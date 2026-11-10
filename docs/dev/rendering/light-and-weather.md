@@ -40,7 +40,8 @@ canopy window's trick; the viewed hero's own layer joins through `litAdd`) that 
 `litCv`, the frame's record of where a body shows. Whatever stands after a body in the y-sort and
 over it is drawn once more into a scratch and cut out of the record (`litPunch`, called by
 `drawSorted` round every reed, `fn` draw and tile object), so a body behind a pine is as hidden as
-it was. `renderLighting` copies the frame as it stood before the night (`bodyLightKeep`) and stamps
+it was. An `fn` draw names its box (`bx`, `by`, `bw`, `bh`) so only a piece that crosses a body is
+redrawn; one without a box is tested on the whole view. `renderLighting` copies the frame as it stood before the night (`bodyLightKeep`) and stamps
 it back through the record at `BODY_HOLD` (`bodyLightStamp`). The ground, the trees, the shade
 under the feet and the rim take the whole night. Never a bird, a ghost seat or a rider on the air layer; a body out of a rival's sight is not drawn
 at all (`fogShown`), so nothing hidden is lit. By day the pass does

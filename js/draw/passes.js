@@ -181,7 +181,9 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     // what stands in the sort that is not a body covers a body's night light
     // as it covers its pixels (litPunch, js/draw/light.js)
-    if (d.fn) { litPunch(0, 0, WV_W, WV_H, () => d.fn(d, ex, ey, now)); continue; }
+    // a piece that names its box (bx, by, bw, bh: world px) is tested on it; one
+    // that does not is tested on the whole view, and pays a view-sized redraw
+    if (d.fn) { if (d.bw) litPunch(d.bx - ex, d.by - ey, d.bw, d.bh, () => d.fn(d, ex, ey, now)); else litPunch(0, 0, WV_W, WV_H, () => d.fn(d, ex, ey, now)); continue; }
     // a pine is most of what stands in the sort, so it gets its own tight box
     // (27x37 at px - 5, py - 21, its nudge, its shake and the target rim)
     const sx = d.tx * TILE - ox, sy = d.ty * TILE - oy, obj = () => drawSceneryObj(d, ox, oy, now, wkO, hovO);
