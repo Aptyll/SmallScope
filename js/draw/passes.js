@@ -436,6 +436,7 @@ function renderAirLayer(now) {
   airOn = airBox.x1 > airBox.x0 && airBox.y1 > airBox.y0;
   if (airOn) {
     ctx = actx;
+    worldBase(actx);
     ctx.clearRect(0, 0, WV_W, WV_H);
     if (state.drop) drawDropAir(ax, ay, now, true);
     for (const p of airRiders) drawPlayer(p, ax, ay, now);
@@ -462,10 +463,10 @@ function renderScreen(ox, oy, now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const kPx = zoomCur * devScale;
   const subX = Math.round((camX - ox) * kPx), subY = Math.round((camY - oy) * kPx);
-  ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
+  ctx.drawImage(worldCv, 0, 0, WV_W * WD, WV_H * WD, -subX, -subY, WV_W * kPx, WV_H * kPx);
   if (airOn) {
     const b = airBox, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
-    ctx.drawImage(airCv, b.x0, b.y0, bw, bh, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
+    ctx.drawImage(airCv, b.x0 * WD, b.y0 * WD, bw * WD, bh * WD, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
   }
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom

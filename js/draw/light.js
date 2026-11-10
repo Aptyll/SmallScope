@@ -304,14 +304,14 @@ function godRays(ox, oy, day) {
     const x0 = cs * start - sn * across, y0 = sn * start + cs * across;
     beams.push({ i, ang: beamAng, a, x0, y0, len, halfEnd });
     if (a <= 0.004) continue;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    worldBase(ctx);
     ctx.translate(x0, y0);
     ctx.rotate(beamAng);
     ctx.globalAlpha = a;
     // the texture already holds the taper, so this is one plain scaled blit
     ctx.drawImage(RAY_CV, 0, -halfEnd, len, halfEnd * 2);
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  worldBase(ctx);
   ctx.imageSmoothingEnabled = prevSmooth;
 
   // Dust in the light. The motes live in SHAFT coordinates - u along, v across -
@@ -565,10 +565,10 @@ function todGrade() {
   const crisp = Math.max(todNoon() * TOD_CRISP, frost * FROST_CRISP * (1 - state.darkness));
   if (crisp > 0.01) {
     grctx.globalCompositeOperation = 'copy'; // through a copy, never ctx.canvas onto itself (gradeCv, js/app/canvas.js)
-    grctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    grctx.drawImage(ctx.canvas, 0, 0, WV_W * WD, WV_H * WD, 0, 0, WV_W * WD, WV_H * WD);
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = crisp;
-    ctx.drawImage(gradeCv, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    worldBlit(ctx, gradeCv, 0, 0, WV_W, WV_H, 0, 0);
     ctx.globalAlpha = 1;
   }
   ctx.globalCompositeOperation = 'source-over';
@@ -874,7 +874,7 @@ function flushWorldInk() {
 const BODY_HOLD = 0.65;                 // the share of the night a body does not take
 const BODY_LW = 128, BODY_LH = 128, BODY_FOOT = 104; // the layer, the feet at (BODY_LW / 2, BODY_FOOT)
 const bodyCv = document.createElement('canvas');
-bodyCv.width = BODY_LW; bodyCv.height = BODY_LH;
+bodyCv.width = BODY_LW * WD; bodyCv.height = BODY_LH * WD;
 const bodyCtx = bodyCv.getContext('2d');
 bodyCtx.imageSmoothingEnabled = false;
 const litCv = document.createElement('canvas'), lctx = litCv.getContext('2d');     // where a body shows this frame
@@ -892,8 +892,9 @@ function bodyLightFrame() {
   // canvas read back as a source is copied whole, and the buffer is cut for
   // the furthest zoom out
   const lw = Math.ceil((WV_W + 1) / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) / LIT_STEP) * LIT_STEP;
-  for (const c of [litCv, preCv, punchBigCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
-  if (punchCv.width !== PUNCH_W) { punchCv.width = PUNCH_W; punchCv.height = PUNCH_H; }
+  for (const c of [litCv, preCv, punchBigCv]) if (c.width !== lw * WD || c.height !== lh * WD) { c.width = lw * WD; c.height = lh * WD; }
+  if (punchCv.width !== PUNCH_W * WD) { punchCv.width = PUNCH_W * WD; punchCv.height = PUNCH_H * WD; }
+  worldBase(lctx);
   lctx.clearRect(0, 0, WV_W + 1, WV_H + 1); // the corner of the buffer this frame uses (sizeWorldView)
 }
 // a model drawn into a layer of its own (the hero's, heroCv) joins the record
@@ -901,7 +902,7 @@ function bodyLightFrame() {
 // model can reach to either side and over its feet: the box scenery is tested on
 function litAdd(cv, x, y, cx, fy, hw, up) {
   if (!litOn) return;
-  lctx.drawImage(cv, x, y);
+  lctx.drawImage(cv, x, y, cv.width / WD, cv.height / WD);
   litBoxes.push(x + cx - hw, y + fy - up, hw * 2, up + 8);
 }
 // a body's model pass, (cx, fy) its centre column and foot row: from here to
@@ -910,17 +911,17 @@ function bodyLayerOpen(cx, fy, hw, up) {
   if (!litOn || ctx !== wctx) return null;
   const T = wctx.getTransform();
   const lx = cx - (BODY_LW >> 1), ly = fy - BODY_FOOT;
-  bodyCtx.setTransform(1, 0, 0, 1, 0, 0);
+  worldBase(bodyCtx);
   bodyCtx.globalAlpha = 1;
   // only the model's own box of the layer is cleared and copied (hw, up)
   const bw = Math.min(BODY_LW >> 1, hw), bu = Math.min(BODY_FOOT, up);
   bodyCtx.clearRect((BODY_LW >> 1) - bw, BODY_FOOT - bu, bw * 2, bu + 8);
   bodyCtx.save();
   bodyCtx.beginPath(); bodyCtx.rect((BODY_LW >> 1) - bw, BODY_FOOT - bu, bw * 2, bu + 8); bodyCtx.clip();
-  bodyCtx.setTransform(1, 0, 0, 1, -lx, -ly);
+  bodyCtx.setTransform(WD, 0, 0, WD, -lx * WD, -ly * WD);
   bodyCtx.globalAlpha = wctx.globalAlpha; // the caller's fade rides in with it
   ctx = bodyCtx;
-  return { x: lx + T.e, y: ly + T.f, hw: bw, up: bu };
+  return { x: lx + T.e / WD, y: ly + T.f / WD, hw: bw, up: bu };
 }
 function bodyLayerClose(L) {
   if (!L) return;
@@ -928,13 +929,13 @@ function bodyLayerClose(L) {
   ctx = wctx;
   const a = wctx.globalAlpha;
   wctx.save();
-  wctx.setTransform(1, 0, 0, 1, 0, 0);
+  worldBase(wctx);
   wctx.globalAlpha = 1; // the layer already carries the fade
   const sx = (BODY_LW >> 1) - L.hw, sy = BODY_FOOT - L.up, sw = L.hw * 2, sh = L.up + 8;
-  wctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh);
+  worldBlit(wctx, bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy);
   wctx.restore();
   wctx.globalAlpha = a;
-  if (litOn) { lctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
+  if (litOn) { worldBlit(lctx, bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
 }
 // Scenery in the y-sort, drawn by `draw` inside the box (x, y, w, h) in the
 // world's own coordinates: if that box crosses a body on record, the piece is
@@ -949,9 +950,9 @@ const PUNCH_W = 64, PUNCH_H = 64;
 function litPunch(x, y, w, h, draw) {
   draw();
   if (!litOn || !litBoxes.length || ctx !== wctx) return;
-  const T = wctx.getTransform();
-  const x0 = Math.max(0, Math.floor(x + T.e)), y0 = Math.max(0, Math.floor(y + T.f));
-  const x1 = Math.min(WV_W + 1, Math.ceil(x + w + T.e) + 1), y1 = Math.min(WV_H + 1, Math.ceil(y + h + T.f) + 1);
+  const T = wctx.getTransform(), te = T.e / WD, tf = T.f / WD; // the caller's offset, in world px
+  const x0 = Math.max(0, Math.floor(x + te)), y0 = Math.max(0, Math.floor(y + tf));
+  const x1 = Math.min(WV_W + 1, Math.ceil(x + w + te) + 1), y1 = Math.min(WV_H + 1, Math.ceil(y + h + tf) + 1);
   if (x0 >= x1 || y0 >= y1) return;
   let hit = false;
   for (let i = 0; i < litBoxes.length && !hit; i += 4)
@@ -961,34 +962,34 @@ function litPunch(x, y, w, h, draw) {
   const cv = small ? punchCv : punchBigCv, c = small ? pctx : pbctx;
   // the small scratch holds the box at its own corner, the big one in place
   const ox = small ? x0 : 0, oy = small ? y0 : 0;
-  c.setTransform(1, 0, 0, 1, 0, 0);
+  worldBase(c);
   c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
   c.clearRect(x0 - ox, y0 - oy, cw, ch);
   c.save();
   c.beginPath(); c.rect(x0 - ox, y0 - oy, cw, ch); c.clip();
-  c.setTransform(T.a, T.b, T.c, T.d, T.e - ox, T.f - oy);
+  c.setTransform(T.a, T.b, T.c, T.d, T.e - ox * WD, T.f - oy * WD);
   ctx = c;
   try { draw(); } finally { ctx = wctx; c.restore(); }
   lctx.globalCompositeOperation = 'destination-out';
-  lctx.drawImage(cv, x0 - ox, y0 - oy, cw, ch, x0, y0, cw, ch);
+  worldBlit(lctx, cv, x0 - ox, y0 - oy, cw, ch, x0, y0);
   lctx.globalCompositeOperation = 'source-over';
 }
 // the frame as it stands, before the night goes over it...
 function bodyLightKeep() {
   if (!litOn || !litBoxes.length) return false;
   prectx.globalCompositeOperation = 'copy';
-  prectx.drawImage(worldCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  prectx.drawImage(worldCv, 0, 0, (WV_W + 1) * WD, (WV_H + 1) * WD, 0, 0, (WV_W + 1) * WD, (WV_H + 1) * WD);
   return true;
 }
 // ...and its bodies stamped back over the night at BODY_HOLD
 function bodyLightStamp() {
   lctx.globalCompositeOperation = 'source-in';
-  lctx.drawImage(preCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  worldBlit(lctx, preCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0);
   lctx.globalCompositeOperation = 'source-over';
   ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  worldBase(ctx);
   ctx.globalAlpha = BODY_HOLD;
-  ctx.drawImage(litCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  worldBlit(ctx, litCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0);
   ctx.restore();
 }
 
@@ -1056,8 +1057,8 @@ function renderLighting(ox, oy, now) {
 // shape, copied first, cuts them back out; then the riders' names and the
 // frames are stamped over it ungraded, as the world's are.
 function lightAir(x, y, w, h) {
-  amctx.clearRect(x, y, w, h);
-  amctx.drawImage(airCv, x, y, w, h, x, y, w, h);
+  amctx.clearRect(x * WD, y * WD, w * WD, h * WD);
+  amctx.drawImage(airCv, x * WD, y * WD, w * WD, h * WD, x * WD, y * WD, w * WD, h * WD);
   // every fill below is cut to the box, so a rider's grade costs a rider's
   // few hundred px, not the frame's
   ctx.save();
@@ -1084,7 +1085,7 @@ function lightAir(x, y, w, h) {
     nightEdge(dark * NIGHT_EDGE);
   }
   ctx.globalCompositeOperation = 'destination-in';
-  ctx.drawImage(airMask, x, y, w, h, x, y, w, h);
+  worldBlit(ctx, airMask, x, y, w, h, x, y);
   ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
   flushWorldInk();

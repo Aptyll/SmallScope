@@ -23,6 +23,20 @@ ctx.imageSmoothingEnabled = false;
 //     particles instead of each sprite rounding its own way.
 // It is allocated at the most zoomed-OUT size once per canvas size, never
 // per frame - resizing a canvas reallocates it and resets its context state.
+// THE WORLD'S DENSITY: buffer px per world px. Every world pass draws in world
+// px under a WD scale (render() sets it on wctx, renderAirLayer on actx), so
+// today's art lands WD x WD per pixel and the screen shows it exactly as before;
+// a sprite drawn WD times finer (a hero look's `dens`, js/draw/heroes.js) is
+// drawn at 1/WD and keeps every one of its pixels. A layer that holds what the
+// world buffer holds (the body, hero, lit and canopy layers) is WD times its
+// world size, and copies between them go through worldBlit.
+// It is 1 (today's buffer, today's cost) until a real-GPU frame time says the
+// finer buffer is affordable and a fine look's weapon, fist and roll are fine
+// too; `?fine=1` turns it to 2 for a tool or a look being drawn.
+const WD = /[?&]fine=1\b/.test(location.search) ? 2 : 1;
+function worldBase(c) { c.setTransform(WD, 0, 0, WD, 0, 0); }
+// a WD-dense layer's (sx, sy, sw, sh), all in world px, onto c at (dx, dy) in c's world px
+function worldBlit(c, cv, sx, sy, sw, sh, dx, dy) { c.drawImage(cv, sx * WD, sy * WD, sw * WD, sh * WD, dx, dy, sw, sh); }
 const worldCv = document.createElement('canvas');
 const wctx = worldCv.getContext('2d');
 // THE AIR LAYER: what flies above the valley (a bird in flight and anyone
@@ -189,9 +203,9 @@ function fitCanvas() {
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
   const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
-  worldCv.width = wMax; worldCv.height = hMax;
+  worldCv.width = wMax * WD; worldCv.height = hMax * WD;
   wctx.imageSmoothingEnabled = false;
-  airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;
+  airCv.width = airMask.width = gradeCv.width = wMax * WD; airCv.height = airMask.height = gradeCv.height = hMax * WD;
   actx.imageSmoothingEnabled = false;
   sizeWorldView();
   // The 9:16 canvas keeps its Short-sized backing store and is SHOWN fitted to

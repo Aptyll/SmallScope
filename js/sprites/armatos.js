@@ -301,6 +301,116 @@ const ARM_BODY = {
     ],
   },
 };
+// The finer world body (`fine` on his first look): twice the pixels a cell, drawn by the
+// WD-dense world buffer at the 16 px cell's size (bodySet, js/draw/bodies.js); his
+// menus, portrait and cards keep ARM_BODY. Walk, run, breath and cloth come off it
+// the same way, stepping a world px (lookSet, js/sprites/characters.js).
+const ARM_FINE = { // LAST STANDARD at 32 px a cell (`fine`, dens 2), the world's own; round 2 look B off /mnt/project-files/scale-32/r2
+  standard: {
+    down: [
+      '................................',
+      '................................',
+      '..........oooooooooooo..........',
+      '.........otTTTTTTTTTTto.........',
+      '........otTTSSTTTTTTttto........',
+      '........otTTSTTTTTTTttto........',
+      '........otttTTTTTTtttnno........',
+      '........onyyyyyyyyyyyyno........',
+      '........onYYYYYYYYYYYYno........',
+      '........okKKKKKTtKKKKKko........',
+      '........okkeekkTtkkeekko........',
+      '........owkkkkkTtkkkkKwo........',
+      '........owwkkkKttKkkKwwo........',
+      '........oWWwwwwwwwwwwwvo........',
+      '......ommmttWWWWwwwwttmmmo......',
+      '......omMmttWWWwwwwvttmMmo......',
+      '......otTtrrWWwwwwwvrrttto......',
+      '......otttrrWWwwwwvvrrttto......',
+      '......ommmrRRRWwwvrrrrmmmo......',
+      '......omMmrRRRrWwrrrrdmMmo......',
+      '......otTtrrRRRRRRrrrdttto......',
+      '......otttrrRRRRrrrrddttto......',
+      '......ooodddddyyyyddddddoo......',
+      '........odddddYYYYdddddo........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........bbbb....bbbb..........',
+      '..........bbbb....bbbb..........',
+      '..........BBBB....BBBB..........',
+      '..........BBBB....BBBB..........',
+    ],
+    up: [
+      '................................',
+      '................................',
+      '..........oooooooooooo..........',
+      '..........otTTTTTTTTto..........',
+      '........oottTTTTTTTTttoo........',
+      '........otttTTTTTTTTttto........',
+      '........otttTTTTTTttttto........',
+      '........onnnyyyyyyyynnno........',
+      '........onnnyyyyyyyynnno........',
+      '........otttttttttttttto........',
+      '........otttttttttttttto........',
+      '........onnnnnnnnnnnnnno........',
+      '........onnnnnnnnnnnnnno........',
+      '......oommttttmmmmttttmmoo......',
+      '......otttrrrrrrrrrrrrttto......',
+      '......otttrrrrrrrrrrrrttto......',
+      '......ommmrrrrRRRRrrrrmmmo......',
+      '......ommmrrrrRRRRrrrrmmmo......',
+      '......ommmrrrrRRRRrrrrmmmo......',
+      '......ommmrrrrRRRRrrrrmmmo......',
+      '......otttrrrrrrrrrrrrttto......',
+      '......oottrrrrrrrrrrrrttoo......',
+      '........otddddyyyyddddto........',
+      '........ooddddyyyyddddoo........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........pppp....pppp..........',
+      '..........bbbb....bbbb..........',
+      '..........bbbb....bbbb..........',
+      '..........BBBB....BBBB..........',
+      '..........BBBB....BBBB..........',
+    ],
+    side: [
+      '................................',
+      '................................',
+      '..........oooooooooooo..........',
+      '..........otTTTTTTTTto..........',
+      '........oottTTTTTTTTttoo........',
+      '........otttTTTTTTTTttto........',
+      '........otttTTTTTTTTTTTo........',
+      '........onnnnnyyyyyyyyyo........',
+      '........onnnnnyyyyyyyyyo........',
+      '........otttttttKKKKyyyo........',
+      '........otttttttkkeeyyyo........',
+      '........otttttttkkkkwwwo........',
+      '........otttttttkkkkwwwo........',
+      '........ommmttwwwwwwwwwwoo......',
+      '......oommttttrrwwwwwwwo........',
+      '......oommttttrrwwwwwwwo........',
+      '........otttrrrrRRRRrrro........',
+      '........otttrrrrRRRRrrro........',
+      '........ommmrrrrRRRRrrro........',
+      '........ommmrrrrRRRRrrro........',
+      '........otttrrrrrrrrttto........',
+      '........otttrrrrrrrrttto........',
+      '........odddddyyyydddddo........',
+      '........ooddddyyyyddddoo........',
+      '............pppp..pppp..........',
+      '............pppp..pppp..........',
+      '............pppp..pppp..........',
+      '............pppp..pppp..........',
+      '............bbbb..bbbb..........',
+      '............bbbb..bbbb..........',
+      '............BBBB..BBBB..........',
+      '............BBBB..BBBB..........',
+    ],
+  },
+};
 // his iron: helm, mail, gauntlets, gold and beard (and the letters the borrowed
 // catch and prone frames still use: g/G visor, S steel, x/h/H the face)
 const ARM_PAL = {
@@ -312,25 +422,28 @@ const ARM_PAL = {
 // with coins on the skins screen (js/ui/skins.js, the ARMATOS tab; the profile
 // keeps the pick under `slot`). `motion` names the doll body in js/baked/motion.js.
 const ARM_SKINS = [
-  { id: 'standard', name: 'LAST STANDARD', rarity: 'common', price: 0, grids: ARM_BODY.standard, motion: 'standard' },
+  { id: 'standard', name: 'LAST STANDARD', rarity: 'common', price: 0, grids: ARM_BODY.standard, motion: 'standard', fine: { dens: 2, grids: ARM_FINE.standard } },
   { id: 'oath', name: 'IRON OATH', rarity: 'rare', price: 200, grids: ARM_BODY.oath, motion: 'oath' },
 ];
 // the walk off a standing frame: down and up lift one foot then the other
 // (split at the body's middle column), the side spreads the feet then closes them.
 // A frame is a square cell of any even size (16 px, or the larger 20): every
 // column and row here is counted off the grid's own size, feet on its last rows.
-function heroWalk(b) {
-  const N = b.down.length, H = N >> 1, blank = '.'.repeat(H), leg = Math.round(N / 8); // a leg's width
+// `d` is the grid's density, art px a world px (a look's `dens`): every step is d px, so a
+// finer body walks the same world distance as the rest.
+function heroWalk(b, d = 1) {
+  const N = b.down.length, H = N >> 1, blank = '.'.repeat(N), leg = Math.round(N / 8); // a leg's width
+  // one foot off the snow (s > 0 the right half's, else the left's): its bottom d rows up by d
   const lift = (g, s) => {
-    const r = g.slice(), a = r[N - 2], c = r[N - 1];
-    if (s > 0) { r[N - 2] = a.slice(0, H) + c.slice(H); r[N - 1] = c.slice(0, H) + blank; }
-    else { r[N - 2] = c.slice(0, H) + a.slice(H); r[N - 1] = blank + c.slice(H); }
+    const r = g.slice(), half = (row, from) => (s > 0 ? row.slice(0, H) + from.slice(H) : from.slice(0, H) + row.slice(H));
+    for (let y = N - d; y < N; y++) r[y - d] = half(r[y - d], g[y]);
+    for (let y = N - d; y < N; y++) r[y] = half(r[y], blank);
     return r;
   };
-  const spread = (row) => { let o = ''; for (let x = 0; x < N; x++) o += (x < H ? row[x + 1] : x > H ? row[x - 1] : '.') || '.'; return o; };
-  const close = (row) => ('.'.repeat(H - 1) + row.slice(H - leg, H)).padEnd(N, '.');
-  const sideA = (g) => g.slice(0, N - 2).concat([spread(g[N - 2]), spread(g[N - 1])]);
-  const sideB = (g) => g.slice(0, N - 2).concat([close(g[N - 2]), close(g[N - 1])]);
+  const spread = (row) => { let o = ''; for (let x = 0; x < N; x++) o += (x < H - d + 1 ? row[x + d] : x > H + d - 1 ? row[x - d] : '.') || '.'; return o; };
+  const close = (row) => ('.'.repeat(H - d) + row.slice(H - leg, H)).padEnd(N, '.');
+  const sideA = (g) => g.slice(0, N - 2 * d).concat(g.slice(N - 2 * d).map(spread));
+  const sideB = (g) => g.slice(0, N - 2 * d).concat(g.slice(N - 2 * d).map(close));
   return {
     down: [b.down, lift(b.down, 1), lift(b.down, -1)],
     up: [b.up, lift(b.up, 1), lift(b.up, -1)],
@@ -340,7 +453,7 @@ function heroWalk(b) {
 // The box a hero's run frames come out in: SPR.motion's for the 16 px cell (the
 // doll's frames share it), the same margins round a larger cell. Every frame is
 // drawn centred on its cell with its floor on the cell's (drawPlayer).
-function heroRunBox(N) { const B = SPR.motion.BOX; return N === 16 ? B : { w: N + B.w - 16, h: N + B.h - 16, x: B.x, y: B.y }; }
+function heroRunBox(N, d = 1) { const B = SPR.motion.BOX; return N === 16 && d === 1 ? B : { w: N + (B.w - 16) * d, h: N + (B.h - 16) * d, x: B.x * d, y: B.y * d }; }
 // The run and the held run seen side-on, off the hero's own standing side frame
 // rather than the doll's (app/bake-player): the doll's side run is a head and a
 // coat narrower than the hand-drawn body, so a hero shrank the moment it ran left
@@ -354,8 +467,8 @@ function heroRunBox(N) { const B = SPR.motion.BOX; return N === 16 ? B : { w: N 
 // in the cell's run box (heroRunBox).
 const HERO_LEAN = 7 / 16; // the share of the cell, from its top, that is the head: a runner's head leads its hips by a pixel
 const HERO_STRIDE = [2, 1, 0, -1, -2, -1, 0, 1]; // px the near foot is ahead, a frame at a time (the far one behind by as much)
-function heroRunSide(side, bob, look) {
-  const N = side.length, B = heroRunBox(N);
+function heroRunSide(side, bob, look, d = 1) {
+  const N = side.length, B = heroRunBox(N, d);
   const runs = (row) => { const out = []; let x0 = -1; for (let x = 0; x <= N; x++) { const on = x < N && row[x] !== '.'; if (on && x0 < 0) x0 = x; if (!on && x0 >= 0) { out.push([x0, x]); x0 = -1; } } return out; };
   const legTop = heroLegTop(side); // the rows that stand as two legs
   const lean = Math.round(N * HERO_LEAN); // the head's rows, carried a pixel ahead of the hips
@@ -363,33 +476,33 @@ function heroRunSide(side, bob, look) {
     // the loose cloth (heroCloth) rides a frame late: a pixel behind as the body rises,
     // and where the body was the frame before
     const was = bob[(f + bob.length - 1) % bob.length], late = Math.max(-1, Math.min(1, was - bob[f]));
-    const body = (look && (bob[f] < was || late) && heroCloth(side, look, 'side', bob[f] < was ? -1 : 0, late)) || side;
+    const body = (look && (bob[f] < was || late) && heroCloth(side, look, 'side', (bob[f] < was ? -1 : 0) * d, late * d, d)) || side;
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
     const put = (x, y, c) => { if (c !== '.' && y >= 0 && y < B.h && x >= 0 && x < B.w) g[y][x] = c; };
     for (let y = legTop; y < N; y++) { // the legs: the far (first) one, then the near over it
-      const r = runs(side[y]), deep = y === legTop && N - legTop > 2 ? 0.5 : 1;
+      const r = runs(side[y]), deep = y < legTop + d && N - legTop > 2 * d ? 0.5 : 1;
       const legs = [[r[0], -1], [r[r.length - 1], 1]];
       for (const [[x0, x1], sgn] of legs) {
         // THE STRIDE: at full reach the rear foot has left the snow, and as the legs pass
         // under the hips the one swinging forward is lifted (the far leg, then the near one)
         const lift = step ? (Math.abs(step) === 2 && sgn * step < 0 ? 1 : 0) : (sgn < 0) === (f < HERO_STRIDE.length / 2) ? 1 : 0;
-        for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]) - lift, side[y][x]); // up: the whole body leaves the snow
+        for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep) * d, B.y + y + (Math.min(0, bob[f]) - lift) * d, side[y][x]); // up: the whole body leaves the snow
       }
     }
-    for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x + (y < lean ? 1 : 0), B.y + y + bob[f], body[y][x]); // the body, over the hips, the head leaning into the run
+    for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x + (y < lean ? d : 0), B.y + y + bob[f] * d, body[y][x]); // the body, over the hips, the head leaning into the run
     return g.map((r) => r.join(''));
   });
 }
 // ...and head-on or from behind, for a look whose doll does not match its drawn
 // body (a skin row's `run: 'drawn'`): the standing frame bobbed the same way, one
 // foot lifted and then the other (heroWalk's step) while the stride is out
-function heroRunFront(grid, bob) {
-  const N = grid.length, B = heroRunBox(N), w = heroWalk({ down: grid, up: grid, side: grid }).down;
+function heroRunFront(grid, bob, d = 1) {
+  const N = grid.length, B = heroRunBox(N, d), w = heroWalk({ down: grid, up: grid, side: grid }, d).down;
   return HERO_STRIDE.map((step, f) => {
     const src = step > 0 ? w[1] : step < 0 ? w[2] : w[0];
     const g = Array.from({ length: B.h }, () => Array(B.w).fill('.'));
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const c = src[y][x], yy = B.y + y + (y < N - 3 ? bob[f] : Math.min(0, bob[f]));
+      const c = src[y][x], yy = B.y + y + (y < N - 3 * d ? bob[f] : Math.min(0, bob[f])) * d;
       if (c !== '.' && yy >= 0 && yy < B.h) g[yy][B.x + x] = c;
     }
     return g.map((r) => r.join(''));
@@ -410,21 +523,21 @@ function heroLegTop(g) {
 // over it step down, so the hands, the weapon in them and the feet hold still. The row
 // that goes is the one most like a neighbour, so the drop reads as a breath and not a
 // change of costume. Counted from the grid's own size (the hands sit 6 rows over the floor).
-function heroBreath(g) {
-  const h = g.length, w = g[0].length, hand = h - 6;
+function heroBreath(g, d = 1) {
+  const h = g.length, w = g[0].length, hand = h - 6 * d;
   const diff = (a, b) => { let n = 0; for (let x = 0; x < w; x++) n += a[x] !== b[x]; return n; };
   const cost = (y) => Math.min(diff(g[y], g[y - 1]), diff(g[y], g[y + 1]));
-  const cut = cost(hand - 2) < cost(hand - 1) ? hand - 2 : hand - 1;
-  return ['.'.repeat(w)].concat(g.slice(0, cut), g.slice(cut + 1));
+  const cut = cost(hand - 1 - d) < cost(hand - d) ? hand - 1 - d : hand - d; // the first of the d rows that go
+  return Array(d).fill('.'.repeat(w)).concat(g.slice(0, cut), g.slice(cut + d));
 }
 // THE CLOTH: a look's loose parts (its `cloth` boxes, [x0, y0, x1, y1] on a facing's grid,
 // and its `hem`, the rows of skirt over the legs) one pixel along (dx, dy) for the beat
 // after a stop or a turn. A part pushed off the body grows from its seam; one pushed into
 // the body tucks behind it. A hem only swings sideways.
-function heroCloth(g, look, face, dx, dy) {
+function heroCloth(g, look, face, dx, dy, d = 1) {
   const h = g.length, w = g[0].length, boxes = [];
   for (const b of (look.cloth && look.cloth[face]) || []) boxes.push([b, dy]);
-  if (look.hem && dx) { const top = heroLegTop(g); boxes.push([[0, top - look.hem, w - 1, top - 1], 0]); }
+  if (look.hem && dx) { const top = heroLegTop(g); boxes.push([[0, top - look.hem * d, w - 1, top - 1], 0]); }
   if (!boxes.length) return null;
   const sway = (x, y) => { for (const [[x0, y0, x1, y1], vy] of boxes) if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return vy; return null; };
   const out = g.map((r) => r.split('')), loose = [];
