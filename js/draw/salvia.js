@@ -87,14 +87,13 @@ function drawSalviaGround(ex, ey, now) {
   for (const b of salviaBundles) {
     const px = Math.round(b.x - ex), py = Math.round(b.y - ey);
     if (px < -6 || py < -6 || px > WV_W + 6 || py > WV_H + 6) continue;
-    // its shadow on the snow at the feet, then the bundle spinning
-    ctx.globalAlpha = 0.3; ctx.fillStyle = '#9fb6d8'; ctx.fillRect(px - 1, py + BOW_Y, 3, 1); ctx.globalAlpha = 1;
-    ctx.fillStyle = SV_INK; ctx.fillRect(px - 2, py - 2, 5, 5);
-    ctx.fillStyle = SV_LINEN; ctx.fillRect(px - 1, py - 1, 3, 3);
-    ctx.fillStyle = SV_LINEN_D; ctx.fillRect(px + 1, py + 1, 1, 1);
-    const spin = Math.floor(b.d / 6) % 2;
-    ctx.fillStyle = SV_GOLD; if (spin) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3);
-    ctx.fillStyle = SV_SAGE; ctx.fillRect(px + (spin ? -1 : 1), py - 3, 1, 1);
+    // its shadow on the snow at the feet, a loose leaf or two dropping behind it, then the bundle tumbling
+    ctx.globalAlpha = 0.3; ctx.fillStyle = '#9fb6d8'; ctx.fillRect(px - 2, py + BOW_Y, 5, 1); ctx.globalAlpha = 1;
+    for (let k = 1; k <= 2; k++) {
+      const back = 9 * k + (b.d % 9); if (back > b.d) break;
+      svLeaf(Math.round(px - b.nx * back), Math.round(py - b.ny * back + k * 2 + (back >> 3)), b.d * 0.3 + k);
+    }
+    svBundle(px, py, Math.floor(b.d / 7) % 4);
   }
 }
 HERO_GROUND.push(drawSalviaGround);
@@ -107,14 +106,43 @@ function svLeaf(x, y, t) {
   ctx.fillStyle = SV_SAGE; ctx.fillRect(x, y, 2, 1);
   ctx.fillStyle = SV_SAGE_D; ctx.fillRect(x + (c > 0 ? 1 : 0), y + (s > 0 ? 1 : 0), 1, 1);
 }
-// POULTICE's wind-up: herb leaves shaken loose, scattered down the line it will fly
-function drawPoulticeTele(p, a, closing, now, ex, ey) {
-  const nx = Math.cos(a), ny = Math.sin(a), L = POULTICE_RANGE * (0.25 + 0.75 * closing);
-  for (let s = 14, k = 0; s < L; s += 13, k++) {
-    const side = Math.sin(k * 2.3 + now * 3) * 3;
-    svLeaf(Math.round(p.x + nx * s - ny * side - ex), Math.round(p.y + ny * s + nx * side - ey), a + k);
-  }
+// the poultice: a round linen bundle tied with twine, the knot's two ears and a sprig of sage
+// standing out of the tie; `turn` (0..3) is the quarter it has tumbled to
+const SV_TIE = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+function svBundle(x, y, turn) {
+  ctx.fillStyle = SV_INK; ctx.fillRect(x - 2, y - 3, 5, 7); ctx.fillRect(x - 3, y - 2, 7, 5);
+  ctx.fillStyle = SV_LINEN; ctx.fillRect(x - 1, y - 2, 3, 5); ctx.fillRect(x - 2, y - 1, 5, 3);
+  ctx.fillStyle = SV_LINEN_D; ctx.fillRect(x + 1, y + 1, 2, 1); ctx.fillRect(x + 1, y + 2, 1, 1); ctx.fillRect(x - 1, y + 2, 2, 1); // its under side in shade
+  ctx.fillStyle = SV_WHITE; ctx.fillRect(x - 1, y - 2, 2, 1);
+  const [tx, ty] = SV_TIE[turn], sx = -ty, sy = tx;
+  ctx.fillStyle = SV_GOLD_D; // the twine round it, and the knot where it is tied
+  for (let k = -2; k <= 2; k++) ctx.fillRect(x + sx * k + tx, y + sy * k + ty, 1, 1);
+  ctx.fillStyle = SV_INK; ctx.fillRect(x + tx * 4 - 1, y + ty * 4 - 1, 3, 3); // the gathered neck above the knot
+  ctx.fillStyle = SV_LINEN; ctx.fillRect(x + tx * 4 - sx, y + ty * 4 - sy, 1, 1); ctx.fillRect(x + tx * 4 + sx, y + ty * 4 + sy, 1, 1);
+  ctx.fillStyle = SV_SAGE_D; ctx.fillRect(x + tx * 4, y + ty * 4, 1, 1);
+  ctx.fillStyle = SV_INK; ctx.fillRect(x + tx * 6 - 1, y + ty * 6 - 1, 3, 3); // the sprig
+  ctx.fillStyle = SV_SAGE; ctx.fillRect(x + tx * 5, y + ty * 5, 1, 1); ctx.fillRect(x + tx * 6, y + ty * 6, 1, 1);
+  ctx.fillStyle = SV_SAGE_D; ctx.fillRect(x + tx * 6 + sx, y + ty * 6 + sy, 1, 1);
 }
+// POULTICE's wind-up: no line down the snow; the bundle itself, drawn out of her satchel and
+// held out the way it will fly
+function drawPoulticeTele(p, a, closing, now, ex, ey) {
+  const r = 10 + 3 * closing;
+  svBundle(Math.round(p.x + Math.cos(a) * r - ex), Math.round(p.y - BOW_Y + Math.sin(a) * r - ey) + (closing < 0.5 ? 1 : 0), 0);
+}
+// POULTICE landing: the bundle burst open where it met a body, a wall or its reach: the linen
+// square dropping flat and its sage leaves thrown out and settling
+function drawPoulticeFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 3 * (1 - u));
+  const cy = py + Math.round(BOW_Y * Math.min(1, u * 2.5)); // the cloth falls to the snow
+  ctx.fillStyle = SV_INK; ctx.fillRect(px - 3, cy - 1, 7, 4);
+  ctx.fillStyle = SV_LINEN; ctx.fillRect(px - 2, cy, 5, 2);
+  ctx.fillStyle = SV_LINEN_D; ctx.fillRect(px, cy + 1, 3, 1);
+  drawFlung(px, py + BOW_Y, 0, Math.PI, f.r, 0.3, 9, 9, Math.min(1, u * 1.8), seed, (x, y, k) => svLeaf(x, y, k * 1.7));
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.poultice = drawPoulticeFx;
 // SNOWDROPS' wind-up: a green shoot pushing up on each spot she will plant, a white bud on it
 function drawDropsTele(x, y, closing) {
   const h = 1 + Math.round(3 * closing);
