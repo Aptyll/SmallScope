@@ -323,7 +323,7 @@ SPRITES.weaponArt.arbalest = SPR.bake([
 // their paint, the skins tab's 8x8 glyph and the 12x12 emblem
 heroArt('sagitta', {
   looks: SAGITTA_SKINS, pal: SAGITTA_PAL,
-  glow: ['#0e1218', '#1a2028', '#28323e', '#3a4856', '#526478'], // slate and steel, the siege line
+  glow: ['#0e1420', '#1a2434', '#28384e', '#3a506c', '#52708e'], // slate and steel, the siege line
   glyph: ['wwwwwwww', 'w..ww..w', '...ww...', '...ww...', '..wwww..', '..wwww..', '...ww...', '........'],
   emblem: [ // a crossbow, prod up, the stock down
     '............',
