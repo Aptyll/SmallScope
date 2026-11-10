@@ -92,6 +92,11 @@ const OBJECTS = {
   // never drawn in the y-sorted pass - a trunk on the ground is ground.
   // `leap`: a deer's leap clears it (rideLeap, js/sim/wildlife.js)
   log:      { solid: true,  leap: true, mm: [124, 94, 62] },
+  // a fallen pine on the river's bank, a junction's landmark (jungleMarks,
+  // js/sim/jungle.js): every tile it lies across carries the whole trunk's
+  // line in world px (x0, y0 the root plate, x1, y1 the broken top), and its
+  // pixels are baked flat into the ground like the log's (paintTrunk)
+  trunk:    { solid: true,  leap: true, mm: [124, 94, 62] },
   // a zipline's pylon (placeZips, the `zipline` banner, js/sim/zipline.js): solid, inert
   // to E, carrying its `team`. Its pixels are PYLON_SPRS in render()'s
   // object pass (js/draw/zipline.js); the cable itself is not an object at

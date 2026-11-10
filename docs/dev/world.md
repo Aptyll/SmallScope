@@ -41,11 +41,12 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `snowdrop`, `den`, `dummy`, `banner`, `log`,
+  `snowdrop`, `den`, `dummy`, `banner`, `log`, `trunk`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
   `barracks`, `tower`. `banner`/`log` are
-  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
+  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `trunk` the fallen pine a
+  junction's landmark (`jungleMarks`: each tile it lies across carries the trunk's whole line), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
   [the practice tool](#the-practice-tool)'s arena. `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
@@ -140,7 +141,7 @@ array only ever flips ice ↔ hole at runtime and both are lake, so it never nee
 | --- | --- | --- |
 | **LIP** (`w` 1) | gentle wander, 2 px shade band | the sheet's two tones on a dithered low noise |
 | **DEEP** (`w` 2) | gentle wander, 3 px deeper band | pale shallows along the shore, then two steps darker to the middle, off `lakeDepth` |
-| **RIVER** (`w` 0, never rolled: the frozen creek's, `CREEK_ICE_STYLE`) | as LIP | `riverTone`, in the creek's own frame: a darker clear channel down the middle, wind-laid snow streaks along the flow on the sheet either side, and a crack bank to bank every few tiles |
+| **RIVER** (`w` 0, never rolled: the frozen creek's, `CREEK_ICE_STYLE`) | as LIP | `riverTone`, in the creek's own frame: a darker clear channel down the middle, wind-laid snow streaks along the flow on the sheet either side, and a crack bank to bank every few tiles, leaning and jagged by `hash2` |
 
 The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
 the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
