@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['STUMPS IN THREE CUTS, NO LONGER IN ROWS', '0.762'],
     ['Hiems\'s staff top is a clear snowflake; resting staves show their whole head from the front', '0.761'],
     ['LANES KEEP A CLEAN STRAIGHT EDGE', '0.759'],
     ['Lignum, Rupes, Sagitta, Varro and Velox have proper side views, Velox carries a real staff sling and Lucerna a caged lantern', '0.758'],
