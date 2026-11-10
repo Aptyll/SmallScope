@@ -157,6 +157,23 @@ function drawFlameTongue(x, y, h, w, ph) {
 // on every screen (a look seeds off where it landed)
 function fxRoll(seed, k, j) { return hash2(seed + k * 131, j * 977 + 17); }
 function fxSeed(f) { return (Math.round(f.x) * 7 + Math.round(f.y) * 13) | 0; }
+// A strip of some material lying on the snow, the wind-up of a key that flies or runs
+// down a line: from (x0, y0) along (nx, ny) for len px, `half` px to each side at its
+// root narrowing to `tip` at its end, its edge broken and its width wandering so it is
+// never a ruled line or a hairline. Its colours from the outside in: `edge` on the rim,
+// `body`, and `core` on the middle third where it is wide enough to have one.
+function fxStrip(x0, y0, nx, ny, len, half, tip, seed, edge, body, core) {
+  for (let i = 0, n = Math.ceil(len * 2); i < n; i++) { // half px steps: a slanted strip has no holes
+    const s = i / 2, q = s | 0;
+    const w = Math.max(0, Math.round(tip + (half - tip) * (1 - s / len) + (fxRoll(seed, q >> 1, 1) - 0.5) * 1.4));
+    for (let k = -w; k <= w; k++) {
+      const rim = w > 0 && Math.abs(k) === w;
+      if (rim && fxRoll(seed, q, 5 + k) < 0.35) continue;
+      ctx.fillStyle = rim ? edge : core && Math.abs(k) * 3 <= w ? core : body;
+      ctx.fillRect(Math.round(x0 + nx * s - ny * k), Math.round(y0 + ny * s + nx * k), 1, 1);
+    }
+  }
+}
 // A blade's cut: a crescent swept across the wedge (a, half) out to r, the trail a
 // swing leaves, thick at its middle and thin at its tips. `u` 0..1 is its life: it
 // sweeps across in the first half (from the side `dir` names, 1 or -1), then fades.

@@ -183,21 +183,19 @@ function drawBashFx(f, px, py, now) {
   });
 }
 AB_FX_LOOK.bash = drawBashFx;
-// VETERAN'S MARCH's wind-up: his boot prints stamped down the line he will
-// charge, out to where it ends, more of them as he lowers his head
+// VETERAN'S MARCH's wind-up: the snow down the line he will charge already trodden
+// flat, a packed strip as wide as he is, and his boot prints stamped into it left and
+// right, out further as he lowers his head
 function drawMarchTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), len = teleLen(p.x, p.y, nx, ny, MARCH_SPD * MARCH_T);
-  const reach = len * (0.4 + 0.6 * closing), col = TEAMS[skin(p.team)].mark;
-  for (let s = 12, k = 0; s < reach; s += 9, k++) {
-    const o = k % 2 ? 3 : -3, x = Math.round(p.x + nx * s - ny * o - ex), y = Math.round(p.y + 2 + ny * s + nx * o - ey);
-    ctx.fillStyle = '#5f7aa3'; ctx.fillRect(x - 1, y - 1, 3, 3); ctx.fillRect(x, y + 2, 1, 1); // the print, its heel behind
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y + 2, 1, 1); ctx.fillRect(x + 1, y + 2, 1, 1);
-    if (s + 9 >= reach) { ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); } // the newest, in his side's mark
+  const reach = len * (0.4 + 0.6 * closing);
+  fxStrip(p.x + nx * 8 - ex, p.y + 3 + ny * 8 - ey, nx, ny, reach - 6, 5, 4, p.id * 19, '#c9d4e8', '#b3c0da');
+  const wide = Math.abs(nx) >= Math.abs(ny);
+  ctx.fillStyle = '#98a8c6'; // a print is pressed snow, one value under the strip, never a colour
+  for (let s = 12, k = 0; s < reach - 2; s += 5, k++) { // left, right, left: a stride, each boot ahead of the last
+    const o = k % 2 ? 3 : -3, x = Math.round(p.x + nx * s - ny * o - ex), y = Math.round(p.y + 3 + ny * s + nx * o - ey);
+    ctx.fillRect(x - 1, y - 1, wide ? 3 : 2, wide ? 2 : 3);
   }
-  const x = Math.round(p.x + nx * len - ex), y = Math.round(p.y + 2 + ny * len - ey); // where it ends
-  ctx.globalAlpha = 0.4 + 0.5 * closing;
-  ctx.fillStyle = 'rgba(40,52,90,0.4)'; fillEllipsePx(x, y, 6, 2);
-  ctx.globalAlpha = 1;
 }
 // THE OLD GUARD: a shield stood in the snow, in the side's colour, its boss gold
 const GUARD_SHIELDS = 20;
