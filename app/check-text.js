@@ -15,8 +15,8 @@
 // A key counts as named wherever its exact text sits in a quoted string, so
 // a key kept in a data table (`word: 'recap.attacks'`) and passed to tr()
 // later counts too. A loose word is a quoted string with two capitals in a
-// row and no lowercase (a colour, an id with an underscore, a lone mark
-// are not words). No packages.
+// row and no lowercase (a colour, an id with an underscore, a lone mark,
+// a sprite row of one letter are not words). No packages.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -35,6 +35,7 @@ const MOVED = [
   'js/ui/tooltip.js',
   'js/ui/shop.js',
   'js/ui/panels.js',
+  'js/ui/select.js',
 ];
 
 function readText() {
@@ -50,7 +51,8 @@ function readGlyphs() {
   return set;
 }
 const unescape = (v) => v.replace(/\\(.)/g, '$1');
-const looseWord = (v) => /[A-Z]{2}/.test(v) && !/[a-z]/.test(v) && !/^#/.test(v) && !/_/.test(v);
+const looseWord = (v) => /[A-Z]{2}/.test(v) && !/[a-z]/.test(v) && !/^#/.test(v) && !/_/.test(v) &&
+  new Set(v.replace(/[^A-Z]/g, '')).size > 1; // one letter over and over is a sprite row, not a word
 
 function check() {
   const problems = [];

@@ -131,7 +131,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk for the
   person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD: the parked cards, gameplay/roguelike-cards.md).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
-  is what is in it and where: WOLF DEN, BLACK BEAR BEND (the bear walks a bend of the creek), ORCA'S POOL.
+  is what is in it and where: WOLF DEN, FOX HOLLOW, OX RANGE, BLACK BEAR BEND (the bear walks a bend of the creek), ORCA'S POOL.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/app/profile.js](../../js/app/profile.js)).
 - **A hero is one Latin-sounding word and a title**: ARMATOS, THE LAST STANDARD; FORTIVA, THE
