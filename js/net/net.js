@@ -612,7 +612,7 @@ function netClientApplyDelta(msg) {
     // a body still easing toward an earlier target is compared at that
     // target, not where it is drawn - PER AXIS: an axis this delta moved
     // already holds the host's value, the other is still drawn short of its
-    // own target (a fish that turned in x alone is still easing in y)
+    // own target (a body that turned in x alone is still easing in y)
     const movedX = new Set(), movedY = new Set();
     for (const [e, f] of changed) { if ('x' in f) movedX.add(e); if ('y' in f) movedY.add(e); }
     const eased = [];

@@ -154,7 +154,7 @@ dashes pass through the small bodies a roll passes (`through` on the `HERO_DASH`
 | 3 | **OUTMANEUVER** | 9/8.5/8/7.5/7 s | refused without a rival body within `OUT_PICK` of the aim and `OUT_RANGE` of her (`slipTarget`, the row's `ok`); she slips through it (`p.dash = 'slip'`) to `OUT_PAST` beyond, dealing `dmg` and marking it for `mark`: her next basic attack on it deals `markDmg` (12/18/24/30/36) + `OUT_BONUS_AD` of her damage more |
 | 4 | **THE FINAL GAMBIT** | 70/60/50 s | calls out a rival hero within `DUEL_RANGE` (`duelTarget`) for `t`: she walks ×`DUEL_MS` toward them. The key again (`recast`, refused past `FLURRY_REACH`) closes in and strikes `FLURRY_N` times `FLURRY_GAP` apart (`bellaStrike`): `FLURRY_DMG`, then a finisher of `dmg` (18/30/42) + `missing` of the life they are missing |
 
-IGNIA, THE HEARTHKEEPER — the first mage: she burns a fight down, slowly, and the snow and the creek
+IGNIA, THE HEARTHKEEPER — the first mage: she burns a fight down, slowly, and deep snow and open water
 put her out. Her rules live in **[js/sim/ignia.js](../../../js/sim/ignia.js)** (`IGNIA_AB`, its
 `ignia` banner), her pixels in [js/draw/ignia.js](../../../js/draw/ignia.js), her icons and looks in
 [js/sprites/ignia.js](../../../js/sprites/ignia.js). She is fragile (84 hp, 10 armor) and shoots
@@ -224,7 +224,7 @@ she freezes a fight and lets her side finish it. What she leaves in the world (`
 | --- | --- | --- | --- |
 | P | **DEEP CHILL** | — | every blow of hers (her keys and her staff, `hiemsDeal` on `HERO_PASSIVE.deepchill`'s `deal`) chills the rival body: a stack held `CHILL_WINDOW`, slowing ×0.85 at one and ×0.7 at two (`hiemsChill`). The third freezes it in place for `FREEZE_T` (a stun, so tenacity cuts it; the ice is drawn round it, `frozeT`), and for `FREEZE_IMMUNE` after its chills stop at two. Soldiers and beasts chill too |
 | 1 | **ICICLE** | 8/7.5/7/6.5/6 s | a shard down the aim (`ICICLE_SPD` for `ICICLE_RANGE`, riding `arrows`): the first rival takes `dmg` (20/25/30/35/40), is slowed ×`ICICLE_SLOW` for `ICICLE_SLOW_T` and chilled |
-| 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on the creek's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
+| 2 | **CLEAR ICE** | 15/14/13/12/11 s | a disc `GLAZE_R` at the aim (at most `GLAZE_RANGE`) turns to ice for `t` (3/3.5/4/4.5/5 s): a rival hero on it skates as on a lake's ice (`HERO_ICE`, read by `iceUnder`), and every rival body on it walks ×`GLAZE_SLOW`. Her own side walks it as snow. No damage |
 | 3 | **COLD SNAP** | 12/11.5/11/10.5/10 s | a burst `SNAP_R` at the aim (at most `SNAP_RANGE`): every rival already chilled is rooted `root` (1 s), then every rival inside takes `dmg` (18/24/30/36/42) and is chilled; buildings take it too |
 | 4 | **WHITEOUT** | 100/85/70 s | a blizzard `WHITE_R` round her for `WHITE_T`, riding her: rivals inside walk ×`WHITE_SLOW`, and once a second take `dmg` (10/16/22) and a chill. A rival hero inside sees only `WHITE_SEE` (a fifth) of their reach (`HERO_SIGHT`, read by `heroEyeR`): their side's other eyes still see |
 
@@ -393,7 +393,7 @@ saved and sent like HIEMS's ice.
 | --- | --- | --- | --- |
 | P | **KEEP MOVING** | — | each of her basic hits adds a stack, `KEEP_MAX` at most, each walking ×(1 + `KEEP_MS`) (`HERO_MOVE`); the stacks hold `KEEP_T`, or `KEEP_ICE_T` when she stands on ice. `HERO_PASSIVE.keepmoving` |
 | 1 | **SKIP STONE** | 7/6.5/6/5.5/5 s | a stone down the aim at `SKIP_SPD`: it lands every `SKIP_GAP` (`SKIP_ICE_GAP` after a landing on ice: the creek's, or a lane), `SKIP_N` times, and each landing hits every rival body within `SKIP_R` for `dmg` (18/26/34/42/50). A tree or a wall stops it |
-| 2 | **ICE LANE** | 16/15/14/13/12 s | a strip `LANE_LEN` long and `LANE_W` wide from her feet down the aim, for `t` (3/3.5/4/4.5/5 s). On her own lane she skates (`HERO_ICE`) ×`LANE_FAST`; a rival body on it skates like the creek's ice; her own side walks it as snow |
+| 2 | **ICE LANE** | 16/15/14/13/12 s | a strip `LANE_LEN` long and `LANE_W` wide from her feet down the aim, for `t` (3/3.5/4/4.5/5 s). On her own lane she skates (`HERO_ICE`) ×`LANE_FAST`; a rival body on it skates like a lake's ice; her own side walks it as snow |
 | 3 | **QUICK STEP** | 9/8.5/8/7.5/7 s | a dash `QSTEP_D` down the aim (`p.dash = 'vstep'`), out of which she glides; her attack cycle is reset, and for `QSTEP_READY_T` her next draw is full at once and her next basic hit adds `dmg` (6/10/14/18/22) |
 | 4 | **LONG RUN** | 100/85/70 s | for `t` (4/5/6 s) she walks ×(1 + `RUN_MS`) and slows, roots and stuns on her last `RUN_TEN` less (`HERO_TEN`); each basic hit throws a second stone (`ab: 'run'`, `dmg` 14/22/30) at the rival body nearest the one hit within `RUN_ECHO_R` |
 

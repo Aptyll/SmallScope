@@ -377,7 +377,7 @@ function godRays(ox, oy, day) {
 // twinkles on its own rate, and the whole reflection ripples a pixel sideways
 // on a slow wave, because ice is not a perfect mirror.
 //
-// Drawn early - above the fish and the cracks, under everything that walks, so
+// Drawn early - above the orca's shadow and the cracks, under everything that walks, so
 // a body standing on the ice covers its own reflection - and therefore under
 // the night colour too, which cools the stars along with the snow.
 const STAR_MIRROR = 0.46;  // how far the darkness sinks intact ice toward black

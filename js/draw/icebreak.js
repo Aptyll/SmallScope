@@ -3,7 +3,7 @@
 // The pixels of a break (the thing itself, its footprint and its clock:
 // js/sim/icebreak.js). Each break owns a small canvas over its box, repainted
 // every frame it is on screen from its age, and laid flat over the ground
-// right after the ice fish in render(). Under it the ground canvas still
+// with the flat pass in render(). Under it the ground canvas still
 // shows the sheet, even on a tile the break holds open (paintGroundTile asks
 // iceBreakHolds), so what reads as water here is exactly the break's shape:
 //   the warning   bright cracks tracing the outline round, before it opens

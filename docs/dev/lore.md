@@ -58,9 +58,9 @@ guild sells — not from a new faction or a new magic.
 | robots, road towers, gold pumps and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | three lanes, the road straight down the middle | the works' haul road, older than everything but the machines, and a track round each side by the trees |
 | three road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
-| a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |
-| a ring of cut stone round that pool, two gates on the road, its wall down in four places | THE CISTERN: the works walled the pool in and ran the haul road through it; the stone has been coming down ever since |
-| an orca under that pool's ice: stand on it too long and you go down | it was there before either company, and it takes whoever is on its ice, any side |
+| a creek down the other diagonal, frozen rough from lane to lane, that everyone walks across | the works' old outfall, long gone cold and frozen through; it runs on under the stone where the road crosses it |
+| a ring of cut stone at that crossing, the road straight through its two gates, a snow floor, its wall down in four places | THE CISTERN: the works walled the outfall's pool in and ran the haul road through it; the pool is snow now, and the stone has been coming down ever since |
+| an orca under the ice of its own pool on the creek: stand on it too long and you go down | it was there before either company, and it takes whoever is on its ice, any side |
 | camps are neutral until hit | the wolves were here first and have no opinion about claims |
 | WORN, KEEN, GILDED | the condition salvage comes out of the snow in |
 | the wind dies at dusk and night is a colour | the valley goes blue and quiet; the claim does not stop for it |
@@ -132,7 +132,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk for the
   person it makes you** (SPRINTER, FORAGER, WINTER'S CHILD: the parked cards, gameplay/roguelike-cards.md).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
-  is what is in it and where: WOLF DEN, BLACK BEAR BEND (the bear walks a bend of the creek), ORCA'S POOL.
+  is what is in it and where: WOLF DEN, BLACK BEAR BEND (the bear's clearing on a bend of the creek), ORCA'S POOL.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/app/profile.js](../../js/app/profile.js)).
 - **A hero is one Latin-sounding word and a title**: ARMATOS, THE LAST STANDARD; FORTIVA, THE

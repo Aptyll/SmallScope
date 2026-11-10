@@ -30,7 +30,6 @@ function aiThink(p, dt) {
   if (aiBackOffRung(k)) return; // 2b. a human's DANGER ping
   if (aiFight(k)) return;      // 3. a rival in sight
   if (aiCampFight(k)) return;  // 4. a camp it woke
-  if (aiHealRung(k)) return;   // 5'. hurt and alone: a creek fish
   if (aiPingRung(k)) return;   // 5a. a human's ping
   if (aiDefendRung(k)) return; // 5b. its bird
   if (aiHomeRung(k)) return;   // 5b''. the guard's patrol
@@ -164,8 +163,7 @@ function aiOrders(k) {
 // it first)
 function aiFoe(k) {
   const { p, dt, ai, prof, T, mine, theirs, own, pushE, defend, guardE, ward, order, caller } = k;
-  // 1. the rival in sight. `foe` is read here rather than at rung 2 because
-  //    the heal rung (5') asks it too: nobody goes fishing under fire.
+  // 1. the rival in sight.
   // (a ping's spot is an anchor too: a rival on it is found on arrival)
   // (and a teammate it is answering is one: the fight it walks into is found)
   let foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order, caller]);
@@ -337,12 +335,12 @@ function aiCampFight(k) {
     // orca in its hole) is gone in on even by the one it is after, since
     // giving ground never takes that one out of its fight
     const bowD = M.still ? Math.max(90, M.reach + 12) : 90, keep = M.still ? Math.max(64, M.reach + 4) : 64;
-    // (the orca's far bank is a long way round by a ford: its walk may search
-    // as far as a roost's, AI_ROOST_BUDGET; a bear's keeps the usual search)
+    // (the orca's far bank can be a long way round its pool: its walk may
+    // search as far as a roost's, AI_ROOST_BUDGET; a bear's keeps the usual search)
     // a route ends on the beast's own tile, or, where that is no ground (the
     // orca's hole), on ground inside the reach it fights from (findPath, in
-    // tiles). Only there: a reach would also end a route on the near bank of
-    // a creek with the bear across it
+    // tiles). Only there: a reach would also end a route on the near side of
+    // a wall of pines with the bear behind it
     const reach = walkable(Math.floor(wolf.x / TILE), Math.floor(wolf.y / TILE), p) ? 0 : Math.ceil((hide + (melee ? AI_MELEE_D : bowD)) / TILE);
     if ((wolf.target !== p || M.still) && (melee ? d > AI_MELEE_D : d > bowD || !clear)) { if (steerTo(wolf.x, wolf.y, reach, M.still ? AI_ROOST_BUDGET : undefined) < 0) { inp.mx = 0; inp.my = 0; } }
     else if (d < keep && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground

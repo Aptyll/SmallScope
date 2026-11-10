@@ -1,13 +1,14 @@
 'use strict';
 // ------------------------------------------------------------ the cistern
 // THE CISTERN at the middle of the map: the works' ring of dressed stone
-// round the creek's pool, whose water froze over: plain ice, the creek on
-// under it (creekIced, js/sim/world.js). The road comes in at two GATES, each paved
-// with a stone sill, and the wall is down in four BREACHES on the
-// diagonals, the blocks that fell lying round them. The creek runs in and
-// out under it, a culvert each way (in the wall's face: nobody goes
-// through), and just outside each culvert a FORD of stepping stones crosses
-// it: the way the waves go round (cisternWayRound). Look H CUT BLOCKS,
+// round a floor of snow, the frozen creek running on under it. The mid road
+// goes straight through: in at one GATE, each paved with a stone sill,
+// across the floor and out at the other, so a wave walks the lane end to
+// end. The wall is down in four BREACHES on the diagonals, the blocks that
+// fell lying round them, and the creek's ice runs in and out under it, a
+// culvert each way (in the wall's face: nobody goes through). Two drifts of
+// deep snow lie on the floor, one either side of the road (BRUSH_PATCHES,
+// js/sim/depth.js). Look H CUT BLOCKS,
 // baked with its footprint by app/bake-cistern/paint.py into
 // js/baked/cistern.js, and the ring's
 // measures are the bake's (SPRITES.cistern.geo), so the sim can never stand
@@ -29,28 +30,23 @@
 // clear) and checks the gates and the breaches before it writes.
 // Pure position: nothing rolls and nothing changes, so there is no sim
 // state to save, and the footprint is the same every seed and every client.
-// Laid by placeCreek (placeCistern), before the lanes and the road.
+// Laid by placeCreek (placeCistern), after the lanes and before the road.
 const CIST_GEO = SPRITES.cistern.geo;
 const CIST_RI = CIST_GEO.ri;         // tiles from the crossing to the wall's inner face...
 const CIST_RO = CIST_GEO.ro;         // ...and its outer face
 const CIST_GH = CIST_GEO.gh;         // a gate's half-width, tiles
 const CIST_SILL = [CIST_GEO.sillIn, CIST_GEO.sillOut]; // the gates' sills run radially from .. to (tiles): road to walk
-const CIST_ICE = CIST_GEO.ice;       // the pool's ice reaches here, under the inner face
-const CIST_FROZEN = CIST_GEO.frozen; // the creek is ice to here (under the wall) and open water past it
-const CIST_CLEAR = CIST_GEO.reach + 1.5; // tiles round the crossing placeCistern clears of what worldgen stood, all other ice and every path
+const CIST_UNDER = CIST_GEO.frozen; // tiles from the crossing that the creek runs under the floor and the wall; its ice shows past it
+const CIST_CLEAR = CIST_GEO.reach + 1.5; // tiles round the crossing placeCistern clears of what worldgen stood, every other lake and every path
 const CIST_FOOT = 4;                 // px under a body's x, y that its soles stand (drawPlayer's feet)
 const CIST_STAND = PLAYER_R + 1;     // px of room round the feet a route's tile must have (walkable)
-const CIST_LANE_IN = 0.1;            // tiles past the outer face the road's earth stops, under the sill
-const CIST_LANE_TAPER = 4;           // tiles over which the road narrows onto a gate's width
 const CIST_STEP = 2;                 // px between the points a step is swept at
 const CIST_PAD = 24;                 // px of field kept round the footprint: past any body's reach
-const CIST_FORD = 13;                // tiles down the creek from the crossing to the middle of each culvert's ford: its stones just clear of the wall, the whole row on the cleared ground
 // per world tile: 1 its middle is stone, 2 no body fits at its middle, 4 any stone on it
 const CIST_MID = 1, CIST_NOFIT = 2, CIST_ANY = 4;
 let cistTiles = null;  // the flags above (placeCistern)
 let cistCuts = null;   // per world tile, bit k: the step NAV_DX[k], NAV_DY[k] from its middle meets the stone
 let cistField = null;  // { x, y, w, h, d }: world px box, px from each px to the nearest stone (0 on it)
-let cistFords = [];    // the culverts' fords as laid (creekFord's rows): [0] upstream, top-left; [1] downstream, bottom-right
 let cistOn = false;    // a match with the cistern standing (never the practice arena)
 
 // tiles from the crossing, of a continuous tile coordinate
@@ -61,19 +57,6 @@ function cisternTile(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[id
 function cisternBlocks(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_NOFIT) !== 0; }
 function cisternTouches(tx, ty) { return cistOn && inWorld(tx, ty) && (cistTiles[idx(tx, ty)] & CIST_ANY) !== 0; }
 function cisternCuts(i, k) { return cistOn && ((cistCuts[i] >> k) & 1) === 1; } // tile index i, NAV_DX/NAV_DY's k
-
-// the road ends on the gates' sills: a cap on its distance (laneDist,
-// js/sim/world.js), nothing inside the ring and the lane eased from its own
-// width down to a gate's over CIST_LANE_TAPER tiles out. -99 well clear
-function cisternLane(fx, fy) {
-  if (!cistOn) return -99;
-  const w = roadOffS(fx, fy), p = creekP(fx, fy), r = Math.hypot(w, p);
-  if (r > CIST_RO + CIST_LANE_TAPER + 2) return -99;
-  if (r < CIST_RO + CIST_LANE_IN) return 99;
-  let t = Math.max(0, Math.min(1, (Math.abs(p) - CIST_RO) / CIST_LANE_TAPER));
-  t = t * t * (3 - 2 * t);
-  return Math.abs(w) - (CIST_GH + (ROAD_HW + ROAD_SHOULDER + 0.2 - CIST_GH) * t);
-}
 
 // px from a world point to the nearest stone (Infinity off the field)
 function cisternDist(x, y) {
@@ -147,14 +130,12 @@ function cisternField() {
 }
 
 // placeCreek's last step (js/sim/world.js): the ground round the crossing made
-// the cistern's - the pool ice to CIST_ICE, the creek
-// frozen under the wall, the gates' sills road to walk, every other lake
-// and everything standing cleared off CIST_CLEAR - and the tiles' flags
-// and cuts - and last a ford just outside each culvert
+// the cistern's - a snow floor over the creek out to CIST_UNDER, the gates'
+// sills road to walk, every other lake and everything standing cleared off
+// CIST_CLEAR - and the tiles' flags and cuts
 function placeCistern() {
   cistTiles = new Uint8Array(WORLD * WORLD);
   cistCuts = new Uint8Array(WORLD * WORLD);
-  cistFords = [];
   cistOn = !ARENA;
   if (!cistOn) return;
   const f = cisternField(), c = (WORLD - 1) / 2, r = Math.ceil(CIST_CLEAR + 1);
@@ -163,8 +144,7 @@ function placeCistern() {
     const R = cisternR(tx, ty), i = idx(tx, ty), g = ground[i];
     if (R >= CIST_CLEAR) continue;
     objects[i] = null;
-    if (R < CIST_ICE) ground[i] = 1;
-    else if ((g === 4 && R < CIST_FROZEN) || g === 1) ground[i] = 0;
+    if (R < CIST_UNDER || (g === 1 && !creekIceAt(tx, ty))) ground[i] = 0;
     if (R >= CIST_SILL[0] && R <= CIST_SILL[1] && Math.abs(roadOffS(tx, ty)) < CIST_GH) ground[i] = 3;
     const x = tx * TILE, y = ty * TILE;
     let fl = 0;
@@ -176,26 +156,5 @@ function placeCistern() {
     cistTiles[i] = fl;
     for (let k = 0; k < 8; k++) if (cisternReach(x + 8, y + 8, x + 8 + NAV_DX[k] * TILE, y + 8 + NAV_DY[k] * TILE, CIST_STAND) < 1) cistCuts[i] |= 1 << k;
   }
-  // on the creek's line CIST_FORD up and down it, where creekCalm holds the water square
-  cistFords = [-1, 1].map((s) => { const m = (s * CIST_FORD * Math.SQRT2 + WORLD - 1) / 2; return creekFord(m, m); });
 }
 
-// a wave's way past the middle (makeSoldier): the road's waypoints on the
-// cistern's ground dropped, and where the route crosses the creek the road
-// just short of its own gate, ford `side`'s two banks (cistFords) and the
-// road just past the rival's gate spliced in. So a column comes up the road,
-// forks round the ring and over the stones, never across the pool's ice
-function cisternWayRound(way, team, side) {
-  const f = cistOn && cistFords[side];
-  if (!f) return;
-  const s = team === 1 ? 1 : -1; // the soldier's own half: + BLUE's (+p), the row's east end
-  const bank = (tx) => ({ x: (tx + 0.5) * TILE, y: (f.ty + 0.5) * TILE });
-  const gate = (k) => roadPoint((WORLD - 1) / 2 + k * (CIST_CLEAR + 1) / Math.SQRT2);
-  const round = [gate(s), bank(s > 0 ? f.x1 + 1 : f.x0 - 1), bank(s > 0 ? f.x0 - 1 : f.x1 + 1), gate(-s)];
-  const fx = (q) => q.x / TILE - 0.5, fy = (q) => q.y / TILE - 0.5;
-  const kept = way.filter((q) => cisternR(fx(q), fy(q)) >= CIST_CLEAR + 1);
-  let i = kept.findIndex((q) => creekP(fx(q), fy(q)) * s < 0); // the first on the rival's half
-  if (i < 0) i = kept.length;
-  kept.splice(i, 0, ...round);
-  way.splice(0, way.length, ...kept);
-}

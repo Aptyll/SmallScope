@@ -253,7 +253,7 @@ the byte-fragile grid files under js/sprites/ — see `SPR.bake` in js/sprites/c
 should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)). A heal the WORLD hands out is not carried at all: it is taken where it
-stands through `healPlayer`, like the creek fish. Gold is **not** an item and
+stands through `healPlayer`, like the roost ring. Gold is **not** an item and
 must not become one: it is a wallet number with no ceiling.
 
 **Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry
@@ -445,10 +445,9 @@ the template; a ground that should walk like snow needs none, because only ice a
 special-cased — [the road](world.md#the-road), `3`, is the live example of one that walks like
 snow and is not snow), and
 if it is **open water** make `waterAt()` (world.js) say so — every walker, route, spawn and
-climb-out asks that and nothing else ([the creek](world.md#the-creek), `4`, is the live example);
+climb-out asks that and nothing else ([ice holes](world.md#ice-holes), `2`, are the live example);
 remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placement rule — as does
-the footprint emitter. Check `fishWater()` too: it names the
-swimmable grounds outright.
+the footprint emitter.
 
 **Adding a sound** — drop the file in `audio/sfx/`, **run `node app/bake-sfx.js`** (this is not
 optional: without it the clip works when served and is silently dead when `index.html` is opened
@@ -492,8 +491,8 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed hero is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS`), which reshape both roost corners |
-| js/sim/jungle.js | the jungle's pine walls (`JUNGLE_WALLS` capsules for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`) |
-| js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`, the ford's `LANE_FORD_HW`) and their cables (`LANE_ZIP_*`) |
+| js/sim/jungle.js | the jungle's pine walls (planted solid inside the lanes, with `JUNGLE_PATHS` and `JUNGLE_CLEARINGS` cut out for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`) |
+| js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`) and their cables (`LANE_ZIP_*`) |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`/`hp`, `BARRACKS_ROLL`) |
 | js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SEEK`/`PUMP_SEEK_FAR`, `PUMP_ROAD`, `PUMP_STAND`/`PUMP_STAND_LONE`, `PUMP_CLEAR`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |

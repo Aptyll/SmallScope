@@ -31,7 +31,7 @@ const BRUSH_MELT = 3;           // s the melted strip lingers after the fire is 
 const WARM_T = 5;               // s it waits for a key before the warmth goes
 const WARM_HOT = 2;             // the next key's burn rate, times this
 // R WILDFIRE: a ring at the aim catches fire; for a while after, the flames
-// jump further and the snow cannot put them out. Never across the creek.
+// jump further and the snow cannot put them out. Never across open water.
 const WILD_RANGE = 160;         // px from her the ring's middle may be set
 const WILD_R = 56;              // px of ring
 const WILD_BURN_T = 5;          // s the ring leaves each rival burning
@@ -81,7 +81,7 @@ const IGNIA_AB = [
     id: 'wildfire', name: 'WILDFIRE', cd: [90, 75, 60], ap: 0.5, cast: 0.5, aim: { ring: WILD_RANGE },
     rank: { burn: [16, 24, 32], dmg: [20, 35, 50], t: WILD_T }, // dmg: the ring's blow; t: s the flames jump
     tip: 'A RING CATCHES FIRE. FLAMES JUMP',
-    blurb: 'A LARGE RING AROUND A SPOT CATCHES FIRE. EVERY RIVAL INSIDE BURNS HARD, AND THE FLAMES JUMP BETWEEN RIVALS FOR A FEW SECONDS, SNOW OR NOT. IT CANNOT CROSS THE CREEK.',
+    blurb: 'A LARGE RING AROUND A SPOT CATCHES FIRE. EVERY RIVAL INSIDE BURNS HARD, AND THE FLAMES JUMP BETWEEN RIVALS FOR A FEW SECONDS, SNOW OR NOT. IT CANNOT CROSS OPEN WATER.',
     use: (p) => igniaWildfire(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = wildAt(p); drawWildTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the ground smouldering (js/draw/ignia.js)
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised
@@ -114,7 +114,7 @@ function igniaHeat(p) {
   burst(p.x, p.y - 10, '#ffd95c', 10, 50, 0.45, true);
   return abRk(p, 'warm', 'hot');
 }
-// is there open water between two points (the creek, an ice hole): the wildfire
+// is there open water between two points (an ice hole; the creek is frozen): the wildfire
 // never crosses it. Walked in steps a quarter tile long.
 function waterBetween(x0, y0, x1, y1) {
   const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / (TILE / 4));
@@ -238,7 +238,7 @@ function igniaWildfire(p) {
   const hot = igniaHeat(p);
   const dps = igniaBurnRate(p, abRk(p, 'wildfire', 'burn'), hot), dmg = abDmg(p, 'wildfire', abRk(p, 'wildfire', 'dmg'));
   for (const q of unitsHit(p, c.x, c.y, WILD_R)) {
-    if (waterBetween(c.x, c.y, q.x, q.y)) continue; // the creek holds it
+    if (waterBetween(c.x, c.y, q.x, q.y)) continue; // open water holds it
     const d = Math.hypot(q.x - c.x, q.y - c.y) || 1;
     hurtUnit(q, dmg, (q.x - c.x) / d, (q.y - c.y) / d, p, { kb: 20 });
     igniaLight(p, q, WILD_BURN_T, dps, abRk(p, 'wildfire', 't'));

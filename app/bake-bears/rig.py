@@ -11,7 +11,6 @@ PAL = {                  # measured from the reference (k-means on 5px cells)
     'D0': (43, 30, 30), 'D1': (71, 45, 35), 'M3': (106, 67, 38),
     'L6': (149, 98, 60), 'H8': (187, 136, 91), 'G7': (137, 109, 102),
     'EY': (214, 160, 102),
-    'FL': (214, 226, 236), 'FM': (128, 150, 170),  # the fish: silver over a slate belly
     'SM': (250, 252, 255), 'SD': (58, 66, 96),   # the paw's claw trail and the bite's snap: white slashes, ink edges so they read on snow
 }
 # the antlered bear in the reference is the same sprite recoloured: map band by band
@@ -19,7 +18,6 @@ PAL_DARK = {
     'D0': (35, 36, 39), 'D1': (49, 51, 61), 'M3': (59, 59, 83),
     'L6': (89, 87, 117), 'H8': (89, 87, 117), 'G7': (124, 118, 113),
     'EY': (198, 163, 118), 'BN': (188, 169, 165), 'BS': (124, 118, 113),
-    'FL': (214, 226, 236), 'FM': (128, 150, 170),
     'SM': (250, 252, 255), 'SD': (58, 66, 96),
 }
 RAMPS = {
@@ -168,8 +166,8 @@ INK, INKED = 'SD', '~'   # INKED: a pixel of a sticker's own ink ring, redrawn a
 def sticker_px(p):
     """a sticker's pixels on the game grid. `px` is drawn in rig units, each
     pixel an SxS block at its snapped anchor, so the antlers and runes keep
-    the exact shape measured off the reference; an `ink` sticker (the fish,
-    the fangs) drops its INKED ring and is inked again one game pixel round,
+    the exact shape measured off the reference; an `ink` sticker (the
+    fangs) drops its INKED ring and is inked again one game pixel round,
     the same weight as the bear's own outline. `gpx` is already in game
     pixels from the anchor (the claw trail, drawn at the game's resolution)"""
     ax, ay = int(round(p['cx'] + OX)), int(round(p['cy'] + OY))
@@ -188,7 +186,7 @@ def sticker_px(p):
     return [(x, y, c) for (x, y), c in out.items()]
 
 def stamp_stickers(prims, img, pal):
-    """pixel-exact markings (antlers, runes, the fish, the claw trail) ride
+    """pixel-exact markings (antlers, runes, the claw trail) ride
     their bone, painted over the banded body"""
     for p in prims:
         if p['mat'] != 'sticker': continue

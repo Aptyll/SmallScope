@@ -6,7 +6,7 @@
 // and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: ten heroes face off
-// on the frozen middle (js/ui/titlescene.js) while the snow keeps falling, the
+// in the stone ring at the middle (js/ui/titlescene.js) while the snow keeps falling, the
 // modes take mouse or arrows+enter, and every mode change is a transition
 // rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.752';
+const PATCH_TXT = 'PATCH 0.753';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.753', 'THE JUNGLE IS WALLED WITH PINES ON PURPOSE, THE RIVER IS FROZEN SOLID AND YOU CAN WALK ACROSS IT, EVERY FISH IS GONE, THE BEAR KEEPS TO ITS OWN CLEARING, AND THE MID LANE RUNS STRAIGHT THROUGH THE STONE RING.'],
   ['0.752', 'BELLA\'S SPATHA IS A SHORT ONE-HAND BLADE, SO SHE READS LIGHTER AND QUICKER THAN ARMATOS AT A GLANCE.'],
   ['0.751', 'A RUNNING HERO\'S FEET LEAVE THE SNOW: THE BACK FOOT LIFTS AT FULL STRIDE AND THE SWINGING ONE AS THE LEGS PASS.'],
   ['0.750', 'A WOLF DEN HAS A YARD: TRODDEN SNOW, PAW TRAILS AND HALF-BURIED STONES ROUND ITS MOUTH.'],

@@ -1,17 +1,17 @@
 'use strict';
 // The title's scene: what the landing page shows behind the logo and the
-// words. Ten heroes stand on the frozen middle, five a side, facing each other
-// across the merchant's boat at the match's own zoom - the game in one picture before a word is
+// words. Ten heroes stand in the stone ring at the middle, five a side, facing
+// each other across the mid road at the match's own zoom - the game in one picture before a word is
 // read. They are this screen's own bodies (never in `players`, never stepped
 // by the sim, never sent): drawPlayer paints them in the sorted pass like
 // any body, so they wear the real sprites, weapons, shade and team rings.
 // Your own hero (the profile's last pick) leads the blue side; the other nine
 // are dealt fresh each time the title opens.
-const TITLE_AT = [14, 12];     // world px off the boat's tile the scene is framed on: the merchant's boat, frozen into the middle
-                               // (off the map's centre on a map with no boat)
+const TITLE_AT = [14, 12];     // world px off the boat's tile the scene is framed on, the boat nearest the
+                               // middle; off the map's centre on a map with no boat (today's: the ring's floor is snow)
 const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each axis
 // where each side's five stand, world px off the scene's centre, the leader first
-// (your side as written, left of the boat; the rivals mirrored across it)
+// (your side as written, left of the centre; the rivals mirrored across it)
 const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24], [-104, -4], [-102, -52]];
 let titleBodies = null;
 

@@ -241,7 +241,7 @@ function iceBreak(x, y, shape, ang, o) {
   return b;
 }
 
-// the hole opening: its tiles go to open water, the noise scatters the fish
+// the hole opening: its tiles go to open water
 function breakOpen(b) {
   b.st = 1;
   for (const [i] of b.open) {
@@ -253,9 +253,6 @@ function breakOpen(b) {
   sfxAt('mine', b.x, b.y);
   burst(b.x, b.y, '#3a6080', 14, 60, 0.6, true);
   burst(b.x, b.y, '#ddf1f8', 16, 75, 0.6, true);
-  for (const f of fish) {
-    if (f.born && Math.hypot(f.x - b.x, f.y - b.y) < 60) { f.a = Math.atan2(f.y - b.y, f.x - b.x); f.spook = 1.2; }
-  }
 }
 // one tile frozen back: ice again, unless another break holds it
 function breakClose(b, i) {

@@ -244,9 +244,7 @@ function tryDodge(p) {
 // branch calls rollSweep() every step: anything small inside the roll's body
 // takes one swipe per roll and is rolled through (separateUnits skips the
 // pair, so there is nothing to bump against), and anything too big to go
-// through ends the roll in a tackle that hurts both sides. Fish under the ice
-// are not in any of it; a creek fish the roll passes over is caught
-// (creekFishCatch, js/sim/world.js).
+// through ends the roll in a tackle that hurts both sides.
 
 // How hard the roll in progress hits: the scale runs from the champion's own
 // dodgeSpeed (the floor a standing dash starts at) up to ROLL_FAST, so speed
@@ -356,16 +354,11 @@ function swingHit(p) {
   });
 }
 
-// nearest tile a player can stand on - used to climb out of a hole. Out of
-// the creek it is the nearest on the SAME side of the water (creekAt's `n`):
-// you went in off that bank, and floundering never carries you over. The
+// nearest tile a player can stand on - used to climb out of a hole. The
 // search starts one ring out (the tile underfoot is the one being left);
 // r0 = 0 lets a caller that is placing a body take the tile itself first.
 function nearestDryTile(x, y, p, r0 = 1) {
   const ctx0 = Math.floor(x / TILE), cty0 = Math.floor(y / TILE);
-  const inCreek = inWorld(ctx0, cty0) && ground[idx(ctx0, cty0)] === 4;
-  let side = 0;
-  if (inCreek) { creekAt(x / TILE - 0.5, y / TILE - 0.5); side = Math.sign(CQ.n) || 1; }
   for (let r = r0; r <= 8; r++) {
     let best = null, bd = 1e9;
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -373,7 +366,6 @@ function nearestDryTile(x, y, p, r0 = 1) {
       const tx = ctx0 + dx, ty = cty0 + dy;
       if (!inWorld(tx, ty) || waterAt(tx, ty) || isSolidTile(tx, ty) || cisternBlocks(tx, ty)) continue;
       if (iceBreakWet((tx + 0.5) * TILE, (ty + 0.5) * TILE + 4)) continue; // the feet would land in a break's water (js/sim/icebreak.js)
-      if (inCreek) { creekAt(tx, ty); if (Math.sign(CQ.n) !== side) continue; }
       const d = Math.hypot(dx, dy);
       if (d < bd) { bd = d; best = { tx, ty }; }
     }

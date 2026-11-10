@@ -114,7 +114,7 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
-  alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bear: patrols at a walk, charges at a gallop
+  alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10 }, // the bear: patrols at a walk, charges at a gallop
   orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
@@ -299,120 +299,9 @@ function deerRouteGoal(a) {
   return { x: R[a.leg].x, y: R[a.leg].y };
 }
 
-// ------------------------------------------------------------ fish
-// The lake's fish are SCENERY: shadows swimming under the ice, nobody's to
-// catch (the creek's whitefish are the river's heal, js/sim/world.js).
+// ------------------------------------------------------------ open water
 const HOLE_FALL_DMG = 15;  // falling into open water hurts
 const HOLE_FALL_T = 1.1;   // seconds floundering before climbing back out
-const FISH_MARGIN = 6;     // body clearance from snow: soft-steered away, hard-clamped
-// The shoal is a live population, not a nightly reset: it fills up to its
-// cap by a trickle of new fish swimming in from under the snow - the deep
-// water no hole ever reaches (see spawnEmerger).
-const FISH_MAX = 30;       // cap: the boot shoal, and the ceiling the trickle fills to
-const FISH_RARE = 0.2;     // the share of the shoal that is GOLD SUNFISH; the rest are FROST PIKE
-const FISH_MIN = 10;       // floor: below it the trickle runs at FISH_SPAWN_FAST instead
-const FISH_SPAWN_FAST = 4; // ...and while it is under FISH_MIN
-const FISH_EMERGE_SPD = 7; // px/s an unborn fish creeps out from under the shore
-const FISH_EMERGE_MAX = 14; // seconds before an emerger that never found water is dropped
-
-// passive swimmers that live under the frozen water, visible as silhouettes
-// through the ice.
-// `born` is the whole two-state life of a fish. A born fish is the one the
-// game has always had: hard-clamped inside the water and drawn. An emerger is none of those yet - it is still under the snow
-// (the deep water the map does not draw), swimming for the shallows at
-// FISH_EMERGE_SPD with the clamp lifted, and `vis` - how much of its body is
-// over water - is both its alpha and the test that promotes it. So a fish is
-// literally never drawn on snow: what is visible IS what is under the ice.
-function addFish(x, y, a, born) {
-  fish.push({
-    x, y, a: a === undefined ? rand(0, Math.PI * 2) : a, spd: rand(9, 18), t: rand(0, 9), turnT: rand(1, 3),
-    spook: 0, ts: rng() < 0.5 ? -1 : 1, // preferred turn direction at a dead end
-    born: born !== false, vis: born === false ? 0 : 1, emT: 0,
-    // its look, the frost pike's or the rarer gold sunfish's shadow: hashed
-    // off where it came in rather than drawn from rng, so the shoal's stream
-    // is the one it always was
-    kind: hash2(Math.floor(x) * 7 + Math.floor(y), Math.floor(y) * 3 + 11) < FISH_RARE ? 'sunfish' : 'fish',
-  });
-}
-
-function fishWater(x, y) {
-  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
-  // ice or open water only - named outright rather than "not snow", so any
-  // future land ground type is automatically land a fish must not count as
-  // swimmable
-  const g = inWorld(tx, ty) ? ground[idx(tx, ty)] : 0;
-  return g === 1 || g === 2;
-}
-// the whole body fits in water with margin px to spare on every side, so a
-// fish never reads as poking into the snow
-function fishClear(x, y, margin) {
-  const m = margin || FISH_MARGIN;
-  return fishWater(x - m, y) && fishWater(x + m, y) &&
-    fishWater(x, y - m) && fishWater(x, y + m);
-}
-
-// the seed shoal: dropped straight into interior water, already born
-function spawnFish() {
-  const spots = [];
-  for (let i = 0; i < WORLD * WORLD; i++) {
-    if (ground[i] !== 1) continue;
-    const x = (i % WORLD + 0.5) * TILE, y = ((i / WORLD | 0) + 0.5) * TILE;
-    if (fishClear(x, y, 14)) spots.push(i); // interior ice only, ~a tile off the shore
-  }
-  let guard = 0;
-  while (fish.length < FISH_MAX && spots.length && guard++ < 400) {
-    const i = spots[randi(0, spots.length - 1)];
-    addFish((i % WORLD + 0.5) * TILE, ((i / WORLD | 0) + 0.5) * TILE);
-  }
-}
-
-// Where a replacement fish comes from: a roomy shore tile of ice, entered
-// from the snow two tiles back - which is what "deep lake" means here, since
-// the map has no deep water to draw.
-//
-// These are found ONCE and cached. Rejection-sampling random tiles for one
-// (ice with swimming room, snow exactly two tiles off) hits so rarely on a
-// 232x232 world that thirty tries routinely found nothing at all, which
-// silently throttled the whole respawn trickle to near zero. The shoreline
-// never moves - a hole only flips ice to water and back, and `fishClear`
-// counts both as swimmable - so one scan at first use stays correct for the
-// match, and `genWorld()` runs only at boot.
-let emergeSites = null;
-function buildEmergeSites() {
-  const out = [];
-  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let ty = 2; ty < WORLD - 2; ty++) {
-    for (let tx = 2; tx < WORLD - 2; tx++) {
-      if (ground[idx(tx, ty)] !== 1) continue;
-      const x = tx * TILE + 8, y = ty * TILE + 8;
-      if (!fishClear(x, y, 10)) continue; // real swimming room, not a rim tile
-      for (const d of dirs) {
-        const sx = tx + d[0] * 2, sy = ty + d[1] * 2;
-        if (!inWorld(sx, sy) || ground[idx(sx, sy)] !== 0) continue;
-        const px = sx * TILE + 8, py = sy * TILE + 8;
-        out.push({ x: px, y: py, a: Math.atan2(y - py, x - px) });
-      }
-    }
-  }
-  return out;
-}
-function spawnEmerger() {
-  if (!emergeSites) emergeSites = buildEmergeSites();
-  if (!emergeSites.length) return false; // a world with no reachable shoreline
-  const s = emergeSites[randi(0, emergeSites.length - 1)];
-  addFish(s.x, s.y, s.a, false);
-  return true;
-}
-
-// How much of a fish's body is over water, sampled nose to tail: 1 = fully
-// under the ice, 0 = fully under the snow. It is the draw alpha, so nothing
-// half-beached can ever be seen half-beached, and it is what says an emerger
-// has arrived.
-function fishVis(f) {
-  let n = 0;
-  for (const o of [5, 2, 0, -2, -5]) if (fishWater(f.x + Math.cos(f.a) * o, f.y + Math.sin(f.a) * o)) n++;
-  return n / 5;
-}
 
 // shortest signed turn from a to b - the one steering helper the lure needs
 function angDelta(a, b) {
@@ -420,51 +309,6 @@ function angDelta(a, b) {
   while (d > Math.PI) d -= Math.PI * 2;
   while (d < -Math.PI) d += Math.PI * 2;
   return d;
-}
-
-function updateFish(dt) {
-  for (let i = fish.length - 1; i >= 0; i--) {
-    const f = fish[i];
-    f.t += dt;
-    f.spook = Math.max(0, f.spook - dt);
-    if (!f.born) {
-      // an emerger holds its heading and creeps in; no wander, no edge cap,
-      // no clamp - the shore is the thing it is crossing. It is born the
-      // moment its whole body is in water with the usual margin to spare.
-      f.emT += dt;
-      f.x += Math.cos(f.a) * FISH_EMERGE_SPD * dt;
-      f.y += Math.sin(f.a) * FISH_EMERGE_SPD * dt;
-      f.vis = fishVis(f);
-      if (f.vis >= 1 && fishClear(f.x, f.y)) { f.born = true; f.vis = 1; f.emT = 0; }
-      else if (f.emT > FISH_EMERGE_MAX) fish.splice(i, 1); // walled in: never surfaced, never seen
-      continue;
-    }
-    f.turnT -= dt;
-    if (f.turnT <= 0) { f.turnT = rand(1, 3); f.a += rand(-1.1, 1.1); }
-    const spd = f.spd * (f.spook > 0 ? 3 : 1);
-    // soft edge cap: veer away well before the shore, turning toward
-    // whichever side opens into water (falling back to the fish's own bias)
-    if (!fishClear(f.x + Math.cos(f.a) * 10, f.y + Math.sin(f.a) * 10)) {
-      const L = fishClear(f.x + Math.cos(f.a + 0.9) * 10, f.y + Math.sin(f.a + 0.9) * 10);
-      const R = fishClear(f.x + Math.cos(f.a - 0.9) * 10, f.y + Math.sin(f.a - 0.9) * 10);
-      f.a += (L === R ? f.ts : L ? 1 : -1) * 5 * dt;
-    }
-    // hard clamp: never commit a position whose body margin touches snow
-    const nx = f.x + Math.cos(f.a) * spd * dt, ny = f.y + Math.sin(f.a) * spd * dt;
-    if (fishClear(nx, ny)) { f.x = nx; f.y = ny; }
-    else f.a += f.ts * 5 * dt; // pinned: keep rotating until a way out opens
-  }
-  // the trickle that keeps the shoal alive: one fish at a time, twice as fast
-  // while it is under FISH_MIN, nothing at all at the cap.
-  // The practice arena has NO fishable water - its only ice is the parkour
-  // track, and a fish emerging into a race line would be absurd - so under
-  // ARENA the trickle is off entirely.
-  if (ARENA) return;
-  state.fishT -= dt;
-  if (state.fishT <= 0) {
-    state.fishT = fish.length < FISH_MIN ? FISH_SPAWN_FAST : FISH_SPAWN_T;
-    if (fish.length < FISH_MAX) spawnEmerger();
-  }
 }
 
 function nearestObj(x, y, rTiles, pred) {
@@ -492,7 +336,6 @@ function titleWild(dt) {
   if (netShared()) return;
   for (const a of animals) updateAnimal(a, dt);
   for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
-  updateFish(dt);
 }
 
 function updateAnimal(a, dt) {
@@ -877,8 +720,6 @@ const BEAR_ATTACK_FRAMES = 10;
 const BEAR_STRIKE = 4;
 const BEAR_COMMIT_REACH = 1.5; // x reach: a blow lands up to 22 px past it, one walking step out of the wind-up
 const BEAR_ROAR_FRAMES = 8;
-const BEAR_FISH_FRAMES = 12; // the river camp's catch: paw up, scoop, snap, chew (riverFish)
-const BEAR_FISH_STRIKE = 3;  // the frame the paw hits the water
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
@@ -1134,43 +975,13 @@ function campQuarry(a, t, onGround) {
   return best;
 }
 
-// A RIVER camp's bear (CAMPS' `river`, camps.js) has no den to stand at: it
-// walks its stretch of bank (C.path) up and down, a few tiles a leg, turning
-// at either end, and at the end of most legs stops facing the water, waits,
-// and fishes - its own clip, `fish`: paw up over the water, a scoop that
-// flips a fish into the air, the snap that catches it, and the chewing. The
-// splash is the game's, on the scoop (riverFish); the fish is in the frames.
-const RIVER_LEG = [3, 7];       // points along the bank one patrol leg walks
-const RIVER_FISH_P = 0.6;       // the chance a leg ends in a stop to fish
-const RIVER_FISH_WAIT = [1.4, 3.2]; // s it stands watching the water before the scoop
-function riverLeg(a, C) {
-  const P = C.path, n = P.length;
-  let near = 0;
-  for (let i = 1; i < n; i++) if (Math.hypot(P[i].x - a.x, P[i].y - a.y) < Math.hypot(P[near].x - a.x, P[near].y - a.y)) near = i;
-  // off the bank (home from a hunt, or knocked off it): back to the nearest point first
-  if (Math.hypot(P[near].x - a.x, P[near].y - a.y) > TILE * 2) { a.bankI = near; a.fishAt = false; return { x: P[near].x, y: P[near].y }; }
-  if (!a.bankD) a.bankD = rng() < 0.5 ? 1 : -1;
-  let i = near + a.bankD * randi(RIVER_LEG[0], RIVER_LEG[1]);
-  if (i < 0 || i > n - 1) { a.bankD = -a.bankD; i = Math.max(0, Math.min(n - 1, near + a.bankD * randi(RIVER_LEG[0], RIVER_LEG[1]))); }
-  a.bankI = i;
-  a.fishAt = rng() < RIVER_FISH_P;
-  return { x: P[i].x, y: P[i].y };
-}
-// the scoop's frame: the water jumps where the paw goes in
-function riverFish(a) {
-  const q = a.home.path[a.bankI];
-  burst(q.wx, q.wy, '#cfe6f5', 14, 60, 0.7, true);
-  sfxAt('splash', q.wx, q.wy, 200);
-}
-
 function updateCampMonster(a, dt) {
   const M = MONSTER[a.kind], C = a.home, foot = M.foot || M.r;
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
   const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
-  // the camp's ground: its clearing, and a river camp's whole bank (campNear, camps.js)
+  // the camp's ground: its clearing (campNear, camps.js)
   const onGround = (p) => (C ? campNear(C, p.x / TILE - 0.5, p.y / TILE - 0.5, CAMP_GROUND) : Math.hypot(p.x - hx, p.y - hy) < groundR);
-  const river = !!(C && C.path && C.path.length);
 
   let t = a.target;
   const awake = !!t;
@@ -1200,15 +1011,6 @@ function updateCampMonster(a, dt) {
   // the mark over its head (drawAnimal): a monster on a hunt, and nothing else
   a.senseT = t ? a.senseT + dt : 0;
 
-  // a bear fishing: planted at the water until the fish is down, or until
-  // something wakes it, when the fish can wait
-  if (a.clip === 'fish') {
-    const was = a.animT;
-    if (!t) stepClip(a, dt);
-    if (!t && was < BEAR_FISH_STRIKE && a.animT >= BEAR_FISH_STRIKE) riverFish(a);
-    if (!t && a.animT < BEAR_FISH_FRAMES) return;
-    setClip(a, 'idle');
-  }
   // a bear mid set piece: planted, facing its quarry, an attack's blow
   // landing on its strike frame
   const attack = BEAR_ATTACKS.includes(a.clip);
@@ -1224,7 +1026,6 @@ function updateCampMonster(a, dt) {
     if (a.animT < (attack ? BEAR_ATTACK_FRAMES : BEAR_ROAR_FRAMES)) return;
     setClip(a, 'idle');
   }
-  if (t) a.fishT = 0; // woken while watching the water: the fish can wait
 
   let moving = false;
   if (t) {
@@ -1252,22 +1053,12 @@ function updateCampMonster(a, dt) {
   } else if (a.goal) {
     // patrolling its camp, on a route like any other walk
     const n = navStep(a, a.goal.x, a.goal.y, foot, 34, dt);
-    if (!n.ok || n.d < 6) {
-      a.goal = null; navClear(a); a.idleT = rand(0.8, 2.6);
-      if (river && n.ok && a.fishAt) { // at the water: turn to it and watch
-        const q = C.path[a.bankI];
-        a.fishT = rand(RIVER_FISH_WAIT[0], RIVER_FISH_WAIT[1]);
-        a.dir = q.wx > a.x ? 'right' : 'left';
-      }
-    } else moving = true;
-  } else if (a.fishT > 0) {
-    a.fishT -= dt;
-    if (a.fishT <= 0 && ANIM_CLIPS[a.kind].fish) { setClip(a, 'fish'); return; }
+    if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rand(0.8, 2.6); }
+    else moving = true;
   } else {
     a.idleT -= dt;
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, foot);
-    if (a.idleT <= 0 && river) a.goal = riverLeg(a, C);
-    else if (a.idleT <= 0) {
+    if (a.idleT <= 0) {
       // pick the next patrol leg, but never far from the camp it belongs to:
       // out past the ring and the only way it will walk is back toward home
       const ring = (C ? C.r : 4) * TILE * 0.8;

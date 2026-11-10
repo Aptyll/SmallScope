@@ -2,7 +2,7 @@
 // ------------------------------------------------------------ the orca, drawn
 // The pixels of the orca (the thing itself, its hunt and its clock:
 // js/sim/orca.js; its art: SPRITES.orca, js/baked/orca.js).
-//   the shadow   under the ice with the lake's fish (render, after them): the
+//   the shadow   under the ice (render): the
 //                baked heading nearest its own (64 round, so a turn rolls
 //                through them), never turned off the pixel grid, and cut to the ice's own pixels (orcaMask) so it never
 //                shows over a sill it swims under or past the shore. Locked
@@ -28,7 +28,7 @@
 //                dark water flat on the ground under it, and each spout in
 //                the air is a ring filling at its landing spot under a
 //                lump of the pool's ice arcing onto it.
-const ORCA_SHADE = 0.42;      // the shadow's alpha cruising: the fish's own (render)
+const ORCA_SHADE = 0.42;      // the shadow's alpha cruising: the under-ice ink at part strength (render)
 const ORCA_SHADE_DEEP = 0.34; // ...the moment it locks on, a little deeper
 const ORCA_SHADE_UP = 0.78;   // ...and come up under its quarry when the count runs out
 const ORCA_WAG = [4, 1 / 16]; // the tail's beat: rad/s at rest, and more per px/s of speed

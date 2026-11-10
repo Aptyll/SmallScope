@@ -207,7 +207,7 @@ function drawShaft(a, x, y) {
 // view has to be as readable at midnight as at noon, and the lighting would
 // eat it.
 const HB_SOLID = '#5ad0ff', HB_WATER = '#3f76ff', HB_BODY = '#4dff7d';
-const HB_HURT = '#ff4d5e', HB_PICK = '#c07dff', HB_SHOT = '#ffd95c';
+const HB_HURT = '#ff4d5e', HB_SHOT = '#ffd95c';
 const HB_MID = '#ff2ee6';
 
 // One ring, plotted as 1px world pixels. Not an arc() stroke: that is
@@ -258,20 +258,6 @@ function hbDot(cx, cy, col) {
   ctx.fillStyle = col;
   ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3);
 }
-// a short heading arrow - the shape for a thing that STEERS rather than
-// routes, and so has no goal tile to put a box on. The arrowhead is what
-// tells the two apart at a glance: a barbed stub is a heading, a line ending
-// in a box is a walk to a decided place.
-function hbArrow(cx, cy, ang, len, col) {
-  const x0 = Math.round(cx), y0 = Math.round(cy);
-  const x1 = Math.round(cx + Math.cos(ang) * len), y1 = Math.round(cy + Math.sin(ang) * len);
-  hbLine(x0, y0, x1, y1, col, 0);
-  const back = ang + Math.PI;
-  for (const s of [0.7, -0.7]) {
-    hbLine(x1, y1, Math.round(x1 + Math.cos(back + s) * 4), Math.round(y1 + Math.sin(back + s) * 4), col, 0);
-  }
-}
-
 // The model's own centre column, and the one overlay here that is about the
 // ART rather than the sim: the overhead frame (health bar, stamina bar, level
 // badge) is the only thing in the game that has to line up with a sprite
@@ -353,10 +339,6 @@ function drawHitboxes(ox, oy, ex, ey) {
   // an arrow is a point: it is the tile under that point that stops it, and
   // that point that is tested against every circle above
   for (const a of arrows) hbDot(a.x - ex, a.y - ey, HB_SHOT);
-
-  // walk-over and click targets, claimed from their own centres - what the
-  // sim measures to
-  for (let i = 0, n = creekFishN(); i < n; i++) { const f = creekFishAt(i); if (f.show >= 0.5) hbRing(f.x - ex, f.y - ey, CREEK_FISH_R, HB_PICK); } // a roll over one takes it (creekFishCatch)
 }
 
 // debug: every walker's live route - '.' (settings.hitbox 2), or
@@ -368,9 +350,8 @@ function drawHitboxes(ox, oy, ex, ey) {
 // route being followed reads differently from a route being replanned.
 // Everything that walks has one of these, grazing and patrolling included,
 // so a line always shrinks into its box and ends where the walker stops.
-// The two exceptions are the two things that do not walk: a flying bird gets
-// a straight dotted line to its perch, and a fish - which genuinely has
-// nowhere it is going - gets an arrow, no box, no claim of a destination.
+// The one exception is the thing that does not walk: a flying bird gets a
+// straight dotted line to its perch.
 function drawNavPaths(ox, oy, ex, ey) {
   const one = (e, col) => {
     const nav = e.nav;
@@ -393,9 +374,6 @@ function drawNavPaths(ox, oy, ex, ey) {
     one(a, isCampKind(a.kind) ? '#ff6a6a' : '#8ef0a0');
   }
   for (const b of robots) if (!b.dead) one(b, '#7fc8ff');
-  // fish steer and never route - there is no goal tile under a fish to box -
-  // so they get the arrow instead, teal to sit apart from the walkers above
-  for (const f of fish) hbArrow(f.x - ex, f.y - ey, f.a, 12, '#5fe0c8');
 }
 
 // ------------------------------------------------------------ cursor & aim line

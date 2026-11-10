@@ -457,55 +457,15 @@ function updateAI(p, dt) {
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
-// THE HEALS a bot takes, as a human takes them. Rung 1 drinks a potion under
+// THE HEAL a bot takes, as a human takes it: it drinks a potion under
 // AI_POTION_HP - early, since the heal comes over POTION_T and a level-1 body
-// is rarely a whole potion short before it goes home - never in its own roost ring, which heals faster for free. Rung 5' (aiHealRung)
-// is the free heal: hurt, with no rival near, a showing creek fish within
-// AI_HEAL_R is rolled over from the bank (creekFishCatch) - only a roll whose end lands
-// on dry ground, so the bot never rolls itself into the current.
+// is rarely a whole potion short before it goes home - never in its own
+// roost ring, which heals faster for free.
 const AI_POTION_HP = 0.6;   // share of max health under which a bot drinks
-const AI_HEAL_HP = 0.85;    // ...and under which it goes for a fish
-const AI_HEAL_R = 10;       // tiles it walks for one
-const AI_HEAL_SAFE = 200;   // px: a rival in sight this close and it fights instead
-const AI_FISH_T = 5, AI_FISH_REST = 10; // s a fish is chased, and s before the next chase
 function aiDrink(p) {
   const s = potionSlot(p);
   if (s < 0 || p.potT > 0 || p.dead || inAir(p) || roostRing(p)) return;
   if (p.hp < p.maxHp * AI_POTION_HP) p.input.useItem = s;
-}
-function aiHealRung(k) {
-  const { p, dt, inp, ai, steerTo } = k;
-  if (k.foeD < AI_HEAL_SAFE || p.hp >= p.maxHp * AI_HEAL_HP || roostRing(p)) { ai.fishT = 0; return false; }
-  const miss = p.maxHp - p.hp, px = p.x, py = p.y + 4;
-  // a chase that has not landed a roll in AI_FISH_T is dropped for
-  // AI_FISH_REST, so no bot follows the current down the map
-  ai.fishT = (ai.fishT || 0) + dt;
-  if (ai.fishT > AI_FISH_T + AI_FISH_REST) ai.fishT = 0;
-  return miss >= CREEK_FISH_HEAL && p.dodgeCharges > 0 && ai.fishT < AI_FISH_T && aiFishRoll(p, inp, steerTo, px, py);
-}
-// the nearest showing fish: roll at it from the dry bank when the roll ends on
-// dry ground past it, else walk to the bank across from it (CREEK_HW + 0.4
-// tiles off the water's middle, at the fish's place along the creek)
-function aiFishRoll(p, inp, steerTo, px, py) {
-  const reach = kitOf(p).dodgeSpeed * DODGE_T;
-  let best = null, bd = AI_HEAL_R * TILE;
-  for (let i = 0, n = creekFishN(); i < n; i++) {
-    const f = creekFishAt(i), d = Math.hypot(f.x - px, f.y - py);
-    if (f.show >= 0.5 && d < bd) { bd = d; best = { x: f.x, y: f.y, w: f.w }; }
-  }
-  if (!best) return false;
-  const nx = (best.x - px) / (bd || 1), ny = (best.y - py) / (bd || 1);
-  const dry = creekAt(px / TILE - 0.5, py / TILE - 0.5) > 0;
-  if (dry && bd < reach - 6 && creekAt((px + nx * reach) / TILE - 0.5, (py + ny * reach) / TILE - 0.5) > 0.3) {
-    inp.mx = nx; inp.my = ny; inp.dodge = true;
-    aiNote(p, 'HEAL', 'FISH', best);
-    return true;
-  }
-  const side = (px - py) > (best.x - best.y) ? 1 : -1, q = creekMid(best.w) + side * (CREEK_HW + 0.4);
-  const sx = (((best.w + q) * Math.SQRT2 + WORLD - 1) / 2 + 0.5) * TILE, sy = (((best.w - q) * Math.SQRT2 + WORLD - 1) / 2 + 0.5) * TILE;
-  if (steerTo(sx, sy - 4, 0) < 0) return false;
-  aiNote(p, 'HEAL', 'FISH', best);
-  return true;
 }
 // THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
 // what the ladder asked only when nothing rival is within AI_RECALL_SAFE: a
