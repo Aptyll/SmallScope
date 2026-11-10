@@ -819,10 +819,11 @@ function drawHeldTool(p, px, py, back) {
   if (aimed) {
     const q = aimed.heading * Math.PI / 4, c = Math.round(Math.cos(q)), sn = Math.round(Math.sin(q));
     const k = c && sn ? 0.75 : 1; // a diagonal reach, in whole pixels
-    const hx = cxp + Math.round(c * AIMED_HAND[0] * k), hy = cyp - 2 + Math.round(sn * AIMED_HAND[sn > 0 ? 1 : 2] * k);
+    const at = aimed.art.hand || [Math.round(c * AIMED_HAND[0] * k), Math.round(sn * AIMED_HAND[sn > 0 ? 1 : 2] * k)];
+    const hx = cxp + at[0], hy = cyp - 2 + at[1];
     if ((sn < 0) === back) {
-      ctx.drawImage(aimed.art.img, hx - aimed.art.grip[0], hy - aimed.art.grip[1]);
-      if (!back) heroFist(p, hx, hy, c < 0 ? -1 : 1);
+      if (aimed.art.img) ctx.drawImage(aimed.art.img, hx - aimed.art.grip[0], hy - aimed.art.grip[1]);
+      if (!back) heroFist(p, hx, hy, at[0] < 0 ? -1 : 1);
     }
     return;
   }

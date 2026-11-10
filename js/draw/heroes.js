@@ -111,7 +111,9 @@ function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_B
 // hands close on it ({ img, grip }), or null
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
 // A shot weapon whose aim is DRAWN, never turned (a bow, with its string and arrow):
-// HERO_AIMED[art] = fn(heading, step) -> { img, grip }. `heading` is the aim snapped to
+// HERO_AIMED[art] = fn(heading, step) -> { img, grip, hand }. `img` may be null (an empty
+// hand); `hand`, where given, is where the fist is, px from the chest, in place of the
+// bow hand's reach on the aim (AIMED_HAND): a thrown thing is cocked back, not held out. `heading` is the aim snapped to
 // eight, 0..7 clockwise from +x; `step` is 0 the beat after the shot has left (AIMED_LOOSE_T),
 // 1 half drawn, 2 full drawn. drawHeldTool (js/draw/bodies.js) puts the grip in the bow hand.
 const HERO_AIMED = {};

@@ -272,16 +272,20 @@ const ARCUS_BOW_GRIP = [4, 6];
 const ARCUS_BOW_CARRY = SPR.bake([
   '..Go..', '.FGo..', '.F.Go.', '.F.Go.', '.F..Go', '.F..Go',
   '.F..Go', '.F..go', '.F.go.', '.F.go.', '.Fgo..', '..go..',
-], { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#9c917c' });
+], { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', F: '#9c917c' });
 
 // The bow as he DRAWS it (HERO_AIMED.longbow, js/draw/arcus.js): eight headings, each its
 // own pixel frame, never a turned one. Per heading three steps: 0 the string straight just
 // after the arrow has gone, 1 half drawn, 2 full drawn with the nock at his chest, the arrow
-// on the string in both. Two are set by hand, aimed right (E) and down-right (SE); down is E
-// with its rows and columns swapped, the other five their mirrors. ARCUS_BOW_AIM[heading][step]
-// is { img, grip }, headings clockwise from +x, the grip where the bow hand closes on the stave.
+// on the string in both. Three are set by hand: aimed right (E), down-right (SE) and down
+// (S, toward the camera, so it is foreshortened: the stave a wide shallow arc across the
+// waist, its tips past the body, the arrow a few pixels of shaft and its head). The other
+// five are their mirrors. ARCUS_BOW_AIM[heading][step] is { img, grip, hand }: headings
+// clockwise from +x, the grip where the bow hand closes on the stave, `hand` where that fist
+// is, px from the chest (out on the aim through the draw, back by the body once it has shot,
+// so the fist never leaves the stave and the bow never floats off him).
 const ARCUS_BOW_AIM = (() => {
-  const pal = { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#9c917c', A: '#c8a46a', h: '#2a3044' };
+  const pal = { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', F: '#9c917c', A: '#c8a46a', h: '#2a3044' };
   const E = [[
     '......Go......', '.....FGo......', '.....F.Go.....', '.....F.Go.....', '.....F..Go....', '.....F..Go....', '.....F..Go....',
     '.....F..go....', '.....F..go....', '.....F.go.....', '.....F.go.....', '.....Fgo......', '......go......',
@@ -302,19 +306,29 @@ const ARCUS_BOW_AIM = (() => {
     '..............', '..............', '.......FFFGo..', '...AFFF...Go..', '...FA.....Go..', '...F.A....Go..', '...F..A..Go...',
     '..F....A.Go...', '..F.....Goo...', '..F...ggoA....', '..ggggoo..h...', '..oooo........', '..............', '..............',
   ]];
-  const turn = (rows) => rows[0].split('').map((_, x) => rows.map(r => r[x]).join('')); // rows and columns swapped: +x becomes +y
+  const S = [[
+    '...............', '...............', '.GFFFFFFFFFFFg.', 'oGG.........ggo', '.ooGGGGGggggoo.', '...ooooooooo...', '...............', '...............',
+  ], [
+    '...............', '...............', '.GFFFFFAFFFFFg.', 'oGG....A....ggo', '.ooGGGGGggggoo.', '...ooooAoooo...', '.......A.......', '.......h.......',
+  ], [
+    '.......A.......', '....FFFAFFF....', '.GFF...A...FFg.', 'oGG....A....ggo', '.ooGGGGGggggoo.', '...ooooAoooo...', '.......h.......', '...............',
+  ]];
+  // the bow hand from the chest, by step: [level, down, up] px (a diagonal takes three quarters)
+  const REACH = [[7, 5, 2], [10, 5, 2], [10, 5, 2]];
   const out = [[], [], [], [], [], [], [], []];
   for (let f = 0; f < 3; f++) {
-    const e = SPR.bake(E[f], pal), s = SPR.bake(turn(E[f]), pal), d = SPR.bake(SE[f], pal);
-    const gx = 8, gy = 6, gd = 8; // the stave's middle on the E grid, and on the SE one
-    out[0][f] = { img: e, grip: [gx, gy] };
-    out[1][f] = { img: d, grip: [gd, gd] };
-    out[2][f] = { img: s, grip: [gy, gx] };
-    out[3][f] = { img: SPR.flipH(d), grip: [d.width - 1 - gd, gd] };
-    out[4][f] = { img: SPR.flipH(e), grip: [e.width - 1 - gx, gy] };
-    out[5][f] = { img: SPR.flipV(SPR.flipH(d)), grip: [d.width - 1 - gd, d.height - 1 - gd] };
-    out[6][f] = { img: SPR.flipV(s), grip: [gy, s.height - 1 - gx] };
-    out[7][f] = { img: SPR.flipV(d), grip: [gd, d.height - 1 - gd] };
+    const e = SPR.bake(E[f], pal), s = SPR.bake(S[f], pal), d = SPR.bake(SE[f], pal);
+    const eg = [8, 6], sg = [7, 4], dg = [8, 8]; // the stave's middle on each grid
+    const row = [
+      [e, eg], [d, dg], [s, sg], [SPR.flipH(d), [d.width - 1 - dg[0], dg[1]]],
+      [SPR.flipH(e), [e.width - 1 - eg[0], eg[1]]], [SPR.flipV(SPR.flipH(d)), [d.width - 1 - dg[0], d.height - 1 - dg[1]]],
+      [SPR.flipV(s), [sg[0], s.height - 1 - sg[1]]], [SPR.flipV(d), [dg[0], d.height - 1 - dg[1]]],
+    ];
+    row.forEach(([img, grip], h) => {
+      const q = h * Math.PI / 4, c = Math.round(Math.cos(q)), sn = Math.round(Math.sin(q)), k = c && sn ? 0.75 : 1;
+      // the chest's middle is between two columns: a hand to the left reaches one more, so left mirrors right
+      out[h][f] = { img, grip, hand: [Math.round(c * REACH[f][0] * k) - (c < 0 ? 1 : 0), Math.round(sn * REACH[f][sn > 0 ? 1 : 2] * k)] };
+    });
   }
   return out;
 })();
