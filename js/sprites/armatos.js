@@ -348,7 +348,8 @@ function heroRunBox(N) { const B = SPR.motion.BOX; return N === 16 ? B : { w: N 
 // whole pixels by `bob` (SPR.motion's RUN_BOB / HOLD_BOB: up, the feet leave the snow
 // with it; down, the hips sink over the legs), and the legs - the
 // bottom rows that stand as two apart - scissor fore and aft, the near one over
-// the far one, the head leans a pixel into the run (HERO_LEAN), and the look's loose
+// the far one, a foot lifting off the snow behind the stride and as it swings through
+// (THE STRIDE), the head leans a pixel into the run (HERO_LEAN), and the look's loose
 // cloth (its `cloth` boxes and `hem`, heroCloth) trails a frame late. Frames come out
 // in the cell's run box (heroRunBox).
 const HERO_LEAN = 7 / 16; // the share of the cell, from its top, that is the head: a runner's head leads its hips by a pixel
@@ -368,7 +369,12 @@ function heroRunSide(side, bob, look) {
     for (let y = legTop; y < N; y++) { // the legs: the far (first) one, then the near over it
       const r = runs(side[y]), deep = y === legTop && N - legTop > 2 ? 0.5 : 1;
       const legs = [[r[0], -1], [r[r.length - 1], 1]];
-      for (const [[x0, x1], sgn] of legs) for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]), side[y][x]); // up: the whole body leaves the snow
+      for (const [[x0, x1], sgn] of legs) {
+        // THE STRIDE: at full reach the rear foot has left the snow, and as the legs pass
+        // under the hips the one swinging forward is lifted (the far leg, then the near one)
+        const lift = step ? (Math.abs(step) === 2 && sgn * step < 0 ? 1 : 0) : (sgn < 0) === (f < HERO_STRIDE.length / 2) ? 1 : 0;
+        for (let x = x0; x < x1; x++) put(B.x + x + Math.round(sgn * step * deep), B.y + y + Math.min(0, bob[f]) - lift, side[y][x]); // up: the whole body leaves the snow
+      }
     }
     for (let y = 0; y < legTop; y++) for (let x = 0; x < N; x++) put(B.x + x + (y < lean ? 1 : 0), B.y + y + bob[f], body[y][x]); // the body, over the hips, the head leaning into the run
     return g.map((r) => r.join(''));
