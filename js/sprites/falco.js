@@ -179,77 +179,77 @@ const FALCO_ICON32 = {
 
 // ------------------------------------------------------------ falco bodies
 // His own 16 px body, on ARMATOS's standing frame (his head box, legs and outline;
-// js/sprites/armatos.js), worn over the side's coat (r/R/d): the falconer's leather
-// cap, straps and the big glove on his left hand q/Q (the doll's cloak), brown hair
-// a/A (the doll's hair), the kestrel-rust collar x, a cream feather in the cap W.
-// Side-on the head is as wide as head-on and the body two pixels narrower.
-// LAST HAWK is the same cut and the same doll in another paint (its row's `pal`).
+// js/sprites/armatos.js), worn over the side's coat (r/R/d): HUNTSMAN, the old hunt's
+// green hat with a long cream feather W and a green shoulder cape q/Q, brown hair a/A,
+// a leather belt x. Side-on the head is as wide as head-on and the body two pixels
+// narrower. LAST HAWK is the same cut in another paint (its row's `pal`).
 const FALCO_BODY = {
   falconer: {
     down: [
-      '................',
-      '.....oooooo.....',
-      '....oqQQWQqo....',
-      '....oQQQQQQo....',
+      '............o...',
+      '.....oooooooWo..',
+      '....oqQQQQqoo...',
+      '...oQQQQQQQQo...',
       '....oaaaaaao....',
       '....oaekkeao....',
       '....oakkkkao....',
-      '...oqxkKKkxqo...',
-      '...oQqrrRrqqo...',
-      '...oQqrrRrqqo...',
-      '...oQQrqqrrqo...',
-      '..oQQQrrRrrko...',
-      '..oQQorrRrro....',
-      '...oo.orRrro....',
+      '...oqqkKKkqqo...',
+      '...oQqrrRrqQo...',
+      '...oqqrrRrqqo...',
+      '...oxrrxxrrxo...',
+      '...okrrrRrrko...',
+      '....orrRrrro....',
+      '....orrRrrro....',
       '.....bb..bb.....',
       '.....BB..BB.....',
     ],
     up: [
-      '................',
-      '.....oooooo.....',
-      '....oqQQQQqo....',
-      '....oQQQWQQo....',
+      '............o...',
+      '.....oooooooWo..',
+      '....oqQQQQqoo...',
+      '...oQQQQQQQQo...',
       '....oaaaaaao....',
       '....oaaaaaao....',
       '....oaAaaAao....',
-      '...oqxaaaaxqo...',
-      '...oQqrrRrqqo...',
-      '...oQqrqqRrqo...',
-      '...oQQrqqrrqo...',
-      '...okrrrRrQQQo..',
-      '....orrRrroQQo..',
-      '....orrRrro.oo..',
+      '...oqqQQQQqqo...',
+      '...oQqqQQqqQo...',
+      '...oqqqQQqqqo...',
+      '...oxrrxxrrxo...',
+      '...okrrrRrrko...',
+      '....orrRrrro....',
+      '....orrRrrro....',
       '.....bb..bb.....',
       '.....BB..BB.....',
     ],
     side: [
-      '................',
-      '.....oooooo.....',
-      '....oqQQWQQo....',
-      '....oQQQQQQo....',
+      '...........o....',
+      '.....ooooooWo...',
+      '....oqQQQQQoo...',
+      '....oQQQQQQQQo..',
       '....oaaakkko....',
       '....oaakkeko....',
       '....oaakkkko....',
-      '....oqxxkKko....',
+      '....oqqqkKko....',
       '....oQqrrRro....',
-      '....oQqrrRro....',
-      '....oQqqqRro....',
-      '....oQrrRQQQo...',
-      '....orrRrQQQo...',
-      '....orrRrooo....',
+      '....oqqrrRro....',
+      '....oxxxrRro....',
+      '....orrrRrko....',
+      '....orrRrrro....',
+      '....orrRrrro....',
       '......bb.bb.....',
       '......BB.BB.....',
     ],
   },
 };
-const FALCO_PAL = Object.assign({}, ARM_PAL, { q: '#5a4636', Q: '#7a604a', a: '#3a2a20', A: '#5a4030', x: '#9a5a2e', X: '#c07a40', W: '#efe8d6' });
+const FALCO_PAL = Object.assign({}, ARM_PAL, { q: '#3c5a3a', Q: '#56784e', a: '#3a2a20', A: '#5a4030', x: '#5a4636', W: '#efe8d6' });
 // The looks he can wear: the first is his own and free, the second is bought with
-// coins on the skins screen (js/ui/skins.js, the FALCO tab): black leather, gold
-// at the collar, the hair gone silver, a pale gold feather.
+// coins on the skins screen (js/ui/skins.js, the FALCO tab): a black hat and cape, a gold
+// belt, the hair gone silver, a pale gold feather. `run: 'drawn'`: the hat's brim and the
+// cape are not the doll's (Falconer, app/bake-player/bodies.py), which is used only for the roll.
 const FALCO_SKINS = [
-  { id: 'falconer', name: 'FALCONER', rarity: 'common', price: 0, grids: FALCO_BODY.falconer, motion: 'falconer' },
-  { id: 'lasthawk', name: 'LAST HAWK', rarity: 'rare', price: 200, grids: FALCO_BODY.falconer, motion: 'falconer',
-    pal: { q: '#161a26', Q: '#262c3e', a: '#a9b4cc', A: '#e8edf7', x: '#f2cc6a', X: '#b98a2e', W: '#fff3b0' } },
+  { id: 'falconer', name: 'HUNTSMAN', rarity: 'common', price: 0, grids: FALCO_BODY.falconer, motion: 'falconer', run: 'drawn' },
+  { id: 'lasthawk', name: 'LAST HAWK', rarity: 'rare', price: 200, grids: FALCO_BODY.falconer, motion: 'falconer', run: 'drawn',
+    pal: { q: '#161a26', Q: '#262c3e', a: '#a9b4cc', A: '#e8edf7', x: '#f2cc6a', W: '#fff3b0' } },
 ];
 
 // ------------------------------------------------------------ falco knife

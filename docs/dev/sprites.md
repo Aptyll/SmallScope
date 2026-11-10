@@ -327,11 +327,12 @@ hand ticks between two baked frames. His two machines draw themselves from small
 side (`faberArt`, js/draw/faber.js), the side's colour in a band across each.
 
 FALCO has two looks (`FALCO_SKINS`, js/sprites/falco.js) on one set of grids and one doll:
-FALCONER (free) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with his leather `q`/`Q`
-(the doll's `cloak`), brown hair `a`/`A` (the doll's `hair`), the kestrel-rust collar `x`/`X`
-and a cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black leather,
-silver hair, gold at the collar). It is A off falco-round1.png in the project files. His doll is
-`Falconer` in app/bake-player/bodies.py. His THROWING KNIFE is weapon art
+HUNTSMAN (free; row id `falconer`) and LAST HAWK (rare, 200). `FALCO_PAL` is `ARM_PAL` with the
+green hat and shoulder cape `q`/`Q`, brown hair `a`/`A`, a leather belt `x` and the hat's long
+cream feather `W`; LAST HAWK is the same cut repainted by its row's `pal` (black hat and cape,
+silver hair, a gold belt). It is C off falco-round1.png in the project files. Both run as their
+drawn bodies (`run: 'drawn'`); his doll (`Falconer` in app/bake-player/bodies.py) is used only for
+the roll. His THROWING KNIFE is weapon art
 (`SPRITES.weaponArt.knife`, point right, `WEAPON_GRIP.icon.knife`), carried in the leading hand and held on
 the aim while drawn, and thrown as a shot drawn by `HERO_SHOTS.knife`.
 
