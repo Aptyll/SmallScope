@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE COACH POINTS THE WAY TO YOUR LANE', '0.790'],
     ['LANE GRASS GROWS IN CLUMPS', '0.789'],
     ['Bucina keeps the horn at her lips while it sounds; Bella\'s parry shows a single blade', '0.788'],
     ['Maris and Varro keep a hand on the spear when they thrust', '0.787'],
