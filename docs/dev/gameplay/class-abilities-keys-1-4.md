@@ -40,7 +40,7 @@ burst, every rank after floats the number, gold at the top rank), and `abCdOf(p,
 cooldown at the held rank under COOLDOWN SPEED, which every cooldown-setting site reads instead of
 the row's `cd` (the cast landing, and the shield's comes-down reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
 buy pips along the top edge, **one seat per rank the key can hold**, so an empty row
-is a locked ability — and a locked well stands dim (dark rim, the icon at `LOCK_DIM`, a grey key
+is a locked ability — and a locked well stands dim (dark rim, the icon in greys (`classAbIconLocked`), a grey key
 digit), as an empty item slot does; a press on one reddens and shakes
 it (`abDenied`, the twin of `itemDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its

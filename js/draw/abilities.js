@@ -438,3 +438,24 @@ function classAbIcon(cls, i) {
   }
   return cv;
 }
+// ...and the same icon for a key no point has been spent on: its shapes kept,
+// its colour taken out and its values pressed into the HUD's own greys, so a
+// locked well reads as "this, not yet" on the dark strip (drawClassAbCell)
+const abLockCache = new Map();
+function classAbIconLocked(cls, i) {
+  const key = cls + ':' + i;
+  let cv = abLockCache.get(key);
+  if (!cv) {
+    const src = classAbIcon(cls, i);
+    cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
+    const g = cv.getContext('2d'); g.drawImage(src, 0, 0);
+    const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data;
+    for (let k = 0; k < d.length; k += 4) {
+      const v = 30 + (d[k] * 0.3 + d[k + 1] * 0.59 + d[k + 2] * 0.11) * 0.42;
+      d[k] = v; d[k + 1] = v + 2; d[k + 2] = v + 7;
+    }
+    g.putImageData(im, 0, 0);
+    abLockCache.set(key, cv);
+  }
+  return cv;
+}

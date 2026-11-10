@@ -36,7 +36,8 @@ rim), the hero's standing frame at 3× (`portraitSprite`: the worn body's if one
 class body's otherwise) on a dusk ground. Inside the rim a 3 px band is the **xp, filling
 clockwise from top centre round the square** — each band pixel's place along the perimeter
 decides it, so the corners turn at the sides' pace — then one px of ink seals the face apart from
-it. The xp you have of this level and what it needs stand over the square (`XP_TAG`), and the
+it. The xp you have of this level and what it needs stand over the square (`XP_TAG`) only while the
+pointer is on the face or a level has just landed (the band is the everyday readout), and the
 level is the digit in an odd-sized badge on its bottom-right corner (13 px, 17 for two digits, so
 the digits sit on a true centre). At `LEVEL_MAX` the band is full and the numbers go. A level-up
 pops the band and the numbers white (`abLvSeen`/`abLvFlash`). The **health bar** (`drawHpBar`)
@@ -53,21 +54,22 @@ digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out
 inner edge, centred **buy pips** on dark seats count the ranks in the key — one seat per
 rank it can hold (`abLvMax`: five on keys 1-3, three on the ultimate), the first being the unlock
 ([gameplay.md](../../gameplay/class-abilities-keys-1-4.md)). A key with no point in it is **locked**,
-and the well says so in its own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
+and the well says so in its own grammar: dark rim, the icon in the HUD's greys (`classAbIconLocked`: shapes kept, colour out),
 an empty pip row and a grey key digit — dim, never absent, so the strip never rearranges and you
 can read what you have not bought. A press on one is refused with the same red band and 1px
 shake an item slot refuses in (`abDenied`, aged in `updateFx` beside
 `itemFlash`); a cooldown is NOT that refusal, because the sweep already says when it
 comes home. The ASK lives off the well: while a
-skill point is unspent and the key has room a **floating buy plate** bobs in the open screen
-above the well, `AB_BUY_AIR` clear of the strip's line at the bottom of its bob, shadow included
-(`abBuyRect`, a fixed hit rect the drawn bob stays inside; `abBuyHit` gates it on `abLvCanBuy`
-AND `hudHome()`, so the plate's existence IS the appears-then-goes ask; `drawAbBuyPlate` draws it
+skill point is unspent and the key has room a **buy tab** stands on the strip's top line right
+over the well, sharing its bottom row with the frame's outline so it reads as part of the bar
+(`abBuyRect`, `AB_BUY` tall; `abBuyHit` gates it on `abLvCanBuy`
+AND `hudHome()`, so the tab's existence IS the appears-then-goes ask; `drawAbBuyPlate` draws it
 under the same two gates
-— a gold-rimmed plus, lighting on hover, the tooltip carrying the numbers). The `hudHome()` half
-matters because the plate hangs in open screen ABOVE the strip: the intro's `HUD_SLIDE` ([the HUD corners](../the-hud-corners.md)) is not far
-enough to carry it off the bottom with the wells, so without that gate four gold plus plates
-bob alone along the bottom edge while the HUD slides in.
+— a gold-rimmed plus whose gold breathes between two steps, lighting on hover, the tooltip
+carrying the numbers). The `hudHome()` half
+matters because the tab stands ABOVE the strip: the intro's `HUD_SLIDE` ([the HUD corners](../the-hud-corners.md)) is not far
+enough to carry it off the bottom with the wells, so without that gate four gold tabs
+stand alone along the bottom edge while the HUD slides in.
 `hudInT()` is the one answer to "how far in is the HUD", shared by `renderUI`'s slide and both
 gates. Pressing the plate buys the level,
 pressing the well casts — two surfaces, so neither can steal the other's click, and the well's

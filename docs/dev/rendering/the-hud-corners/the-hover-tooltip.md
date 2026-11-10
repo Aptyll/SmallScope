@@ -24,7 +24,7 @@ panel is painted at this frame, which is how the two modes are read without eyeb
 does, so what the panel describes and what a click would do can never be two different things.
 In `play`, in order: the merchant's counter (`shopHit` → `tipShop`, first), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), a
-floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
+buy tab (`abBuyHit`), the strip (`stripHit`: an ability well, an item slot answering
 `tipItem`, the purse, and the portrait answering `tipAttack`). In `title` it answers the wiki's rows and
 ability cards and the lobby's stage wells; every other mode returns null.
 
