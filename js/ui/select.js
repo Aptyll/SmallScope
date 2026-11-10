@@ -397,15 +397,16 @@ function drawSelMode(L, a) {
 // hero you point at, so a new player reads a hero before locking it. It stands
 // where the 2x stage would when the grid leaves the stage no room.
 const BRIEF_WELL = 34, BRIEF_GAP = 3, BRIEF_SPLIT = 12; // an ability's well, the air between two, and between the words and the wells
-function selBriefHero(L) {
+// under: the brief's ground even while the loadout's open picker stands on it (where its cards anchor, loadoutTip)
+function selBriefHero(L, under) {
   if (DRAFT.phase !== 'pick' || DRAFT.lock[localId] >= 0 || L.stage) return -1;
-  if (state.menu.loPick != null) return -1; // the loadout's open picker stands on this ground (loOptions, js/ui/loadout.js)
+  if (!under && state.menu.loPick != null) return -1; // the loadout's open picker stands on this ground (loOptions, js/ui/loadout.js)
   const hi = state.menu.screenT >= 1 && state.menu.popT <= 0 && mouse.inside ? heroCellAt(L.heroes) : -1;
   const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
   return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;
 }
-function selBrief(L) {
-  const h = selBriefHero(L);
+function selBrief(L, under) {
+  const h = selBriefHero(L, under);
   if (h < 0) return null;
   const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + HERO_PITCH : L.grid.y;
   if (L.play.y - last < BRIEF_WELL + 8) return null; // no room under this grid

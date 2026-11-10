@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['HERO PICK: CALLING AND TRICK CARDS NO LONGER COVER LOCK IN', '0.832'],
     ['AURA at 32 px behind ?fine=1: body, roll and star-glass', '0.831'],
     ['A struck soldier no longer washes white', '0.830'],
     ['Slow shows as ice on the feet; a stunned hero slumps and sways', '0.830'],
