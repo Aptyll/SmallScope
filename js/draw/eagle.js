@@ -199,9 +199,9 @@ function warmPerch(e, id) {
 const perchLiftBeat = (T) => [0, 1, 2, 1][Math.floor(T * 13) % 4];
 
 // the roosting bird's pool: the match is won and lost on it, so it is the
-// biggest bar in the world. Even segments like every hp bar but big and few
-// (PERCH_BAR_SEGS, not hpSegCount, which would split EAGLE_HP into a comb of
-// 2 px blocks), a heavy ink frame, the chunk a hit just took holding pale
+// widest bar in the world, yet quieter than the bird it stands over. Even
+// segments like every hp bar but few (PERCH_BAR_SEGS, not hpSegCount, which
+// would split EAGLE_HP into a comb of 2 px blocks), a body's own ink frame, the chunk a hit just took holding pale
 // before it drains (render-side: perchLag eases toward e.hp), the pool's
 // number inside. `bottom` is the world row just above the bird.
 const perchLag = new WeakMap();
@@ -225,7 +225,7 @@ function drawPerchBar(e, sx, bottom, now) {
     ctx.fillStyle = HP_TICK;
     for (let k = 1; k < PERCH_BAR_SEGS; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
     const txt = String(Math.max(0, Math.ceil(e.hp))); // the pool's number, 1x outlined, centred in the bar
-    drawWorldText(txt, centreTextX(sx, txt, 1), by + 2, '#f4f7ff', 1);
+    drawWorldText(txt, centreTextX(sx, txt, 1), by + 1, '#f4f7ff', 1);
   });
 }
 // one bird in its team's armour, whatever its state. In the air the sprite

@@ -23,6 +23,7 @@ const HEAVE_RANGE = 150;        // px of flight
 const HEAVE_PACK = 0.34;        // pack gained when it hits a hero (a layer)
 // W SHED: the pack shaken off in a ring
 const SHED_R = 36;              // px of ring
+const SHED_FX_LIFE = 0.65;      // s the shed snow flies and lies (drawn: AB_FX_LOOK.shed)
 // E SHOULDER: a short charge; the first rival body met is thrown the way he ran
 const SHOULDER_SPD = 300;
 const SHOULDER_T = 0.24;        // s of charge (~4.5 tiles)
@@ -37,6 +38,7 @@ const AVA_STEER = 1.5;          // rad/s it bends toward the aim
 const AVA_FULL = 300;           // px rolled for the biggest burst
 const AVA_R0 = 26, AVA_R1 = 58; // px of the burst's ring, unrolled and at full
 const AVA_UP_GROW = 0.8;        // the knock-up at full is (1 + this) x the rank's
+const AVA_FX_LIFE = 0.8;        // s the burst's powder hangs (drawn: AB_FX_LOOK.powder)
 const AVA_SHOVE = 180;          // px/s a lesser body is thrown off the line
 
 // ---- the keys ---------------------------------------------------------------
@@ -48,7 +50,7 @@ const RUPES_AB = [
     tip: 'THROW SNOW. SLOWS. A HERO HIT PACKS YOU',
     blurb: 'THROW A BLOCK OF PACKED SNOW. THE FIRST RIVAL HIT IS SLOWED. HIT A HERO AND YOU PACK ON A LAYER OF SNOW.',
     use: (p) => rupesHeave(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), HEAVE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawHeaveTele(p, a, closing, ex, ey), // the block torn up, its flight's shadow (js/draw/rupes.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -2 : 1, rot: 0 }), // the block lifted overhead, then thrown
     icon: RUPES_ICON32.heave, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < HEAVE_RANGE - 10,
@@ -59,7 +61,7 @@ const RUPES_AB = [
     tip: 'BURST OF SNOW. MORE FOR EACH LAYER SHED',
     blurb: 'SHAKE OFF YOUR SNOWPACK IN A BURST. RIVALS NEAR ARE HURT AND SLOWED, MORE FOR EACH LAYER YOU SHED. IT COSTS THE PACK.',
     use: (p) => rupesShed(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, SHED_R, col, 0.45 + 0.4 * closing, closing * 0.5),
+    tele: (p, px, py, a, col, closing, now) => drawShedTele(p, px, py, closing, now), // the snow shaking loose round him
     pose: (p, prog) => ({ dx: Math.round(Math.sin(prog * 30)), dy: 0, rot: 0 }), // the shake
     icon: RUPES_ICON32.shake,
     bot: (p, foe, d) => d < SHED_R - 4 && (packLayers(p) >= 2 || foe.hp < foe.maxHp * 0.3),
@@ -70,7 +72,7 @@ const RUPES_AB = [
     tip: 'CHARGE. INTO A TREE OR WALL, STUNS',
     blurb: 'A SHORT CHARGE. THE FIRST RIVAL IN THE WAY IS THROWN BACK THE WAY YOU RAN. THROWN INTO A TREE OR A WALL, THEY ARE STUNNED.',
     use: (p) => rupesShoulder(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SHOULDER_SPD * SHOULDER_T), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawShoulderTele(p, a, closing, ex, ey), // the furrow he will plough
     pose: (p, prog) => ({ dx: 0, dy: 1, rot: 0.12 * (p.dir === 'left' ? -1 : 1) }), // the shoulder dropped
     icon: RUPES_ICON32.shoulder, mark: 'stun',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < SHOULDER_SPD * SHOULDER_T - 6,
@@ -81,7 +83,7 @@ const RUPES_AB = [
     tip: 'ROLL AS A SNOWBALL. BIGGER THE FURTHER',
     blurb: 'CURL UP AND ROLL AS A SNOWBALL THAT GROWS THE FURTHER IT GOES. YOU CAN STEER A LITTLE. ON THE FIRST HERO, OR AT THE END, IT BURSTS AND KNOCKS UP EVERYONE AROUND IT.',
     use: (p) => rupesAvalanche(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), AVA_FULL), col, 0.4 + 0.4 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now) => drawAvalancheTele(p, px, py, a, closing, now), // the snow rolling up round him
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // curled down
     icon: RUPES_ICON32.avalanche,
     bot: (p, foe, d, clear) => foe instanceof Player && d > 60 && d < AVA_FULL && clear,
@@ -153,7 +155,7 @@ function rupesShed(p) {
   }
   for (const s of structsNear(p, p.x, p.y, SHED_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, SHED_R, dmg);
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: SHED_R, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: SHED_R, t: 0, col: '#f4f7ff', fx: 'shed', life: SHED_FX_LIFE, n });
   burst(p.x, p.y - 6, '#f4f7ff', 10 + 8 * n, 70 + 15 * n, 0.5, true);
   burst(p.x, p.y - 6, '#cfd8e8', 6 + 4 * n, 50, 0.5, true);
   sfxAt('break_', p.x, p.y);
@@ -269,7 +271,7 @@ function avaBurst(p) {
   }
   for (const s of structsNear(p, p.x, p.y, R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, R, dmg);
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: R, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: R, t: 0, col: '#f4f7ff', fx: 'powder', life: AVA_FX_LIFE });
   burst(p.x, p.y - 4, '#f4f7ff', 20 + Math.round(24 * g), 70 + 50 * g, 0.6, true);
   burst(p.x, p.y - 4, '#cfd8e8', 10 + Math.round(10 * g), 50, 0.6, true);
   packGain(p, 1); // he comes out of it packed in snow

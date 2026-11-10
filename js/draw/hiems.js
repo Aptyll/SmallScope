@@ -67,7 +67,15 @@ function drawHiemsGround(ex, ey, now) {
     // streaks of wind and flakes with a dark under-pixel, wheeling round her
     ctx.globalAlpha = 0.3 * a; hiDisc(px, py, WHITE_R, WHITE_R, '#9fb6d8');
     ctx.globalAlpha = 0.25 * a; hiDisc(px, py, WHITE_R - 6, WHITE_R - 6, '#c8d8e8');
-    drawRing(px, py, WHITE_R, '#5f7aa0', 0.7 * a, 0);
+    for (let k = 0; k < 36; k++) { // its edge: gusts racing round the rim, never a drawn line
+      const ang = k / 36 * Math.PI * 2 + now * 2.2, r = WHITE_R - 1 - (k % 3) * 2, tx = -Math.sin(ang), ty = Math.cos(ang);
+      ctx.globalAlpha = 0.85 * a;
+      for (let s = 0; s < 5; s++) {
+        const x = Math.round(px + Math.cos(ang) * r - tx * s), y = Math.round(py + Math.sin(ang) * r - ty * s);
+        ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = s < 2 ? HI_WHITE : '#c8d8e8'; ctx.fillRect(x, y, 1, 1);
+      }
+    }
     for (let k = 0; k < 90; k++) {
       const r = WHITE_R * (0.1 + ((k * 37) % 88) / 100), ang = k * 2.399 + now * (1.6 + (k % 5) * 0.25);
       const x = Math.round(px + Math.cos(ang) * r), y = Math.round(py + Math.sin(ang) * r - 6);
@@ -85,6 +93,92 @@ function drawHiemsGround(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawHiemsGround);
+
+// ---- the keys' own looks -------------------------------------------------------------
+// a frost crystal on the snow: a plus of ice, its heart white, s 1 or 2 px of arm
+function hiCrystal(x, y, s) {
+  ctx.fillStyle = HI_INK; ctx.fillRect(x - s, y + 1, s * 2 + 1, 1);
+  ctx.fillStyle = HI_ICE; ctx.fillRect(x - s, y, s * 2 + 1, 1); ctx.fillRect(x, y - s, 1, s * 2 + 1);
+  ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, 1, 1);
+}
+// ICICLE's wind-up: frost creeping out down the line from her feet, a crystal every
+// few px, reaching the shard's whole flight as she lets go
+function drawIcicleTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, ICICLE_RANGE) * (0.25 + 0.75 * closing);
+  for (let s = 10, k = 0; s < L; s += 7, k++) {
+    const side = (k % 2 ? 1 : -1) * 2, x = Math.round(p.x + nx * s - ny * side - ex), y = Math.round(p.y + ny * s + nx * side - ey);
+    hiCrystal(x, y, s > L - 14 ? 1 : 2);
+  }
+}
+// CLEAR ICE's wind-up: plates of ice forming from the middle out over the patch it glazes
+const GLAZE_PLATES = 30;
+function drawGlazeTele(px, py, closing) {
+  for (const [ux, uy, r] of fxSpots(GLAZE_PLATES)) {
+    if (r > closing * 1.15) continue;
+    const x = Math.round(px + ux * (GLAZE_R - 3)), y = Math.round(py + uy * (GLAZE_R - 3));
+    ctx.fillStyle = HI_DEEP; ctx.fillRect(x - 3, y - 1, 7, 3);
+    ctx.fillStyle = HI_MID; ctx.fillRect(x - 2, y - 1, 5, 2);
+    ctx.fillStyle = HI_WHITE; ctx.fillRect(x - 2, y - 1, 1, 1);
+  }
+}
+// COLD SNAP's wind-up: the ground freezing at the spot, cracks of frost running out to
+// the burst's reach, the spikes' tips breaking the crust at the last
+function drawSnapTele(px, py, closing, seed) {
+  drawCracks(px, py, 8, SNAP_R, 0.2 + 0.8 * closing, seed * 17, HI_DEEP, HI_PALE);
+  if (closing < 0.6) return;
+  for (const [ux, uy] of fxSpots(SNAP_SPIKES)) {
+    const x = Math.round(px + ux * SNAP_R * 0.85), y = Math.round(py + uy * SNAP_R * 0.85);
+    ctx.fillStyle = HI_INK; ctx.fillRect(x, y - 1, 1, 2);
+    ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y - 2, 1, 1);
+  }
+}
+// COLD SNAP landing: a crown of ice spikes bursts up out of the snow over the spot, stands,
+// and shatters into shards
+const SNAP_SPIKES = 14;
+function hiSpike(x, y, h) {
+  for (let r = 0; r < h; r++) {
+    const w = Math.max(0, Math.round((1 - r / h) * 2));
+    ctx.fillStyle = HI_INK; ctx.fillRect(x - w - 1, y - r, w * 2 + 3, 1);
+  }
+  for (let r = 0; r < h - 1; r++) {
+    const w = Math.max(0, Math.round((1 - r / h) * 2));
+    ctx.fillStyle = HI_MID; ctx.fillRect(x - w, y - r, w * 2 + 1, 1);
+    ctx.fillStyle = HI_WHITE; ctx.fillRect(x - w, y - r, 1, 1);
+  }
+}
+function drawSnapFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 3 * (1 - u));
+  drawCracks(px, py, 8, f.r, 1, seed, HI_DEEP, HI_PALE);
+  ctx.globalAlpha = 1;
+  if (u < 0.62) {
+    const up = Math.min(1, u * 7);
+    fxSpots(SNAP_SPIKES).map(([ux, uy], k) => [Math.round(px + ux * f.r * 0.85), Math.round(py + uy * f.r * 0.85), k])
+      .sort((m, n) => m[1] - n[1]) // the far ones first, so the near stand over them
+      .forEach(([x, y, k]) => hiSpike(x, y, Math.round((7 + 9 * fxRoll(seed, k, 7)) * up)));
+    return;
+  }
+  drawFlung(px, py, 0, Math.PI, f.r + 6, 0.3, 12, 22, (u - 0.62) / 0.38, seed, (x, y) => {
+    ctx.fillStyle = HI_INK; ctx.fillRect(x, y + 1, 2, 1);
+    ctx.fillStyle = HI_MID; ctx.fillRect(x, y, 2, 1);
+    ctx.fillStyle = HI_WHITE; ctx.fillRect(x, y, 1, 1);
+  });
+}
+AB_FX_LOOK.snap = drawSnapFx;
+// WHITEOUT's wind-up: the wind gathering in round her, streaks of snow drawn in on a spiral
+function drawWhiteoutTele(px, py, closing, now) {
+  for (let k = 0; k < 40; k++) {
+    const f = (k * 0.618 + now * 1.4) % 1, r = WHITE_R * (1 - f) * (0.6 + 0.4 * closing) + 6;
+    const ang = fxRoll(7, k, 1) * Math.PI * 2 + f * 2.2, tx = -Math.sin(ang), ty = Math.cos(ang);
+    ctx.globalAlpha = (0.4 + 0.5 * closing) * Math.min(1, f * 4);
+    for (let s = 0; s < 4; s++) {
+      const x = Math.round(px + Math.cos(ang) * r - tx * s * 1.5), y = Math.round(py + Math.sin(ang) * r - ty * s * 1.5);
+      ctx.fillStyle = '#5f7aa0'; ctx.fillRect(x, y + 1, 1, 1);
+      ctx.fillStyle = s ? '#c8d8e8' : HI_WHITE; ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 
 // ---- on a body --------------------------------------------------------------------
 // its chills as ice pips over the head (two at most), and while frozen the ice round it

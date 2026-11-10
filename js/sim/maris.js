@@ -28,12 +28,14 @@ const BRACE_NEAR = 110;         // px a rival hero counts from
 const BRACE_PER = 0.06;         // more off for each one near...
 const BRACE_CAP = 0.5;          // ...up to this share
 // E UNDERTOW: a ring of cold water round her
+const TOW_FX_LIFE = 0.6;        // s the whirl's crests take to close in (drawUndertowFx, js/draw/maris.js)
 const UNDERTOW_R = 56;          // px
 const UNDERTOW_T = 1.6;         // s of slow
 // R BREACH: under the snow to a spot, then up through it
 const BREACH_RANGE = 320;       // px she can go
 const BREACH_SPD = 300;         // px/s under the snow
 const BREACH_R = 40;            // px of ring she comes up in
+const BREACH_FX_LIFE = 0.7;     // s its burst shows (drawn: AB_FX_LOOK.breach, js/draw/maris.js)
 const BREACH_HOLD = 2.5;        // s a hole she breaks stays open before it freezes
 
 // ---- the keys ---------------------------------------------------------------
@@ -45,7 +47,7 @@ const MARIS_AB = [
     tip: 'HARPOON A RIVAL. ROOTS. REEL YOURSELF IN',
     blurb: 'THROW A HARPOON ON A LINE. THE FIRST RIVAL HIT IS ROOTED IN PLACE AND YOU REEL YOURSELF TO THEM.',
     use: (p) => marisHarpoon(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), HARPOON_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawHarpoonTele(p, a, closing, now, ex, ey), // her line paid out down the throw (js/draw/maris.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // drawn back, then thrown
     icon: MARIS_ICON32.harpoon, mark: 'root',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < HARPOON_RANGE - 12,
@@ -56,7 +58,6 @@ const MARIS_AB = [
     tip: 'TAKE LESS FROM HITS, MORE IF CROWDED',
     blurb: 'BRACE FOR A FEW SECONDS: TAKE LESS FROM EVERY HIT, AND LESS STILL FOR EACH RIVAL HERO NEAR YOU.',
     use: (p) => marisBrace(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, 12, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // set low
     icon: MARIS_ICON32.brace, mark: 'shield',
     bot: (p, foe, d) => d < BRACE_NEAR && p.hp < p.maxHp * 0.75,
@@ -67,7 +68,7 @@ const MARIS_AB = [
     tip: 'COLD RING. SLOWS, MORE ON ICE',
     blurb: 'A RING OF COLD WATER WELLS UP ROUND YOU. RIVALS INSIDE ARE HURT AND SLOWED, AND SLOWED MUCH MORE ON ICE.',
     use: (p) => marisUndertow(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, UNDERTOW_R, col, 0.45 + 0.4 * closing, closing * 0.5),
+    tele: (p, px, py, a, col, closing, now) => drawUndertowTele(px, py, closing, now), // the water's seams spiralling out (js/draw/maris.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 0 : 1, rot: 0 }),
     icon: MARIS_ICON32.undertow, mark: 'slow',
     bot: (p, foe, d) => d < UNDERTOW_R - 6,
@@ -78,7 +79,7 @@ const MARIS_AB = [
     tip: 'DIVE UNDER, BURST UP. ON ICE, BREAKS IT',
     blurb: 'DIVE UNDER THE SNOW AND GO, UNHITTABLE, TO A SPOT. BURST UP THERE: RIVALS OVER IT ARE KNOCKED UP. ON ICE YOU BREAK IT IN THE ORCA\'S SHAPE, AND THEY GO IN THE WATER.',
     use: (p) => marisBreach(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const s = breachSpot(p, p.input.aimX, p.input.aimY); drawRing(Math.round(s[0] - ex), Math.round(s[1] - ey), BREACH_R, col, 0.4 + 0.4 * closing, closing * 0.5); }, // where she comes up
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const s = breachSpot(p, p.input.aimX, p.input.aimY); drawBreachTele(p, Math.round(s[0] - ex), Math.round(s[1] - ey), closing, now); }, // her fin circling where she comes up
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // crouched to dive
     icon: MARIS_ICON32.breach, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d > 70 && d < BREACH_RANGE,
@@ -184,7 +185,7 @@ function marisUndertow(p) {
   }
   for (const s of structsNear(p, p.x, p.y, UNDERTOW_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, UNDERTOW_R, dmg);
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: UNDERTOW_R, t: 0, col: '#7cc4e8' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: UNDERTOW_R, t: 0, col: '#7cc4e8', fx: 'undertow', life: TOW_FX_LIFE });
   burst(p.x, p.y + 2, '#3a6080', 10, 60, 0.5, true);
   burst(p.x, p.y + 2, '#cfeeff', 10, 70, 0.5, true);
   sfxAt('splash', p.x, p.y);
@@ -237,7 +238,7 @@ function breachUp(p) {
   for (const s of structsNear(p, p.x, p.y, BREACH_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, BREACH_R, dmg);
   const broke = iceBreak(p.x, p.y + 4, 'breach', Math.atan2(p.rushNY, p.rushNX), { warn: 0.1, hold: BREACH_HOLD });
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: BREACH_R, t: 0, col: broke ? '#7cc4e8' : '#f4f7ff' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: BREACH_R, t: 0, col: broke ? '#7cc4e8' : '#f4f7ff', fx: 'breach', life: BREACH_FX_LIFE });
   burst(p.x, p.y - 4, '#f4f7ff', 24, 85, 0.6, true);
   burst(p.x, p.y - 4, broke ? '#3a6080' : '#cfd8e8', 12, 60, 0.6, true);
   sfxAt(broke ? 'splash' : 'break_', p.x, p.y);

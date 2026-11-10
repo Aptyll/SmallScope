@@ -79,7 +79,7 @@ for (const c of CLASSES) {
 }
 
 // the shapes the abilities flash on the snow
-const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where a blow landed, flashed for AB_FX_T
+const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col, fx?, life?} - where a blow landed, flashed for AB_FX_T (or `life`); `fx` names its own look (AB_FX_LOOK, js/draw/abilities.js)
 
 // ---- levelling -----------------------------------------------------------
 // Whether the key is bought at all (level 0 = locked: no cast, a dim well and
@@ -295,7 +295,7 @@ function abHitDummies(x, y, r, dmg) {
 function updateAbilityWorld(dt) {
   for (let i = abFx.length - 1; i >= 0; i--) {
     abFx[i].t += dt;
-    if (abFx[i].t >= AB_FX_T) abFx.splice(i, 1);
+    if (abFx[i].t >= (abFx[i].life || AB_FX_T)) abFx.splice(i, 1); // a key's own look may last longer (`life`)
   }
   heroTick(dt); // what the heroes leave in the world: ARMATOS's standards (HERO_TICK, js/sim/heroes.js)
 }

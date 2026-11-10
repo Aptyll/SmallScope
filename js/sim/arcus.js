@@ -61,7 +61,7 @@ const ARCUS_AB = [
     tip: 'FIVE ARROWS IN A FAN',
     blurb: 'LOOSE FIVE ARROWS IN A FAN. EACH HITS THE FIRST BODY IN ITS WAY; MORE THAN ONE ON THE SAME RIVAL HIT FOR LESS. EVERY ARROW STAYS IN THE SNOW.',
     use: (p) => arcusVolley(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, VOLLEY_RANGE, VOLLEY_HALF, col, 0.5 + 0.45 * closing),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawVolleyTele(p, a, closing, ex, ey), // five arrows fanned on the string (js/draw/arcus.js)
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
     icon: ARCUS_ICON32.volley,
     bot: (p, foe, d, clear) => d < VOLLEY_RANGE - 20 && (clear || foe instanceof Player), // a fan: a soldier in the way takes one, the rest fly on
@@ -72,7 +72,6 @@ const ARCUS_AB = [
     tip: 'FOR A WHILE, EVERY SHOT IS TWO ARROWS',
     blurb: 'FOR A FEW SECONDS EVERY BASIC SHOT LOOSES TWO ARROWS SIDE BY SIDE. THE SECOND HITS FOR A SHARE OF THE FIRST.',
     use: (p) => arcusTwin(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, 12, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }),
     icon: ARCUS_ICON32.twin,
     bot: (p, foe, d) => foe instanceof Player && d < 250,
@@ -84,7 +83,7 @@ const ARCUS_AB = [
     blurb: 'EVERY ARROW OF YOURS IN THE SNOW FLIES BACK TO YOU, HITTING EACH RIVAL ON ITS WAY. THREE ON ONE RIVAL SLOW THEM. EACH ONE BACK IS PULLED UP.',
     use: (p) => arcusGather(p),
     ok: (p) => arcusShaftsOf(p) > 0, // nothing in the snow, nothing to call
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawGatherLines(p, col, closing, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawGatherTele(p, closing, now, ex, ey), // each arrow of his stirring toward him
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
     icon: ARCUS_ICON32.gather, mark: 'slow',
     bot: (p, foe) => foe instanceof Player && arcusGatherHits(p, foe) >= 2,
@@ -95,7 +94,7 @@ const ARCUS_AB = [
     tip: 'RAIN ARROWS ON A FAR SPOT',
     blurb: 'LOOSE A FULL QUIVER HIGH. ARROW BY ARROW IT FALLS ON A FAR SPOT, EACH ONE HITTING AND SLOWING WHAT IT LANDS ON. EVERY ARROW STAYS IN THE SNOW.',
     use: (p) => arcusQuiver(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = arcusSpot(p); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), RAIN_R, col, 0.45 + 0.45 * closing, closing * 0.3); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawQuiverTele(p, px, py, arcusSpot(p), closing, now, ex, ey), // loosed high; the shadows gathering where they fall
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the bow raised high
     icon: ARCUS_ICON32.quiver, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 60 && d < RAIN_RANGE && (foe.hp < foe.maxHp * 0.7 || arcusFoesNear(p, foe) >= 2),

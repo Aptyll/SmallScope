@@ -20,6 +20,7 @@ const IGNIA_BURN_AD = 0.15;     // ...and per point of her DAMAGE (the stat item
 const BRAND_SPD = 300;          // px/s
 const BRAND_RANGE = 150;        // px of flight
 const BRAND_BURN_T = 3;         // s the stick leaves its rival burning
+const LEAP_FX_LIFE = 0.45;      // s a wild jump's tongue of fire shows (drawn: AB_FX_LOOK.leap, js/draw/ignia.js)
 // W BRUSHFIRE: a line of fire laid across the aim, at the aim
 const BRUSH_RANGE = 120;        // px from her the line's middle may be set
 const BRUSH_LEN = 56;           // px of fire, across the aim
@@ -35,6 +36,7 @@ const WILD_RANGE = 160;         // px from her the ring's middle may be set
 const WILD_R = 56;              // px of ring
 const WILD_BURN_T = 5;          // s the ring leaves each rival burning
 const WILD_JUMP_R = 40;         // px a wildfire flame jumps
+const WILD_FX_LIFE = 1.1;       // s the burst's fire stands on the snow (drawWildFx, js/draw/ignia.js)
 const WILD_T = 4;               // s the jumping lasts, and the snow is ignored
 
 const brushfires = []; // {x, y, nx, ny, team, owner, t, life, dps} - the lit lines, stepped by updateBrushfires, each carrying its caster's rank and heat
@@ -49,7 +51,7 @@ const IGNIA_AB = [
     tip: 'THROW A BRAND. THE FIRST RIVAL BURNS',
     blurb: 'THROW A BURNING STICK DOWN A LINE. THE FIRST RIVAL IT HITS TAKES THE BLOW AND CATCHES FIRE.',
     use: (p) => igniaBrand(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), BRAND_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawBrandTele(p, a, closing, now, ex, ey), // the snow thawing down its line (js/draw/ignia.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // the arm back, then the throw
     icon: IGNIA_ICON32.brand,
     bot: (p, foe, d, clear) => clear && d < BRAND_RANGE - 10,
@@ -81,7 +83,7 @@ const IGNIA_AB = [
     tip: 'A RING CATCHES FIRE. FLAMES JUMP',
     blurb: 'A LARGE RING AROUND A SPOT CATCHES FIRE. EVERY RIVAL INSIDE BURNS HARD, AND THE FLAMES JUMP BETWEEN RIVALS FOR A FEW SECONDS, SNOW OR NOT. IT CANNOT CROSS THE CREEK.',
     use: (p) => igniaWildfire(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = wildAt(p); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), WILD_R, col, 0.45 + 0.45 * closing, closing * 0.5); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = wildAt(p); drawWildTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the ground smouldering (js/draw/ignia.js)
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised
     icon: IGNIA_ICON32.wildfire,
     bot: (p, foe, d) => foe instanceof Player && d < WILD_RANGE && (unitsNear(p, foe.x, foe.y, WILD_R).filter((q) => q instanceof Player).length >= 2 || foe.hp < foe.maxHp * 0.6),
@@ -149,7 +151,7 @@ function updateKindling(dt) {
       if (q === e || unitTeam(q) === p.team || q.burnT > 0) continue; // a body already alight is not lit twice
       if (wild ? waterBetween(e.x, e.y, q.x, q.y) : igniaDoused(q)) continue;
       igniaLight(p, q, e.burnT, e.burnDps, wild ? e.wildT : 0);
-      if (wild) abFx.push({ kind: 'line', x: e.x, y: unitMidY(e), a: Math.atan2(q.y - e.y, q.x - e.x), r: Math.hypot(q.x - e.x, q.y - e.y), half: 2, t: 0, col: '#ff9a3a' });
+      if (wild) abFx.push({ kind: 'line', x: e.x, y: unitMidY(e), a: Math.atan2(q.y - e.y, q.x - e.x), r: Math.hypot(q.x - e.x, q.y - e.y), half: 2, t: 0, col: '#ff9a3a', fx: 'leap', life: LEAP_FX_LIFE });
     }
   }
 }
@@ -243,7 +245,7 @@ function igniaWildfire(p) {
   }
   for (const s of structsNear(p, c.x, c.y, WILD_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(c.x, c.y, WILD_R, dmg);
-  abFx.push({ kind: 'ring', x: c.x, y: c.y, r: WILD_R, t: 0, col: '#ff9a3a' });
+  abFx.push({ kind: 'ring', x: c.x, y: c.y, r: WILD_R, t: 0, col: '#ff9a3a', fx: 'wildfire', life: WILD_FX_LIFE });
   burst(c.x, c.y, '#ff9a3a', 24, 80, 0.6, true);
   burst(c.x, c.y, '#ffd95c', 12, 60, 0.5, true);
   sfxAt('break_', c.x, c.y);

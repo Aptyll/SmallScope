@@ -91,6 +91,51 @@ function drawFalcoSky(p, px, py, now) {
   return true;
 }
 
+// ---- the keys' own looks -------------------------------------------------------------
+// TALONS' wind-up: the hawk's shadow already wheeling over the spot it is sent to,
+// tightening its turn as he lets it go
+function drawTalonsTele(x, y, closing, now) {
+  const r = TALON_R * (1 - 0.6 * closing);
+  for (let k = 0; k < 2; k++) {
+    const t = now * 4 + k * Math.PI;
+    ctx.globalAlpha = 0.25 + 0.3 * closing; ctx.fillStyle = FC_INK;
+    const sx = Math.round(x + Math.cos(t) * r), sy = Math.round(y + Math.sin(t) * r * 0.6);
+    ctx.fillRect(sx - 4, sy, 9, 1); ctx.fillRect(sx - 1, sy - 1, 3, 3); // wings out, the body
+  }
+  ctx.globalAlpha = 1;
+}
+// KNIFE FAN's wind-up: the three blades fanned in his hand, each sending a glint down
+// its line as far as it flies
+function drawFanTele(p, a0, closing, ex, ey) {
+  for (let k = -1; k <= 1; k++) {
+    const a = a0 + k * FAN_SPREAD, nx = Math.cos(a), ny = Math.sin(a), x0 = p.x - ex, y0 = p.y - BOW_Y - ey;
+    ctx.globalAlpha = 0.25 + 0.35 * closing; ctx.fillStyle = FC_STEEL;
+    for (let s = 16; s < FAN_LEN * closing; s += 1) if (s % 3) ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
+    ctx.globalAlpha = 1;
+    drawThrownKnife(Math.round(x0 + nx * 12), Math.round(y0 + ny * 12), nx, ny, 0);
+  }
+}
+// STOOP's landing: three talon rakes torn across the snow where he dropped, feathers
+// and snow thrown up round them
+function drawStoopFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  ctx.fillStyle = '#7f98bc'; fillEllipsePx(px, py + 3, 10, 4);
+  for (let k = -1; k <= 1; k++) for (let s = -9; s <= 9; s++) { // the rakes, down and across
+    const x = px + k * 5 + Math.round(s * 0.5), y = py + 3 + s;
+    if (Math.abs(s) > 9 - Math.abs(k) * 2) continue;
+    ctx.fillStyle = FC_INK; ctx.fillRect(x, y, 2, 1);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x + 2, y, 1, 1);
+  }
+  drawFlung(px, py, 0, Math.PI, f.r + 10, 0.4, 16, 12, Math.min(1, u * 1.3), seed, (x, y, k) => {
+    if (k % 3) { ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x, y, 2, 2); return; }
+    ctx.fillStyle = FC_INK; ctx.fillRect(x - 1, y, 4, 2); // a feather, turning down
+    ctx.fillStyle = FC_WING; ctx.fillRect(x, y, 2, 1);
+  });
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.stoop = drawStoopFx;
+
 HERO_GROUND.push(drawFalcoGround);
 HERO_AIR.push(drawFalcoAir);
 HERO_BODY_DRAW.push(drawFalcoSky);

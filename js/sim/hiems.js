@@ -36,6 +36,7 @@ const GLAZE_FADE = 0.6;         // s the glaze takes to melt back to snow after 
 const SNAP_RANGE = 130;         // px from her the burst's middle may be set
 const SNAP_R = 34;              // px of burst
 const SNAP_ROOT = 1;            // s a chilled rival is rooted
+const SNAP_FX_LIFE = 0.6;       // s its spikes stand (drawn: AB_FX_LOOK.snap)
 // R WHITEOUT: a blizzard that follows her: rivals inside are slowed, chilled
 // and stung once a second, and a rival hero inside sees only WHITE_SEE of their reach
 // round themselves (their side's other eyes still see; HERO_SIGHT, js/sim/heroes.js)
@@ -57,7 +58,7 @@ const HIEMS_AB = [
     tip: 'AN ICE SHARD. SLOWS AND CHILLS',
     blurb: 'A SHARD OF ICE FLIES DOWN A LINE. THE FIRST RIVAL IT HITS IS HURT, SLOWED AND CHILLED.',
     use: (p) => hiemsIcicle(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), ICICLE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawIcicleTele(p, a, closing, ex, ey), // frost creeping down the line (js/draw/hiems.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }),
     icon: HIEMS_ICON32.icicle, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < ICICLE_RANGE - 10,
@@ -68,7 +69,7 @@ const HIEMS_AB = [
     tip: 'GLAZE THE GROUND. RIVALS SLIDE ON IT',
     blurb: 'TURN A PATCH OF GROUND TO CLEAR ICE. RIVALS ON IT SLIDE AND TURN SLOWLY. YOUR OWN SIDE WALKS IT AS SNOW.',
     use: (p) => hiemsGlaze(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, GLAZE_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), GLAZE_R, col, 0.45 + 0.45 * closing, closing * 0.4); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, GLAZE_RANGE); drawGlazeTele(Math.round(c.x - ex), Math.round(c.y - ey), closing); }, // the ice spreading
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
     icon: HIEMS_ICON32.glaze, mark: 'slow',
     bot: (p, foe, d) => d < GLAZE_RANGE && foe instanceof Player,
@@ -79,7 +80,7 @@ const HIEMS_AB = [
     tip: 'A BURST. ROOTS EVERY CHILLED RIVAL',
     blurb: 'A BURST OF COLD AROUND A SPOT. EVERY CHILLED RIVAL INSIDE IS ROOTED, AND EVERY RIVAL INSIDE IS HURT AND CHILLED.',
     use: (p) => hiemsSnap(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, SNAP_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), SNAP_R, col, 0.45 + 0.45 * closing, closing * 0.5); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = hiemsSpot(p, SNAP_RANGE); drawSnapTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, p.id); }, // the ground freezing and cracking
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised
     icon: HIEMS_ICON32.snap, mark: 'root',
     bot: (p, foe, d) => d < SNAP_RANGE && (foe.chillN > 0 || unitsNear(p, foe.x, foe.y, SNAP_R).length >= 3),
@@ -90,7 +91,7 @@ const HIEMS_AB = [
     tip: 'A BLIZZARD. RIVALS IN IT ARE BLINDED',
     blurb: 'A BLIZZARD FOLLOWS YOU FOR A FEW SECONDS. RIVALS INSIDE SEE ALMOST NOTHING BEYOND THEMSELVES, ARE SLOWED, AND ARE STUNG AND CHILLED EVERY SECOND.',
     use: (p) => hiemsWhiteout(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, WHITE_R, col, 0.4 + 0.45 * closing, closing * 0.3),
+    tele: (p, px, py, a, col, closing, now) => drawWhiteoutTele(px, py, closing, now), // the wind gathering round her
     pose: () => ({ dx: 0, dy: -2, rot: 0 }),
     icon: HIEMS_ICON32.whiteout, mark: 'blind',
     bot: (p, foe, d) => foe instanceof Player && d < WHITE_R && (unitsNear(p, p.x, p.y, WHITE_R).filter((q) => q instanceof Player).length >= 2 || foe.hp < foe.maxHp * 0.6),
@@ -202,7 +203,7 @@ function hiemsSnap(p) {
   }
   for (const s of structsNear(p, c.x, c.y, SNAP_R)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(c.x, c.y, SNAP_R, dmg);
-  abFx.push({ kind: 'ring', x: c.x, y: c.y, r: SNAP_R, t: 0, col: '#e6f8ff' });
+  abFx.push({ kind: 'ring', x: c.x, y: c.y, r: SNAP_R, t: 0, col: '#e6f8ff', fx: 'snap', life: SNAP_FX_LIFE });
   burst(c.x, c.y, '#e6f8ff', 20, 70, 0.5, true);
   burst(c.x, c.y, '#7cc4e8', 10, 50, 0.45, true);
   sfxAt('break_', c.x, c.y);

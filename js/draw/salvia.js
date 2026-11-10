@@ -46,7 +46,7 @@ function drawSalviaGround(ex, ey, now) {
     ctx.globalAlpha = 0.12 * a; ctx.fillStyle = SV_GOLD;
     for (let y = -THAW_R; y <= THAW_R; y += 2) { const hw = Math.floor(Math.sqrt(THAW_R * THAW_R - y * y)); ctx.fillRect(px - hw, py + y, hw * 2 + 1, 1); }
     ctx.globalAlpha = 1;
-    drawRing(px, py, THAW_R, SV_GOLD, 0.8 * a, 0);
+    svMeltEdge(px, py, THAW_R, a, now); // the melt's ragged edge, never a drawn line
     // warmth rising off it, a mote at a time round the ring
     for (let i = 0; i < 14; i++) {
       const ang = i / 14 * Math.PI * 2 + i * 0.37, rr = THAW_R * (0.25 + 0.7 * ((i * 0.618) % 1));
@@ -71,6 +71,66 @@ function drawSalviaGround(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawSalviaGround);
+
+// ---- the keys' own looks -----------------------------------------------------------------
+// THAW's edge: where the melt meets the snow, ragged and wet, bare earth showing through
+function svMeltEdge(px, py, r, alpha, now) {
+  const n = Math.ceil(r * 2 * Math.PI);
+  for (let k = 0; k < n; k++) {
+    const t = k / n * Math.PI * 2, rr = r + Math.round(Math.sin(t * 7) * 2 + Math.sin(t * 13 + 1) * 1.5);
+    const x = Math.round(px + Math.cos(t) * rr), y = Math.round(py + Math.sin(t) * rr);
+    ctx.globalAlpha = alpha * 0.8; ctx.fillStyle = '#7f98bc'; ctx.fillRect(x, y, 1, 2);
+    if (k % 5 === 0) { ctx.fillStyle = '#6b5a48'; ctx.fillRect(x, y, 2, 1); } // earth through the melt
+    if (k % 9 === 0 && Math.floor(now * 3 + k) % 3 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - 1, 1, 1); } // a wet glint
+  }
+  ctx.globalAlpha = 1;
+}
+// a herb leaf at (x, y), pointing along t: two px of sage, its vein darker
+function svLeaf(x, y, t) {
+  const c = Math.round(Math.cos(t)), s = Math.round(Math.sin(t));
+  ctx.fillStyle = SV_INK; ctx.fillRect(x - 1, y, 4, 2);
+  ctx.fillStyle = SV_SAGE; ctx.fillRect(x, y, 2, 1);
+  ctx.fillStyle = SV_SAGE_D; ctx.fillRect(x + (c > 0 ? 1 : 0), y + (s > 0 ? 1 : 0), 1, 1);
+}
+// POULTICE's wind-up: herb leaves shaken loose, scattered down the line it will fly
+function drawPoulticeTele(p, a, closing, now, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = POULTICE_RANGE * (0.25 + 0.75 * closing);
+  for (let s = 14, k = 0; s < L; s += 13, k++) {
+    const side = Math.sin(k * 2.3 + now * 3) * 3;
+    svLeaf(Math.round(p.x + nx * s - ny * side - ex), Math.round(p.y + ny * s + nx * side - ey), a + k);
+  }
+}
+// SNOWDROPS' wind-up: a green shoot pushing up on each spot she will plant, a white bud on it
+function drawDropsTele(x, y, closing) {
+  const h = 1 + Math.round(3 * closing);
+  for (let k = 0; k < DROP_N; k++) {
+    const t = -Math.PI / 2 + k * Math.PI * 2 / DROP_N, fx = Math.round(x + Math.cos(t) * DROP_SPREAD), fy = Math.round(y + Math.sin(t) * DROP_SPREAD);
+    ctx.fillStyle = '#9fb6d8'; ctx.fillRect(fx - 1, fy, 3, 1); // the snow parted
+    ctx.fillStyle = SV_INK; ctx.fillRect(fx - 1, fy - h - 1, 3, h + 1);
+    ctx.fillStyle = SV_SAGE_D; ctx.fillRect(fx, fy - h, 1, h);
+    if (closing > 0.5) { ctx.fillStyle = SV_WHITE; ctx.fillRect(fx, fy - h - 1, 1, 1); }
+  }
+}
+// WARM CLOAK's wind-up: warm air gathering round the one she wraps, motes wheeling up
+function drawCloakTele(x, y, closing, now) {
+  for (let k = 0; k < 8; k++) {
+    const t = now * 5 + k * Math.PI / 4, rise = (k / 8 + now * 1.2) % 1;
+    ctx.globalAlpha = (0.5 + 0.5 * closing) * (1 - rise);
+    ctx.fillStyle = k % 2 ? SV_GOLD : SV_LINEN;
+    ctx.fillRect(Math.round(x + Math.cos(t) * 7), Math.round(y - 4 + Math.sin(t) * 3 - rise * 14), 1, 2);
+  }
+  ctx.globalAlpha = 1;
+}
+// THAW's wind-up: the snow melting out from her feet, wet patches and steam spreading
+function drawThawTele(px, py, closing, now) {
+  for (const [ux, uy, r] of fxSpots(28)) {
+    if (r > closing) continue;
+    const x = Math.round(px + ux * THAW_R * 0.9), y = Math.round(py + uy * THAW_R * 0.9);
+    ctx.globalAlpha = 0.45; ctx.fillStyle = '#7f98bc'; fillEllipsePx(x, y, 3, 1);
+    ctx.globalAlpha = 0.8; ctx.fillStyle = SV_GOLD; ctx.fillRect(x, y - 2 - Math.round(((now * 2 + r * 5) % 1) * 6), 1, 2);
+  }
+  ctx.globalAlpha = 1;
+}
 
 // ---- the SNOWDROP STAFF ----------------------------------------------------------------
 // Her staff (CLASSES' `staff: 'snowdrop'`; HERO_STAVES, js/draw/heroes.js): a snowdrop's

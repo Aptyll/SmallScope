@@ -81,6 +81,85 @@ function drawFaberGround(ex, ey, now) {
 }
 HERO_GROUND.push(drawFaberGround);
 
+// ---- the keys' own looks -----------------------------------------------------------------
+// a brass cog at (x, y): `r` px to its rim, `n` teeth, turned to `a`
+function faCog(x, y, r, n, a) {
+  ctx.fillStyle = FA_INK; fillEllipsePx(x, y, r + 1, r + 1);
+  for (let k = 0; k < n; k++) {
+    const t = a + k / n * Math.PI * 2, tx = Math.round(x + Math.cos(t) * (r + 1)), ty = Math.round(y + Math.sin(t) * (r + 1));
+    ctx.fillStyle = FA_INK; ctx.fillRect(tx - 1, ty - 1, 3, 3);
+    ctx.fillStyle = FA_BRASS; ctx.fillRect(tx, ty, 1, 1);
+  }
+  ctx.fillStyle = FA_DEEP; fillEllipsePx(x, y, r, r);
+  ctx.fillStyle = FA_BRASS; fillEllipsePx(x - 1, y - 1, Math.max(1, r - 2), Math.max(1, r - 2));
+  ctx.fillStyle = FA_INK; ctx.fillRect(x, y, 1, 1);
+}
+// SPARK's wind-up: crackle running out down the line from his clock, bits of it hopping
+// further each frame until it reaches the spark's whole flight
+function drawSparkTele(p, a, closing, now, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SPARK_RANGE) * (0.3 + 0.7 * closing);
+  ctx.globalAlpha = 0.55 + 0.4 * closing;
+  for (let s = 12; s < L - 6; s += 18) {
+    if ((Math.floor(now * 20) + s) % 3 === 0) continue; // it flickers
+    const x0 = Math.round(p.x + nx * s - ex), y0 = Math.round(p.y - BOW_Y + ny * s - ey);
+    faberZig(x0, y0, Math.round(x0 + nx * 8), Math.round(y0 + ny * 8), now + s);
+  }
+  ctx.globalAlpha = 1;
+}
+// WIND A MACHINE's wind-up: the machine being put together on its spot, its cog turning
+// up out of the snow and its key going round
+function drawWinderTele(x, y, closing, now) {
+  ctx.globalAlpha = 0.5 + 0.5 * closing;
+  ctx.fillStyle = 'rgba(30,40,70,0.35)'; fillEllipsePx(x, y + 2, 6, 2);
+  faCog(x, y - Math.round(4 * closing), 2 + Math.round(2 * closing), 6, now * 6);
+  ctx.globalAlpha = 1;
+}
+// CLOCKSPRING's wind-up: the trap's steel jaws set open on its spot, its coil winding
+function drawSpringTele(x, y, closing, now) {
+  const open = Math.round(3 * (1 - closing)) + 1;
+  ctx.globalAlpha = 0.55 + 0.45 * closing;
+  for (const side of [-1, 1]) {
+    const jy = y + side * open - (side < 0 ? 1 : 0);
+    ctx.fillStyle = FA_INK; ctx.fillRect(x - 5, jy - 1, 11, 3);
+    ctx.fillStyle = FA_STEEL; for (let k = -4; k <= 4; k += 2) ctx.fillRect(x + k, jy, 1, 1);
+  }
+  ctx.fillStyle = Math.floor(now * 12) % 2 ? FA_BRASS : FA_DEEP; ctx.fillRect(x - 1, y - 1, 3, 2);
+  ctx.globalAlpha = 1;
+}
+// THE OLD ENGINE's wind-up: the big cog turning up at his side where it is wound, steam
+// puffing off it, and its tread pressed into the spot it will walk to
+function drawEngineTele(p, c, to, closing, now, ex, ey) {
+  const x = Math.round(c.x - ex), y = Math.round(c.y - ey);
+  faCog(x, y - 6, 3 + Math.round(3 * closing), 8, now * 4);
+  for (let k = 0; k < 3; k++) {
+    const f = (now * 1.5 + k / 3) % 1;
+    ctx.globalAlpha = 0.7 * (1 - f); ctx.fillStyle = '#e6e1d6';
+    fillEllipsePx(x + (k - 1) * 4, y - 14 - Math.round(12 * f), 2 + Math.round(2 * f), 1 + Math.round(f));
+  }
+  ctx.globalAlpha = 0.25 + 0.35 * closing; ctx.fillStyle = FA_INK;
+  const tx = Math.round(to.x - ex), ty = Math.round(to.y - ey);
+  for (const side of [-1, 1]) { ctx.fillRect(tx + side * 4 - 2, ty - 2, 4, 6); ctx.fillRect(tx + side * 4 - 3, ty - 3, 6, 2); } // its two feet
+  ctx.globalAlpha = 1;
+}
+// THE OLD ENGINE's slam: the ground split under its fist, snow and frozen earth thrown up,
+// brass sparks off the iron
+function drawSlamFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  ctx.fillStyle = '#7f98bc'; fillEllipsePx(px, py + 2, 10, 4);
+  drawCracks(px, py + 2, 9, f.r, Math.min(1, u * 5), seed, FA_INK, '#ffffff');
+  drawFlung(px, py + 2, 0, Math.PI, f.r, 0.5, 14, 16, Math.min(1, u * 1.4), seed, (x, y, k) => {
+    ctx.fillStyle = FA_INK; ctx.fillRect(x - 1, y - 1, 4, 4);
+    ctx.fillStyle = k % 3 ? '#e6e1d6' : '#8a6a50'; ctx.fillRect(x, y, 2, 2);
+  });
+  drawFlung(px, py - 4, 0, Math.PI, f.r * 0.6, 0.3, 20, 10, Math.min(1, u * 2), seed + 5, (x, y) => {
+    ctx.fillStyle = FA_BRASS; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = FA_WHITE; ctx.fillRect(x, y - 1, 1, 1);
+  });
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.slam = drawSlamFx;
+
 // ---- his machines -------------------------------------------------------------------
 // bake a grid once per side (its r is the side's colour) and once mirrored (faces left)
 const faberArtCache = {};

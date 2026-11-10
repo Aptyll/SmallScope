@@ -38,7 +38,7 @@ function drawFace(fx, fy, fs, p, sc) {
   ctx.drawImage(spr, fx + ((fs - spr.width * sc) >> 1), fy + (fs >> 1) - 7 * sc, spr.width * sc, spr.height * sc);
   ctx.restore();
 }
-function drawPortrait(now) {
+function drawPortrait(now, over) {
   const p = player, r = portraitRect();
   if (p.level > abLvSeen && abLvSeen > 0) abLvFlash = now + 0.5;
   abLvSeen = p.level;
@@ -84,10 +84,12 @@ function drawPortrait(now) {
   ctx.fillStyle = '#2b2e34'; ctx.fillRect(lx + 1, ly + 1, bw - 2, 11);
   ctx.fillStyle = BAG_WELL; ctx.fillRect(lx + 2, ly + 2, bw - 4, 9);
   drawPixelText(ctx, lv, lx + (bw >> 1) - ((lw - 1) >> 1), ly + 4, '#f4f7ff', 1);
-  // what you have of this level, and what it needs, standing over the square
-  if (p.level < LEVEL_MAX) {
+  // what you have of this level, and what it needs, standing over the square:
+  // only while the pointer is on the face or a level has just landed - the
+  // band round the square is the everyday readout
+  if (p.level < LEVEL_MAX && (hot || over)) {
     const t = Math.floor(p.xp - LEVEL_XP[p.level - 1]) + '/' + (LEVEL_XP[p.level] - LEVEL_XP[p.level - 1]);
-    drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), r.y - AB_PAD - XP_TAG + 2, hot ? '#f4f7ff' : PORT_XP_LIT, HUD_INK);
+    drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), r.y - AB_PAD - XP_TAG + 2, '#f4f7ff', HUD_INK);
   }
 }
 // THE HEALTH BAR under the ability wells: green, the number on it your health
@@ -212,11 +214,10 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 // (drawAbBuyPlate), so the well's rim carries combat states only.
 //
 // A key with no point in it is LOCKED, and the well says so plainly: dark
-// rim, the icon at LOCK_DIM,
+// rim, the icon in greys (classAbIconLocked, js/draw/abilities.js),
 // the pips all empty and the key digit dim - grey, not absent, so the strip
 // never rearranges and you can read what you have not bought yet. A press on
 // one reddens it (abDenied above).
-const LOCK_DIM = 0.28; // the locked icon's alpha
 let abCdSeen = [0, 0, 0, 0], abReadyFlash = [0, 0, 0, 0];
 function drawClassAbCell(i, now, on) {
   const p = player, ab = abOf(p, i);
@@ -245,9 +246,7 @@ function drawClassAbCell(i, now, on) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  if (lock) ctx.globalAlpha = LOCK_DIM;
-  ctx.drawImage(classAbIcon(p.cls, i), r.x + 1, r.y + 1);
-  ctx.globalAlpha = 1;
+  ctx.drawImage(lock ? classAbIconLocked(p.cls, i) : classAbIcon(p.cls, i), r.x + 1, r.y + 1);
   // a RUNNING ability owns its well: the drain bar is the readout and the
   // sweep waits until the state ends (the shield resets its cooldown on the
   // drop anyway, so a hand turning under a raised shield would be a lie)
@@ -286,25 +285,26 @@ function drawClassAbCell(i, now, on) {
   drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#8c919a' : '#f4f7ff', '#191b1f', 2);
   if (red) ctx.restore();
 }
-// The floating buy plate over ability i - a bobbing chevron made a real
-// button, spending a SKILL POINT (never gold). Drawn only while a point is
-// in hand, the key has room, and the strip is HOME (the same abLvCanBuy +
-// hudHome gate abBuyHit answers with - the plate hangs in open screen, so the
+// The buy tab over ability i - a gold tab standing on the strip's top line,
+// spending a SKILL POINT (never gold). Drawn only while a point is in hand,
+// the key has room, and the strip is HOME (the same abLvCanBuy + hudHome gate
+// abBuyHit answers with - the tab stands above the strip's line, so the
 // intro's slide does not take it with the wells and it has to leave on its
-// own), bobbing over open screen; hover lights it, and the tooltip
+// own). Its gold breathes between two steps; hover lights it, and the tooltip
 // carries the numbers.
 function drawAbBuyPlate(i, now, hot) {
-  if (!abLvCanBuy(player, i) || !hudHome()) return; // never bobbing over a cinematic the strip is hidden for
+  if (!abLvCanBuy(player, i) || !hudHome()) return; // never standing over a cinematic the strip is hidden for
   const r = abBuyRect(i);
-  const y = r.y + 2 + Math.round(Math.sin(now * 6)); // the bob stays inside the fixed hit rect
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, y + 2, AB_BUY, AB_BUY);
-  ctx.fillStyle = hot ? '#f4f7ff' : Math.sin(now * 6) > 0 ? '#f2cc6a' : '#c9a227';
-  ctx.fillRect(r.x, y, AB_BUY, AB_BUY);
+  const gold = hot ? '#f4f7ff' : Math.sin(now * 6) > 0 ? '#f2cc6a' : '#c9a227';
+  ctx.fillStyle = HUD_INK;
+  ctx.fillRect(r.x + 1, r.y, r.w - 2, 1); ctx.fillRect(r.x, r.y + 1, r.w, r.h - 1); // clipped top corners, the bottom row is the frame's own line
+  ctx.fillStyle = gold;
+  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   ctx.fillStyle = '#191b1f';
-  ctx.fillRect(r.x + 1, y + 1, AB_BUY - 2, AB_BUY - 2);
-  ctx.fillStyle = hot ? '#f4f7ff' : '#f2cc6a';
-  ctx.fillRect(r.x + 6, y + 3, 2, 8); ctx.fillRect(r.x + 3, y + 6, 8, 2);
+  ctx.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 3);
+  ctx.fillStyle = gold;
+  const cx = r.x + (r.w >> 1);
+  ctx.fillRect(cx - 1, r.y + 3, 2, 6); ctx.fillRect(cx - 3, r.y + 5, 6, 2);
 }
 // AN ITEM WELL: the item's icon on its rim - a part's green, a finished
 // item's gold (itemMetal), so a glance tells how far the build has come - and
@@ -394,7 +394,7 @@ function drawHudStrip(now) {
   // ground and one chrome, so the HUD pieces sit in the same family
   drawHudFrame(R.x - 3, R.y, R.w + 6, R.h);
   drawStatPanel(hov); // left of the portrait (js/ui/statpanel.js)
-  drawPortrait(now);
+  drawPortrait(now, !!hov && hov.kind === 'port');
   for (let i = 0; i < AB_N; i++) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);

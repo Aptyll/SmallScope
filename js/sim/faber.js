@@ -52,6 +52,7 @@ const ENGINE_HP_LV = 25;        // ...and this more for each of his levels
 const ENGINE_SPD = 46;          // px/s it walks
 const ENGINE_LEASH = 190;       // px from him the spot it walks to may be
 const ENGINE_SLAM_R = 36;       // px round it a slam reaches
+const SLAM_FX_LIFE = 0.6;       // s a slam's split ground shows (drawn: AB_FX_LOOK.slam)
 const ENGINE_SLAM_FIRST = 1;    // s before its first slam
 const ENGINE_SLAM_EVERY = 2;    // s between slams (only with a rival in reach)
 const ENGINE_HASTE = 2;         // his small machines' shots come this much faster while it runs
@@ -70,7 +71,7 @@ const FABER_AB = [
     tip: 'A SPARK THAT JUMPS TO ONE MORE RIVAL',
     blurb: 'A SPARK FLIES DOWN A LINE. THE FIRST RIVAL IT HITS IS HURT, AND IT JUMPS TO THE NEAREST OTHER RIVAL FOR PART OF THE DAMAGE.',
     use: (p) => faberSpark(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SPARK_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawSparkTele(p, a, closing, now, ex, ey), // crackle running down the line (js/draw/faber.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }),
     icon: FABER_ICON32.spark,
     bot: (p, foe, d, clear) => clear && d < SPARK_RANGE - 10,
@@ -81,7 +82,7 @@ const FABER_AB = [
     tip: 'A SMALL GUN THAT SHOOTS NEARBY RIVALS',
     blurb: 'SET DOWN A SMALL CLOCKWORK MACHINE. IT SHOOTS THE NEAREST RIVAL UNTIL IT RUNS DOWN OR IS BROKEN. YOU CAN HAVE TWO AT ONCE.',
     use: (p) => faberWinder(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, WINDER_PLACE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), 6, col, 0.5 + 0.45 * closing, closing * 0.5); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), WINDER_RANGE, col, 0.2 + 0.2 * closing, 0); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, WINDER_PLACE); drawWinderTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the machine put together on the spot (js/draw/faber.js)
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // stooped to set it down
     icon: FABER_ICON32.winder,
     bot: (p, foe, d) => d < WINDER_RANGE + 20,
@@ -92,7 +93,7 @@ const FABER_AB = [
     tip: 'A TRAP. THE FIRST RIVAL HERO IS ROOTED',
     blurb: 'SET A CLOCKSPRING TRAP ON THE GROUND. ONCE WOUND, THE FIRST RIVAL HERO TO STEP ON IT IS HELD IN PLACE AND HURT. UP TO THREE WAIT AT ONCE.',
     use: (p) => faberSpring(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, SPRING_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), SPRING_R, col, 0.5 + 0.45 * closing, closing * 0.5); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, SPRING_RANGE); drawSpringTele(Math.round(c.x - ex), Math.round(c.y - ey), closing, now); }, // the jaws set open
     pose: () => ({ dx: 0, dy: 2, rot: 0 }),
     icon: FABER_ICON32.spring, mark: 'root',
     bot: (p, foe, d) => foe instanceof Player && d < SPRING_RANGE,
@@ -103,7 +104,7 @@ const FABER_AB = [
     tip: 'A BIG MACHINE WALKS WHERE YOU POINT',
     blurb: 'WIND UP THE OLD ENGINE FOR A FEW SECONDS. IT WALKS WHERE YOU POINT AND SLAMS THE GROUND, HURTING AND STUNNING RIVALS NEAR IT. YOUR SMALL MACHINES SHOOT TWICE AS FAST WHILE IT RUNS.',
     use: (p) => faberEngine(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = faberSpot(p, ENGINE_LEASH); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), ENGINE_SLAM_R, col, 0.45 + 0.45 * closing, closing * 0.3); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawEngineTele(p, faberSpot(p, 14), faberSpot(p, ENGINE_LEASH), closing, now, ex, ey), // wound up at his side, its tread on the spot
     pose: () => ({ dx: 0, dy: -2, rot: 0 }), // the staff raised to wind it
     icon: FABER_ICON32.engine,
     bot: (p, foe, d) => foe instanceof Player && d < ENGINE_LEASH - 40 && (unitsNear(p, foe.x, foe.y, 90).filter((q) => q instanceof Player).length >= 2 || foe.hp < foe.maxHp * 0.6),
@@ -329,7 +330,7 @@ function stepEngine(b, dt) {
   }
   for (const s of structsNear(src, b.x, b.y, ENGINE_SLAM_R)) hurtStruct(s, b.dmg, src);
   if (PRACTICE) abHitDummies(b.x, b.y, ENGINE_SLAM_R, b.dmg);
-  abFx.push({ kind: 'ring', x: b.x, y: b.y, r: ENGINE_SLAM_R, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'ring', x: b.x, y: b.y, r: ENGINE_SLAM_R, t: 0, col: '#f2cc6a', fx: 'slam', life: SLAM_FX_LIFE });
   burst(b.x, b.y, '#e6e1d6', 18, 70, 0.5, true);
   sfxAt('break_', b.x, b.y);
 }

@@ -56,7 +56,7 @@ const VELOX_AB = [
     tip: 'A STONE THAT SKIPS. HITS AT EACH LANDING',
     blurb: 'A SLING STONE SKIPS ALONG THE GROUND, HITTING EVERY RIVAL WHERE IT LANDS, UP TO THREE TIMES. ON ICE IT SKIPS FURTHER.',
     use: (p) => veloxSkip(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), SKIP_GAP * SKIP_N), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawSkipTele(p, a, closing, ex, ey), // the stone's hops, a mark where each lands (js/draw/velox.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }),
     icon: VELOX_ICON32.skip,
     bot: (p, foe, d, clear) => clear && d < SKIP_GAP * SKIP_N - 6,
@@ -67,7 +67,7 @@ const VELOX_AB = [
     tip: 'A STRIP OF ICE. YOU FLY ON IT, RIVALS SKID',
     blurb: 'LAY A STRIP OF POLISHED ICE FROM YOUR FEET. YOU SKATE IT MUCH FASTER. RIVALS ON IT SKID AND TURN SLOWLY. YOUR OWN SIDE WALKS IT AS SNOW.',
     use: (p) => veloxLane(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), LANE_LEN, col, 0.45 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawLaneTele(p, a, closing, ex, ey), // the ice freezing out from her feet
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
     icon: VELOX_ICON32.lane, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < LANE_LEN,
@@ -78,7 +78,6 @@ const VELOX_AB = [
     tip: 'A SHORT DASH. YOUR NEXT THROW IS READY',
     blurb: 'SKATE A SHORT DASH. YOUR NEXT SLING THROW IS READY AT ONCE, AT FULL DRAW, AND LANDS HARDER.',
     use: (p) => veloxStep(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), QSTEP_D), col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
     icon: VELOX_ICON32.step,
     bot: (p, foe, d) => d < 70,
@@ -89,7 +88,6 @@ const VELOX_AB = [
     tip: 'SKATE FAST. EACH THROW THROWS TWO',
     blurb: 'FOR A FEW SECONDS YOU SKATE AT FULL SPEED AND SLOWS BARELY HOLD YOU. EACH SLING THROW THAT LANDS THROWS A SECOND STONE AT THE NEXT RIVAL NEAR IT.',
     use: (p) => veloxRun(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py, 14, col, 0.4 + 0.45 * closing, closing * 0.3),
     pose: () => ({ dx: 0, dy: -1, rot: 0 }),
     icon: VELOX_ICON32.run, mark: 'speed',
     bot: (p, foe, d) => foe instanceof Player && d < 170 && (foe.hp < foe.maxHp * 0.6 || p.hp < p.maxHp * 0.4),

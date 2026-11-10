@@ -253,21 +253,17 @@ function abDenied(i) {
   abFlashI = i;
   SFX.deny();
 }
-// The floating buy plate: an affordable ability level's ask hovers in the
-// open screen ABOVE the well - a bobbing chevron, made a real
-// button. The plate is the buy click and the well below stays purely the
-// cast, so the two can never steal each other's press. The rect is FIXED
-// (the bob is drawn, never hit-tested) and 3px taller than the plate so the
-// bob's whole travel stays inside it.
-const AB_BUY = 14;
-const AB_BUY_AIR = 3; // open screen between the plate's lowest bob (its shadow too) and the strip's outline
+// The buy tab: an affordable ability level's ask stands ON the strip's top
+// line, right over its well - a gold tab with a plus, made a real button.
+// The tab is the buy click and the well below stays purely the cast, so the
+// two can never steal each other's press. It shares its bottom row with the
+// frame's outline, so it reads as part of the bar and never floats.
+const AB_BUY = 11; // the tab's height, outline included
 function abBuyRect(i) {
   const r = abCellRect(i);
-  // the drawn plate sits 2 under the rect's top, bobs 1 either way and casts
-  // 2 more of shadow: all of it stays AB_BUY_AIR clear of the strip's line
-  return { x: r.x + ((r.w - AB_BUY) >> 1), y: r.y - AB_PAD - AB_BUY_AIR - AB_BUY - 5, w: AB_BUY, h: AB_BUY + 3 };
+  return { x: r.x + 3, y: r.y - AB_PAD - AB_BUY + 1, w: r.w - 6, h: AB_BUY };
 }
-// which ability's plate the pointer is on, or -1. A plate only EXISTS while
+// which ability's tab the pointer is on, or -1. A tab only EXISTS while
 // a skill point is waiting and the key has room (abLvCanBuy), so the hit
 // test is also the appears-then-goes gate - shared by the press, the
 // cursor, the tooltip and the pixels.

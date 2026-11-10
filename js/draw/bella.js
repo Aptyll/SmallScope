@@ -47,19 +47,54 @@ HERO_OVER.push({
     if (duel) { ctx.fillStyle = BELLA_GOLD; ctx.fillRect(mx - 4, my, 2, 1); ctx.fillRect(mx + 3, my, 2, 1); }
   },
 });
-// the duel's ring on the snow under the hero called out, in the caller's
-// side's colour, closing in as the duel runs out (HERO_GROUND)
+// the duel on the snow under the hero called out: her spatha laid either side of
+// their feet, points in, on a shadow in the caller's side's colour, closing on them
+// as the duel runs out (HERO_GROUND)
+function drawDuelBlade(tipX, y, dir, col) {
+  const img = bellaSpathas().flat; // its point at the left, the hilt at the right
+  ctx.fillStyle = col; ctx.fillRect(dir > 0 ? tipX - 16 : tipX, y + 2, 16, 1);
+  if (dir < 0) { ctx.drawImage(img, tipX - 1, y - 10); return; }
+  ctx.save(); ctx.translate(tipX + 1, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, y - 10); ctx.restore();
+}
 function drawBellaDuels(ex, ey, now) {
   for (const b of players) {
     if (!(b.duelT > 0)) continue;
     const q = players[b.duelId];
     if (!q || !unitAlive(q)) continue;
-    const px = Math.round(q.x - ex), py = Math.round(q.y - ey);
-    const r = 9 + Math.round(3 * b.duelT / DUEL_T);
-    drawRing(px, py + 3, r, TEAMS[skin(b.team)].mark, 0.7, 0);
-    drawRing(px, py + 3, r - 2 - Math.round(Math.sin(now * 8)), BELLA_GOLD, 0.35, 0);
+    const px = Math.round(q.x - ex), py = Math.round(q.y - ey) + 4;
+    const gap = 6 + Math.round(6 * b.duelT / DUEL_T), col = TEAMS[skin(b.team)].mark;
+    drawDuelBlade(px - gap, py, 1, col);
+    drawDuelBlade(px + gap, py, -1, col);
   }
 }
+// PERFECT PARRY's riposte: the answering thrust, a gold streak to the one it
+// struck and a flash where its point went in
+function drawRiposteFx(f, px, py, now) {
+  const u = f.t / f.life, nx = Math.cos(f.a), ny = Math.sin(f.a), run = f.r * Math.min(1, u * 5);
+  ctx.globalAlpha = u < 0.5 ? 1 : 2 * (1 - u);
+  for (let s = 6; s < run; s++) {
+    const x = Math.round(px + nx * s), y = Math.round(py + ny * s);
+    ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+  }
+  for (let s = 6; s < run; s++) {
+    const x = Math.round(px + nx * s), y = Math.round(py + ny * s);
+    ctx.fillStyle = s > run - 6 ? '#ffffff' : s % 3 ? BELLA_GOLD : '#ffd95c'; ctx.fillRect(x, y, 1, 1);
+  }
+  if (u * 5 >= 1) { // the flash at its point
+    const x = Math.round(px + nx * f.r), y = Math.round(py + ny * f.r), k = Math.round(5 * (1 - u));
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - k, y, 2 * k + 1, 1); ctx.fillRect(x, y - k, 1, 2 * k + 1);
+    ctx.fillStyle = BELLA_GOLD; ctx.fillRect(x - 1, y - 1, 3, 3);
+  }
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.riposte = drawRiposteFx;
+// GRAND GAMBIT's strikes: each a quick cut, swung from the other side to the last,
+// the finish wide and gold
+function drawFlurryFx(f, px, py, now) {
+  const gold = f.col === '#ffd95c';
+  drawSwoosh(px, py, f.a, f.r, f.half, f.t / f.life, gold ? 7 : 4, [BELLA_INK, gold ? '#ffd95c' : '#ffffff', gold ? BELLA_GOLD_D : '#a9b6c9'], f.n % 2 ? 1 : -1);
+}
+AB_FX_LOOK.flurry = drawFlurryFx;
 // ---- the spatha in her hands ---------------------------------------------------
 // Her EAGLE SPATHA (HERO_BLADES.spatha, js/draw/heroes.js): flat for the swing and
 // the wind-up, slanted at the ready in her leading hand at rest in every facing

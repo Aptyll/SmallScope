@@ -51,6 +51,41 @@ function drawVeloxGround(ex, ey, now) {
 }
 HERO_GROUND.push(drawVeloxGround);
 
+// ---- the keys' wind-ups -------------------------------------------------------------------
+// SKIP STONE: the stone's hops drawn ahead of it, each a low arc, and a splash of snow
+// where each lands (on the snow's spacing; ice carries it further)
+function drawSkipTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), n = Math.max(1, Math.ceil(SKIP_N * closing));
+  ctx.globalAlpha = 0.45 + 0.45 * closing;
+  for (let k = 0; k < n; k++) {
+    const s0 = k * SKIP_GAP, s1 = s0 + SKIP_GAP;
+    for (let s = s0 + 2; s < s1; s++) {
+      const h = Math.sin(Math.PI * (s - s0) / SKIP_GAP) * 7, x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + ny * s - ey - h);
+      if (s % 2) continue;
+      ctx.fillStyle = VX_INK; ctx.fillRect(x, y + 1, 1, 1);
+      ctx.fillStyle = VX_LIT; ctx.fillRect(x, y, 1, 1);
+    }
+    const x = Math.round(p.x + nx * s1 - ex), y = Math.round(p.y + ny * s1 - ey);
+    ctx.fillStyle = VX_DEEP; fillEllipsePx(x, y, 3, 1);
+    ctx.fillStyle = VX_WHITE; ctx.fillRect(x - 3, y - 2, 1, 1); ctx.fillRect(x + 3, y - 2, 1, 1); ctx.fillRect(x, y - 3, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+// ICE LANE: the strip freezing out from her feet down the aim, as wide as it will lie
+function drawLaneTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = LANE_LEN * closing, w = LANE_W / 2;
+  for (const [hw, col, al] of [[w, VX_DEEP, 0.4], [w - 2, VX_ICE, 0.45]]) {
+    ctx.globalAlpha = al; ctx.fillStyle = col;
+    for (let s = 0; s <= L; s++) {
+      const cx = Math.round(p.x + nx * s - ex), cy = Math.round(p.y + 4 + ny * s - ey);
+      ctx.fillRect(cx - Math.round(hw * Math.abs(ny)), cy - Math.round(hw * Math.abs(nx)), Math.round(hw * 2 * Math.abs(ny)) + 1, Math.round(hw * 2 * Math.abs(nx)) + 1);
+    }
+  }
+  ctx.globalAlpha = 0.9; ctx.fillStyle = VX_WHITE; // the freezing front
+  for (let k = -w; k <= w; k += 2) ctx.fillRect(Math.round(p.x + nx * L - ny * k - ex), Math.round(p.y + 4 + ny * L + nx * k - ey), 1, 1);
+  ctx.globalAlpha = 1;
+}
+
 // ---- on her ------------------------------------------------------------------------
 // KEEP MOVING's stacks as gold chevrons over her head, pointing the way she goes;
 // LONG RUN as white streaks off her back while it lasts

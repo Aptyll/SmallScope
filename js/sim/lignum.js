@@ -21,6 +21,7 @@ const CHOP_R = 30;              // px of wedge
 const CHOP_HALF = 0.9;          // rad either side of the aim
 const CHOP_WAIT = 3;            // s the second blow waits for the key
 const CHOP_SLOW_T = 1.5;        // s the chop slows for
+const CHOP_FX_LIFE = 0.42;      // s its cut shows (drawn: AB_FX_LOOK.chop)
 // W THROWN AXE: a hand axe down the aim; it sticks in the first rival or tree
 const AXE_SPD = 380;            // px/s
 const AXE_RANGE = 200;          // px of flight
@@ -50,7 +51,6 @@ const LIGNUM_AB = [
     use: (p) => (p.castSlam ? lignumChop(p, true) : lignumChop(p, false)),
     recast: (p) => p.chopT > 0,
     acol: '#d9a648', activeF: (p) => (p.chopT > 0 ? p.chopT / CHOP_WAIT : 0),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, CHOP_R, CHOP_HALF, col, 0.5 + 0.4 * closing, closing * 0.5),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // up, then down
     icon: LIGNUM_ICON32.chop, mark: 'slow',
     bot: (p, foe, d) => d < CHOP_R - 4,
@@ -62,7 +62,7 @@ const LIGNUM_AB = [
     blurb: 'THROW A HAND AXE DOWN A LINE. IT STICKS IN THE FIRST RIVAL OR TREE IT MEETS. PRESS AGAIN TO PULL YOURSELF TO IT.',
     use: (p) => (p.castSlam ? lignumPull(p) : lignumThrow(p)),
     recast: (p) => !!lignumStuck(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { if (!p.castSlam) drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), AXE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { if (!p.castSlam) drawAxeTele(p, a, closing, now, ex, ey); }, // the axe's spin down the line (js/draw/lignum.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // drawn back, then thrown
     icon: LIGNUM_ICON32.axe,
     bot: (p, foe, d, clear) => (lignumStuck(p) ? d > 40 : clear && foe instanceof Player && d < AXE_RANGE - 12),
@@ -73,7 +73,6 @@ const LIGNUM_AB = [
     tip: 'TAKE LESS FROM HITS. TWICE BY A PINE',
     blurb: 'YOUR SKIN HARDENS LIKE BARK FOR A FEW SECONDS: TAKE LESS FROM EVERY HIT. STANDING BESIDE A PINE, TWICE AS LITTLE.',
     use: (p) => lignumBark(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, 12, col, 0.45 + 0.4 * closing, closing * 0.5),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // set low
     icon: LIGNUM_ICON32.bark, mark: 'shield',
     bot: (p, foe, d) => d < 90 && p.hp < p.maxHp * 0.8,
@@ -84,7 +83,7 @@ const LIGNUM_AB = [
     tip: 'FELL A PINE ACROSS THEM. A WALL',
     blurb: 'FELL THE NEAREST PINE TOWARD THE AIM, OR SWING YOUR FELLING AXE WHERE NONE STANDS. THE TRUNK KNOCKS UP EVERY RIVAL IT LANDS ON AND LIES THERE A FEW SECONDS AS A WALL NOBODY WALKS THROUGH.',
     use: (p) => lignumTimber(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const L = timberLine(p, a); drawLineBox(Math.round(L.x0 - ex), Math.round(L.y0 - ey), a, L.len, TIMBER_W, col, 0.45 + 0.4 * closing, closing * 0.5); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTimberTele(timberLine(p, a), closing, now, ex, ey), // the pine's shadow tipping across (js/draw/lignum.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 2, rot: 0 }), // the felling axe up, then down
     icon: LIGNUM_ICON32.timber, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d < TIMBER_LEN - 16,
@@ -130,7 +129,7 @@ function lignumChop(p, second) {
   }
   for (const s of structsInCone(p, p.x, p.y, a, CHOP_R, CHOP_HALF)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + nx * CHOP_R * 0.5, p.y + ny * CHOP_R * 0.5, CHOP_R * 0.5, dmg);
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: CHOP_R, half: CHOP_HALF, t: 0, col: second ? '#d9a648' : '#e6ebf2' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: CHOP_R, half: CHOP_HALF, t: 0, col: second ? '#d9a648' : '#e6ebf2', fx: 'chop', life: CHOP_FX_LIFE });
   p.chopT = second ? 0 : CHOP_WAIT;
   sfxAt(second ? 'chop' : 'swing', p.x, p.y);
 }

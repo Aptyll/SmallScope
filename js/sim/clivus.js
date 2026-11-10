@@ -19,6 +19,7 @@ const FOOT_DMG = 0.4;           // its extra share
 const PICK_R = 30;              // px of wedge
 const PICK_HALF = 0.85;         // rad either side of the aim
 const PICK_HELD = 2;            // times the damage on a rival he holds (roped or rooted)
+const PICK_FX_LIFE = 0.4;       // s its cut shows (drawn: AB_FX_LOOK.pick)
 // W ROPE: a weighted rope down the aim; it ties to the first rival hero it meets
 const ROPE_SPD = 400;           // px/s
 const ROPE_RANGE = 190;         // px of flight
@@ -32,6 +33,7 @@ const VAULT_REACH = 32;         // px past VAULT_LEN he may land, where the spot
 const VAULT_HIT_R = 20;         // px around his landing a rival is struck
 const VAULT_SLOW_T = 1;         // s the landing slows for
 const VAULT_UP = 8;             // px the body rises at the top of the hop
+const VAULT_FX_LIFE = 0.5;      // s the landing's splash shows (drawn: AB_FX_LOOK.vault)
 // R ROPE RING: a ring staked around him that rivals cannot cross
 const RING_R = 52;              // px from him to the rope
 const RING_CAST_R = RING_R + 6; // px a rival is struck within as it goes up
@@ -47,7 +49,6 @@ const CLIVUS_AB = [
     tip: 'TWICE AS HARD ON A RIVAL YOU HOLD',
     blurb: 'SWING YOUR ICE AXE THROUGH THE WEDGE AHEAD. A RIVAL YOUR ROPE HOLDS, OR WHO CANNOT MOVE, TAKES TWICE AS MUCH.',
     use: (p) => clivusPick(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, PICK_R, PICK_HALF, col, 0.5 + 0.4 * closing, closing * 0.5),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // up, then down
     icon: CLIVUS_ICON32.pick,
     bot: (p, foe, d) => d < PICK_R - 4,
@@ -58,7 +59,7 @@ const CLIVUS_AB = [
     tip: 'TIE A RIVAL. STAY CLOSE TO ROOT THEM',
     blurb: 'THROW A WEIGHTED ROPE DOWN A LINE. IT TIES TO THE FIRST RIVAL HERO IT MEETS. IF THEY ARE STILL NEAR YOU WHEN THE TIE ENDS, THEY ARE ROOTED. THEY CAN RUN FAR ENOUGH TO SNAP IT.',
     use: (p) => clivusThrow(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), teleLen(p.x, p.y, Math.cos(a), Math.sin(a), ROPE_RANGE), col, 0.5 + 0.45 * closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawRopeTele(p, a, closing, now, ex, ey), // the rope whirled and paid out (js/draw/clivus.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 1, rot: 0 }), // swung back, then thrown
     icon: CLIVUS_ICON32.rope, mark: 'root',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d < ROPE_RANGE - 12,
@@ -70,12 +71,6 @@ const CLIVUS_AB = [
     blurb: 'VAULT DOWN THE AIM OVER ANYTHING IN THE WAY BUT A BUILDING: PINES, ROCKS, A FELLED TRUNK, THE CREEK. RIVALS WHERE YOU LAND ARE STRUCK AND SLOWED.',
     use: (p) => clivusVault(p),
     ok: (p) => !!vaultSpot(p, clivusAim(p)),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => {
-      const s = vaultSpot(p, a);
-      if (!s) return;
-      drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), s.d, col, 0.45 + 0.4 * closing, now, ex, ey);
-      drawRing(Math.round(s.x - ex), Math.round(s.y - ey), VAULT_HIT_R, col, 0.4 + 0.4 * closing, closing * 0.4);
-    },
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // crouched to spring
     icon: CLIVUS_ICON32.vault, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 36 && d < VAULT_LEN + 16,
@@ -86,7 +81,7 @@ const CLIVUS_AB = [
     tip: 'STAKE A RING NO RIVAL CAN CROSS',
     blurb: 'DRIVE YOUR STAKES AND STRING A ROPE RING AROUND YOU. RIVALS INSIDE ARE STRUCK, AND FOR A FEW SECONDS NO RIVAL CAN WALK ACROSS THE ROPE, IN OR OUT. YOUR SIDE STEPS OVER IT.',
     use: (p) => clivusRing(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, RING_R, col, 0.45 + 0.4 * closing, closing * 0.3),
+    tele: (p, px, py, a, col, closing) => drawRingTele(p, px, py, closing), // the stakes driven one by one (js/draw/clivus.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 2, rot: 0 }), // the axe up, then driven down
     icon: CLIVUS_ICON32.ring,
     bot: (p, foe, d) => foe instanceof Player && d < RING_R - 12,
@@ -132,7 +127,7 @@ function clivusPick(p) {
   }
   for (const s of structsInCone(p, p.x, p.y, a, PICK_R, PICK_HALF)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + nx * PICK_R * 0.5, p.y + ny * PICK_R * 0.5, PICK_R * 0.5, dmg);
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: PICK_R, half: PICK_HALF, t: 0, col: '#e6ebf2' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: PICK_R, half: PICK_HALF, t: 0, col: '#e6ebf2', fx: 'pick', life: PICK_FX_LIFE });
   sfxAt('swing', p.x, p.y);
 }
 
@@ -257,6 +252,7 @@ function vaultLand(p) {
   for (const s of structsNear(p, p.x, p.y, VAULT_HIT_R)) hurtStruct(s, p.clVaultDmg, p);
   if (PRACTICE) abHitDummies(p.x, p.y, VAULT_HIT_R, p.clVaultDmg);
   burst(p.x, p.y + 4, '#f4f7ff', 10, 50, 0.45, true);
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: VAULT_HIT_R, t: 0, col: '#f4f7ff', fx: 'vault', life: VAULT_FX_LIFE });
   sfxAt('hit', p.x, p.y);
 }
 

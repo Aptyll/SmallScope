@@ -1,9 +1,9 @@
 'use strict';
 // ------------------------------------------------------------ aura
 // AURA's pixels (her rules: js/sim/aura.js): her staff's star bolt in flight
-// (HERO_SHOTS), and on the snow (HERO_GROUND) the FALLING STAR's ring filling
-// in as the strike nears, the DRIFTING LIGHT's orb and its glow, and THE
-// CURTAIN's band brightening until it falls. Both sides see all of it: the
+// (HERO_SHOTS), and on the snow (HERO_GROUND) the FALLING STAR's light pooling
+// as the strike nears, the DRIFTING LIGHT's orb and its glow, and THE
+// CURTAIN's ribbons rising until it falls. Both sides see all of it: the
 // telegraph is the whole fairness of a strike from that far.
 
 const AU_INK = '#0a0e23', AU_STAR = '#fff3b0', AU_WHITE = '#ffffff', AU_PALE = '#e6f8ff', AU_GREEN = '#86f0bf', AU_TEAL = '#2fae7c';
@@ -24,40 +24,100 @@ function drawStarBolt(a, sx, sy, now) {
 HERO_SHOTS.starbolt = drawStarBolt;
 
 // ---- on the snow --------------------------------------------------------------------
-// the FALLING STAR's ring at (px, py): the rim, the small centre ring, and the
-// hatch filling in as `fill` runs 0..1
-function drawStarRing(px, py, col, alpha, fill) {
-  drawRing(px, py, STAR_R, col, alpha, fill);
-  drawRing(px, py, STAR_CORE, AU_WHITE, alpha * 0.9, 0);
+// a four-point twinkle at (x, y), `r` px out each way
+function auTwinkle(x, y, r, col) {
+  ctx.fillStyle = AU_INK; ctx.fillRect(x - r, y - 1, 2 * r + 1, 3); ctx.fillRect(x - 1, y - r, 3, 2 * r + 1);
+  ctx.fillStyle = col; ctx.fillRect(x - r + 1, y, 2 * r - 1, 1); ctx.fillRect(x, y - r + 1, 1, 2 * r - 1);
+  ctx.fillStyle = AU_WHITE; ctx.fillRect(x, y, 1, 1);
 }
-// THE CURTAIN's band from (px, py) out along (nx, ny), `len` px: its two edges
-// dashed, and lit between them as `fill` runs 0..1 (the fall's nearness)
-function drawCurtainBand(px, py, nx, ny, len, col, alpha, fill) {
-  const h = CURTAIN_HALF;
-  ctx.globalAlpha = alpha;
-  for (let s = 6; s <= len; s += 4) {
-    const cx = px + nx * s, cy = py + ny * s;
-    if (cx < -h - 4 || cy < -h - 4 || cx > WV_W + h + 4 || cy > WV_H + h + 4) continue;
-    for (const k of [-h, h]) {
-      const x = Math.round(cx - ny * k), y = Math.round(cy + nx * k);
-      ctx.fillStyle = AU_INK; ctx.fillRect(x, y + 1, 2, 1);
-      ctx.fillStyle = col; ctx.fillRect(x, y, 2, 1);
+// the FALLING STAR's light on the snow at (px, py), `k` 0..1 the fall's nearness: a
+// pale pool out to its reach with the brighter heart where it strikes harder, and
+// twinkles turning round the pool's edge, more of them as it nears
+function drawStarPool(px, py, k, now) {
+  ctx.globalAlpha = 0.3 + 0.35 * k; ctx.fillStyle = '#e8c25a'; fillEllipsePx(px, py, STAR_R, STAR_R); // its light's warm edge
+  ctx.fillStyle = AU_STAR; fillEllipsePx(px, py, STAR_R - 2, STAR_R - 2);
+  ctx.globalAlpha = 0.4 + 0.5 * k; ctx.fillStyle = AU_WHITE; fillEllipsePx(px, py, STAR_CORE, STAR_CORE);
+  ctx.globalAlpha = 1;
+  const n = 3 + Math.round(5 * k);
+  for (let i = 0; i < n; i++) {
+    const t = now * 0.8 + i * Math.PI * 2 / n;
+    auTwinkle(Math.round(px + Math.cos(t) * STAR_R), Math.round(py + Math.sin(t) * STAR_R), Math.floor(now * 6 + i) % 3 ? 2 : 3, AU_STAR);
+  }
+}
+// its strike: a flash at the heart, rays of light out to the reach, sparks thrown
+function drawStarFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f), go = Math.min(1, u * 4);
+  ctx.globalAlpha = Math.max(0, 1 - u);
+  ctx.fillStyle = AU_WHITE; fillEllipsePx(px, py, Math.round(STAR_CORE * (1 - u)), Math.round(STAR_CORE * (1 - u)));
+  for (let i = 0; i < 8; i++) {
+    const t = i * Math.PI / 4 + 0.2, c = Math.cos(t), sn = Math.sin(t);
+    for (let r = STAR_CORE * go; r < f.r * go; r++) {
+      ctx.fillStyle = r > f.r * go - 4 ? AU_WHITE : AU_STAR; ctx.fillRect(Math.round(px + c * r), Math.round(py + sn * r), 1, 1);
     }
   }
-  if (fill > 0) {
-    ctx.globalAlpha = alpha * 0.45 * fill;
-    ctx.fillStyle = col;
-    for (let s = 6; s <= len; s += 3) {
-      const cx = px + nx * s, cy = py + ny * s;
-      if (cx < -h - 4 || cy < -h - 4 || cx > WV_W + h + 4 || cy > WV_H + h + 4) continue;
-      for (let k = -h + 2; k <= h - 2; k += 3) {
-        if ((Math.round(s / 3) + Math.round(k / 3)) % 2) continue;
-        ctx.fillRect(Math.round(cx - ny * k), Math.round(cy + nx * k), 1, 1);
-      }
+  drawFlung(px, py, 0, Math.PI, f.r + 6, 0.5, 12, 12, Math.min(1, u * 1.3), seed, (x, y, k) => auTwinkle(x, y, 1, k % 2 ? AU_STAR : AU_PALE));
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.star = drawStarFx;
+// a band of light laid from (px, py) out along (nx, ny), `len` px, `h` either side:
+// drawn as one span a column (or a row) so it is solid, with no seams
+function auBand(px, py, nx, ny, len, h, col, alpha) {
+  const flat = Math.abs(nx) >= Math.abs(ny), w = Math.round(h / Math.max(Math.abs(nx), Math.abs(ny)));
+  ctx.globalAlpha = alpha; ctx.fillStyle = col;
+  const step = 1 / Math.max(Math.abs(nx), Math.abs(ny));
+  for (let s = 6; s <= len; s += step) {
+    const x = Math.round(px + nx * s), y = Math.round(py + ny * s);
+    if (x < -w - 2 || y < -w - 2 || x > WV_W + w + 2 || y > WV_H + w + 2) continue;
+    if (flat) ctx.fillRect(x, y - w, 1, 2 * w + 1); else ctx.fillRect(x - w, y, 2 * w + 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+// DRIFTING LIGHT's wind-up: a soft glow laid down the way the orb will drift, out
+// further as she readies it, and the orb gathering at her staff
+function drawOrbTele(p, px, py, a, closing, now, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), len = auraReach(p, ORB_LEN) * (0.3 + 0.7 * closing);
+  auBand(p.x - ex, p.y + 6 - ey, nx, ny, len, 3, '#7cc4e8', 0.3 + 0.3 * closing);
+  const r = 1 + Math.round(2 * closing), x = Math.round(px + nx * 10), y = Math.round(py - 8 + ny * 6);
+  auDisc(x, y, r + 1, AU_INK); auDisc(x, y, r, '#7cc4e8'); if (r > 1) auDisc(x, y, r - 1, AU_WHITE);
+}
+// STEP OF LIGHT's going: motes of light left rising off the snow where she stood
+function drawStepFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  for (let k = 0; k < 16; k++) {
+    const t = fxRoll(seed, k, 1) * Math.PI * 2, d = f.r * Math.sqrt(fxRoll(seed, k, 2));
+    const x = Math.round(px + Math.cos(t) * d), y = Math.round(py + Math.sin(t) * d - u * (14 + 10 * fxRoll(seed, k, 3)));
+    ctx.globalAlpha = Math.max(0, 1 - u * (0.8 + 0.4 * fxRoll(seed, k, 4)));
+    if (k % 4) { ctx.fillStyle = '#7cc4e8'; ctx.fillRect(x, y + 1, 2, 1); ctx.fillStyle = k % 3 ? AU_WHITE : AU_STAR; ctx.fillRect(x, y, 2, 1); }
+    else auTwinkle(x, y, 2, AU_PALE);
+  }
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.step = drawStepFx;
+// THE CURTAIN gathering over its band from (px, py) out along (nx, ny), `len` px,
+// `k` 0..1 the fall's nearness: the snow under it lit, and short ribbons of light
+// beginning to stand up off it, taller as the fall nears
+function drawCurtainRise(px, py, nx, ny, len, k, now) {
+  auBand(px, py, nx, ny, len, CURTAIN_HALF, AU_GREEN, 0.12 + 0.18 * k);
+  const h = Math.round(8 + 18 * k);
+  for (let s = 6, i = 0; s <= len; s += 6, i++) {
+    const bx = px + nx * s, by = py + ny * s;
+    if (bx < -10 || bx > WV_W + 10 || by < -4 || by > WV_H + h + 4) continue;
+    const sway = Math.sin(now * 3 + i * 0.7);
+    for (let y = 0; y < h; y++) {
+      const t = y / h;
+      ctx.globalAlpha = (0.6 + 0.4 * k) * (1 - t * 0.7);
+      ctx.fillStyle = t < 0.3 ? AU_PALE : i % 3 ? AU_GREEN : AU_TEAL;
+      ctx.fillRect(Math.round(bx + sway * t), Math.round(by - y - (i % 3) * 2), 2, 1);
     }
   }
   ctx.globalAlpha = 1;
 }
+// its fall: the band's snow flashed white, gone in a beat
+function drawCurtainFx(f, px, py, now) {
+  const u = f.t / f.life;
+  auBand(px, py, Math.cos(f.a), Math.sin(f.a), f.r, f.half, AU_WHITE, 0.6 * (1 - u));
+}
+AB_FX_LOOK.curtain = drawCurtainFx;
 // a round blot of `r` px at (px, py), one row at a time
 function auDisc(px, py, r, col) {
   ctx.fillStyle = col;
@@ -86,7 +146,7 @@ function drawAuraGround(ex, ey, now) {
     const px = Math.round(s.x - ex), py = Math.round(s.y - ey);
     if (px < -STAR_R - 4 || py < -STAR_R - 40 || px > WV_W + STAR_R + 4 || py > WV_H + STAR_R + 4) continue;
     const k = Math.min(1, s.t / s.delay);
-    drawStarRing(px, py, AU_STAR, 0.55 + 0.4 * k, k);
+    drawStarPool(px, py, k, now);
     // the star itself, coming down onto its ring
     const h = Math.round(36 * (1 - k)), sx = px + Math.round(10 * (1 - k)), sy = py - h;
     ctx.fillStyle = AU_INK; ctx.fillRect(sx - 1, sy - 2, 3, 5); ctx.fillRect(sx - 2, sy - 1, 5, 3);
@@ -108,7 +168,7 @@ function drawAuraGround(ex, ey, now) {
   for (const c of auraCurtains) {
     if (c.t >= c.delay) { drawCurtainFall(c, ex, ey, now, (c.t - c.delay) / CURTAIN_GLOW); continue; }
     const k = Math.min(1, c.t / c.delay);
-    drawCurtainBand(c.x - ex, c.y - ey, c.nx, c.ny, c.len, AU_GREEN, 0.55 + 0.4 * k, k);
+    drawCurtainRise(c.x - ex, c.y - ey, c.nx, c.ny, c.len, k, now);
   }
 }
 HERO_GROUND.push(drawAuraGround);

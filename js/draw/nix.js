@@ -62,6 +62,34 @@ function drawNixShard(s, ex, ey) {
     ctx.fillStyle = k < 2 ? '#ffffff' : k < 4 ? NIX_ICE : NIX_ICE_D; ctx.fillRect(px, py, 1, 1);
   }
 }
+// ICE SHARD's wind-up: frost creeping out down the line it will fly, a thin glaze on
+// the snow with crystals pricking up off it, to the first tree or wall on it
+function drawShardTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, SHARD_LEN) * (0.35 + 0.65 * closing);
+  for (let s = 8, last = 0; s < L; s++) {
+    const x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + 3 + ny * s - ey);
+    ctx.fillStyle = NIX_ICE_D; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = s > L - 4 ? '#ffffff' : NIX_ICE; ctx.fillRect(x, y, 1, 1);
+    if (s - last > 5 && s < L - 6 && fxRoll(p.id, s, 3) < 0.3) { // a crystal pricking up, to a point, taller as the throw nears
+      last = s;
+      const h = 2 + Math.round(2 * closing + 2 * fxRoll(p.id, s, 4)), lean = fxRoll(p.id, s, 5) < 0.5 ? -1 : 1;
+      ctx.fillStyle = NIX_INK; ctx.fillRect(x - 1, y - h + 1, 3, h); ctx.fillRect(x + (h > 3 ? lean : 0), y - h, 1, 1);
+      ctx.fillStyle = NIX_ICE_D; ctx.fillRect(x, y - h + 2, 1, h - 2);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y - h + 1, 1, 1);
+    }
+  }
+}
+// WHITEOUT's strike: she bursts up out of the snow, a white cut of her dirks and the
+// powder thrown up round her
+function drawWhiteStrikeFx(f, px, py, now) {
+  const u = f.t / f.life;
+  drawSwoosh(px, py, f.a, f.r, f.half, u, 5, [NIX_INK, '#ffffff', NIX_ICE_D], 1);
+  drawFlung(px, py + 4, 0, Math.PI, 18, 0.3, 12, 12, Math.min(1, u * 1.4), fxSeed(f), (x, y, k) => {
+    ctx.fillStyle = NIX_SNOW_D; ctx.fillRect(x, y + 1, 2, 1);
+    ctx.fillStyle = k % 3 ? NIX_SNOW : NIX_ICE; ctx.fillRect(x, y, 2, 1);
+  });
+}
+AB_FX_LOOK.white = drawWhiteStrikeFx;
 function drawNixGround(ex, ey) { for (const c of nixClouds) drawNixCloudShadow(c, ex, ey); }
 function drawNixAir(ex, ey, now) {
   for (const c of nixClouds) drawNixCloud(c, ex, ey, now);

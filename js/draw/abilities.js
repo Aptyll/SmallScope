@@ -72,19 +72,6 @@ function drawRing(px, py, r, col, alpha, fill) {
   ctx.globalAlpha = 1;
 }
 
-// a dashed line marching from (x0, y0) out along (nx, ny) for `len` px - a
-// shot's or a dash's telegraph
-function drawTeleLine(x0, y0, nx, ny, len, col, alpha, now, ex, ey) {
-  const march = (now * 60) % 4; // dashes crawl toward the landing
-  ctx.globalAlpha = alpha;
-  for (let s = 10 + march; s < len; s += 4) {
-    const px = Math.round(x0 + nx * s - ex), py = Math.round(y0 + ny * s - ey);
-    if (px < -2 || py < -2 || px > WV_W + 2 || py > WV_H + 2) continue;
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(px, py + 1, 1, 1);
-    ctx.fillStyle = col; ctx.fillRect(px, py, 1, 1);
-  }
-  ctx.globalAlpha = 1;
-}
 // the sword's sweep, drawn over the bodies (js/render.js beside the E swing
 // arcs): the wedge it reached, fading, and a bright edge sweeping across it
 function drawSlashes(ex, ey) {
@@ -104,6 +91,106 @@ function drawSlashes(ex, ey) {
       }
     }
     ctx.globalAlpha = 1;
+  }
+}
+
+// ---- a key's own look ----
+// A key worth reading is drawn as the thing it is - fire bursting out of
+// the snow, water churning, snow blown flat by a howl - never as one more
+// dotted ring. A landing that names `fx` is drawn by AB_FX_LOOK[fx](f, px, py,
+// now) (registered by the hero's draw file) for its own `life`, and the
+// row's `tele` draws that same thing gathering. The helpers below are the
+// shared pixel pieces those looks are built from.
+const AB_FX_LOOK = {};
+// n points spread evenly over a disc of radius 1 (a sunflower spiral: no rng,
+// the same on every screen), as [x, y, r]
+const fxSpotCache = {};
+function fxSpots(n) {
+  if (fxSpotCache[n]) return fxSpotCache[n];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.sqrt((i + 0.5) / n), t = i * 2.39996;
+    out.push([Math.cos(t) * r, Math.sin(t) * r, r]);
+  }
+  return (fxSpotCache[n] = out);
+}
+// a flat ellipse of whole pixels, one rect a row
+function fillEllipsePx(cx, cy, rx, ry) {
+  cx = Math.round(cx); cy = Math.round(cy);
+  for (let dy = -ry; dy <= ry; dy++) {
+    const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / ((ry + 0.5) * (ry + 0.5)))));
+    if (w > 0) ctx.fillRect(cx - w, cy + dy, w * 2 + 1, 1);
+  }
+}
+// one tongue of flame standing on (x, y), h px tall, w px wide at the foot,
+// licking with phase ph: dark red rim, orange body, a yellow heart
+function drawFlameTongue(x, y, h, w, ph) {
+  x = Math.round(x); y = Math.round(y);
+  if (h < 1) return;
+  for (let c = 0; c < w; c++) {
+    const edge = Math.abs(c - (w - 1) / 2) / Math.max(1, w / 2);
+    const ch = Math.max(1, Math.round(h * (1 - edge * 0.65) + Math.sin(ph + c * 1.7) * 1.2));
+    ctx.fillStyle = '#a8321f'; ctx.fillRect(x - (w >> 1) + c, y - ch, 1, ch);
+    if (ch > 2) { ctx.fillStyle = '#ff7a2e'; ctx.fillRect(x - (w >> 1) + c, y - ch + 1, 1, ch - 1); }
+    if (ch > 4 && edge < 0.5) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(x - (w >> 1) + c, y - Math.round(ch * 0.55), 1, Math.round(ch * 0.4)); }
+  }
+}
+
+// one 0..1 roll for piece k of the look seeded `seed`: the same every frame and
+// on every screen (a look seeds off where it landed)
+function fxRoll(seed, k, j) { return hash2(seed + k * 131, j * 977 + 17); }
+function fxSeed(f) { return (Math.round(f.x) * 7 + Math.round(f.y) * 13) | 0; }
+// A blade's cut: a crescent swept across the wedge (a, half) out to r, the trail a
+// swing leaves, thick at its middle and thin at its tips. `u` 0..1 is its life: it
+// sweeps across in the first half (from the side `dir` names, 1 or -1), then fades.
+// cols: [ink, body, the shaded inner edge]; w its thickness at the middle.
+function drawSwoosh(px, py, a, r, half, u, w, cols, dir) {
+  const reveal = Math.min(1, u * 2.2), n = Math.max(8, Math.ceil(r * half * 2.4));
+  ctx.globalAlpha = u < 0.45 ? 1 : Math.max(0, 1 - (u - 0.45) / 0.55);
+  for (let pass = 0; pass < 3; pass++) {
+    ctx.fillStyle = cols[pass];
+    for (let i = 0; i <= n; i++) {
+      const f = i / n;
+      if (f > reveal) break;
+      const t = a + dir * half * (2 * f - 1), c = Math.cos(t), s = Math.sin(t);
+      const th = Math.max(1, Math.round(w * Math.pow(Math.sin(Math.PI * f), 0.7)));
+      const r0 = pass === 0 ? r - th - 1 : pass === 1 ? r - th : r - th, r1 = pass === 0 ? r + 1 : pass === 1 ? r : r - th + Math.max(1, th >> 2);
+      for (let k = r0; k <= r1; k++) ctx.fillRect(Math.round(px + c * k), Math.round(py + s * k), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// Pieces thrown out from (px, py) and falling back, over u 0..1: n of them, each on a
+// bearing within `half` of `a` (Math.PI: all round), landing between r*near and r, at
+// most `up` px high. paint(x, y, k, land) draws piece k; its shadow is drawn here.
+function drawFlung(px, py, a, half, r, near, up, n, u, seed, paint) {
+  const go = 1 - (1 - u) * (1 - u);
+  for (let k = 0; k < n; k++) {
+    const t = a + (fxRoll(seed, k, 1) * 2 - 1) * half;
+    const d = r * (near + (1 - near) * fxRoll(seed, k, 2)) * go;
+    const z = up * (0.5 + 0.5 * fxRoll(seed, k, 3)) * 4 * u * (1 - u);
+    const x = Math.round(px + Math.cos(t) * d), y = Math.round(py + Math.sin(t) * d);
+    ctx.fillStyle = 'rgba(40,52,90,0.3)'; ctx.fillRect(x, y + 1, 2, 1);
+    paint(x, Math.round(y - z), k, u > 0.9);
+  }
+}
+// Cracks run out from (px, py): n jagged lines, each `len` px at full, grown to `grow`
+// of that. dark is the split, lite the lit lip under it.
+function drawCracks(px, py, n, len, grow, seed, dark, lite) {
+  for (let k = 0; k < n; k++) {
+    let t = (k + fxRoll(seed, k, 4) * 0.6) / n * Math.PI * 2, x = px, y = py;
+    const L = len * (0.6 + 0.4 * fxRoll(seed, k, 5)) * grow;
+    for (let s = 0; s < L; s += 2) {
+      t += (fxRoll(seed, k, 10 + s) - 0.5) * 0.9;
+      const mx = x + Math.cos(t), my = y + Math.sin(t); // the step's middle too: an unbroken split, not dots
+      x += Math.cos(t) * 2; y += Math.sin(t) * 2;
+      ctx.fillStyle = lite; ctx.fillRect(Math.round(mx), Math.round(my) + 1, 1, 1); ctx.fillRect(Math.round(x), Math.round(y) + 1, 1, 1);
+      ctx.fillStyle = dark; ctx.fillRect(Math.round(mx), Math.round(my), 1, 1); ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+      if (s > 6 && fxRoll(seed, k, 40 + s) < 0.12) { // a short branch off it
+        const b = t + (fxRoll(seed, k, 60 + s) < 0.5 ? 0.9 : -0.9);
+        ctx.fillStyle = dark; ctx.fillRect(Math.round(x + Math.cos(b) * 2), Math.round(y + Math.sin(b) * 2), 1, 1);
+      }
+    }
   }
 }
 
@@ -131,6 +218,8 @@ function drawAbilityGround(ex, ey, now) {
   for (const f of abFx) {
     const px = Math.round(f.x - ex), py = Math.round(f.y - ey);
     if (px < -60 || py < -60 || px > WV_W + 60 || py > WV_H + 60) continue;
+    const look = f.fx && AB_FX_LOOK[f.fx];
+    if (look) { look(f, px, py, now); continue; } // a key with a look of its own (a hero's draw file)
     const prog = f.t / AB_FX_T;
     const alpha = 0.9 * (1 - prog);
     if (f.kind === 'wedge') drawWedge(px, py, f.a, f.r + prog * 3, f.half, f.col, alpha, 1 - prog);
@@ -346,6 +435,27 @@ function classAbIcon(cls, i) {
   if (!cv) {
     cv = bakeAbRow(cls, CLASS_AB[cls][i]);
     ab32Cache.set(key, cv);
+  }
+  return cv;
+}
+// ...and the same icon for a key no point has been spent on: its shapes kept,
+// its colour taken out and its values pressed into the HUD's own greys, so a
+// locked well reads as "this, not yet" on the dark strip (drawClassAbCell)
+const abLockCache = new Map();
+function classAbIconLocked(cls, i) {
+  const key = cls + ':' + i;
+  let cv = abLockCache.get(key);
+  if (!cv) {
+    const src = classAbIcon(cls, i);
+    cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
+    const g = cv.getContext('2d'); g.drawImage(src, 0, 0);
+    const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data;
+    for (let k = 0; k < d.length; k += 4) {
+      const v = 30 + (d[k] * 0.3 + d[k + 1] * 0.59 + d[k + 2] * 0.11) * 0.42;
+      d[k] = v; d[k + 1] = v + 2; d[k + 2] = v + 7;
+    }
+    g.putImageData(im, 0, 0);
+    abLockCache.set(key, cv);
   }
   return cv;
 }

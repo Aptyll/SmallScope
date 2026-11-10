@@ -18,10 +18,12 @@ const RESOLVE_SHIELD_T = 4;     // ...held for this long
 const VERDICT_LEN = 64;         // px of line
 const VERDICT_HALF = 9;         // px either side of it
 const VERDICT_MID = [0.4, 0.75]; // the stretch of the line that is its centre: knocked up there
+const VERDICT_FX_LIFE = 0.6;    // s its split shows (drawn: AB_FX_LOOK.verdict)
 // W HOLD THE LINE: braced behind the shield, the front takes less; a hero who
 // strikes the front primes the bash, the key again
 const BASH_R = 30, BASH_HALF = 0.85; // the bash's wedge, the slam's shape
 const BASH_KB = 150;
+const BASH_FX_LIFE = 0.35;      // s its sweep shows (AB_FX_LOOK.bash)
 // E VETERAN'S MARCH: a charge that shoulders soldiers and beasts aside and
 // stops dead on the first hero, stunning them
 const MARCH_SPD = 280;
@@ -30,6 +32,7 @@ const MARCH_RAMP = 0.08;
 const MARCH_SHOVE = 160;        // px/s a lesser body is thrown off the line
 // R THE OLD GUARD: the standard planted; a ring his side stands in
 const GUARD_R = 72;             // px
+const GUARD_FX_LIFE = 0.6;      // s the planting's cracks show (AB_FX_LOOK.guard)
 const GUARD_EDGE = 80;          // px past the rim a fleeing rival is still caught by it (a dodge roll out included)
 
 const guards = []; // {x, y, team, owner, t, n, life, armor, ten, slow, slowT} - the planted standards, stepped by updateGuards, each carrying its planter's rank
@@ -52,7 +55,7 @@ const ARM_AB = [
     tip: 'LINE SLAM. SLOWS. THE MIDDLE KNOCKS UP',
     blurb: 'THE SWORD COMES DOWN IN A LINE. SLOWS ALL IT HITS. THE MIDDLE OF THE LINE THROWS THEM UP.',
     use: (p) => armVerdict(p),
-    tele: (p, px, py, a, col, closing) => drawVerdictTele(px, py, a, col, closing),
+    tele: (p, px, py, a, col, closing, now) => drawVerdictTele(p, px, py, a, closing, now), // the sword's shadow down the line (js/draw/armatos.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.75 ? -Math.round(3 * prog / 0.75) : 2, rot: 0 }), // up, then down
     icon: ARM_ICON32.verdict,
     bot: (p, foe, d, clear) => clear && d < VERDICT_LEN - 6,
@@ -63,7 +66,6 @@ const ARM_AB = [
     tip: 'BLOCK THE FRONT. AGAIN TO BASH',
     blurb: 'BRACE BEHIND THE SHIELD: THE FRONT TAKES LESS. A HERO WHO STRIKES IT PRIMES THE BASH. PRESS AGAIN TO BASH.',
     use: (p) => (p.castSlam ? armBash(p) : armBrace(p)),
-    tele: (p, px, py, a, col, closing) => { if (p.castSlam) drawWedge(px, py, a, BASH_R, BASH_HALF, p.holdHit ? TELE_HOT : col, 0.55 + 0.4 * closing, closing); }, // the bash's wedge; the raise shows none
     acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 && p.hold ? p.shieldT / abRk(p, 'hold', 't') : 0),
     icon: ARM_ICON32.hold, mark: 'shield',
     bot: (p, foe, d) => (p.shieldT > 0 && p.hold
@@ -76,7 +78,7 @@ const ARM_AB = [
     tip: 'CHARGE. STUNS THE FIRST HERO HIT',
     blurb: 'CHARGE. SOLDIERS AND BEASTS ARE SHOVED ASIDE. THE FIRST HERO IN THE WAY STOPS YOU AND IS STUNNED.',
     use: (p) => armMarch(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawMarchTele(p, a, col, closing, now, ex, ey),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawMarchTele(p, a, closing, ex, ey), // his boot prints down the charge
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0.14 * (p.dir === 'left' ? -1 : 1) }), // head down
     icon: ARM_ICON32.march, mark: 'stun',
     bot: (p, foe, d, clear) => clear && foe instanceof Player && d > 34 && d < MARCH_SPD * MARCH_T - 10,
@@ -87,7 +89,7 @@ const ARM_AB = [
     tip: 'ALLIES INSIDE GAIN ARMOR',
     blurb: 'PLANT THE STANDARD. YOUR SIDE INSIDE TAKES LESS AND IS STUNNED FOR LESS. RIVALS WHO RUN FROM IT ARE SLOWED.',
     use: (p) => armGuard(p),
-    tele: (p, px, py, a, col, closing) => drawRing(px, py + 2, GUARD_R, col, 0.45 + 0.4 * closing, closing * 0.5),
+    tele: (p, px, py, a, col, closing) => drawGuardTele(p, px, py, closing), // the shields coming up round its reach
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the standard driven down
     icon: ARM_ICON32.guard, mark: 'shield',
     bot: (p, foe, d) => d < GUARD_R && (guardAllies(p) >= 2 || p.hp < p.maxHp * 0.5),
@@ -146,7 +148,7 @@ function armVerdict(p) {
     for (const st of structsNear(p, p.x + nx * s, p.y + ny * s, VERDICT_HALF)) if (!seen.includes(st)) { seen.push(st); hurtStruct(st, dmg, p); }
   }
   if (PRACTICE) abHitDummies(p.x + nx * VERDICT_LEN / 2, p.y + ny * VERDICT_LEN / 2, VERDICT_LEN / 2, dmg);
-  abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a, r: VERDICT_LEN, half: VERDICT_HALF, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a, r: VERDICT_LEN, half: VERDICT_HALF, t: 0, col: '#f4f7ff', fx: 'verdict', life: VERDICT_FX_LIFE });
   // the crack running down the line
   for (let s = 6; s < VERDICT_LEN; s += 6) burst(p.x + nx * s, p.y + 2 + ny * s, s % 12 ? '#eef4fb' : '#cfd8e8', 2, 30, 0.35, true);
   sfxAt('break_', p.x, p.y);
@@ -191,7 +193,7 @@ function armBash(p) {
   }
   for (const s of structsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + nx * BASH_R * 0.5, p.y + ny * BASH_R * 0.5, BASH_R * 0.5, dmg);
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: BASH_R, half: BASH_HALF, t: 0, col: primed ? '#ffd95c' : '#c8d2e4' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: BASH_R, half: BASH_HALF, t: 0, col: primed ? '#ffd95c' : '#c8d2e4', fx: 'bash', life: BASH_FX_LIFE });
   burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
   abShieldDown(p, true);
   sfxAt('hit', p.x, p.y);
@@ -250,7 +252,7 @@ function armGuard(p) {
   const rk = (k) => abRk(p, 'guard', k); // the rank he planted it at stays with the standard
   guards.push({ x: p.x, y: p.y, team: p.team, owner: p.id, t: 0, n: ++guardN,
     life: rk('t'), armor: rk('armor'), ten: rk('ten'), slow: rk('slow'), slowT: rk('slowT') });
-  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: GUARD_R, t: 0, col: '#f2cc6a' });
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: GUARD_R, t: 0, col: '#f2cc6a', fx: 'guard', life: GUARD_FX_LIFE });
   burst(p.x, p.y + 2, '#eef4fb', 14, 60, 0.5, true);
   sfxAt('break_', p.x, p.y);
 }

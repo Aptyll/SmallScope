@@ -41,5 +41,5 @@ which also carries a setting across to a screen with other stops; `hudSc()` is t
 `renderSettings` draws the strip live over the slab — the minimap slider's
 preview grammar.
 
-The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill
+The strip's **upgrade** half is entirely the buy tabs standing on the strip over these wells — a skill
 point is spent nowhere else, and nothing else on the strip is ever bought.
