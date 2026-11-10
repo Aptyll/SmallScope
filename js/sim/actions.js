@@ -12,9 +12,6 @@
 // in the hands the moment the swing ends. Which objects E works is their
 // OBJECTS entry's `work`.
 const BOW_Y = 6;          // arrows spawn (and are aimed from) this far above the player's feet
-const ARROW_TRAIL_STEP = 4;    // px of flight between trail motes (distance, not time, so a
-const ARROW_TRAIL_LIFE = 0.22; // slow arrow streaks as evenly as a fast one); motes fade over
-const ARROW_TRAIL_A = 0.7;     // their whole life from this alpha, so the tail thins out behind
 const ARROW_RIM = '#0d1226';  // 1px dark rim under the shaft, so it reads over snow
 // The arrow's body, one ASCII master: i runs 0 (tip) .. ARROW_LEN (tail) along
 // the flight, j -3..+3 across it. W the white tip, F the flint head, B the

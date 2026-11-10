@@ -185,7 +185,7 @@ function arcusVolley(p) {
     const a = a0 - VOLLEY_HALF + (2 * VOLLEY_HALF * k) / (VOLLEY_N - 1);
     arrows.push({
       x: p.x, y: p.y - BOW_Y, vx: Math.cos(a) * VOLLEY_SPD, vy: Math.sin(a) * VOLLEY_SPD,
-      t: 0, life: VOLLEY_RANGE / VOLLEY_SPD, dmg, pow: 1, owner: p.id, team: p.team, trailD: 0,
+      t: 0, life: VOLLEY_RANGE / VOLLEY_SPD, dmg, pow: 1, owner: p.id, team: p.team,
       solid: true, kb: 0.6, col: '#c8a46a', ab: 'volley', hit: 'volley',
       ang: a, spd: VOLLEY_SPD, ox: p.x, oy: p.y - BOW_Y,
     });
@@ -216,7 +216,7 @@ function arcusGather(p) {
     const y0 = s.y - 3, dx = p.x - s.x, dy = y1 - y0, d = Math.hypot(dx, dy) || 1, a = Math.atan2(dy, dx);
     arrows.push({
       x: s.x, y: y0, vx: dx / d * GATHER_SPD, vy: dy / d * GATHER_SPD,
-      t: 0, life: d / GATHER_SPD, dmg, pow: 1, owner: p.id, team: p.team, trailD: 0,
+      t: 0, life: d / GATHER_SPD, dmg, pow: 1, owner: p.id, team: p.team,
       solid: true, kb: 0.3, col: '#c8a46a', ab: 'gather', hit: 'gather', gid,
       pierce: true, pierceHit: [], ang: a, spd: GATHER_SPD, ox: s.x, oy: y0,
     });

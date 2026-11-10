@@ -149,17 +149,15 @@ plus-shaped 1 px dark edge) so the shaft reads over snow. `drawShaft` (js/draw/r
 it, which is why the view cull uses the widened ±22 bound. The whole body is 16 long by 7 deep —
 one 16×16 sprite cell, the scale everything else in the world is drawn at.
 
-Behind it, each shot lays a **trail of team-coloured motes** into `particles`, one every
-`ARROW_TRAIL_STEP` (4) px of *flight distance* — not per tick, so a slow arrow streaks as evenly
-as a fast one, and a long frame is subdivided instead of leaving a gap. Motes are dropped at the
-distance behind the TAIL they are owed (`a.trailD` banks the remainder; a shaft's body runs
-`ARROW_LEN` px behind the tip, so the trail flows off the fletching — and none lay until the tail
-has cleared the bow, `a.flown`), drift back at 8 px/s and
-fade from `ARROW_TRAIL_A` (0.7) over `ARROW_TRAIL_LIFE` (0.22 s), leaving a tail that thins out
-behind the shot. The particle draw pass is what makes that possible: a particle's
+Behind it, each shot draws a **short streak** (`drawArrows`, js/draw/passes.js): `SHOT_STREAK_LEN`
+px of the shot's own colour off its tail, one unbroken line whose far end is its side's colour,
+once the tail has cleared the bow (`a.flown`). A hero's own shot that flies bare names where its
+body ends in `SHOT_STREAK`; one with a tail of its own gets none. Nothing is left behind in the
+air. In the particle draw pass, a particle's
+
 `maxLife` is the seconds it spends fading (`burst` uses 0.4) and its optional `alpha` caps how
 opaque it ever gets; an optional `dx` is a steady sideways px/s the damping never takes (`burst`'s
-`drift`: the wind carrying a pine's snow). Particles draw before the arrows, so a trail always sits under its own shaft.
+`drift`: the wind carrying a pine's snow).
 Opening an overlay or dying drops the draw without firing (and clears `fireArmed` with it);
 `BOW_CHARGE` (0.9 s) is a full draw.
 

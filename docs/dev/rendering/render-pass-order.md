@@ -36,7 +36,7 @@
 10. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
 11. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
-    → `drawTowerFx` (each road tower's dashed aim line and ring, js/draw/towers.js);
+    → `drawTowerFx` (each road tower's sight line, bolt and spent bolt, js/draw/towers.js);
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
     (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
     [Text over the world](text-over-the-world.md)) and the farm's coins (plates,

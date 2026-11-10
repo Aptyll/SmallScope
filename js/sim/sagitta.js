@@ -37,7 +37,7 @@ const CRANK_R = 40;             // px round her feet it slows
 const CRANK_SLOW = 0.55;        // walk x this
 const CRANK_DMG = 25;           // to each body near
 const CRANK_FX_LIFE = 0.55;     // s the crater shows (drawn: AB_FX_LOOK.crank)
-// R THE LONG BOLT: she kneels and draws (the towers' dashed line on the snow),
+// R THE LONG BOLT: she kneels and draws (her aim shown on the snow, js/draw/sagitta.js),
 // then looses one bolt across most of the screen: through soldiers and beasts,
 // ending on the first hero, who is thrown far back
 const LONG_SPD = 760;           // px/s
@@ -100,7 +100,7 @@ function sagittaBolt(p, spd, range, o) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y), a = Math.atan2(dy, dx);
   const b = Object.assign({
     x: p.x, y: p.y - BOW_Y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-    t: 0, life: range / spd, pow: 1, owner: p.id, team: p.team, trailD: 0,
+    t: 0, life: range / spd, pow: 1, owner: p.id, team: p.team,
     solid: true, kb: 1, col: '#c3ccd8', ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
   }, o);
   arrows.push(b);

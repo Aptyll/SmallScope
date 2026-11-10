@@ -606,29 +606,7 @@ function updatePlay(dt) {
       if (dead) { a.struck = true; end = h.s; endK = h.k; break; }
     }
     if (end < 1) { a.x = x0 + dx * end; a.y = y0 + dy * end; }
-    // a faint mote in the shooter's colour every few px of flight: the shot
-    // reads as a streak, and whose shot it is reads from across the map. The
-    // step just walked is subdivided (rather than one mote per tick) so the
-    // spacing survives both a slow arrow and a long frame; the motes are laid
-    // off the TAIL (the body runs ARROW_LEN px behind the tip a shaft flies
-    // by, so the trail flows off the fletching, never through the body) at
-    // the distance they are owed and left to fade in place - and not before
-    // the tail has cleared the bow, or every launch flicks a mote across the
-    // archer's back.
-    a.trailD += vd * dt * end;
-    a.flown = (a.flown || 0) + vd * dt * end;
-    const tailB = ARROW_LEN;
-    while (a.trailD >= ARROW_TRAIL_STEP) {
-      a.trailD -= ARROW_TRAIL_STEP;
-      if (a.flown < tailB + a.trailD) continue;
-      particles.push({
-        x: a.x - nx * (tailB + a.trailD), y: a.y - ny * (tailB + a.trailD),
-        vx: -nx * 8, vy: -ny * 8,
-        life: ARROW_TRAIL_LIFE, maxLife: ARROW_TRAIL_LIFE,
-        color: TEAMS[skin(a.team)].mark, // the trail says WHOSE shot it is, which is what it is for
-        size: 1, grav: 0, alpha: ARROW_TRAIL_A,
-      });
-    }
+    a.flown = (a.flown || 0) + vd * dt * end; // how far it has come: its streak waits for the tail to clear the bow (drawArrows, js/draw/passes.js)
     if (dead) {
       // a practice shot that ends any way but in a target face breaks the
       // range's consecutive-hit run (agStreak, js/sim/practice.js) - minigame or not

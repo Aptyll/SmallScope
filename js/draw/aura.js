@@ -14,9 +14,9 @@ const AU_STAR_ARMS = [4, 2].map((n) => { const o = [[0, 0]]; for (let d = 1; d <
 function drawStarBolt(a, sx, sy, now) {
   const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy);
   fxTail(sx, sy, nx, ny, 7, '#7cc4e8', '#4f8fc8');
-  fxInked(AU_STAR_ARMS[Math.sin(now * 22 + a.ox) > 0 ? 0 : 1], x, y, AU_INK, '#ffd76a');
-  ctx.fillStyle = AU_STAR; ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1);
-  ctx.fillStyle = AU_WHITE; ctx.fillRect(x, y, 1, 1);
+  fxInked(AU_STAR_ARMS[Math.sin(now * 22 + a.ox) > 0 ? 0 : 1], x, y, '#9a6a14', '#ffd76a'); // a dark gold rim, never black: a star, not a crosshair
+  ctx.fillStyle = AU_STAR; ctx.fillRect(x - 1, y - 1, 3, 3);
+  ctx.fillStyle = AU_WHITE; ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1);
 }
 HERO_SHOTS.starbolt = drawStarBolt;
 

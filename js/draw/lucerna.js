@@ -17,8 +17,8 @@ function drawLampSpark(a, sx, sy, now) {
   ctx.fillStyle = LU_BRASS; ctx.fillRect(x - 1, y - 1, 3, 3);
   ctx.fillStyle = LU_LIGHT; ctx.fillRect(x - 1, y - 1, 2, 2);
   ctx.fillStyle = LU_WHITE; ctx.fillRect(x, y, 1, 1);
-  ctx.fillStyle = LU_BRASS_D; // the rays: upright, then slanted
-  for (const [dx, dy] of k ? [[3, 3], [-3, 3], [3, -3], [-3, -3]] : [[4, 0], [-4, 0], [0, 4], [0, -4]]) ctx.fillRect(x + dx, y + dy, 1, 1);
+  ctx.fillStyle = LU_BRASS_D; // the rays, touching the ball: upright, then slanted
+  for (const [dx, dy] of k ? [[2, 2], [-2, 2], [2, -2], [-2, -2]] : [[3, 0], [-3, 0], [0, 3], [0, -3]]) ctx.fillRect(x + dx, y + dy, 1, 1);
 }
 HERO_SHOTS.lampspark = drawLampSpark;
 

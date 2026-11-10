@@ -391,6 +391,10 @@ function drawParticles(ex, ey) {
   ctx.globalAlpha = 1;
 }
 
+// px behind the tip a hero's own shot's body ends, for the looks that fly bare; a look
+// with a tail of its own (the staff shots' fxTail, a harpoon's line) is not listed and gets no streak
+const SHOT_STREAK = { slingstone: 3, cog: 3, knife: 5, bolt: 11, heavybolt: 11, pinbolt: 12, longbolt: 15 };
+const SHOT_STREAK_LEN = 4;
 function drawArrows(ex, ey, now) {
   // arrows: the one shared body (ARROW_MAP, js/sim/actions.js - white tip, flint
   // head, the shot's own collar, one-gold shaft, team feathers) rasterised
@@ -401,6 +405,16 @@ function drawArrows(ex, ey, now) {
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
     const own = a.look && HERO_SHOTS[a.look]; // a hero's own (js/draw/heroes.js)
+    const back = own ? SHOT_STREAK[a.look] : ARROW_LEN; // where its body ends, behind the tip
+    if (back && (a.flown || 0) > back + SHOT_STREAK_LEN) {
+      // THE STREAK: a few px of the shot's own colour off its tail, brightest at the shot,
+      // one unbroken line ending in its side's colour. Never dots, never left behind.
+      const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd, col = a.col || '#c8a46a', mark = TEAMS[skin(a.team)].mark;
+      for (let s = SHOT_STREAK_LEN; s >= 1; s--) {
+        ctx.fillStyle = s * 2 <= SHOT_STREAK_LEN ? col : mark; // its far end in its side's colour: whose shot it is
+        ctx.fillRect(Math.round(a.x - nx * (back + s) - ex), Math.round(a.y - ny * (back + s) - ey), 1, 1);
+      }
+    }
     if (own) own(a, a.x - ex, a.y - ey, now); else drawShaft(a, a.x - ex, a.y - ey);
   }
 }

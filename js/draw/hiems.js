@@ -9,13 +9,13 @@
 const HI_INK = '#0a0e23', HI_ICE = '#7cc4e8', HI_PALE = '#e6f8ff', HI_MID = '#a8dcf0', HI_DEEP = '#2f5f8f', HI_WHITE = '#ffffff';
 
 // ---- shots -----------------------------------------------------------------------
-// her staff's FROST BOLT: a snowflake, eight arms on a dark diamond so it holds on snow, its heart glinting; a cold streak behind it
+// her staff's FROST BOLT: a snowflake, six arms on a diamond of deep ice so it holds on snow, its heart glinting; a cold streak behind it
 function drawFrostBolt(a, sx, sy, now) {
   const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy);
   fxTail(sx, sy, nx, ny, 7, HI_ICE, HI_DEEP);
-  ctx.fillStyle = HI_INK; for (let d = -4; d <= 4; d++) ctx.fillRect(x - (4 - Math.abs(d)), y + d, 2 * (4 - Math.abs(d)) + 1, 1);
-  ctx.fillStyle = HI_ICE; for (const d of [-2, -1, 1, 2]) { ctx.fillRect(x + d, y + d, 1, 1); ctx.fillRect(x + d, y - d, 1, 1); }
-  ctx.fillStyle = HI_PALE; ctx.fillRect(x, y - 3, 1, 7); ctx.fillRect(x - 3, y, 7, 1);
+  ctx.fillStyle = HI_DEEP; for (let d = -4; d <= 4; d++) ctx.fillRect(x - (4 - Math.abs(d)), y + d, 2 * (4 - Math.abs(d)) + 1, 1); // deep ice, not black
+  ctx.fillStyle = HI_PALE; ctx.fillRect(x, y - 3, 1, 7); // six arms: one upright, two slanted
+  for (const d of [-2, -1, 1, 2]) { ctx.fillRect(x + d, y + d, 1, 1); ctx.fillRect(x + d, y - d, 1, 1); }
   ctx.fillStyle = HI_WHITE; if (Math.floor(now * 10 + a.ox) % 2) { ctx.fillRect(x - 1, y - 1, 3, 3); } else ctx.fillRect(x, y, 1, 1);
 }
 // the ICICLE: a long shard, point first, along its flight
