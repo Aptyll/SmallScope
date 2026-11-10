@@ -3,16 +3,17 @@
 The `replay` banner keeps a rolling four seconds of the world and plays it back while you
 are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
 
-- **The recap**, on a **death** (a respawn wait or an elimination, once `deadReady()` — half a
-  second of dim — has landed): the **whole frame**, the way a goal replays. The countdown reads
-  over it on a wait; the spectate strip, the death dim, its headline and its planks wait
+- **The recap**, on a **death** (a respawn wait, once `deadReady()` — half a
+  second — has landed; never a lost match, whose bird's flight was just watched live and whose
+  screen is the defeat's): the **whole frame**, the way a goal replays. The countdown reads
+  over it; the spectate strip waits
   underneath (`renderDead` returns early while `replayFull()`). A close box sits inside the
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
   `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons. `state.rpClosed`
-  remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending starts
-  it closed (the host walking out is no death), so the guest sees THE HOST LEFT and LOBBY at once.
+  remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending is no death and never
+  opens it, so the guest sees THE HOST LEFT and LOBBY at once.
   In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
   of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
   it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's

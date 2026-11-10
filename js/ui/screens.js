@@ -6,9 +6,9 @@
 // A rolling four seconds of the world, kept as pixels rather than as state,
 // played back while you are dead or paused. A DEATH gets the RECAP:
 // the whole frame, the way a goal replays - the ally view (a respawn wait)
-// or the elimination's planks wait underneath until its close box or ESC
+// waits underneath until its close box or ESC
 // puts it away, and the RESPAWNING IN Ns
-// line and the ESC BACK prompt draw over it. PAUSE gets the WINDOW: the
+// line and the ESC BACK prompt draw over it. A lost match gets none. PAUSE gets the WINDOW: the
 // bottom-left corner at RP_W x RP_H, under the pause planks.
 //
 // The capture is the WORLD LAYER itself (worldCv, one sample per world px,
@@ -116,15 +116,17 @@ function replayLive() {
   return goingDown(player) || (state.mode === 'play' && !player.dead);
 }
 
-// up on a death until it is closed (a respawn wait or an elimination, once
-// its half second of dim has landed - the recap) and on pause (the corner
+// up on a death until it is closed (a respawn wait, once its half second
+// has landed - the recap) and on pause (the corner
 // window); never under a full-screen panel
 function replayShowing() {
   if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen || goingDown(player)) return false;
   if (state.paused) return true;
   // not over an end screen: both are compositions, and the frame is theirs
   if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
-  return !state.rpClosed && (state.over === 'respawning' || state.deadView === 'menu');
+  // a respawn wait only: a lost match has just been watched live (the bird's
+  // flight is the camera's, js/sim/eagle.js), and its screen is the defeat's
+  return !state.rpClosed && state.over === 'respawning';
 }
 
 // Which of the two it is this frame: the recap fills the view on a death,
@@ -282,27 +284,25 @@ function renderReplay() {
 // ('respawning', see die()/updateRespawns) - or its win, once every RIVAL
 // TEAM is gone (teams win together, see checkLastStanding) - puts the game
 // in mode 'dead' with the match running on underneath. 'lost' dims the
-// screen and offers the one plank, LOBBY; 'respawning' offers none - it opens straight
+// screen under one line and goes on to the defeat banner by itself (lostBeat); 'respawning' has no plank - it opens straight
 // onto an ally (endMatch picks one through specNext, which keeps to the side
 // while the wait runs) under one line, RESPAWNING IN Ns, with the replay
 // window large over the view until it is closed, and snaps back to 'play' on
 // its own once the timer clears; a win
 // hands the whole frame to the victory banner (js/ui/endscreens.js), LOBBY
 // under it. A won or lost match is decided for everyone, so there is nothing
-// left to watch or play on: LOBBY is the only plank. Off an ELIMINATION it does
-// not leave at once: it hands the frame to the defeat banner - the loss's own
-// summary, the mirror of the victory screen - and that screen's plank is what
-// leaves. A respawn wait follows an ally through a top-centre control: two
+// left to watch or play on: LOBBY is the only plank, on the victory banner and
+// on the defeat banner - the loss's own summary, the mirror of the victory screen. A respawn wait follows an ally through a top-centre control: two
 // pixel arrows around the name, clickable, the arrow keys do the same (no hint
 // text: the arrows are the explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
 const DEAD_BW = 112, DEAD_BH = 20, DEAD_GAP = 12; // the title menu plank, side by side
-const DEAD_ITEMS = { lost: ['end.lobby'], won: ['end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
+const DEAD_ITEMS = { lost: [], won: ['end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
 
 // the planks on offer: the defeat summary has nothing left to offer but the
 // door, so it is the one view whose items are its own rather than the ending's
 function deadItems() {
-  return state.deadView === 'defeat' ? ['end.lobby'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.lost);
+  return state.deadView === 'defeat' ? ['end.lobby'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.hostleft);
 }
 
 // a full-frame end screen is up: the HUD and the replay window both bow out
@@ -339,6 +339,7 @@ function deadReady() {
 // true means it was consumed and the caller should do nothing else. The plain
 // death dim has nothing to skip - it is half a second of fade, not a reward.
 function endSkip() {
+  if (lostBeat()) { if (state.deadTimer >= 0.5) { openDefeat(); SFX.pickup(); } return true; } // the loss's one line: a press goes on to the ceremony
   if (deadReady()) return false;
   if (state.deadView === 'defeat') { state.defeatT = DEF_T.menu; SFX.pickup(); return true; }
   if (state.over !== 'won') return false;
@@ -347,8 +348,14 @@ function endSkip() {
   return true;
 }
 
-// LOBBY on an elimination lands here first: the loss's summary, on its own
-// clock (the death overlay's has been running since the body dropped)
+// A lost match holds LOST_BEAT s on its one line (YOUR EAGLE WAS DRIVEN OFF,
+// or a 1V1's reason) over the dimmed world, with nothing to press, and then
+// the defeat ceremony opens itself (renderDead), the way a win goes straight
+// to its own: there is no looping recap and no plank between the two.
+const LOST_BEAT = 2.4;
+function lostBeat() { return state.over === 'lost' && state.deadView === 'menu'; }
+// the loss's summary, on its own clock (the death overlay's has been running
+// since the bird left)
 function openDefeat() {
   state.deadView = 'defeat';
   state.defeatT = 0;
@@ -395,10 +402,7 @@ function deadHit() {
 function deadActivate(i) {
   const label = deadLayout()[i].label;
   SFX.place();
-  // the door out of an elimination goes through the summary once; the
-  // summary's own LOBBY (and every other ending's) actually leaves
-  if (label === 'end.lobby' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
-  else if (label === 'end.lobby') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
+  if (label === 'end.lobby') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
 }
 
 // who can be watched while a respawn wait runs: a living ally only - the wait
@@ -532,12 +536,14 @@ function renderDead(now) {
   // body fell. 3x, or 2x on a view too narrow to hold it (a 25-glyph line
   // is 297px at 3x).
   const gone = state.over === 'hostleft'; // the host walked out from under the match
-  const why = gone ? '' : onevoneWhy(); // a 1V1 says DEFEAT and how (js/sim/onevone.js)
-  const t = why ? tr('end.defeat') : tr(gone ? 'end.hostLeft' : 'end.lost');
+  const why = gone ? '' : onevoneWhy(); // a 1V1 says how it was lost (js/sim/onevone.js)
+  if (!gone && state.deadTimer >= LOST_BEAT) { openDefeat(); renderDefeat(now); return; } // a loss's beat is over: the ceremony, from this frame
+  const t = gone ? tr('end.hostLeft') : why || tr('end.lost');
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);
-  const t2 = why || tr(gone ? 'end.hostLeftSub' : 'end.lostSub');
+  if (!gone) return; // a loss says its one line and goes on; a host who left gets the line under it and the door
+  const t2 = tr('end.hostLeftSub');
   drawPixelTextOutline(ctx, t2, Math.round((VIEW_W - pixelTextWidth(t2, 2)) / 2), toy + 34 + ts * 5 + 8, '#8f9cc4', '#0a0e23', 2);
   drawEndPlanks(now, 0);
 }

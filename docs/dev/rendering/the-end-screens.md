@@ -9,10 +9,10 @@ sat and the table lands in the same band. `deadLayout()` reads the same `plankY`
 under the table on both.
 
 **When each is up.** A win goes straight to its screen (`endMatch('won')` → `state.over = 'won'`).
-A loss does **not**: an elimination only dims the play screen, because the match runs on underneath
-and you can sit and watch it, so a lost match ends when you stop watching — **LOBBY** on the death
-overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`), which carries a
-single **LOBBY** word of its own. Neither ceremony's LOBBY leaves, though: both open
+A loss goes there after one beat: the play screen dims under one line for `LOST_BEAT` s
+(`lostBeat()`), with nothing to press, and then the defeat screen opens itself (`renderDead` calls
+`openDefeat()`, `state.deadView = 'defeat'`; a press during the beat goes on at once, `endSkip`),
+which carries a single **LOBBY** word. Neither ceremony's LOBBY leaves, though: both open
 [the post-game lobby](the-post-game-lobby.md) first, and that screen's LOBBY is the door out. A
 respawn-pending death's LOBBY leaves directly — nothing has been lost yet, so there is no record
 to read. `endScreen()` is the one test for "a screen owns the frame" —
@@ -58,9 +58,11 @@ class, look and the row's numbers per player, a mate who is down at the whistle 
 **The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOUR EAGLE
 WAS DRIVEN OFF** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
 to read and the match is still playing behind it, so it goes where an eye lands rather than over
-the body that fell — a second line saying the match is over, and one word, LOBBY. That is the **elimination**; a guest whose host left mid-match (`state.over =
+the body that fell (a 1V1 prints how it was lost in its place) — and nothing else: no second line, no plank and no recap, since the bird's
+flight has just been watched live. It stands `LOST_BEAT` s and the defeat ceremony takes over, its dim deepening from
+this one's. That is the **loss's beat**; a guest whose host left mid-match (`state.over =
 'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY
 word. **The respawn wait** is the fourth state and the lightest: no wash, no
 planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**
-at the same 3× in the same band, the number live. Both open under
+at the same 3× in the same band, the number live. The wait opens under
 [the recap](replay-the-last-four-seconds.md), which owns the frame until it is closed.
