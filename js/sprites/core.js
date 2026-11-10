@@ -101,6 +101,10 @@ window.SPR = (() => {
     return t.map((r) => r.join(''));
   }
 
+  // every letter a bake met that its palette has no entry for (a hole in the sprite), with its
+  // count: read and cleared by app/check-paint.js
+  const unpainted = new Map();
+  function takeUnpainted() { const out = [...unpainted]; unpainted.clear(); return out; }
   function bake(rows, pal) {
     const h = rows.length, w = rows[0].length;
     const c = document.createElement('canvas');
@@ -111,6 +115,7 @@ window.SPR = (() => {
       for (let x = 0; x < w; x++) {
         const col = pal[row[x]];
         if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); px.set(rgba(col), (y * w + x) * 4); }
+        else if (col === undefined && row[x] !== '.') unpainted.set(row[x], (unpainted.get(row[x]) || 0) + 1);
       }
     }
     pixels.set(c, px);
@@ -238,5 +243,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, fine2x, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, takeUnpainted, fine2x, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();
