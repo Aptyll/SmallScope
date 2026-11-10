@@ -52,7 +52,7 @@ function heroLayerOpen(p, px, py) {
   if (p !== canopyHero || ctx !== wctx) return false;
   const T = wctx.getTransform();
   const lx = px + 8 - (HERO_LW >> 1), ly = py + 16 - HERO_FOOT;
-  heroAt = { x: lx + T.e, y: ly + T.f };
+  heroAt = { x: lx + T.e / T.a, y: ly + T.f / T.d }; // world px: the layer is drawn at density 1
   hctx.setTransform(1, 0, 0, 1, 0, 0);
   hctx.clearRect(0, 0, HERO_LW, HERO_LH);
   hctx.save();
@@ -65,7 +65,7 @@ function heroLayerClose(open) {
   hctx.restore();
   ctx = wctx;
   wctx.save();
-  wctx.setTransform(1, 0, 0, 1, 0, 0);
+  wBase(wctx);
   wctx.drawImage(heroCv, heroAt.x, heroAt.y);
   wctx.restore();
 }

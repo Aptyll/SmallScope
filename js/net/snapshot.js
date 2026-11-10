@@ -905,7 +905,7 @@ function snapFrame() {
   const shake = state.shake; state.shake = 0;
   performance.now = () => SNAP_T0; trCatchUp = true;
   try { render(); } finally { performance.now = now; state.shake = shake; trCatchUp = false; }
-  return new Uint32Array(wctx.getImageData(0, 0, WV_W, WV_H).data.buffer);
+  return new Uint32Array(wctx.getImageData(0, 0, WV_W * ART_K, WV_H * ART_K).data.buffer);
 }
 // every path at which two packed snapshots disagree (the first `max`): the
 // field-level answer to a nonzero pixel diff. The one tolerance is the

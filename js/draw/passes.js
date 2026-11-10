@@ -451,6 +451,7 @@ function renderAirLayer(shx, shy, now) {
   airOn = airBox.x1 > airBox.x0 && airBox.y1 > airBox.y0;
   if (airOn) {
     ctx = actx;
+    wBase(actx);
     ctx.clearRect(0, 0, WV_W, WV_H);
     if (state.drop) drawDropAir(ax, ay, now, true);
     for (const p of airRiders) drawPlayer(p, ax, ay, now);
@@ -477,10 +478,10 @@ function renderScreen(ox, oy, shx, shy, now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const kPx = zoomCur * devScale;
   const subX = Math.round((camX + shx - ox) * kPx), subY = Math.round((camY + shy - oy) * kPx);
-  ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
+  ctx.drawImage(worldCv, 0, 0, WV_W * ART_K, WV_H * ART_K, -subX, -subY, WV_W * kPx, WV_H * kPx);
   if (airOn) {
     const b = airBox, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
-    ctx.drawImage(airCv, b.x0, b.y0, bw, bh, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
+    ctx.drawImage(airCv, b.x0 * ART_K, b.y0 * ART_K, bw * ART_K, bh * ART_K, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
   }
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom

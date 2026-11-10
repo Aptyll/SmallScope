@@ -23,6 +23,14 @@ ctx.imageSmoothingEnabled = false;
 //     particles instead of each sprite rounding its own way.
 // It is allocated at the most zoomed-OUT size once per canvas size, never
 // per frame - resizing a canvas reallocates it and resets its context state.
+// ART_K: art px per world px. The sim, the camera and every draw call speak
+// world px; the world buffer (and every layer composed with it) holds ART_K x
+// ART_K art px for each, so art drawn at density 2 has twice the pixels to
+// work with while today's density-1 art lands doubled, exactly as before.
+// wBase() is the world layers' resting transform: a pass that drops to the
+// identity to blit in buffer px comes back through it, never through (1,0,0,1).
+const ART_K = 2;
+function wBase(c) { c.setTransform(ART_K, 0, 0, ART_K, 0, 0); }
 const worldCv = document.createElement('canvas');
 const wctx = worldCv.getContext('2d');
 // THE AIR LAYER: what flies above the valley (a bird in flight and anyone
@@ -185,7 +193,7 @@ function fitCanvas() {
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
-  const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
+  const wMax = (Math.ceil(VIEW_W / ZOOM_FLOOR) + 1) * ART_K, hMax = (Math.ceil(VIEW_H / ZOOM_FLOOR) + 1) * ART_K; // + the sub-pixel camera's spare (sizeWorldView), in art px
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
   airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;

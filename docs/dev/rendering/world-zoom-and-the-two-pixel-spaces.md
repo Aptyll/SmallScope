@@ -19,6 +19,14 @@ nearest-neighbour resample of an already-composed frame** is what keeps it coher
 sprites, particles and floaters are drawn together at 1:1 first, so they share one pixel grid
 instead of each rounding its own edges and shimmering against its neighbours.
 
+**Art density.** The world buffer holds `ART_K` art px per world px (2): the sim, the camera
+and every draw call still speak world px, and `render()` puts `wBase()` (a scale of `ART_K`)
+under the world passes, so density-1 art lands doubled exactly as before while density-2 art has
+twice the pixels. A pass that drops to the identity to blit in buffer px (the grade's copy, the
+body light's layers, the hero layer) comes back through `wBase()`, and sizes its source rects
+in art px (`WV_W * ART_K`). Soft content (gradients, anti-aliased strokes, the rays) renders at
+art px, so it is finer than it was; hard pixel art is unchanged.
+
 Consequences a new pass has to respect:
 
 - **A world pass bounds itself against `WV_W`/`WV_H`, never `VIEW_W`/`VIEW_H`.** Below zoom 1

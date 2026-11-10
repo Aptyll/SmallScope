@@ -179,8 +179,8 @@ function replayTick(now) {
     // clear it so the last tenant does not fringe the new one
     rpAtx.fillStyle = '#06091a';
     rpAtx.fillRect(sx, sy, rpSW, rpSH);
-    rpAtx.drawImage(worldCv, 0, 0, WV_W, WV_H, sx, sy, cw, ch);
-    if (airOn) rpAtx.drawImage(airCv, 0, 0, WV_W, WV_H, sx, sy, cw, ch); // the fliers ride over it (render())
+    rpAtx.drawImage(worldCv, 0, 0, WV_W * ART_K, WV_H * ART_K, sx, sy, cw, ch);
+    if (airOn) rpAtx.drawImage(airCv, 0, 0, WV_W * ART_K, WV_H * ART_K, sx, sy, cw, ch); // the fliers ride over it (render())
     rpFW[rpHead] = cw; rpFH[rpHead] = ch; rpFK[rpHead] = ck;
     rpHead = (rpHead + 1) % RP_N;
     if (rpCount < RP_N) rpCount++;

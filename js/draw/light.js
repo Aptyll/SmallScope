@@ -304,14 +304,14 @@ function godRays(ox, oy, day) {
     const x0 = cs * start - sn * across, y0 = sn * start + cs * across;
     beams.push({ i, ang: beamAng, a, x0, y0, len, halfEnd });
     if (a <= 0.004) continue;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    wBase(ctx);
     ctx.translate(x0, y0);
     ctx.rotate(beamAng);
     ctx.globalAlpha = a;
     // the texture already holds the taper, so this is one plain scaled blit
     ctx.drawImage(RAY_CV, 0, -halfEnd, len, halfEnd * 2);
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  wBase(ctx);
   ctx.imageSmoothingEnabled = prevSmooth;
 
   // Dust in the light. The motes live in SHAFT coordinates - u along, v across -
@@ -565,10 +565,10 @@ function todGrade() {
   const crisp = Math.max(todNoon() * TOD_CRISP, frost * FROST_CRISP * (1 - state.darkness));
   if (crisp > 0.01) {
     grctx.globalCompositeOperation = 'copy'; // through a copy, never ctx.canvas onto itself (gradeCv, js/app/canvas.js)
-    grctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    grctx.drawImage(ctx.canvas, 0, 0, WV_W * ART_K, WV_H * ART_K, 0, 0, WV_W * ART_K, WV_H * ART_K);
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = crisp;
-    ctx.drawImage(gradeCv, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    ctx.drawImage(gradeCv, 0, 0, WV_W * ART_K, WV_H * ART_K, 0, 0, WV_W, WV_H);
     ctx.globalAlpha = 1;
   }
   ctx.globalCompositeOperation = 'source-over';
@@ -889,18 +889,21 @@ function bodyLightFrame() {
   // sized to the view in steps (LIT_STEP), never to the whole world buffer: a
   // canvas read back as a source is copied whole, and the buffer is cut for
   // the furthest zoom out
-  const lw = Math.ceil((WV_W + 1) / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) / LIT_STEP) * LIT_STEP;
+  const lw = Math.ceil((WV_W + 1) * ART_K / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) * ART_K / LIT_STEP) * LIT_STEP;
   for (const c of [litCv, preCv, punchBigCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
-  if (punchCv.width !== PUNCH_W) { punchCv.width = PUNCH_W; punchCv.height = PUNCH_H; }
-  lctx.clearRect(0, 0, WV_W + 1, WV_H + 1); // the corner of the buffer this frame uses (sizeWorldView)
+  if (punchCv.width !== PUNCH_W * ART_K) { punchCv.width = PUNCH_W * ART_K; punchCv.height = PUNCH_H * ART_K; }
+  lctx.clearRect(0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K);
+  // the record scales density-1 layers up by ART_K: nearest, or every body grows a soft fringe
+  lctx.imageSmoothingEnabled = false; // the corner of the buffer this frame uses (sizeWorldView)
 }
 // a model drawn into a layer of its own (the hero's, heroCv) joins the record
 // (cx, fy) its centre column and foot row in the layer, hw and up how far the
 // model can reach to either side and over its feet: the box scenery is tested on
 function litAdd(cv, x, y, cx, fy, hw, up) {
   if (!litOn) return;
-  lctx.drawImage(cv, x, y);
-  litBoxes.push(x + cx - hw, y + fy - up, hw * 2, up + 8);
+  const K = ART_K; // the layer is world px, the record art px
+  lctx.drawImage(cv, x * K, y * K, cv.width * K, cv.height * K);
+  litBoxes.push((x + cx - hw) * K, (y + fy - up) * K, hw * 2 * K, (up + 8) * K);
 }
 // a body's model pass, (cx, fy) its centre column and foot row: from here to
 // bodyLayerClose the global ctx is the body layer, lined up with the world
@@ -918,7 +921,7 @@ function bodyLayerOpen(cx, fy, hw, up) {
   bodyCtx.setTransform(1, 0, 0, 1, -lx, -ly);
   bodyCtx.globalAlpha = wctx.globalAlpha; // the caller's fade rides in with it
   ctx = bodyCtx;
-  return { x: lx + T.e, y: ly + T.f, hw: bw, up: bu };
+  return { x: lx + T.e / T.a, y: ly + T.f / T.d, hw: bw, up: bu };
 }
 function bodyLayerClose(L) {
   if (!L) return;
@@ -926,13 +929,14 @@ function bodyLayerClose(L) {
   ctx = wctx;
   const a = wctx.globalAlpha;
   wctx.save();
-  wctx.setTransform(1, 0, 0, 1, 0, 0);
+  wBase(wctx);
   wctx.globalAlpha = 1; // the layer already carries the fade
   const sx = (BODY_LW >> 1) - L.hw, sy = BODY_FOOT - L.up, sw = L.hw * 2, sh = L.up + 8;
   wctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh);
   wctx.restore();
   wctx.globalAlpha = a;
-  if (litOn) { lctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
+  const K = ART_K; // litCv and its record are in art px
+  if (litOn) { lctx.drawImage(bodyCv, sx, sy, sw, sh, (L.x + sx) * K, (L.y + sy) * K, sw * K, sh * K); litBoxes.push((L.x + sx) * K, (L.y + sy) * K, sw * K, sh * K); }
 }
 // Scenery in the y-sort, drawn by `draw` inside the box (x, y, w, h) in the
 // world's own coordinates: if that box crosses a body on record, the piece is
@@ -948,14 +952,15 @@ function litPunch(x, y, w, h, draw) {
   draw();
   if (!litOn || !litBoxes.length || ctx !== wctx) return;
   const T = wctx.getTransform();
-  const x0 = Math.max(0, Math.floor(x + T.e)), y0 = Math.max(0, Math.floor(y + T.f));
-  const x1 = Math.min(WV_W + 1, Math.ceil(x + w + T.e) + 1), y1 = Math.min(WV_H + 1, Math.ceil(y + h + T.f) + 1);
+  // the box in art px (T carries ART_K), like the record it is tested on
+  const x0 = Math.max(0, Math.floor(x * T.a + T.e)), y0 = Math.max(0, Math.floor(y * T.d + T.f));
+  const x1 = Math.min((WV_W + 1) * ART_K, Math.ceil((x + w) * T.a + T.e) + 1), y1 = Math.min((WV_H + 1) * ART_K, Math.ceil((y + h) * T.d + T.f) + 1);
   if (x0 >= x1 || y0 >= y1) return;
   let hit = false;
   for (let i = 0; i < litBoxes.length && !hit; i += 4)
     hit = x0 < litBoxes[i] + litBoxes[i + 2] && x1 > litBoxes[i] && y0 < litBoxes[i + 1] + litBoxes[i + 3] && y1 > litBoxes[i + 1];
   if (!hit) return;
-  const cw = x1 - x0, ch = y1 - y0, small = cw <= PUNCH_W && ch <= PUNCH_H;
+  const cw = x1 - x0, ch = y1 - y0, small = cw <= PUNCH_W * ART_K && ch <= PUNCH_H * ART_K;
   const cv = small ? punchCv : punchBigCv, c = small ? pctx : pbctx;
   // the small scratch holds the box at its own corner, the big one in place
   const ox = small ? x0 : 0, oy = small ? y0 : 0;
@@ -975,18 +980,18 @@ function litPunch(x, y, w, h, draw) {
 function bodyLightKeep() {
   if (!litOn || !litBoxes.length) return false;
   prectx.globalCompositeOperation = 'copy';
-  prectx.drawImage(worldCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  prectx.drawImage(worldCv, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K);
   return true;
 }
 // ...and its bodies stamped back over the night at BODY_HOLD
 function bodyLightStamp() {
   lctx.globalCompositeOperation = 'source-in';
-  lctx.drawImage(preCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  lctx.drawImage(preCv, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K);
   lctx.globalCompositeOperation = 'source-over';
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha = BODY_HOLD;
-  ctx.drawImage(litCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
+  ctx.drawImage(litCv, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K, 0, 0, (WV_W + 1) * ART_K, (WV_H + 1) * ART_K);
   ctx.restore();
 }
 
@@ -1054,8 +1059,9 @@ function renderLighting(ox, oy, now) {
 // shape, copied first, cuts them back out; then the riders' names and the
 // frames are stamped over it ungraded, as the world's are.
 function lightAir(x, y, w, h) {
-  amctx.clearRect(x, y, w, h);
-  amctx.drawImage(airCv, x, y, w, h, x, y, w, h);
+  const K = ART_K; // airMask is a copy in art px
+  amctx.clearRect(x * K, y * K, w * K, h * K);
+  amctx.drawImage(airCv, x * K, y * K, w * K, h * K, x * K, y * K, w * K, h * K);
   // every fill below is cut to the box, so a rider's grade costs a rider's
   // few hundred px, not the frame's
   ctx.save();
@@ -1082,7 +1088,7 @@ function lightAir(x, y, w, h) {
     nightEdge(dark * NIGHT_EDGE);
   }
   ctx.globalCompositeOperation = 'destination-in';
-  ctx.drawImage(airMask, x, y, w, h, x, y, w, h);
+  ctx.drawImage(airMask, x * K, y * K, w * K, h * K, x, y, w, h);
   ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
   flushWorldInk();
