@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ARCUS\'s bow has a pale string and lighter wood', '0.884'],
     ['LUCERNA crook winds up as lamplight on the snow, MARIS harpoon as a thick cord, ARCUS volley as soft fading paths', '0.883'],
     ['Hog hut: a whole snow roof, a doorway and a warm window', '0.882'],
     ['Nix holds her ice dirk point up at the ready, and it shows clearer on snow', '0.881'],
