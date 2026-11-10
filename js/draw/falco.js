@@ -12,16 +12,18 @@ const FC_INK = '#2e2440', FC_WING = '#a8794a', FC_WING_D = '#6e4a28', FC_BELLY =
 // ---- the hawk -----------------------------------------------------------------------
 // a hawk from above at (x, y), wings up or down by the beat, head toward (nx, ny)'s side
 function drawHawk(x, y, beat, left) {
-  const s = left ? -1 : 1;
+  const s = left ? -1 : 1, span = beat ? 5 : 7;
+  const wy = (d) => (beat ? -Math.round(d * 0.6) : d > 4 ? d - 4 : 0), th = (d) => (d <= 2 ? 3 : d <= span - 2 ? 2 : 1);
   ctx.fillStyle = FC_INK;
-  ctx.fillRect(x - 4, y - (beat ? 2 : 0), 9, 2); ctx.fillRect(x - 1, y - 1, 3, 4);
-  ctx.fillStyle = FC_WING;
-  ctx.fillRect(x - 3, y - (beat ? 2 : 0) + (beat ? 0 : 1) - (beat ? 0 : 1), 3, 1); ctx.fillRect(x + 1, y - (beat ? 2 : 0), 3, 1);
-  ctx.fillStyle = FC_BELLY; ctx.fillRect(x, y, 1, 2);
-  ctx.fillStyle = FC_WING_D; ctx.fillRect(x, y + 2, 1, 1);
-  ctx.fillStyle = FC_GOLD; ctx.fillRect(x + s, y - 1, 1, 1);
+  for (let dx = -span - 1; dx <= span + 1; dx++) { const d = Math.min(span, Math.abs(dx)); ctx.fillRect(x + dx, y + wy(d) - 1, 1, th(d) + 2); }
+  ctx.fillRect(x - 2, y - 4, 5, 8); ctx.fillRect(x - 3, y + 3, 7, 3); // head, body, the tail's fan
+  for (let dx = -span; dx <= span; dx++) { const d = Math.abs(dx); ctx.fillStyle = d >= span - 1 ? FC_WING_D : FC_WING; ctx.fillRect(x + dx, y + wy(d), 1, th(d)); }
+  ctx.fillStyle = FC_WING; ctx.fillRect(x - 1, y - 3, 3, 6);
+  ctx.fillStyle = FC_WING_D; ctx.fillRect(x - 2, y + 4, 5, 1); ctx.fillRect(x - 1, y + 3, 3, 1);
+  ctx.fillStyle = FC_BELLY; ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 2, y + 4, 1, 1); ctx.fillRect(x + 2, y + 4, 1, 1);
+  ctx.fillStyle = FC_GOLD; ctx.fillRect(x + s, y - 3, 1, 1);
 }
-function hawkShadow(x, y) { ctx.globalAlpha = 0.25; ctx.fillStyle = FC_INK; ctx.fillRect(x - 2, y, 5, 1); ctx.globalAlpha = 1; }
+function hawkShadow(x, y) { ctx.globalAlpha = 0.3; ctx.fillStyle = FC_INK; ctx.fillRect(x - 6, y, 13, 1); ctx.fillRect(x - 3, y - 1, 7, 1); ctx.fillRect(x - 1, y - 2, 3, 5); ctx.globalAlpha = 1; }
 function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !(p.falcoDownT > 0) && !falcoHawkOf(p) && !inAir(p); }
 // At home the hawk sits on his glove (THE GRIP RULE's other hand): a tan gauntlet raised on
 // the side away from the knife, in every facing, and the hawk on it, outside the body's
@@ -53,7 +55,7 @@ function drawHawkOut(b, ex, ey, now) {
   const x = Math.round(b.x - ex), y = Math.round(b.y - ey);
   hawkShadow(x, y + 4);
   drawHawk(x, y - 8, Math.floor(now * 14) % 2, b.face < 0);
-  if (b.flash > 0) { ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 4, y - 10, 9, 5); ctx.globalAlpha = 1; }
+  if (b.flash > 0) { ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 7, y - 11, 15, 8); ctx.globalAlpha = 1; }
   drawHealthBar(b.x - ex, y - 16, b.hp, b.maxHp, 8, b.team, undefined, b);
 }
 
@@ -63,8 +65,9 @@ function drawHawkOut(b, ex, ey, now) {
 function drawThrownKnife(x, y, nx, ny, now) {
   const spin = Math.floor(now * 16) % 2;
   const ax = spin ? -ny : nx, ay = spin ? nx : ny;
-  for (let k = 0; k < 5; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k), 3, 1); }
-  for (let k = 0; k < 5; k++) { ctx.fillStyle = k < 1 ? '#ffffff' : k < 3 ? FC_STEEL : '#6b4a30'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
+  for (let k = 2; k <= 6; k++) { ctx.fillStyle = k < 5 ? '#4f6288' : '#7f98bc'; ctx.fillRect(Math.round(x - nx * (5 + k)), Math.round(y - ny * (5 + k)), 1, 1); } // the air it cut
+  for (let k = 0; k < 7; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
+  for (let k = 0; k < 7; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < 5 ? FC_STEEL : '#8a5f3a'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
 }
 HERO_SHOTS.knife = (a, sx, sy, now) => drawThrownKnife(Math.round(sx), Math.round(sy), Math.cos(a.ang), Math.sin(a.ang), now);
 
@@ -104,29 +107,57 @@ function drawFalcoSky(p, px, py, now) {
 }
 
 // ---- the keys' own looks -------------------------------------------------------------
-// TALONS' wind-up: the hawk's shadow already wheeling over the spot it is sent to,
-// tightening its turn as he lets it go
+// TALONS' wind-up: the hawk's own shadow, wings spread, wheeling over the spot it is
+// sent to and tightening its turn; at the last it folds and its dive streaks down
 function drawTalonsTele(x, y, closing, now) {
-  const r = TALON_R * (1 - 0.6 * closing);
-  for (let k = 0; k < 2; k++) {
-    const t = now * 4 + k * Math.PI;
-    ctx.globalAlpha = 0.25 + 0.3 * closing; ctx.fillStyle = FC_INK;
-    const sx = Math.round(x + Math.cos(t) * r), sy = Math.round(y + Math.sin(t) * r * 0.6);
-    ctx.fillRect(sx - 4, sy, 9, 1); ctx.fillRect(sx - 1, sy - 1, 3, 3); // wings out, the body
-  }
+  const r = TALON_R * (1 - 0.7 * closing), t = now * 4.5;
+  const sx = Math.round(x + Math.cos(t) * r), sy = Math.round(y + Math.sin(t) * r * 0.6), s = Math.sin(t) > 0 ? -1 : 1;
+  ctx.globalAlpha = 0.4 + 0.3 * closing; ctx.fillStyle = FC_INK;
+  ctx.fillRect(sx - 7, sy, 15, 1); ctx.fillRect(sx - 6, sy - 1, 5, 1); ctx.fillRect(sx + 2, sy - 1, 5, 1); // the wings, swept
+  ctx.fillRect(sx - 4, sy + 1, 3, 1); ctx.fillRect(sx + 2, sy + 1, 3, 1);
+  ctx.fillRect(sx - 1, sy - 2, 3, 5); ctx.fillRect(sx - 2, sy + 3, 5, 1); ctx.fillRect(sx + s, sy - 3, 1, 1); // body, tail, head
   ctx.globalAlpha = 1;
+  if (closing > 0.7) { // the dive
+    const k = (closing - 0.7) / 0.3;
+    for (let j = 0; j < 12; j++) {
+      const f = j / 12, dx = Math.round(x + 14 * (1 - k) + 10 * f), dy = Math.round(y - 30 * (1 - k) - 22 * f);
+      ctx.fillStyle = j < 3 ? FC_WING_D : j < 7 ? '#4f6288' : '#7f98bc'; ctx.fillRect(dx, dy, j < 3 ? 2 : 1, 1);
+    }
+  }
 }
-// KNIFE FAN's wind-up: the three blades fanned in his hand, each sending a glint down
-// its line as far as it flies
-function drawFanTele(p, a0, closing, ex, ey) {
+// KNIFE FAN's wind-up: the three blades fanned out of his hand, each with a glint
+// running out along the line it will fly
+function drawFanTele(p, a0, closing, now, ex, ey) {
   for (let k = -1; k <= 1; k++) {
     const a = a0 + k * FAN_SPREAD, nx = Math.cos(a), ny = Math.sin(a), x0 = p.x - ex, y0 = p.y - BOW_Y - ey;
-    ctx.globalAlpha = 0.25 + 0.35 * closing; ctx.fillStyle = FC_STEEL;
-    for (let s = 16; s < FAN_LEN * closing; s += 1) if (s % 3) ctx.fillRect(Math.round(x0 + nx * s), Math.round(y0 + ny * s), 1, 1);
-    ctx.globalAlpha = 1;
-    drawThrownKnife(Math.round(x0 + nx * 12), Math.round(y0 + ny * 12), nx, ny, 0);
+    drawThrownKnife(Math.round(x0 + nx * 15), Math.round(y0 + ny * 15), nx, ny, 0);
+    const s = 20 + (FAN_LEN * closing - 20) * ((now * 2.2 + (k + 1) * 0.17) % 1);
+    if (s <= 20) continue;
+    const gx = Math.round(x0 + nx * s), gy = Math.round(y0 + ny * s);
+    ctx.fillStyle = '#4f6288'; ctx.fillRect(gx - 2, gy, 5, 1); ctx.fillRect(gx, gy - 2, 1, 5);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(gx - 1, gy, 3, 1); ctx.fillRect(gx, gy - 1, 1, 3);
   }
 }
+// TALONS' strike: three rakes torn across the snow under the body it took, opening one
+// after the other either side of its feet, and a feather or two knocked loose
+function drawRakeFx(f, px, py, now) {
+  const u = f.t / f.life;
+  ctx.globalAlpha = u < 0.6 ? 1 : Math.max(0, (1 - u) / 0.4);
+  for (let k = -1; k <= 1; k++) {
+    const n = Math.round(15 * Math.min(1, Math.max(0, u * 5 - (k + 1) * 0.5)));
+    for (let s = 0; s < n; s++) {
+      const x = px + k * 7 + 5 - Math.round(s * 0.7), y = py - 4 + s;
+      ctx.fillStyle = FC_INK; ctx.fillRect(x - 1, y, 3, 1);
+      ctx.fillStyle = s > n - 3 ? FC_GOLD : '#ffffff'; ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  drawFlung(px, py + 6, 0, Math.PI, 16, 0.5, 9, 3, Math.min(1, u * 1.4), fxSeed(f), (x, y) => {
+    ctx.fillStyle = FC_WING_D; ctx.fillRect(x - 1, y + 1, 3, 1); // a feather, turning down
+    ctx.fillStyle = FC_WING; ctx.fillRect(x, y, 3, 1);
+  });
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.rake = drawRakeFx;
 // STOOP's landing: three talon rakes torn across the snow where he dropped, feathers
 // and snow thrown up round them
 function drawStoopFx(f, px, py, now) {

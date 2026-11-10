@@ -62,7 +62,7 @@ const IGNIA_AB = [
     tip: 'A LINE OF FIRE. RIVALS WHO CROSS BURN',
     blurb: 'LAY A LINE OF FIRE ACROSS THE GROUND FOR A FEW SECONDS. RIVALS WHO CROSS IT BURN. IT MELTS THE SNOW UNDER IT.',
     use: (p) => igniaBrushfire(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = brushAt(p); drawBrushTele(c.x - ex, c.y - ey, c.nx, c.ny, col, 0.5 + 0.45 * closing); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = brushAt(p); drawBrushTele(c.x - ex, c.y - ey, c.nx, c.ny, closing, now); },
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the staff swept low
     icon: IGNIA_ICON32.brushfire,
     bot: (p, foe, d) => d < BRUSH_RANGE && (foe instanceof Player || unitsNear(p, foe.x, foe.y, 40).length >= 3),

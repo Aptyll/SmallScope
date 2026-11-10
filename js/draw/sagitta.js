@@ -65,8 +65,7 @@ function drawCrankFx(f, px, py, now) {
   ctx.fillStyle = '#9fb6d8'; fillEllipsePx(px, py + 3, 6, 2);
   drawCracks(px, py + 4, 6, f.r * 0.7, Math.min(1, u * 5), seed, SG_INK, '#ffffff');
   drawFlung(px, py + 4, 0, Math.PI, f.r, 0.5, 12, 14, Math.min(1, u * 1.4), seed, (x, y, k) => {
-    ctx.fillStyle = SG_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = k % 4 ? '#f4f7ff' : '#a3794f'; ctx.fillRect(x, y, 1, 1);
+    fxChip(x, y - 1, k, k % 4 ? '#f4f7ff' : '#c79a6a', k % 4 ? '#7f98bc' : '#8a5f3a', SG_INK); // snow, and splinters of the bolt
   });
   ctx.fillStyle = SG_INK; ctx.fillRect(px - 1, py - 4, 3, 7); // the bolt standing in it
   ctx.fillStyle = SG_WOOD; ctx.fillRect(px, py - 3, 1, 6);

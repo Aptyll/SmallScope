@@ -26,23 +26,23 @@ HERO_SHOTS.starbolt = drawStarBolt;
 // ---- on the snow --------------------------------------------------------------------
 // a four-point twinkle at (x, y), `r` px out each way
 function auTwinkle(x, y, r, col) {
-  ctx.fillStyle = AU_INK; ctx.fillRect(x - r, y - 1, 2 * r + 1, 3); ctx.fillRect(x - 1, y - r, 3, 2 * r + 1);
+  ctx.fillStyle = col === AU_STAR ? '#a8771c' : '#3f73b0'; ctx.fillRect(x - r, y - 1, 2 * r + 1, 3); ctx.fillRect(x - 1, y - r, 3, 2 * r + 1); // rimmed in its own colour's shade, never black
   ctx.fillStyle = col; ctx.fillRect(x - r + 1, y, 2 * r - 1, 1); ctx.fillRect(x, y - r + 1, 1, 2 * r - 1);
   ctx.fillStyle = AU_WHITE; ctx.fillRect(x, y, 1, 1);
 }
-// the FALLING STAR's light on the snow at (px, py), `k` 0..1 the fall's nearness: a
-// pale pool out to its reach with the brighter heart where it strikes harder, and
-// twinkles turning round the pool's edge, more of them as it nears
+// the FALLING STAR's light on the snow at (px, py), `k` 0..1 the fall's nearness: the
+// snow under it catching the starlight in sparkles, more of them and nearer the
+// heart as it comes down, and a glint growing where it strikes
 function drawStarPool(px, py, k, now) {
-  ctx.globalAlpha = 0.3 + 0.35 * k; ctx.fillStyle = '#e8c25a'; fillEllipsePx(px, py, STAR_R, STAR_R); // its light's warm edge
-  ctx.fillStyle = AU_STAR; fillEllipsePx(px, py, STAR_R - 2, STAR_R - 2);
-  ctx.globalAlpha = 0.4 + 0.5 * k; ctx.fillStyle = AU_WHITE; fillEllipsePx(px, py, STAR_CORE, STAR_CORE);
-  ctx.globalAlpha = 1;
-  const n = 3 + Math.round(5 * k);
+  const n = 10 + Math.round(22 * k);
   for (let i = 0; i < n; i++) {
-    const t = now * 0.8 + i * Math.PI * 2 / n;
-    auTwinkle(Math.round(px + Math.cos(t) * STAR_R), Math.round(py + Math.sin(t) * STAR_R), Math.floor(now * 6 + i) % 3 ? 2 : 3, AU_STAR);
+    if ((Math.floor(now * 7) + i * 3) % 5 === 0) continue; // each one winks
+    const t = fxRoll(4099, i, 1) * Math.PI * 2, d = STAR_R * Math.sqrt(fxRoll(4099, i, 2)) * (1 - 0.3 * k);
+    const x = Math.round(px + Math.cos(t) * d), y = Math.round(py + Math.sin(t) * d);
+    if (i % 3) fxMote(x, y, i % 2 ? AU_STAR : '#c6ecff', i % 2 ? '#d9a93a' : '#4f9bd6');
+    else { ctx.fillStyle = '#b98a2e'; ctx.fillRect(x, y + 1, 2, 1); ctx.fillStyle = '#e8c25a'; ctx.fillRect(x, y, 2, 1); }
   }
+  if (k > 0.12) auTwinkle(px, py, 2 + Math.round(3 * k), AU_STAR);
 }
 // its strike: a flash at the heart, rays of light out to the reach, sparks thrown
 function drawStarFx(f, px, py, now) {
@@ -55,7 +55,7 @@ function drawStarFx(f, px, py, now) {
       ctx.fillStyle = r > f.r * go - 4 ? AU_WHITE : AU_STAR; ctx.fillRect(Math.round(px + c * r), Math.round(py + sn * r), 1, 1);
     }
   }
-  drawFlung(px, py, 0, Math.PI, f.r + 6, 0.5, 12, 12, Math.min(1, u * 1.3), seed, (x, y, k) => auTwinkle(x, y, 1, k % 2 ? AU_STAR : AU_PALE));
+  drawFlung(px, py, 0, Math.PI, f.r + 6, 0.5, 12, 12, Math.min(1, u * 1.3), seed, (x, y, k) => fxMote(x, y, k % 2 ? AU_STAR : '#c6ecff', k % 2 ? '#d9a93a' : '#4f9bd6'));
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.star = drawStarFx;
@@ -72,11 +72,17 @@ function auBand(px, py, nx, ny, len, h, col, alpha) {
   }
   ctx.globalAlpha = 1;
 }
-// DRIFTING LIGHT's wind-up: a soft glow laid down the way the orb will drift, out
-// further as she readies it, and the orb gathering at her staff
+// DRIFTING LIGHT's wind-up: a glint running out along the snow the way the orb will
+// drift, further each time as she readies it, and the orb gathering at her staff
 function drawOrbTele(p, px, py, a, closing, now, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), len = auraReach(p, ORB_LEN) * (0.3 + 0.7 * closing);
-  auBand(p.x - ex, p.y + 6 - ey, nx, ny, len, 3, '#7cc4e8', 0.3 + 0.3 * closing);
+  const u = (now * 1.6) % 1, gx = p.x - ex, gy = p.y + 6 - ey;
+  for (let j = 3; j >= 0; j--) { // the glint and the light it leaves behind it
+    const s = 10 + (len - 10) * (u - j * 0.07);
+    if (s < 10) continue;
+    const x = Math.round(gx + nx * s), y = Math.round(gy + ny * s);
+    if (j === 0) auTwinkle(x, y, 2, AU_PALE); else fxMote(x, y, '#c6ecff', '#4f9bd6');
+  }
   const r = 1 + Math.round(2 * closing), x = Math.round(px + nx * 10), y = Math.round(py - 8 + ny * 6);
   auDisc(x, y, r + 1, AU_INK); auDisc(x, y, r, '#7cc4e8'); if (r > 1) auDisc(x, y, r - 1, AU_WHITE);
 }
@@ -88,7 +94,7 @@ function drawStepFx(f, px, py, now) {
     const x = Math.round(px + Math.cos(t) * d), y = Math.round(py + Math.sin(t) * d - u * (14 + 10 * fxRoll(seed, k, 3)));
     ctx.globalAlpha = Math.max(0, 1 - u * (0.8 + 0.4 * fxRoll(seed, k, 4)));
     if (k % 4) { ctx.fillStyle = '#7cc4e8'; ctx.fillRect(x, y + 1, 2, 1); ctx.fillStyle = k % 3 ? AU_WHITE : AU_STAR; ctx.fillRect(x, y, 2, 1); }
-    else auTwinkle(x, y, 2, AU_PALE);
+    else fxMote(x, y, '#c6ecff', '#4f9bd6');
   }
   ctx.globalAlpha = 1;
 }
@@ -149,10 +155,12 @@ function drawAuraGround(ex, ey, now) {
     drawStarPool(px, py, k, now);
     // the star itself, coming down onto its ring
     const h = Math.round(36 * (1 - k)), sx = px + Math.round(10 * (1 - k)), sy = py - h;
-    ctx.fillStyle = AU_INK; ctx.fillRect(sx - 1, sy - 2, 3, 5); ctx.fillRect(sx - 2, sy - 1, 5, 3);
-    ctx.fillStyle = AU_STAR; ctx.fillRect(sx, sy - 1, 1, 3); ctx.fillRect(sx - 1, sy, 3, 1);
-    ctx.fillStyle = AU_WHITE; ctx.fillRect(sx, sy, 1, 1);
-    ctx.fillStyle = AU_PALE; ctx.fillRect(sx + 1, sy - 2, 1, 1); ctx.fillRect(sx + 2, sy - 3, 1, 1);
+    for (let j = 2; j <= 16; j++) { // its streak, back up the way it came, thinning
+      const tx = sx + Math.round(j * 0.3), ty = sy - j;
+      ctx.fillStyle = '#3f73b0'; ctx.fillRect(tx - 1, ty, j < 9 ? 3 : 2, 1);
+      ctx.fillStyle = j < 6 ? AU_STAR : j < 11 ? AU_PALE : '#7cc4e8'; ctx.fillRect(tx, ty, 1, 1);
+    }
+    auTwinkle(sx, sy, 3, AU_STAR);
   }
   for (const o of auraOrbs) {
     const px = Math.round(o.x - ex), py = Math.round(o.y - ey);

@@ -245,7 +245,9 @@ const BUFF_RING = 12;                // pips round the ring
 const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): amber
 // THE TEAM RING: one pixel ring on the snow round every hero's feet, in its
 // side's paint (the coat's own shade, a value step under the mark so a blue
-// one holds on blue-white snow; your own too, like every ally's), on an ink underline and a faint wash of the same colour. Heroes alone wear
+// one holds on blue-white snow; your own too, like every ally's), the mark itself
+// on its lit arc, with no ink line and no fill, a little narrower than the body
+// so the boots stand clear. Heroes alone wear
 // it - never a soldier, a beast or the merchant - so in a crowd the ringed
 // bodies are the ones that matter, and which side each is on reads off the
 // ground when the bodies and their frames are piled on each other. It is
@@ -253,25 +255,19 @@ const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant)
 // body's light. Not under a body plunged through the ice, riding a cable, or
 // off the map on a stage. A hero its own kit hides is not drawn for a rival
 // at all (fogShown), so its ring never is either.
-const HERO_RING_RX = 8, HERO_RING_RY = 4, HERO_RING_DY = 6, HERO_RING_WASH = 0.25;
-const HERO_RING_INK = '#0f1632';
-let heroRingPts = null; // [dx, dy] of the outline, then [dx0, dy, w] of each wash row
+const HERO_RING_RX = 7, HERO_RING_RY = 3, HERO_RING_DY = 6;
+let heroRingPts = null; // [dx, dy] of each pixel of the rim, once each
 function heroRingShape() {
-  const rx = HERO_RING_RX, ry = HERO_RING_RY, edge = [], rows = [];
+  const rx = HERO_RING_RX, ry = HERO_RING_RY, edge = [], seen = new Set();
   const half = (v, r, q) => Math.round(r * Math.sqrt(Math.max(0, 1 - ((v + 0.5) / q) ** 2)) - 0.5);
-  for (let x = -rx; x < rx; x++) { const y = half(x, ry, rx); edge.push([x, y], [x, -y - 1]); }
-  for (let y = -ry; y < ry; y++) { const x = half(y, rx, ry); edge.push([x, y], [-x - 1, y]); rows.push([-x - 1, y, 2 * x + 2]); }
-  return (heroRingPts = { edge, rows });
+  const add = (x, y) => { const k = x + ',' + y; if (!seen.has(k)) { seen.add(k); edge.push([x, y]); } };
+  for (let x = -rx; x < rx; x++) { const y = half(x, ry, rx); add(x, y); add(x, -y - 1); }
+  for (let y = -ry; y < ry; y++) { const x = half(y, rx, ry); add(x, y); add(-x - 1, y); }
+  return (heroRingPts = edge);
 }
 function drawHeroRing(p, cx, cy) {
-  const R = heroRingPts || heroRingShape(), was = ctx.globalAlpha;
-  ctx.fillStyle = HERO_RING_INK;
-  for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1] + 1, 1, 1);
-  ctx.fillStyle = TEAMS[skin(p.team)].coat;
-  for (const q of R.edge) ctx.fillRect(cx + q[0], cy + q[1], 1, 1);
-  ctx.globalAlpha = was * HERO_RING_WASH;
-  for (const q of R.rows) ctx.fillRect(cx + q[0], cy + q[1], q[2], 1);
-  ctx.globalAlpha = was;
+  const T = TEAMS[skin(p.team)];
+  for (const q of heroRingPts || heroRingShape()) { ctx.fillStyle = q[0] + q[1] * 2 < -3 ? T.mark : T.coat; ctx.fillRect(cx + q[0], cy + q[1], 1, 1); } // the lit side a step brighter
 }
 function drawBuffRing(p, cx, cy, now) {
   drawPipRing(cx, cy, 7 + ((now * 3) & 1), p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL);

@@ -19,12 +19,9 @@ HERO_BLADES.maul = { art: rupesMauls, hilt: [14, 9], hip: { down: [13, 11], up: 
 // ---- shots -------------------------------------------------------------------------
 // HEAVE's block: a 5 px cube of packed snow, its lit top and shaded face, tumbling
 function drawSnowBlock(a, sx, sy, now) {
-  const x = Math.round(sx) - 2, y = Math.round(sy) - 2;
-  const turn = Math.floor(a.t * 12) % 2;
-  ctx.fillStyle = RU_INK; ctx.fillRect(x - 1, y - 1, 7, 7);
-  ctx.fillStyle = RU_SNOW_M; ctx.fillRect(x, y, 5, 5);
-  ctx.fillStyle = RU_SNOW; ctx.fillRect(x, y, 5, 2 + turn);
-  ctx.fillStyle = RU_SNOW_D; ctx.fillRect(x + 4 - turn * 4, y + 2, 1, 3);
+  const x = Math.round(sx) - 3, y = Math.round(sy) - 3, turn = Math.floor(a.t * 12) % 2;
+  ruLump(x, y + turn, 6);
+  ctx.fillStyle = RU_SNOW_M; ctx.fillRect(x + 1 + turn * 2, y + 2 + turn, 2, 1); // a face catching the light as it tumbles
 }
 HERO_SHOTS.snowblock = drawSnowBlock;
 
@@ -78,11 +75,15 @@ function drawSnowball(p, px, py, now) {
 HERO_BODY_DRAW.push(drawSnowball);
 
 // ---- the keys' own looks -----------------------------------------------------------------
-// a lump of packed snow s px across, inked, lit on top
-function ruLump(x, y, s) {
-  ctx.fillStyle = RU_INK; ctx.fillRect(x - 1, y, s + 2, s); ctx.fillRect(x, y - 1, s, s + 2); // the corners cut: a lump, not a box
-  ctx.fillStyle = RU_SNOW_D; ctx.fillRect(x, y, s, s); // shaded, or it reads as a hole on the snow
-  ctx.fillStyle = RU_SNOW; ctx.fillRect(x, y, s - 1, Math.max(1, s >> 1));
+// a lump of packed snow about s px across, or a stone out of the pack (`rock`): angular,
+// its top and left planes lit, its right and under planes in shade, an ink foot on the
+// snow. No outline: the shade plane is what holds it against the snow.
+function ruLump(x, y, s, rock) {
+  const L = rock ? '#b4bccb' : RU_SNOW, D = rock ? '#6a748c' : '#9fb4d6', F = rock ? RU_INK : '#5f79a8';
+  s = Math.max(rock ? 3 : 4, s);
+  ctx.fillStyle = L; ctx.fillRect(x + 1, y, s - 2, 1); ctx.fillRect(x, y + 1, s - 1, s - 2);
+  ctx.fillStyle = D; ctx.fillRect(x + s - 1, y + 1, 1, s - 2); ctx.fillRect(x + 1, y + s - 1, s - 2, 1);
+  ctx.fillStyle = F; ctx.fillRect(x + 1, y + s, s - 1, 1); if (rock) ctx.fillRect(x + s, y + 2, 1, s - 2);
 }
 // HEAVE's wind-up: the block torn up out of the snow at his side, growing as he lifts it,
 // a scraped hole where it came from, and its shadow sliding out to its reach
@@ -99,7 +100,7 @@ function drawShedTele(p, px, py, closing, now) {
   const n = 8 + packLayers(p) * 4, hop = Math.floor(now * 20) % 2;
   fxSpots(n).forEach(([ux, uy], k) => {
     const x = Math.round(px + ux * SHED_R * (0.3 + 0.6 * closing)), y = Math.round(py + 4 + uy * SHED_R * (0.3 + 0.6 * closing) * 0.8);
-    ruLump(x, y - ((k + hop) % 2) * 2, k % 3 ? 2 : 3);
+    ruLump(x, y - ((k + hop) % 2) * 2, k % 3 ? 2 : 3, k % 4 === 0);
   });
 }
 // SHED landing: the whole pack thrown off him in lumps that fly out, land and lie, a bare
@@ -108,7 +109,7 @@ function drawShedFx(f, px, py, now) {
   const u = f.t / f.life, n = f.n || 0, seed = fxSeed(f);
   ctx.globalAlpha = Math.min(1, 3 * (1 - u));
   ctx.fillStyle = RU_SNOW_D; fillEllipsePx(px, py + 4, 8, 4);
-  drawFlung(px, py + 4, 0, Math.PI, f.r, 0.55, 14 + 4 * n, 12 + 6 * n, Math.min(1, u * 1.6), seed, (x, y, k) => ruLump(x - 1, y - 1, k % 3 ? 2 + (n > 1 ? 1 : 0) : 3 + (n > 0 ? 1 : 0)));
+  drawFlung(px, py + 4, 0, Math.PI, f.r, 0.55, 14 + 4 * n, 12 + 6 * n, Math.min(1, u * 1.6), seed, (x, y, k) => ruLump(x - 1, y - 1, k % 3 ? 2 + (n > 1 ? 1 : 0) : 3 + (n > 0 ? 1 : 0), k % 4 === 0));
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.shed = drawShedFx;
@@ -130,7 +131,7 @@ function drawShoulderTele(p, a, closing, ex, ey) {
 function drawAvalancheTele(p, px, py, a, closing, now) {
   for (let k = 0; k < 16; k++) {
     const f = (k / 16 + now * 1.8) % 1, r = 6 + 30 * (1 - f) * (1 - 0.5 * closing), t = k * 2.399 + f * 4;
-    ruLump(Math.round(px + Math.cos(t) * r) - 1, Math.round(py + 4 + Math.sin(t) * r * 0.7) - 1, f > 0.6 ? 3 : 2);
+    ruLump(Math.round(px + Math.cos(t) * r) - 1, Math.round(py + 4 + Math.sin(t) * r * 0.7) - 1, f > 0.6 ? 3 : 2, k % 3 === 0);
   }
   const nx = Math.cos(a), ny = Math.sin(a);
   for (let k = 0; k < 10; k++) {
@@ -143,13 +144,15 @@ function drawAvalancheTele(p, px, py, a, closing, now) {
 const POWDER_PUFFS = 16;
 function drawPowderFx(f, px, py, now) {
   const u = f.t / f.life, seed = fxSeed(f), go = 1 - (1 - u) * (1 - u);
-  drawFlung(px, py + 2, 0, Math.PI, f.r, 0.5, 18, 14, Math.min(1, u * 1.3), seed, (x, y) => ruLump(x - 1, y - 1, 3));
-  fxSpots(POWDER_PUFFS).forEach(([ux, uy], k) => {
-    const x = px + ux * f.r * go * 0.9, y = py + uy * f.r * go * 0.75 - 4 * u, r = Math.round(4 + 7 * go * (0.6 + 0.4 * fxRoll(seed, k, 8)));
+  fxSpots(POWDER_PUFFS).forEach(([ux, uy], k) => { // the powder: each puff lit from the top left, in shade under and to the right
+    const x = Math.round(px + ux * f.r * go * 0.9), y = Math.round(py + uy * f.r * go * 0.75 - 4 * u), r = Math.round(4 + 7 * go * (0.6 + 0.4 * fxRoll(seed, k, 8)));
     ctx.globalAlpha = Math.min(1, 1.6 * (1 - u));
-    ctx.fillStyle = '#7f98bc'; fillEllipsePx(x, y + 2, r, Math.round(r * 0.7));
-    ctx.fillStyle = RU_SNOW; fillEllipsePx(x, y, r - 1, Math.round(r * 0.6));
+    fxPatch(x + 1, y + 2, r, 0.7, 2, seed + k, '#6f86ad');
+    fxPatch(x, y, r - 1, 0.65, 2, seed + k, RU_SNOW_M);
+    fxPatch(x - 1, y - 1, Math.max(1, r - 3), 0.5, 1, seed + k, RU_SNOW);
   });
+  ctx.globalAlpha = Math.min(1, 2.5 * (1 - u));
+  drawFlung(px, py + 2, 0, Math.PI, f.r, 0.3, 18, 16, Math.min(1, u * 1.3), seed, (x, y, k) => ruLump(x - 1, y - 2, k % 2 ? 3 : 4, k % 3 !== 1)); // the ball's stones through it
   ctx.globalAlpha = 1;
 }
 AB_FX_LOOK.powder = drawPowderFx;

@@ -128,8 +128,9 @@ It lifts by the lift + 5 for a zipline rider, so the frame rises with the body a
 handle, and by `MOUNT_BAR_ROWS` for a deer's rider, to hang the deer's bar under the stamina.
 
 **The team ring is the frame's partner on the ground.** `drawHeroRing` (js/draw/bodies.js) lays one
-pixel ring round every hero's feet, after the shade and under the body: the side's `coat` shade
-through `skin()` (a value step under `mark`, so a blue one holds on blue-white snow), yours too,
-on an ink underline with a faint wash of the same colour. Heroes only, so in a crowd the
+pixel rim round every hero's feet, after the shade and under the body, a little narrower than
+the body so the boots stand clear of it: the side's `coat` shade through `skin()` (a value step
+under `mark`, so a blue one holds on blue-white snow), `mark` on the lit upper-left arc, yours
+too. No ink line and no fill: the body's own shade is what sits inside it. Heroes only, so in a crowd the
 ringed bodies are the ones that matter. It is ground: it takes the whole night, and it is skipped
 for a body plunged through the ice, riding a cable, or on a stage.

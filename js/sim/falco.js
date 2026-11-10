@@ -66,7 +66,7 @@ const FALCO_AB = [
     tip: 'THREE KNIVES. ALL THREE SLOW A MARK',
     blurb: 'THROW THREE KNIVES IN A NARROW FAN. A RIVAL YOUR HAWK MARKED WHO IS HIT BY ALL THREE IS SLOWED.',
     use: (p) => falcoFan(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawFanTele(p, a, closing, ex, ey), // three blades fanned in his hand, their glint down each line
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawFanTele(p, a, closing, now, ex, ey), // three blades fanned in his hand, their glint down each line
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? -1 : 1, rot: 0 }), // the arm back, then the throw
     icon: FALCO_ICON32.fan, mark: 'slow',
     bot: (p, foe, d, clear) => clear && d < FAN_LEN - 10,
@@ -165,7 +165,7 @@ function stepHawk(h, dt) {
     const nx = (q.x - o.x) / (Math.hypot(q.x - o.x, q.y - o.y) || 1), ny = (q.y - o.y) / (Math.hypot(q.x - o.x, q.y - o.y) || 1);
     hurtUnit(q, h.dmg, nx, ny, o, { kb: 10, ab: 'talons' });
     falcoMark(o, q);
-    burst(q.x, unitMidY(q), '#f2cc6a', 8, 45, 0.4, true);
+    abFx.push({ kind: 'ring', x: q.x, y: q.y, r: 10, t: 0, col: '#f2cc6a', fx: 'rake', life: 0.4 }); // the rakes (drawn: AB_FX_LOOK.rake)
     sfxAt('hit', q.x, q.y);
   } else if (PRACTICE) abHitDummies(h.x, h.y, TALON_R, h.dmg);
   h.back = true;

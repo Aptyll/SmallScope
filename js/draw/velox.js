@@ -21,18 +21,38 @@ HERO_SHOTS.slingstone = drawSlingStone;
 // ---- on the snow --------------------------------------------------------------------
 // ICE LANE: a dark rim, the polished ice, shine streaks sliding along it; SKIP STONE:
 // the stone over its shadow, high between landings
+// a strip of ice from (x0, y0) along (nx, ny), `len` px, at alpha a: the polished
+// sheet, a frost edge that breaks up either side, and the lines her skates cut in it
+function vxIce(x0, y0, nx, ny, len, a, seed) {
+  const w = LANE_W / 2 - 2, steps = Math.ceil(len);
+  ctx.globalAlpha = 0.7 * a; ctx.fillStyle = VX_ICE;
+  for (let s = 0; s <= steps; s++) {
+    const cx = Math.round(x0 + nx * s), cy = Math.round(y0 + ny * s);
+    ctx.fillRect(cx - Math.round(w * Math.abs(ny)), cy - Math.round(w * Math.abs(nx)), Math.round(w * 2 * Math.abs(ny)) + 1, Math.round(w * 2 * Math.abs(nx)) + 1);
+  }
+  for (let s = 0; s <= steps; s++) for (const side of [-1, 1]) { // the frost edge, a few px of it, never a ruled line
+    const n = Math.round(fxRoll(seed, s, side + 2) * 3.4);
+    for (let k = 1; k <= n; k++) {
+      ctx.globalAlpha = (k === n ? 0.9 : 0.6) * a; ctx.fillStyle = k === n ? VX_WHITE : '#cfeaf8';
+      ctx.fillRect(Math.round(x0 + nx * s - ny * side * (w + k)), Math.round(y0 + ny * s + nx * side * (w + k)), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 0.55 * a; ctx.fillStyle = VX_DEEP;
+  for (let j = 0; j < 4; j++) { // skate cuts: long, thin, each its own stretch, crossing a little
+    const o0 = [-4, -1, 2, 4][j], s0 = len * fxRoll(seed, j, 7) * 0.3, s1 = len * (0.6 + 0.4 * fxRoll(seed, j, 8));
+    for (let s = s0; s < s1; s++) {
+      const o = o0 + Math.sin(s * 0.07 + j * 2) * 1.5;
+      ctx.fillRect(Math.round(x0 + nx * s - ny * o), Math.round(y0 + ny * s + nx * o), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 function drawVeloxGround(ex, ey, now) {
   for (const L of veloxLanes) {
     const a = L.t < L.life ? Math.min(1, L.t / 0.15) : Math.max(0, 1 - (L.t - L.life) / LANE_FADE);
     const vx = L.x1 - L.x0, vy = L.y1 - L.y0, len = Math.hypot(vx, vy) || 1, nx = vx / len, ny = vy / len;
-    const steps = Math.ceil(len), sh = (now * 60) % 24;
-    for (const [w, col, al] of [[LANE_W / 2, VX_DEEP, 0.6], [LANE_W / 2 - 2, VX_ICE, 0.65]]) {
-      ctx.globalAlpha = al * a; ctx.fillStyle = col;
-      for (let s = 0; s <= steps; s += 1) {
-        const cx = Math.round(L.x0 + nx * s - ex), cy = Math.round(L.y0 + ny * s - ey);
-        ctx.fillRect(cx - Math.round(w * Math.abs(ny)), cy - Math.round(w * Math.abs(nx)), Math.round(w * 2 * Math.abs(ny)) + 1, Math.round(w * 2 * Math.abs(nx)) + 1);
-      }
-    }
+    vxIce(L.x0 - ex, L.y0 - ey, nx, ny, len, a, (Math.round(L.x0) * 7 + Math.round(L.y0) * 13) | 0);
+    const sh = (now * 60) % 24;
     ctx.globalAlpha = 0.85 * a; ctx.fillStyle = VX_WHITE;
     for (let s = sh; s < len; s += 24) for (let k = 0; k < 6; k++) {
       const d = s + k, o = (k >> 1) - 2;
@@ -52,37 +72,28 @@ function drawVeloxGround(ex, ey, now) {
 HERO_GROUND.push(drawVeloxGround);
 
 // ---- the keys' wind-ups -------------------------------------------------------------------
-// SKIP STONE: the stone's hops drawn ahead of it, each a low arc, and a splash of snow
-// where each lands (on the snow's spacing; ice carries it further)
+// SKIP STONE: only where it will touch down: a scuff in the snow at each skip and the
+// snow it kicks up, the nearest the biggest (on the snow's spacing; ice carries it further)
 function drawSkipTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), n = Math.max(1, Math.ceil(SKIP_N * closing));
-  ctx.globalAlpha = 0.45 + 0.45 * closing;
   for (let k = 0; k < n; k++) {
-    const s0 = k * SKIP_GAP, s1 = s0 + SKIP_GAP;
-    for (let s = s0 + 2; s < s1; s++) {
-      const h = Math.sin(Math.PI * (s - s0) / SKIP_GAP) * 7, x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + ny * s - ey - h);
-      if (s % 2) continue;
-      ctx.fillStyle = VX_INK; ctx.fillRect(x, y + 1, 1, 1);
-      ctx.fillStyle = VX_LIT; ctx.fillRect(x, y, 1, 1);
+    const s = (k + 1) * SKIP_GAP, x = Math.round(p.x + nx * s - ex), y = Math.round(p.y + ny * s - ey), r = Math.max(2, 4 - k);
+    ctx.globalAlpha = 0.5 + 0.4 * closing;
+    fxPatch(x, y + 1, r + 1, 0.4, 1, k + 3, '#6f86ad'); // the scuff
+    for (let j = 0; j < r + 1; j++) { // the snow thrown up off it, forward
+      const fx = Math.round(x + nx * (1 + j) + (j % 2 ? 2 : -2)), fy = y - 2 - (j % 3) - (r - 2);
+      ctx.fillStyle = '#6f86ad'; ctx.fillRect(fx, fy + 1, 1, 1);
+      ctx.fillStyle = VX_WHITE; ctx.fillRect(fx, fy, 1, 1);
     }
-    const x = Math.round(p.x + nx * s1 - ex), y = Math.round(p.y + ny * s1 - ey);
-    ctx.fillStyle = VX_DEEP; fillEllipsePx(x, y, 3, 1);
-    ctx.fillStyle = VX_WHITE; ctx.fillRect(x - 3, y - 2, 1, 1); ctx.fillRect(x + 3, y - 2, 1, 1); ctx.fillRect(x, y - 3, 1, 1);
   }
   ctx.globalAlpha = 1;
 }
 // ICE LANE: the strip freezing out from her feet down the aim, as wide as it will lie
 function drawLaneTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), L = LANE_LEN * closing, w = LANE_W / 2;
-  for (const [hw, col, al] of [[w, VX_DEEP, 0.4], [w - 2, VX_ICE, 0.45]]) {
-    ctx.globalAlpha = al; ctx.fillStyle = col;
-    for (let s = 0; s <= L; s++) {
-      const cx = Math.round(p.x + nx * s - ex), cy = Math.round(p.y + 4 + ny * s - ey);
-      ctx.fillRect(cx - Math.round(hw * Math.abs(ny)), cy - Math.round(hw * Math.abs(nx)), Math.round(hw * 2 * Math.abs(ny)) + 1, Math.round(hw * 2 * Math.abs(nx)) + 1);
-    }
-  }
-  ctx.globalAlpha = 0.9; ctx.fillStyle = VX_WHITE; // the freezing front
-  for (let k = -w; k <= w; k += 2) ctx.fillRect(Math.round(p.x + nx * L - ny * k - ex), Math.round(p.y + 4 + ny * L + nx * k - ey), 1, 1);
+  vxIce(p.x - ex, p.y + 4 - ey, nx, ny, L, 0.6, p.id * 37);
+  ctx.globalAlpha = 0.9; ctx.fillStyle = VX_WHITE; // the freezing front, broken
+  for (let k = -w; k <= w; k++) if (fxRoll(p.id, k + 20, 3) < 0.6) ctx.fillRect(Math.round(p.x + nx * (L + fxRoll(p.id, k + 20, 4) * 3) - ny * k - ex), Math.round(p.y + 4 + ny * L + nx * k - ey), 1, 1);
   ctx.globalAlpha = 1;
 }
 

@@ -46,20 +46,19 @@ HERO_SHOTS.brand = drawBrandShot;
 HERO_SHOTS.ember = drawEmberShot;
 
 // ---- on the snow ------------------------------------------------------------------
-// the wind-up: the line the fire will lie along, its two ends marked
-function drawBrushTele(cx, cy, nx, ny, col, alpha) {
-  ctx.globalAlpha = alpha;
-  const h = BRUSH_LEN / 2;
-  for (let s = -h; s <= h; s += 3) {
-    const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y + 1, 2, 2);
-    ctx.fillStyle = col; ctx.fillRect(x, y, 2, 2);
+// the wind-up: the snow thawing in a wet strip from the middle of where the fire will
+// lie, a low flame creeping out at each end of it and embers hopping along it
+function drawBrushTele(cx, cy, nx, ny, closing, now) {
+  const h = BRUSH_LEN / 2, run = h * (0.25 + 0.75 * closing);
+  ctx.fillStyle = '#8fa6c4';
+  for (let s = -run; s <= run; s++) ctx.fillRect(Math.round(cx + nx * s), Math.round(cy + ny * s), 1, 2);
+  for (const e of [-run, run]) igFlame(Math.round(cx + nx * e), Math.round(cy + ny * e) + 1, 2 + Math.round(2 * closing), now, e);
+  for (let k = 0; k < 5; k++) {
+    const u = (now * 2 + k / 5) % 1, s = (fxRoll(77, k + Math.floor(now * 2 + k / 5) * 5, 1) * 2 - 1) * run;
+    const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s - 4 * 4 * u * (1 - u));
+    ctx.fillStyle = IG_EMBER; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = u < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
   }
-  for (const e of [-h, h]) {
-    const x = Math.round(cx + nx * e), y = Math.round(cy + ny * e);
-    ctx.fillStyle = col; ctx.fillRect(x - 1, y - 2, 3, 5);
-  }
-  ctx.globalAlpha = 1;
 }
 // BRUSHFIRE: the melted strip (wet, darker snow), and while it burns, flames
 // standing along it, the ends lower; both sides see it
@@ -98,7 +97,7 @@ function drawBrandTele(p, a, closing, now, ex, ey) {
   for (let k = 0; k < 4; k++) { // sparks rising off it, each on its own beat
     const u = (now * 1.6 + k / 4) % 1, s = 10 + (L - 10) * fxRoll(p.id, k + Math.floor(now * 1.6 + k / 4) * 7, 2);
     const x = Math.round(p.x + nx * s - ex + Math.sin(u * 6 + k) * 1.5), y = Math.round(p.y + 2 + ny * s - ey - u * 9);
-    ctx.fillStyle = IG_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = IG_EMBER; ctx.fillRect(x, y + 1, 1, 1);
     ctx.fillStyle = u < 0.5 ? IG_CORE : IG_FLAME; ctx.fillRect(x, y, 1, 1);
   }
 }
