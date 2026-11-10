@@ -119,6 +119,7 @@ function render() {
   const tx1 = Math.min(WORLD - 1, Math.ceil((ox + WV_W) / TILE) + 1);
   const ty1 = Math.min(WORLD - 1, Math.ceil((oy + WV_H) / TILE) + 2);
 
+  drawRoostFootings(ex, ey); // each roost's kerbed round, under its healing ring (js/draw/footings.js)
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
   drawYards(ex, ey); // the trodden yard at a wolf den's mouth and a hog hut's door (js/draw/yards.js)
   drawFootings(ex, ey); // the paved round a tower, a bay or the stall stands on, under the bodies (js/draw/footings.js)
