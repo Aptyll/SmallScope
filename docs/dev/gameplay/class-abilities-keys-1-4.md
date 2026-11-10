@@ -35,7 +35,7 @@ hero does: every point has a home and nothing is stranded. The choice is the ORD
 one point and four dark keys, so the first thing a match asks is which ability you want to be.
 The rest of the set: `abLvCanBuy(p, i)` (a point in hand, room on the key, the hero level reached),
 `buyAbilityLv(p, i)` (the single entry point, reached through `input.cmd {kind:'ability', i}` →
-`runCmd` by HUD plate click and bots alike — the unlock floats `NAME UNLOCKED` and a fatter
+`runCmd` by HUD plate click and bots alike — the unlock floats `NAME UNLOCKED` (on that hero's own screen only: the floater's `own`, `drawPops`) and a fatter
 burst, every rank after floats the number, gold at the top rank), and `abCdOf(p, i)` — the
 cooldown at the held rank under COOLDOWN SPEED, which every cooldown-setting site reads instead of
 the row's `cd` (the cast landing, and the shield's comes-down reset). `p.abLv` resets with the match (every boot builds fresh `Player`s). The wells carry the progress — fat
