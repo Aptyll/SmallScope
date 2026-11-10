@@ -122,6 +122,7 @@ function layJungle() {
     placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty), wall: true });
   }
   jungleRound(inside);
+  jungleShelf(inside);
   jungleMarks();
 }
 // THE CORNERS: where two cuts meet, a lane's shelf and a path, the wall
@@ -219,6 +220,36 @@ function jungleMarks() {
       const { ln, tiles } = trunkAt(k, tx, ty);
       for (const [x, y] of tiles) placeObj(x, y, 'trunk', ln);
     });
+  }
+}
+// THE SHELF: the strip of open snow between a lane's verge and the wall
+// facing it, where the lane was cut through the woods. A few knots of the
+// felled pines' stumps are left on it: JUNGLE_SHELF_KNOTS of its tiles start
+// one, and each takes up to JUNGLE_SHELF_KNOT stumps within two tiles, rolled
+// on worldRng('jungleShelf'). Some are drawn as a trunk left lying
+// (stumpLook, js/draw/footings.js). A stump never blocks a walker, so no way
+// through changes; none stands on ice, by a cable or a tower, or near the creek
+const JUNGLE_SHELF = [2.5, 4.2];   // tiles past the road's edge a knot starts on
+const JUNGLE_SHELF_SPREAD = [1.6, 5]; // ...and its other stumps stand on, so a knot spreads off the edge line, not along it
+const JUNGLE_SHELF_KNOTS = 0.03, JUNGLE_SHELF_KNOT = 3;
+function jungleShelfAt(inside, tx, ty, band) {
+  if (!inWorld(tx, ty)) return false;
+  const i = idx(tx, ty);
+  if (!inside[i] || objects[i] || ground[i] !== 0) return false;
+  const d = roadDist(tx, ty, true);
+  if (d < band[0] || d > band[1]) return false;
+  if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) return false;
+  return creekAt(tx + 0.5, ty + 0.5) >= JUNGLE_CREEK_KEEP + 2;
+}
+function jungleShelf(inside) {
+  const rng = worldRng('jungleShelf');
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (rng() >= JUNGLE_SHELF_KNOTS || !jungleShelfAt(inside, tx, ty, JUNGLE_SHELF)) continue;
+    placeObj(tx, ty, 'stump');
+    for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
+      const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
+      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump');
+    }
   }
 }
 const JUNGLE_FELLS = { tree: true, stump: true, snag: true };
