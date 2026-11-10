@@ -33,16 +33,16 @@ function drawFalcoPerch(p, ax, ay, now, front) {
   if (!front || CLASSES[p.cls].passive !== 'hawk' || p.zip >= 0 || p.falcoSkyT > 0 || p.dodgeT > 0 || inAir(p)) return;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
   const bob = !p.moving ? 0 : -runBob(p);
-  // the glove: 3 px of tan on the off side, its outline outside and under it
+  // the glove: 3 px of tan on the off side, its outline outside and under it; the hawk stands on its outer px, so its head clears his hat
   const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + (heroAimed(p) ? 12 : 10) + bob; // the bird's head at his eye line; down at the hip while the knife arm is up, so only one arm is raised
   const fine = bodySet(p).dens > 1; // his fine body's glove and hawk are fine too (FALCO_FINE_ART)
   if (fine) ctx.drawImage(FALCO_FINE_ART.glove, gx - 1, gy - 1, 5, 4);
-  else { ctx.fillStyle = FC_INK; ctx.fillRect(gx - 1, gy - 1, 5, 4); ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 2); }
+  else { ctx.fillStyle = FC_INK; ctx.fillRect(gx, gy - 1, 3, 4); ctx.fillRect(gx - 1, gy, 5, 2); ctx.fillStyle = FALCO_GLOVE; ctx.fillRect(gx, gy, 3, 1); ctx.fillStyle = FALCO_GLOVE_D; ctx.fillRect(gx, gy + 1, 3, 1); } // a round fist, darker under, never a box
   if (!falcoHasHawk(p)) return;
   const right = side ? lead : !lead, hawk = fine ? FALCO_FINE_ART.hawk : FALCO_HAWK; // which way the hawk looks
   const img = right ? hawk : heldFlip(hawk);
   const fx = right ? FALCO_HAWK_FOOT[0] : heldW(img) - 1 - FALCO_HAWK_FOOT[0];
-  ctx.drawImage(img, gx + 1 - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0), heldW(img), heldH(img)); // now and then it shifts its feet
+  ctx.drawImage(img, gx + 1 + (lead ? -1 : 1) - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0), heldW(img), heldH(img)); // now and then it shifts its feet
 }
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
@@ -60,14 +60,14 @@ function drawHawkOut(b, ex, ey, now) {
 }
 
 // ---- knives -----------------------------------------------------------------------
-// a thrown knife at its tip (x, y) flying along (nx, ny): a short steel line, a dark
-// grip behind it, turning end over end every other frame
+// a thrown knife at its tip (x, y) flying along (nx, ny): the knife his hand carries (FALCO_KNIFE), pale steel,
+// a gold guard and the tan grip behind it, turning end over end every other frame
 function drawThrownKnife(x, y, nx, ny, now) {
   const spin = Math.floor(now * 16) % 2;
   const ax = spin ? -ny : nx, ay = spin ? nx : ny;
   for (let k = 2; k <= 6; k++) { ctx.fillStyle = k < 5 ? '#4f6288' : '#7f98bc'; ctx.fillRect(Math.round(x - nx * (5 + k)), Math.round(y - ny * (5 + k)), 1, 1); } // the air it cut
   for (let k = 0; k < 7; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
-  for (let k = 0; k < 7; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < 5 ? FC_STEEL : '#8a5f3a'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
+  for (let k = 0; k < 7; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < 4 ? FC_STEEL : k < 5 ? FC_GOLD : '#a3794f'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
 }
 HERO_SHOTS.knife = (a, sx, sy, now) => drawThrownKnife(Math.round(sx), Math.round(sy), Math.cos(a.ang), Math.sin(a.ang), now);
 
