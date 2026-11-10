@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FLAGSTONE LANES', '0.729'],
     ['NO CLOUDS ON THE EAGLE RIDE IN', '0.728'],
     ['ZIPLINES LAND PAST THE TOWER; MID CABLES EVEN', '0.727'],
     ['ONE DEATH, ONE REPLAY: A 1V1 LOSS NEEDS ONE ESC', '0.726'],

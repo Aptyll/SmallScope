@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.728';
+const PATCH_TXT = 'PATCH 0.729';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.729', 'EVERY LANE IS A FLAGSTONE PATH NOW, LAID IN BIG GREY STONES WITH DRY GRASS ALONG THE VERGE, AND IT STILL READS DARK AGAINST THE SNOW AT NIGHT.'],
   ['0.728', 'THE EAGLE RIDE IN HAS NO CLOUDS: YOU SEE THE VALLEY CLEARLY ALL THE WAY DOWN TO THE LANDING.'],
   ['0.727', 'ZIPLINES RUN ON PAST THEIR TOWERS TO A STAKE, SO YOU LET GO ON OPEN SNOW INSTEAD OF INTO THE WALL, AND BOTH MID CABLES NOW STOP THE SAME DISTANCE FROM THE MIDDLE.'],
   ['0.726', 'A 1V1 LOST ON FIRST STRIKE OPENS THE DEATH REPLAY ONCE: PUT IT AWAY AND THE DEFEAT STAYS CLEAR.'],
