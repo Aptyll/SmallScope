@@ -172,7 +172,36 @@ function lucernaLantern() {
   lucernaLanternArt = [bakeBladeArt(LUCERNA_LANTERN, LUCERNA_LANTERN_PAL), bakeBladeArt(beat, LUCERNA_LANTERN_PAL)];
   return lucernaLanternArt;
 }
-HERO_STAVES.lantern = { art: lucernaLantern, grip: LUCERNA_LANTERN_GRIP, cast: { up: 5, out: 1 } }; // gathering a cast she holds it aloft
+// ...and at 32 px for her fine body (`fine`, staffArt): drawn, not doubled, the grip the same world px:
+// the ring her hand goes through, a stepped eave, corner posts and a bar between them, two panes of glass with the flame's heart, a foot
+const LUCERNA_LANTERN_FINE = [
+  '....oooooo....',
+  '...oYyyyyYo...',
+  '...oyo..oyo...',
+  '...oyo..oyo...',
+  '..oooyooyooo..',
+  '.oYYyyyyyyYYo.',
+  'oYyyyyyyyyyyYo',
+  'oooooooooooooo',
+  'onnFFWnWWFFnno',
+  'onfFWWnWWWFfno',
+  'onfFFWnWWFFfno',
+  'onfFFFnFFFFfno',
+  'onffFFnFFFffno',
+  'onfffFnFFfffno',
+  'oooooooooooooo',
+  'oYyyyyyyyyyyYo',
+  '.oYYYYYYYYYYo.',
+  '..oooooooooo..',
+];
+let lucernaLanternFineArt = null;
+function lucernaLanternFine() {
+  if (lucernaLanternFineArt) return lucernaLanternFineArt;
+  const tag = (c) => { c.dens = 2; return c; };
+  const beat = LUCERNA_LANTERN_FINE.map((r) => r.replace('onfFWWnWWWFfno', 'onfFFWnWWFFfno').replace('onnFFWnWWFFnno', 'onnFFFnWFFFnno'));
+  return (lucernaLanternFineArt = [tag(bakeBladeArt(LUCERNA_LANTERN_FINE, LUCERNA_LANTERN_PAL)), tag(bakeBladeArt(beat, LUCERNA_LANTERN_PAL))]);
+}
+HERO_STAVES.lantern = { art: lucernaLantern, fine: lucernaLanternFine, grip: LUCERNA_LANTERN_GRIP, cast: { up: 5, out: 1 } }; // gathering a cast she holds it aloft
 
 // ---- the status plate -------------------------------------------------------------
 // PULLED (lucernaPull, js/sim/lucerna.js) on the frame's plate (statusIcon,
