@@ -65,6 +65,12 @@
     const set = Object.assign({
       down: w.down.map((g) => bk(g)), up: w.up.map((g) => bk(g)), right: side, left: side.map(fl),
     }, motionSet(row.motion, sp));
+    if (d > 1) set.dens = d;
+    // a finer look's own roll (`roll`: its frames in the doll's box at `d` px a world px)
+    if (row.roll) {
+      const R = row.roll, once = {}, get = (f) => once[f] || (once[f] = f === 'left' ? get('right').map(fl) : R[f].map((g) => bk(g)));
+      set.roll = Object.defineProperties({}, Object.fromEntries(['down', 'up', 'right', 'left'].map((f) => [f, { get: () => get(f), enumerable: true }])));
+    }
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
     for (const kind of ['run', 'hold']) {
