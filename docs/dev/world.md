@@ -141,7 +141,7 @@ array only ever flips ice ↔ hole at runtime and both are lake, so it never nee
 | --- | --- | --- |
 | **LIP** (`w` 1) | gentle wander, 2 px shade band | the sheet's two tones on a dithered low noise |
 | **DEEP** (`w` 2) | gentle wander, 3 px deeper band | pale shallows along the shore, then two steps darker to the middle, off `lakeDepth` |
-| **RIVER** (`w` 0, never rolled: the frozen creek's, `CREEK_ICE_STYLE`) | as LIP | `riverTone`, in the creek's own frame: a darker clear channel down the middle, wind-laid snow streaks along the flow on the sheet either side, and a crack bank to bank every few tiles, leaning and jagged by `hash2` |
+| **RIVER** (`w` 0, never rolled: the frozen creek's, `CREEK_ICE_STYLE`) | harder than a pond's: a three-step rim under the bank facing away from the sun (`RIVER_RIM`), a bright face and the crest's line on the sunward one (`RIVER_FACE`, `RIVER_CREST`) | `riverTone`, in the creek's own frame: a darker clear channel down the middle, wind-laid snow streaks along the flow on the sheet either side, a crack bank to bank every few tiles, leaning and jagged by `hash2`, snow swept across it in tongues along the wind (`RIVER_SWEPT*`), and a few frost glints a tile (`RIVER_GLINTS`) |
 
 The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
 the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
