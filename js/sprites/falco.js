@@ -1812,17 +1812,19 @@ SPRITES.weaponArt.knife = SPR.bake([
 ], { '.': null, o: '#241a12', T: '#eef2f8', W: '#ffffff', E: '#8b93a8', g: '#6b4a30', G: '#a3794f' });
 
 // The same knife as his hand holds it on the snow, small and never level at arm's length
-// (falcoCarry and HERO_AIMED.knife, js/draw/falco.js). FALCO_KNIFE.down hangs point down from
-// the fist at rest (`fwd` side-on, its point a pixel forward, drawn for a body facing right);
-// FALCO_KNIFE.up is raised point up for the throw.
+// (falcoCarry and HERO_AIMED.knife, js/draw/falco.js). FALCO_KNIFE.down hangs from the fist at rest, its five px
+// of pale steel slanting down and out from his coat so the blade stands on snow, never on him (`fwd` side-on is the
+// same knife, its point forward; drawn for a body facing right); FALCO_KNIFE.up is raised point up for the throw.
 // Each is { img, grip }, the grip where the fist closes.
 const FALCO_KNIFE = (() => {
-  const pal = { '.': null, o: '#241a12', W: '#ffffff', E: '#aab4c8', G: '#a3794f' };
+  const pal = { '.': null, o: '#241a12', W: '#ffffff', T: '#eef2f8', E: '#aab4c8', G: '#a3794f', y: '#f2cc6a' };
   const k = (rows, grip) => ({ img: SPR.bake(rows, pal), grip });
+  // carried: the grip in the fist, a gold guard, five px of pale steel slanting down and out, clear of his coat
+  const out = k(['.o....', 'oGo...', 'oGo...', 'oyyo..', '.oWo..', '.oWTo.', '..oWo.', '..oWEo', '...oWo', '....o.'], [1, 2]);
   return {
-    down: k(['.o.', 'oGo', 'oGo', 'oWo', 'oEo', 'oEo', '.o.'], [1, 2]),
-    fwd: k(['.o..', 'oGo.', 'oGo.', 'oWo.', '.oEo', '.oEo', '..o.'], [1, 2]),
-    up: k(['.o.', 'oWo', 'oWo', 'oWo', 'oEo', 'oGo', 'oGo', '.o.'], [1, 5]),
+    down: out,
+    fwd: out,
+    up: k(['.o.', 'oWo', 'oWo', 'oWo', 'oTo', 'oTo', 'oyo', 'oGo', 'oGo', '.o.'], [1, 7]),
   };
 })();
 // HIS HAWK ON THE GLOVE (drawFalcoPerch, js/draw/falco.js): the falconer's one shape. A tan
@@ -1831,7 +1833,7 @@ const FALCO_KNIFE = (() => {
 // a tapered tail. Drawn
 // looking right; FALCO_HAWK_FOOT is the pixel of its feet, which stand on the glove.
 const FALCO_HAWK = SPR.bake(['.oo..', 'obey.', 'oBWWo', 'oBbWo', '.oBo.', '..o..'],
-  { '.': null, o: '#2e2440', b: '#a8794a', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
+  { '.': null, o: '#2e2440', b: '#c09462', B: '#6e4a28', W: '#efe8d6', e: '#2e2440', y: '#f2cc6a' });
 const FALCO_HAWK_FOOT = [2, 5];
 const FALCO_GLOVE = '#c8a46a';
 // ...and the knife, the hawk and the glove at 32 px (dens 2) for his fine body (falcoArt, js/draw/falco.js):
