@@ -189,7 +189,7 @@ function drawLevelUp(p, spr, sx, sy, cx, cy) {
       ctx.globalAlpha = a;
       ctx.drawImage(scratch, 0, y * d, spr.width, m * d, sx, sy + y, w, m);
     };
-    rows(top, 4, 0.95); rows(top + 4, 4, 0.5); rows(top + 8, 5, 0.22);
+    rows(top, 4, 0.6); rows(top + 4, 4, 0.38); rows(top + 8, 5, 0.18); // see-through: the eyes stay under it
     ctx.globalAlpha = 1;
   }
   for (let i = 0; i < LV_STREAKS; i++) {

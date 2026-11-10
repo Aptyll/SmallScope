@@ -9,22 +9,23 @@
 // mirrored step pattern (circlePts), baked once per colour and size into a
 // canvas, since the rim is hundreds of pixels.
 // THE CHANNEL is the bird's own feathers (drawRecallFeathers, called by drawPlayer,
-// js/draw/bodies.js, behind the body and again over it): slate flight feathers
-// drift down one by one as the channel runs and turn round the body, closer and
-// quicker as it fills, and lift as the bird takes it; the bar over the head fills
-// with it. No ring on the snow: a count of feathers is the read.
+// js/draw/bodies.js, behind the body and again over it): white feathers tipped in
+// the side's colour drift down one by one as the channel runs and turn round the
+// body at the waist, closer and quicker as it fills, and take off together on the
+// last beat; the bar over the head fills with it. No ring on the snow.
 const ROOST_GLOW = [0.85, 0.5, 0.28, 0.14]; // the rim's four rings, outside in
-const RECALL_FEATHERS = 8;                  // how many have come down by three quarters of the channel
-const FEATHER_R = 15, FEATHER_R_MIN = 9;    // px out from the body they turn at, start and end
+const RECALL_FEATHERS = 6;                  // how many have come down by three quarters of the channel
+const FEATHER_R = 15, FEATHER_R_MIN = 10;   // px out from the body they turn at, start and end
 const FEATHER_DROP = 22, FEATHER_DROP_T = 0.8; // px a feather comes down from, and the s it takes
-const FEATHER_COL = { B: '#2a3042', L: '#8e9cba', T: '#f4f7ff' }; // the eagle's own slate and white (js/sprites/perch.js): the dark vane is its own outline on snow
-// the three ways a feather lies as it sways: level, quill down, quill up (whole pixels, never turned)
-const FEATHER_W = 9;
-const FEATHER_WIND = '#8fa6c8', FEATHER_WIND_2 = '#b4c4de'; // two steps under the snow, so it holds on it
+const FEATHER_LIFT = 0.88, FEATHER_LIFT_PX = 26; // the share of the channel they all take off at, and how far up
+// a feather's inks: a dark rim so it holds on snow and on ice, the eagle's white vane
+// (js/sprites/perch.js), a pale quill line, and `T` the side's own colour on the tip (skin(team))
+const FEATHER_COL = { o: '#2a3042', W: '#eef2fa', Q: '#a9b6d2' };
+// the three ways a feather lies as it sways: level, tip up, tip down (whole pixels, never turned)
 const FEATHER_ART = [
-  ['....BBBB.', 'TTLLLLLLB', '..BBBBB..'],
-  ['.....BBB.', '...BBLLLB', '..BLLLLB.', '.BLLBBB..', 'TTBB.....'],
-  ['TTBB.....', '.BLLBBB..', '..BLLLLB.', '...BBLLLB', '.....BBB.'],
+  ['...oooo...', '.ooWWWTo..', 'oQQQQQTTTo', '.ooWWWTo..', '...oooo...'],
+  ['.....ooo', '....oTTo', '...oWTTo', '..oWQWo.', '.oWQWo..', 'oQQWo...', 'oQoo....', '.o......'],
+  ['.o......', 'oQoo....', 'oQQWo...', '.oWQWo..', '..oWQWo.', '...oWTTo', '....oTTo', '.....ooo'],
 ];
 
 // a midpoint circle's pixels, each once: the eight octants mirror one step pattern
@@ -78,24 +79,21 @@ function drawRecallGround(ex, ey) {
 // half nearer the camera (drawn over the body), else the far half (drawn before it).
 // All of it is read off p.recallT, so every screen shows the same feathers.
 function drawRecallFeathers(p, cx, cy, front) {
-  const q = 1 - p.recallT / RECALL_T, tc = q * RECALL_T;
-  const r = FEATHER_R - (FEATHER_R - FEATHER_R_MIN) * q, lift = Math.max(0, q - 0.88) / 0.12 * 26;
+  const q = 1 - p.recallT / RECALL_T, tc = q * RECALL_T, tip = TEAMS[skin(p.team)].mark;
+  const lift = Math.max(0, q - FEATHER_LIFT) / (1 - FEATHER_LIFT); // the take-off, all of them together
+  const r = FEATHER_R - (FEATHER_R - FEATHER_R_MIN) * q + lift * 5;
   for (let i = 0; i < RECALL_FEATHERS; i++) {
     const age = tc - (Math.max(0, i - 1) / RECALL_FEATHERS) * 0.75 * RECALL_T; // the first two come together
     if (age < 0) break;
     const a = i * 2.399 + tc * (1.2 + 1.4 * q);
     if ((Math.sin(a) >= 0) !== !!front) continue;
-    const h = 4 + (i % 3) * 3 + Math.max(0, 1 - age / FEATHER_DROP_T) * FEATHER_DROP + lift;
-    const art = FEATHER_ART[[0, 1, 0, 2][Math.floor(tc * 5 + i * 1.7) % 4]], flip = Math.cos(a) < 0; // the quill leads
-    const x0 = Math.round(cx + Math.cos(a) * r) - (FEATHER_W >> 1), y0 = Math.round(cy + Math.sin(a) * r * 0.5 - h) - (art.length >> 1);
-    if (age > FEATHER_DROP_T) for (let k = 1; k <= 3; k++) { // the air it turns on, trailing where it has been
-      const b = a - 0.3 - k * 0.2;
-      ctx.fillStyle = k < 3 ? FEATHER_WIND : FEATHER_WIND_2;
-      ctx.fillRect(Math.round(cx + Math.cos(b) * r) - 1, Math.round(cy + Math.sin(b) * r * 0.5 - h), k < 3 ? 2 : 1, 1);
-    }
-    for (let y = 0; y < art.length; y++) for (let x = 0; x < FEATHER_W; x++) {
-      const c = art[y][flip ? FEATHER_W - 1 - x : x];
-      if (c !== '.') { ctx.fillStyle = FEATHER_COL[c]; ctx.fillRect(x0 + x, y0 + y, 1, 1); }
+    // waist to shoulder, clear of the face
+    const h = 5 + (i % 3) * 2.5 + Math.max(0, 1 - age / FEATHER_DROP_T) * FEATHER_DROP + lift * FEATHER_LIFT_PX;
+    const art = FEATHER_ART[[0, 1, 0, 2][Math.floor(tc * 4 + i * 1.7) % 4]], w = art[0].length, flip = Math.cos(a) > 0; // the quill leads
+    const x0 = Math.round(cx + Math.cos(a) * r) - (w >> 1), y0 = Math.round(cy + Math.sin(a) * r * 0.5 - h) - (art.length >> 1);
+    for (let y = 0; y < art.length; y++) for (let x = 0; x < w; x++) {
+      const c = art[y][flip ? w - 1 - x : x];
+      if (c !== '.') { ctx.fillStyle = c === 'T' ? tip : FEATHER_COL[c]; ctx.fillRect(x0 + x, y0 + y, 1, 1); }
     }
   }
 }
