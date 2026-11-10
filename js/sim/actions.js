@@ -497,7 +497,7 @@ function hurtStruct(o, dmg, p, bot) {
   if (p instanceof Player) p.dmgStruct += Math.min(dmg, Math.max(0, o.hp));
   o.hp -= dmg;
   joltObj(o, 0.1, 0.22);
-  sfxAt('hit', c.x, c.y);
+  sfxAt(bot ? 'waveHit' : 'hit', c.x, c.y); // a soldier's axe on a wall is the lane's quieter blow
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
   tallyHit(o, dmg);
   shakeFor(p, 1);
@@ -721,7 +721,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
     hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined);
   } else {
     hitAim(e, nx, ny);
-    hurtRobot(e, dmg, nx, ny, src);
+    hurtRobot(e, dmg, nx, ny, src, o.cause === 'soldier' ? 'waveHit' : null);
     // the chassis takes its own shove inside hurtRobot; anything that names
     // one of its own, or scales the one it has, writes over it here
     if (o.kb !== undefined || km !== 1) {
