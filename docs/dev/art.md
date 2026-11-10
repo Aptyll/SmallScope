@@ -53,7 +53,7 @@ One family, on today's sprites. Measure against them in a real frame, never from
 - **One accent colour** per beast. On a hero the accent is the team colour, 16 px or more from every
   facing, as cloth or gear the character would own.
 - **Dark to mid on snow.** Nothing light sits on the border without ink round it.
-- **Scale.** A hero's body is 16 px tall. Pack beasts 11 to 22, big camp beasts 26 to 48, a
+- **Scale.** A hero's body is 16 px tall on its cell; a look's `fine` world body is drawn twice as fine, 32 px on the same cell, behind `?fine=1` for now ([sprites](sprites.md#hero-looks)). Pack beasts 11 to 22, big camp beasts 26 to 48, a
   hero-sized beast 14 to 22.
 - **No blood.** No spirits, totems or occult marks. Beasts are noble animals.
 - **Lone pixels are noise** unless they are an eye, a glint or a nostril.

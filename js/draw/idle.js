@@ -46,8 +46,8 @@ function idleCloth(p, now) {
   return s && !s.striding && now - s.t < CLOTH_LAG_T && now >= s.t && (s.dx || s.dy) ? s : null;
 }
 // the standing frame drawPlayer shows: the breath, with the cloth behind when it lags
-function idleFrame(p, now) {
-  const look = classSet(p), b = idleBreath(p, now), c = idleCloth(p, now), s = idleOf.get(p);
+function idleFrame(p, now, look = classSet(p)) {
+  const b = idleBreath(p, now), c = idleCloth(p, now), s = idleOf.get(p);
   if (s) { s.b = b; s.lag = c; }
   return (c && look.cloth(p.dir, c.dx, c.dy, b)) || look.breath[p.dir][b];
 }

@@ -331,18 +331,16 @@ function drawUnitStates(e, px, py, w, h, now) {
 function drawAbilityOnPlayer(p, px, py, now) {
   if (p.shieldT > 0) {
     const a = p.shieldA;
-    ctx.save();
-    ctx.translate(px + 8 + Math.round(Math.cos(a) * 7), py + 8 + Math.round(Math.sin(a) * 5));
-    ctx.rotate(a);
-    ctx.fillStyle = '#242a3a';
-    ctx.fillRect(-1, -7, 4, 14);
-    ctx.fillStyle = '#9aa3ad';
-    ctx.fillRect(-1, -6, 3, 12);
-    ctx.fillStyle = '#c8d2e4';
-    ctx.fillRect(-1, -6, 1, 12);
-    ctx.fillStyle = p.holdHit ? '#ffd95c' : TEAMS[skin(p.team)].mark; // the trim carries the side - gold while ARMATOS's bash is primed
-    ctx.fillRect(0, -2, 1, 4);
-    ctx.restore();
+    drawTurned(px + 8 + Math.round(Math.cos(a) * 7), py + 8 + Math.round(Math.sin(a) * 5), a, 8, () => {
+      ctx.fillStyle = '#242a3a';
+      ctx.fillRect(-1, -7, 4, 14);
+      ctx.fillStyle = '#9aa3ad';
+      ctx.fillRect(-1, -6, 3, 12);
+      ctx.fillStyle = '#c8d2e4';
+      ctx.fillRect(-1, -6, 1, 12);
+      ctx.fillStyle = p.holdHit ? '#ffd95c' : TEAMS[skin(p.team)].mark; // the trim carries the side - gold while ARMATOS's bash is primed
+      ctx.fillRect(0, -2, 1, 4);
+    });
   }
   drawUnitStates(p, px, py, 16, 16, now);
 }

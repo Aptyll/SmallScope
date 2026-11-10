@@ -200,11 +200,7 @@ function drawMerchant(b, ex, ey, now) {
       const prog = Math.min(1, b.workT / total);
       const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
       const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
-      ctx.save();
-      ctx.translate(Math.round(px + 8 + Math.cos(a) * 8), Math.round(py + 10 + Math.sin(a) * 8));
-      ctx.rotate(a + Math.PI / 2);
-      ctx.drawImage(SPRITES.itemAxe, -4, -4);
-      ctx.restore();
+      drawTurned(Math.round(px + 8 + Math.cos(a) * 8), Math.round(py + 10 + Math.sin(a) * 8), a + Math.PI / 2, 8, () => ctx.drawImage(SPRITES.itemAxe, -4, -4));
     }
   }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
@@ -355,9 +351,19 @@ const BODY_REACH = 30, BODY_REACH_UP = 44;
 // stage: a model on show off the map (the champ select's showcase, drawShowcase,
 // js/ui/select.js) - the tool in hand, no sun shade (its stage lights it), none of
 // the overhead tells, on any mode.
+// the pose set a body is drawn from here: its look's finer one (`fine`, champLook) in a
+// world layer, which is WD dense; its 16 px one anywhere else (a menu's showcase)
+function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && inWorldLayer() ? s.fine : s; }
+// a frame drawn at (x, y) at its world size: a finer look's (`dens`) at 1/dens, every pixel kept
+function frameW(spr) { return spr.width / (spr.dens || 1); }
+function frameH(spr) { return spr.height / (spr.dens || 1); }
+function drawFrame(spr, x, y) {
+  if (spr.dens > 1) ctx.drawImage(spr, x, y, spr.width / spr.dens, spr.height / spr.dens);
+  else ctx.drawImage(spr, x, y);
+}
 function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
-  const set = classSet(p)[p.dir];
+  const S = bodySet(p), set = S[p.dir];
   let frame = 0;
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
@@ -374,23 +380,23 @@ function drawPlayer(p, ex, ey, now, stage) {
   let spr = set[frame];
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
-  if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
+  if (running) spr = S[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
   // ...and standing still it breathes, its cloth a beat behind a stop or a turn (js/draw/idle.js)
   idleTick(p, striding, now);
-  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now);
+  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now, S);
   const MB = SPRITES.motionBox;
   const px = Math.round(p.x - 8 - ex) + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
   // where the frame's top-left sits: any frame - the 16x16 cell, a larger
   // hero's, a wider run frame, the hoist - is centred on the cell with its
   // floor on the cell's floor
-  const bx = px - ((spr.width - 16) >> 1);
-  const by = py + 16 - spr.height;
+  const bx = px - ((frameW(spr) - 16) >> 1);
+  const by = py + 16 - frameH(spr);
   // shadow (not while swimming in a hole, and not on a deer, which casts its own)
   if (!stage && p.fallT <= 0 && !p.mount) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow
-    if (p.dodgeT > 0) drawCastShade(classSet(p).roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
+    if (p.dodgeT > 0) drawCastShade(S.roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
     else drawCastShade(spr, bx, by);
   }
   if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
@@ -408,8 +414,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     // plunged through the ice: quick sink, only the head above the waterline
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
     ctx.save();
-    ctx.beginPath(); ctx.rect(bx - 2, by - 8, spr.width + 4, py + 12 - (by - 8)); ctx.clip();
-    ctx.drawImage(spr, bx, by + sink);
+    ctx.beginPath(); ctx.rect(bx - 2, by - 8, frameW(spr) + 4, py + 12 - (by - 8)); ctx.clip();
+    drawFrame(spr, bx, by + sink);
     ctx.restore();
     // ripple rings at the waterline
     ctx.fillStyle = 'rgba(207,228,242,0.75)';
@@ -424,8 +430,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     // turns over once, and comes up out of a squat - the doll's frames, lit
     // from where the sun is rather than spun with it. Each afterimage wears
     // the frame the roll showed where it is drawn.
-    const fr = classSet(p).roll[p.dir];
-    const at = (pr, back) => ctx.drawImage(fr[rollFrame(pr)],
+    const fr = S.roll[p.dir];
+    const at = (pr, back) => drawFrame(fr[rollFrame(pr)],
       px - MB.x - Math.round(nx * back), py - MB.y - Math.round(ny * back));
     if (prog >= 0.14) { ctx.globalAlpha = 0.12; at(prog - 0.14, 11); }
     if (prog >= 0.07) { ctx.globalAlpha = 0.28; at(prog - 0.07, 6); }
@@ -454,23 +460,20 @@ function drawPlayer(p, ex, ey, now, stage) {
     // are the deer's (riderSeat); what the hands hold is not cut
     if (seat) {
       ctx.save();
-      ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
+      ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, frameW(spr) + 64, 64); ctx.clip();
     }
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     const fade = heroFade(p); if (fade < 1) ctx.globalAlpha = Math.min(ctx.globalAlpha, fade); // a hero hidden by its own kit, as its side sees it (HERO_FADE, js/draw/heroes.js)
     heroBodyFx(p, ax, ay, now, false); // a hero's own marks behind the body: ARMATOS's standard (HERO_BODY_FX, js/draw/heroes.js)
     if (pose && pose.rot) {
-      ctx.save();
       // turned about the cell's middle (a doll frame is wider than the cell it holds)
-      ctx.translate(ax + 8, ay + 8);
-      ctx.rotate(pose.rot);
-      ctx.drawImage(spr, sx - ax - 8, sy - ay - 8);
-      ctx.restore();
+      const dx = sx - ax - 8, dy = sy - ay - 8;
+      drawTurned(ax + 8, ay + 8, pose.rot, Math.ceil(Math.hypot(Math.max(-dx, dx + frameW(spr)), Math.max(-dy, dy + frameH(spr)))), () => drawFrame(spr, dx, dy), spr.dens || 1);
     } else {
       // never washed white when struck: a hero's model stays solid so a
       // fight reads (Noah, 2026-11-10); the spark and the recoil tell the
       // hit (js/draw/hitfx.js)
-      ctx.drawImage(spr, sx, sy);
+      drawFrame(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
@@ -665,11 +668,32 @@ const CARRY_HAND_Y = { down: 1, up: -1, left: 0, right: 0 };
 function heldBehind(a) { return Math.sin(a) < -HELD_RISE; }
 // one held art at the hand (hx, hy), turned by `rot`, the hand closed on grip
 function drawGripped(img, grip, hx, hy, rot) {
-  ctx.save();
-  ctx.translate(Math.round(hx), Math.round(hy));
-  ctx.rotate(rot);
-  ctx.drawImage(img, -grip[0], -grip[1]);
-  ctx.restore();
+  drawTurned(Math.round(hx), Math.round(hy), rot, Math.ceil(Math.hypot(img.width, img.height)), () => ctx.drawImage(img, -grip[0], -grip[1]));
+}
+// Art turned by `rot` about (tx, ty), a whole world px: `draw` paints it about
+// the origin, within `r` world px of it. A turn is resampled onto the art's own
+// px (`d` a world px: 1 for today's sprites, a finer look's `dens`) on a scratch
+// first and then laid down like every other sprite, so a turned blade or shield
+// keeps the pixel size it has standing (turned straight into the WD-dense buffer
+// a 16 px sprite came out in half pixels).
+const turnCv = document.createElement('canvas'), turnCtx = turnCv.getContext('2d');
+function drawTurned(tx, ty, rot, r, draw, d = 1) {
+  if (d >= WD) { // the art is as fine as the buffer: turned straight in
+    ctx.save(); ctx.translate(tx, ty); ctx.rotate(rot);
+    try { draw(); } finally { ctx.restore(); }
+    return;
+  }
+  const n = 2 * r + 2;
+  if (turnCv.width < n * d || turnCv.height < n * d) { turnCv.width = turnCv.height = n * d; }
+  turnCtx.setTransform(1, 0, 0, 1, 0, 0);
+  turnCtx.clearRect(0, 0, n * d, n * d);
+  turnCtx.imageSmoothingEnabled = false;
+  turnCtx.setTransform(d, 0, 0, d, (r + 1) * d, (r + 1) * d);
+  turnCtx.rotate(rot);
+  const was = ctx;
+  ctx = turnCtx;
+  try { draw(); } finally { ctx = was; }
+  ctx.drawImage(turnCv, 0, 0, n * d, n * d, tx - r - 1, ty - r - 1, n, n);
 }
 // AN AIM IN DRAWN HEADINGS: a weapon with a slanted grid (SPRITES.weaponDiag,
 // js/sprites/weapons.js) is never turned to a free angle, which smears its

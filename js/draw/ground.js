@@ -1153,7 +1153,8 @@ const bodyShade = new WeakMap();
 function drawCastShade(spr, x, y, solid) {
   let m = bodyShade.get(spr);
   if (m === undefined) { m = shadeMask(spr, 0, spr.width, spr.height, SHADE_BODY, SHADE_BODY_A, 0, solid); bodyShade.set(spr, m); }
-  if (m) ctx.drawImage(m, x, y + m.oy);
+  const d = spr.dens || 1; // a finer look's frame: its shade at 1/dens too
+  if (m) { if (d > 1) ctx.drawImage(m, x, y + m.oy / d, m.width / d, m.height / d); else ctx.drawImage(m, x, y + m.oy); }
 }
 
 // ------------------------------------------------------------ the scenery bakes
