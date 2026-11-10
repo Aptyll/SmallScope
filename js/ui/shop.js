@@ -307,14 +307,18 @@ function shopLayout() {
     const big = (id, wx, r) => well(id, wx, sy(r) + 9, B);
     heads.push({ label: tr('shop.start'), x: gx, y: sy(0) });
     start.slice(0, fits).forEach((id, i) => big(id, gx + i * SHOP_REC_PITCH, 0));
-    const bx = gx + Math.min(start.length, fits) * SHOP_REC_PITCH + 12, boots = R.boots.slice(0, Math.max(0, Math.floor((gx + gw - bx + SHOP_REC_PITCH - B) / SHOP_REC_PITCH)));
-    if (boots.length) heads.push({ label: tr('shop.boots'), x: bx, y: sy(0) });
-    boots.forEach((row, i) => big(row.ids[0], bx + i * SHOP_REC_PITCH, 0));
+    // BOOTS beside START; with no room there (a narrow view, a long START), after the one path that view holds
+    const paths = Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W));
+    const room = (x0) => Math.max(0, Math.floor((gx + gw - x0 + SHOP_REC_PITCH - B) / SHOP_REC_PITCH));
+    const bx0 = gx + Math.min(start.length, fits) * SHOP_REC_PITCH + 12, br = room(bx0) ? 0 : 1, bx = br ? gx + paths * SHOP_PATH_W : bx0;
+    const boots = R.boots.slice(0, room(bx));
+    if (boots.length) heads.push({ label: tr('shop.boots'), x: bx, y: sy(br) });
+    boots.forEach((row, i) => big(row.ids[0], bx + i * SHOP_REC_PITCH, br));
     const games = tr('shop.games', { n: R.games });
     heads.push({ label: games, x: gx + gw - pixelTextWidth(games), y: sy(0), dim: true });
     // the paths, side by side: three wells a step apart with a chevron
     // between, and the pick and win rate under their prices
-    R.core.slice(0, Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W))).forEach((row, k) => { // the paths that fit
+    R.core.slice(0, paths).forEach((row, k) => { // the paths that fit
       const px = gx + k * SHOP_PATH_W;
       heads.push({ label: tr(!R.data ? 'shop.core' : row.best ? 'shop.mostWins' : 'shop.mostPicked'), x: px, y: sy(1) });
       row.ids.forEach((id, i) => big(id, px + i * SHOP_PATH_PITCH, 1));

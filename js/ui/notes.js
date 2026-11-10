@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SHOP: RECOMMENDED keeps its boots on a narrow screen', '0.902'],
     ['The fog along a cable has a clean straight edge', '0.900'],
     ['Nix sweeps up a trail of drift snow with DRIFT STEP, and Velox cuts skate lines and throws up ice on a LONG RUN', '0.899'],
     ['SHOP: RECOMMENDED shows its items at twice the size', '0.898'],
