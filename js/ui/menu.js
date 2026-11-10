@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.912';
+const PATCH_TXT = 'PATCH 0.913';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.913', 'WHILE YOUR BIRD IS DRIVEN OFF AFTER A SURRENDER, NO KEY OR CLICK LANDS ON THE HIDDEN RECORD SCREEN.'],
   ['0.912', 'A BLOW TAKEN DARKENS THE EDGE OF THE SCREEN FOR A BEAT INSTEAD OF WASHING IT RED.'],
   ['0.911', 'HIEMS\'S WHITEOUT IS ONE WIND OF DRIVEN SNOW ACROSS THE WHOLE STORM.'],
   ['0.910', 'RUPES PLOUGHS SNOW UP ALONG HIS SHOULDER CHARGE, AND SALVIA THROWS A TIED LINEN POULTICE THAT BURSTS INTO SAGE LEAVES.'],
