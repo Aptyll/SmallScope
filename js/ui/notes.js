@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The pines round each jungle camp can no longer be chopped open either', '0.855'],
     ['HIEMS and AURA at 32 px: team colour into the shoulders from behind', '0.854'],
     ['Lignum swings the same single-bit axe he carries', '0.853'],
     ['The jungle\'s pine walls can no longer be chopped open', '0.852'],
