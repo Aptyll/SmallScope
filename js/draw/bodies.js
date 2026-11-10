@@ -681,7 +681,7 @@ function drawGripped(img, grip, hx, hy, rot) {
 // pixels. It snaps to the nearest of eight headings (0 = +x, clockwise on the
 // screen): the level art turned by quarter turns, or the slanted one. The
 // fore hand is AIM_HAND px out from the hips, so the stock stays on the body.
-const AIM_HAND = 6, AIM_DROP = 1; // a row under the hands' line: a level stock sits below the chin
+const AIM_HAND = 6, AIM_HAND_UP = 2, AIM_DROP = 1; // a row under the hands' line: a level stock sits below the chin
 function aimHeading(a) { return ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; }
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
 function castAims(p) { if (!(p.castT > 0)) return false; const ab = abOf(p, p.castAb); return !!(ab && ab.aimHeld); }
@@ -823,7 +823,8 @@ function drawHeldTool(p, px, py, back) {
     if (dg) { // eight drawn headings, the stock at the shoulder
       const h = aimHeading(w), ha = h * Math.PI / 4;
       if (heldBehind(ha) === back) {
-        const hx = cxp + Math.round(Math.cos(ha) * AIM_HAND), hy = cyp + AIM_DROP + Math.round(Math.sin(ha) * AIM_HAND);
+        const up = Math.sin(ha) < 0; // aimed up the screen it stays at the shoulders, behind the head and under the health frame
+        const hx = cxp + Math.round(Math.cos(ha) * AIM_HAND), hy = cyp + AIM_DROP + Math.round(Math.sin(ha) * (up ? AIM_HAND_UP : AIM_HAND));
         if (h & 1) drawGripped(dg, WEAPON_GRIP.diag[A.art], hx, hy, ha - Math.PI / 4);
         else drawGripped(wIcon, iGrip, hx, hy, ha - fwd);
       }
