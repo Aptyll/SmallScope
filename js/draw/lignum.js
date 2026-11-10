@@ -46,17 +46,19 @@ function drawLignumAir(ex, ey, now) { for (const w of lignumAxes) drawLignumAxe(
 
 // ---- the felled trunk ---------------------------------------------------------------------
 // A whole pine lying where it fell: a bare bark trunk from the stump end, then tier on
-// tier of boughs narrowing to the tip, lit and snow-tipped along its upper side.
+// tier of boughs as wide as the blow lands, closing to a blunt top, lit and snow-tipped along its upper side.
 // `pineHalf` is its outline (px either side of the trunk's line, `s` px along a pine
 // `L` long): TIMBER's shadow is cut to the same shape (drawTimberTele).
 const LG_SNOW = '#f4f7ff', LG_SNOW_D = '#b9c8e2', LG_PINE_T = '#5a9a6c'; // the boughs' lit tops
-const PINE_BARE = 0.28, PINE_TIER = 8, PINE_WIDE = 9; // the bare trunk's share, a tier's px, the lowest tier's half-width
+const PINE_BARE = 0.28, PINE_TIER = 8, PINE_WIDE = 9, PINE_TOP = 0.8; // the bare trunk's share, a tier's px, the lowest tier's half-width, where the top starts to close
 const PINE_PUFF = 0.4; // s the snow it lands in hangs
 function pineHalf(s, L) {
   const bare = L * PINE_BARE;
   if (s < bare) return 2;
-  const u = (s - bare) / (L - bare), f = ((s - bare) % PINE_TIER) / PINE_TIER;
-  return Math.max(1, Math.round((PINE_WIDE * (1 - u) + 1.5) * (1 - 0.5 * f)));
+  const f = ((s - bare) % PINE_TIER) / PINE_TIER, top = L * PINE_TOP;
+  // as wide as the blow lands (TIMBER_W) nearly to the end, then closing to a blunt top
+  const env = s < top ? PINE_WIDE - 1.5 * (s - bare) / (top - bare) : PINE_WIDE - 1.5 - (PINE_WIDE - 5) * (s - top) / (L - top);
+  return Math.max(2, Math.round((env + 0.5) * (1 - 0.28 * f)));
 }
 // it comes down over LG_FALL (seen from above, its length growing as it tips), throws
 // up the snow it lands in, and sinks into the snow at the end of its life
