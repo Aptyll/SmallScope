@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['AURA at 32 px behind ?fine=1: body, roll and star-glass', '0.831'],
     ['A struck soldier no longer washes white', '0.830'],
     ['Slow shows as ice on the feet; a stunned hero slumps and sways', '0.830'],
     ['The gold pumps stand in a worked yard with a board walk to the lane', '0.829'],
