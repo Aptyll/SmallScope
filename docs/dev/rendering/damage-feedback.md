@@ -4,7 +4,8 @@ Combat damage is **one running total per body**, never a number per hit. `tallyH
 (js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
 dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
 `TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
-snapshot carry them and a client fades a total on the host's tick. The total stands **`TALLY_GAP`
+snapshot carry them and a client fades a total on the host's tick. A soldier wears its total only
+while a hero's blow is in it (`b.tallyBy`, `hurtRobot`): two waves meeting show bars, not sums. The total stands **`TALLY_GAP`
 (2) px clear of the frame's right edge** (past the colour-blind cap or the status plate when one is
 up), centred on the frame (a hero's 7-row plate, a unit's 4-row bar), in **that bar's colour** (`barCol`: a blue player's damage is blue, a
 beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1)

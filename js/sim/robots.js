@@ -60,6 +60,10 @@ function hurtRobot(b, dmg, nx, ny, src, cue) {
   b.flash = 0.12;
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
   tallyHit(b, dmg);
+  // whether a hero's blow is in the total it is running (b.tallyBy): a soldier wears its number only then,
+  // or two waves meeting bury the lane in each other's sums (queueTally, js/draw/overhead.js)
+  if (b.tallyN === b.tallyLast) b.tallyBy = false;
+  if (src instanceof Player) b.tallyBy = true;
   aiFarmLearn(src, dmg); // a bot remembers its blow for the next last hit (js/ai/ai-farm.js)
   const puff = (heroMachine(b) && heroMachine(b).puff) || ['#c3c9d3', '#ffb347']; // sparks off the plating, or a hero body's own (HERO_MACHINE `puff`)
   burst(b.x, b.y - 2, puff[0], 6, 45, 0.35, true);
