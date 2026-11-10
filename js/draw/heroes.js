@@ -68,9 +68,10 @@ function heroStaff(p, px, py) {
   let back = p.dir === 'left' || p.dir === 'up';
   if (STAFF_HOLDS[!busy && s.hold || 'lead'].far && p.dir === 'down') back = !back; // side-on it is always out in front
   // whichever hand holds it, it leans the way the face looks (THE GRIP RULE): the
-  // art is drawn leaning right, mirrored for a body facing left or away
+  // art is drawn leaning right, mirrored for a body facing left or away; facing the
+  // camera it leans out from the body, so its head never hides behind hers
   let img = s.art()[Math.floor(state.elapsed * 5) % 2];
-  const mirror = (p.dir === 'left' || p.dir === 'up') !== heldLeansLeft(img);
+  const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== heldLeansLeft(img);
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
   const up = staffCasting(p), rc = heroReach(p) + (up ? STAFF_OUT : 0);

@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.760';
+const PATCH_TXT = 'PATCH 0.761';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.761', 'HIEMS CARRIES A CLEAR SNOWFLAKE ON HER STAFF, AND A RESTING STAFF NO LONGER HIDES BEHIND THE HEAD.'],
   ['0.760', 'A FALLING STAR LANDS IN SPARKLES, BRUSHFIRE THAWS A STRIP, THE HAWK LOOKS LIKE A HAWK, AND THE MARK UNDER A HERO IS ONE THIN RIM.'],
   ['0.759', 'THE LANES KEEP A CLEAN STRAIGHT EDGE UNDER THEIR LIP OF SNOW, AND THE REEDS GROW IN THREE KINDS OF TUFT.'],
   ['0.758', 'FIVE MORE HEROES TURN SIDE-ON WITH A NECK AND A NEAR ARM, VELOX CARRIES A REAL SLING AND LUCERNA A CAGED LANTERN.'],
