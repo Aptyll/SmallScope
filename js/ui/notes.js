@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Nix carries her dirk clear of her face', '0.806'],
     ['THE RING\'S GATES ARE DRESSED STONE SLABS', '0.805'],
     ['TOWERS CATCH THE DAWN AND DUSK LIGHT', '0.804'],
     ['THE COACH SHOWS EACH LESSON ITS LINE ONCE', '0.803'],
