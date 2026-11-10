@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['AURA\'s THE CURTAIN is drawn as solid ribbons of light', '0.907'],
     ['ROOST: no ring, a white feather settles on the hero the bird is mending', '0.906'],
     ['Down when your side wins? You get VICTORY now', '0.905'],
     ['FORTIVA\'s DEFIANT HEART shows as gold chains and a heart plate on her chest', '0.904'],
