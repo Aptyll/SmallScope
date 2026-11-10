@@ -101,7 +101,9 @@ close()
 A transport also carries `open` (the room or lobby is up and the host known), `error`, and on a
 host `roomData(data)`, what the rooms list shows of this room. It raises the same notices on either
 wire: `{t:'peer'}` / `{t:'gone'}` to a host as someone comes or goes, and on the relay
-`{t:'closed'}` (a client's socket dropped; it redials every `WS_RETRY` s) and `{t:'hostGone'}`.
+`{t:'closed'}` (a socket dropped; it redials after `WS_RETRY` s, doubling to `WS_RETRY_MAX`) and `{t:'hostGone'}`.
+A socket that never once reached the relay stops after `WS_GIVEUP` dials with `error` `NORELAY`: a
+web build on a static host, or the wrapper with no relay running, plays on alone without redialing.
 
 **Steam leads in the wrapper, the relay everywhere else (Noah's ruling, 2026-10-14; the relay led
 from 2026-09-14).** A player's own machine runs no relay, so a Steam launch with the API up asks
@@ -521,7 +523,7 @@ The same screens and the same protocol ride either transport; only the list and 
   number, clears its input and parks the slot under the client's `uid` (`NET.parked`) for
   `RECONNECT_GRACE` (60 s). A `hello` with that `uid` inside the grace, while the slot is still a
   bot, lands back in it - `welcome`, `full`, `remote` again. On the relay the client redials on
-  its own every `WS_RETRY` (2 s) and says `hello` again on open. Past the grace the `uid` is a
+  its own (`WS_RETRY`, 2 s, doubling to `WS_RETRY_MAX`) and says `hello` again on open. Past the grace the `uid` is a
   stranger and joins like one. The `uid` lives in `sessionStorage`, so it survives a reload and
   not a new tab.
 - **A mid-match join** to a party is refused (`BUSY`). Without a mode it is a `hello` from an unknown `uid` while `state.drop` is set: accepted

@@ -8,15 +8,24 @@
 // the wire form is cut from the snapshot later, not written beside it.
 // Reliable and ordered, which is what a WebSocket is, so a delta against the
 // last thing SENT is correct here; an unreliable channel needs the ack the
-// plan describes. A client that loses the socket redials on its own every
-// WS_RETRY seconds with the same uid, and the host hands it its slot back.
+// plan describes. A socket that drops redials on its own with the same uid
+// (the host hands a client its slot back), first after WS_RETRY seconds and
+// twice as long after each failure up to WS_RETRY_MAX, so a relay that is
+// down never costs a frame. A socket that never once reached the relay stops
+// after WS_GIVEUP tries with error NORELAY: a page with no relay behind its
+// address (the web build on a static host, the wrapper with none running)
+// plays on alone, and no room was ever handed out that anyone could join.
 //
 // The RELAY ADDRESS (host:port) is netRelay()'s to decide (js/net/net.js);
 // a host hands no room and is given a code by the relay's greeting, a client
 // hands the code it picked off the list. wsRooms() is the list itself: a
 // socket in the `list` role the relay pushes the open rooms to, kept for as
 // long as the screen that asked is up.
-const WS_RETRY = 2;
+const WS_RETRY = 2;       // s before the first redial
+const WS_RETRY_MAX = 30;  // s: the longest wait the doubling reaches
+const WS_GIVEUP = 3;      // failed dials before a socket that never opened stops
+// the wait before redial n (1, 2, ...): WS_RETRY, doubled each time, capped
+function wsBackoff(n) { return Math.min(WS_RETRY_MAX, WS_RETRY * Math.pow(2, Math.max(0, n - 1))); }
 function wsUrl(relay, params) {
   const secure = location.protocol === 'https:' || /^wss:/.test(relay);
   const host = relay.replace(/^wss?:\/\//, '').replace(/\/+$/, '');
@@ -25,11 +34,21 @@ function wsUrl(relay, params) {
 function wsTransport(relay, room) {
   const T = {
     relay, room: room ? String(room).toUpperCase() : null, sock: null, id: -1, open: false, queue: [], role: null, retryT: 0, error: null,
+    fails: 0,      // dials in a row that ended without the relay's greeting
+    reached: false, // has this socket ever been greeted: one that has keeps redialing
     connect() { this.role = 'client'; this.dial(); },
     listen() { this.role = 'host'; this.dial(); },
+    // a dial that ended without a greeting: wait longer before the next, or
+    // stop for good when the relay was never there at all
+    failed(why) {
+      this.fails++;
+      if (!this.reached && this.fails >= WS_GIVEUP) { this.error = 'NORELAY'; this.retryT = Infinity; return; }
+      if (why) this.error = why;
+      this.retryT = wsBackoff(this.fails);
+    },
     dial() {
       const params = 'role=' + this.role + (this.room ? '&room=' + encodeURIComponent(this.room) : '');
-      let s; try { s = new WebSocket(wsUrl(this.relay, params)); } catch (e) { this.error = String(e); this.retryT = WS_RETRY; return; }
+      let s; try { s = new WebSocket(wsUrl(this.relay, params)); } catch (e) { this.failed(String(e)); return; }
       s.binaryType = 'arraybuffer';
       s.onopen = () => { this.error = null; };
       s.onmessage = (ev) => {
@@ -42,14 +61,19 @@ function wsTransport(relay, room) {
           return;
         }
         let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
-        if (m.t === 'relay') { this.id = m.id; if (m.room) this.room = m.room; this.open = true; return; }
+        if (m.t === 'relay') { this.id = m.id; if (m.room) this.room = m.room; this.open = true; this.reached = true; this.fails = 0; return; }
         if (m.t === 'refuse' && !this.open) { this.error = m.why; this.retryT = Infinity; return; } // no such room: do not redial
         // another host took this room (the relay routes to it now): stand down
         // rather than redial and take it back, or the two would swap it forever
         if (m.t === 'replaced') { this.error = 'REPLACED'; this.close(); return; }
         this.queue.push({ peer: m.peer === undefined ? 'host' : m.peer, msg: m });
       };
-      s.onclose = () => { this.open = false; this.sock = null; if (this.retryT !== Infinity) this.retryT = WS_RETRY; this.queue.push({ peer: 'host', msg: { t: 'closed' } }); };
+      s.onclose = () => {
+        const was = this.open;
+        this.open = false; this.sock = null;
+        if (this.retryT !== Infinity) { if (was) { this.fails = 0; this.retryT = WS_RETRY; } else this.failed(); }
+        this.queue.push({ peer: 'host', msg: { t: 'closed' } });
+      };
       s.onerror = () => {};
       this.sock = s;
     },
@@ -80,13 +104,19 @@ function wsTransport(relay, room) {
   return T;
 }
 // the open rooms, live: cb(rooms) on connect and on every change; .close() when done
+// (the same doubling wait between redials, and the same stop when the relay was never there)
 function wsRooms(relay, cb) {
-  let sock = null, closed = false, retry = null;
+  let sock = null, closed = false, retry = null, fails = 0, reached = false;
+  const again = () => {
+    fails++;
+    if (closed || (!reached && fails >= WS_GIVEUP)) return;
+    retry = setTimeout(dial, wsBackoff(fails) * 1000);
+  };
   const dial = () => {
     if (closed) return;
-    try { sock = new WebSocket(wsUrl(relay, 'role=list')); } catch (e) { retry = setTimeout(dial, WS_RETRY * 1000); return; }
-    sock.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'rooms') cb(m.rooms, true); };
-    sock.onclose = () => { sock = null; cb([], false); if (!closed) retry = setTimeout(dial, WS_RETRY * 1000); };
+    try { sock = new WebSocket(wsUrl(relay, 'role=list')); } catch (e) { again(); return; }
+    sock.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'rooms') { reached = true; fails = 0; cb(m.rooms, true); } };
+    sock.onclose = () => { sock = null; cb([], false); again(); };
     sock.onerror = () => {};
   };
   dial();
