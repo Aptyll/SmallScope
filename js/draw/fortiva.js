@@ -2,8 +2,8 @@
 // ------------------------------------------------------------ fortiva
 // FORTIVA's pixels (her rules: js/sim/fortiva.js): the shapes her keys put on the
 // snow while they wind up, her greatsword, and what her state wears on her body - resolve high
-// as gold glints circling her, DEFIANT HEART's shield as a gold shell round
-// her, NO KNEELING's after as embers off her shoulders.
+// as gold glints circling her, DEFIANT HEART's shield as her chains worn crossed in gold and a gold heart
+// plate on her chest that cracks as it is spent, NO KNEELING's after as embers off her shoulders.
 
 const FT_INK = '#141a2c', FT_GOLD = '#f2cc6a', FT_GOLD_D = '#a9781f', FT_STEEL = '#c3ccd8', FT_SNOW_D = '#9fb6d8';
 // a broken piece of chain: a link lying flat (a lit oval) with the next one through it
@@ -110,6 +110,19 @@ function fortSwordsFine() {
 HERO_BLADES.chain = { art: fortSwords, fine: fortSwordsFine, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: FORT_GRIP, hold: 'far' };
 
 // ---- on her body ------------------------------------------------------------------
+// DEFIANT HEART's plate: a gold heart seven px wide, inked, lit on its left lobe, shaded down its right; (x, y) its
+// top middle. `cracks` 0-2 ink lines run down it as the shield is spent; `lit` whitens it for a frame.
+const HEART_PLATE = ['.oo.oo.', 'oGGoGgo', 'oGWGGgo', 'oGGGGgo', '.oGGgo.', '..oGo..', '...o...'];
+function drawHeartPlate(x, y, cracks, lit) {
+  const pal = { o: FT_INK, G: lit ? '#fff3b0' : FT_GOLD, g: FT_GOLD_D, W: '#ffffff' };
+  for (let r = 0; r < 7; r++) for (let i = 0; i < 7; i++) {
+    const ch = HEART_PLATE[r][i];
+    if (ch !== '.') { ctx.fillStyle = pal[ch]; ctx.fillRect(x - 3 + i, y + r, 1, 1); }
+  }
+  ctx.fillStyle = FT_INK;
+  if (cracks > 0) { ctx.fillRect(x + 1, y + 1, 1, 1); ctx.fillRect(x, y + 2, 1, 1); } // one crack, from the notch down
+  if (cracks > 1) { ctx.fillRect(x, y + 3, 1, 1); ctx.fillRect(x - 1, y + 4, 1, 1); } // ...and on to the tip
+}
 function drawFortBody(p, ax, ay, now, front) {
   if (CLASSES[p.cls].passive !== 'unbroken') return;
   const cx = ax + 8, cy = ay + 10;
@@ -123,14 +136,22 @@ function drawFortBody(p, ax, ay, now, front) {
     }
   }
   if (!front) return;
-  // DEFIANT HEART: her chest thrown out with a flash as it starts and links bursting
-  // off her, then her chains worn crossed over the heart, gold, for as long as it holds
+  // DEFIANT HEART: her chest thrown out with a flash as it starts and links bursting off her, then, for as
+  // long as it holds, her chains worn crossed over her in gold, two px thick, and on her chest where they
+  // cross a gold heart plate. The plate is the shield: it cracks once it has lost a third and again at two
+  // thirds. From behind only the crossed chains show.
   if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
-    const age = DEFY_T - p.defyT, hx = ax + 8, hy = ay + 9;
-    for (let s = -3; s <= 3; s++) { // the crossed chains
-      const lit = (s + Math.floor(now * 8)) % 4 === 0;
-      ctx.fillStyle = FT_INK; ctx.fillRect(hx + s, hy + s + 1, 1, 1); ctx.fillRect(hx + s, hy - s + 1, 1, 1);
-      ctx.fillStyle = lit ? '#ffffff' : s % 2 ? FT_GOLD : FT_GOLD_D; ctx.fillRect(hx + s, hy + s, 1, 1); ctx.fillRect(hx + s, hy - s, 1, 1);
+    const age = DEFY_T - p.defyT, side = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0, hx = ax + 8 + side, hy = ay + 10;
+    const glint = Math.floor(now * 8) % 12; // a light running down the chains now and then
+    for (let s = -4; s <= 4; s++) for (const d of [1, -1]) { // the crossed chains, shoulder to hip
+      const x = hx + s, y = hy + s * d;
+      ctx.fillStyle = FT_INK; ctx.fillRect(x, y + 2, 1, 1);
+      ctx.fillStyle = s + 4 === glint ? '#ffffff' : (s & 1) ? FT_GOLD : '#ffe08a'; ctx.fillRect(x, y, 1, 1);
+      ctx.fillStyle = (s & 1) ? FT_GOLD_D : FT_GOLD; ctx.fillRect(x, y + 1, 1, 1);
+    }
+    if (p.dir !== 'up') {
+      const left = shieldOf(p, 'ward') / Math.max(1, p.defyHp);
+      drawHeartPlate(hx, hy - 3, left < 0.67 ? (left < 0.34 ? 2 : 1) : 0, glint === 6);
     }
     if (age < 0.3) {
       const u = age / 0.3, k = Math.round(4 * (1 - u));
