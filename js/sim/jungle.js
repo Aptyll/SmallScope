@@ -121,7 +121,34 @@ function layJungle() {
     if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) continue;
     placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty), wall: true });
   }
+  jungleRound(inside);
   jungleMarks();
+}
+// THE CORNERS: where two cuts meet, a lane's shelf and a path, the wall
+// ends in a square block. Each such corner gives up a slant of pines across
+// it, JUNGLE_ROUND_CUT along each side, but only where the block behind is
+// JUNGLE_ROUND_THICK pines deep both ways: a corner rounds off, and no thin
+// wall or wall's tip is eaten, so no way through gets shorter by more than
+// the slant
+const JUNGLE_ROUND_CUT = 3;   // pines along each side of a corner the slant takes (the corner's own counted)
+const JUNGLE_ROUND_THICK = 6; // pines deep the block behind a corner must stand, both ways, for its corner to go
+function jungleRound(inside) {
+  const wallAt = (x, y) => { const o = inWorld(x, y) && objects[idx(x, y)]; return !!o && o.type === 'tree' && o.wall; };
+  const openAt = (x, y) => inWorld(x, y) && !objects[idx(x, y)] && ground[idx(x, y)] !== 2;
+  const take = [];
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (!inside[idx(tx, ty)] || !wallAt(tx, ty)) continue;
+    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      // open on the five sides away from the block...
+      if (!openAt(tx - sx, ty) || !openAt(tx, ty - sy) || !openAt(tx - sx, ty - sy) || !openAt(tx - sx, ty + sy) || !openAt(tx + sx, ty - sy)) continue;
+      // ...and the block behind it whole
+      let whole = true;
+      for (let j = 0; j < JUNGLE_ROUND_THICK && whole; j++) for (let i = 0; i < JUNGLE_ROUND_THICK && whole; i++) whole = wallAt(tx + i * sx, ty + j * sy);
+      // the slant: every pine within JUNGLE_ROUND_CUT steps of the corner
+      if (whole) for (let j = 0; j < JUNGLE_ROUND_CUT; j++) for (let i = 0; i + j < JUNGLE_ROUND_CUT; i++) take.push([tx + i * sx, ty + j * sy]);
+    }
+  }
+  for (const [x, y] of take) objects[idx(x, y)] = null;
 }
 // the junctions' landmarks (JUNGLE_MARKS), each on open snow or not at all
 function jungleMarks() {
