@@ -8,9 +8,10 @@
 
 const BELLA_GOLD = '#f2cc6a', BELLA_GOLD_D = '#b98a2e', BELLA_INK = '#141a2c';
 
-// a 3 px diamond, its centre at (x, y); where the world is drawn fine (WD, js/app/canvas.js) a true diamond on half px
-function bellaPip(x, y, col) {
-  if (WD > 1 && worldDense()) {
+// a 3 px diamond, its centre at (x, y); `fine` (her own stacks, beside her body) is a true diamond on half px where
+// the world is drawn fine (WD, js/app/canvas.js). The marks over a head stay this size: they sit with the health frame.
+function bellaPip(x, y, col, fine) {
+  if (fine && WD > 1 && worldDense()) {
     for (let pass = 0; pass < 2; pass++) {
       ctx.fillStyle = pass ? col : BELLA_INK;
       const n = pass ? 2 : 3;
@@ -33,7 +34,7 @@ function bellaPip(x, y, col) {
 function drawBellaMarks(e, px, py, w, h, now) {
   if (e instanceof Player && CLASSES[e.cls].passive === 'calculated') {
     const full = e.prec >= PREC_MAX;
-    for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD);
+    for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD, true);
     if (e.parryT > 0) {
       const a = aimAngle(e);
       const cx = px + 8 + Math.round(Math.cos(a) * 6), cy = py + 8 + Math.round(Math.sin(a) * 4);
