@@ -53,7 +53,7 @@ function yardOf(C, Y) {
   const W = Math.ceil(Y.rx * (1 + Y.rag)) * 2 + 24, H = Math.ceil(reachY) * 2 + 24;
   c = document.createElement('canvas'); c.width = W; c.height = H;
   c.wx = cx - (W >> 1); c.wy = cy - (H >> 1);
-  const g = c.getContext('2d'), flip = hash2(key, 77) > 0.5;
+  const g = c.getContext('2d'), flip = hash2(key, 81) > 0.5;
   // open snow only: the yard stops at a pine, at ice and at paving
   const open = (x, y) => {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
