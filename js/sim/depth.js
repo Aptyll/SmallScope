@@ -130,7 +130,7 @@ function brushIn(D, fx, fy) {
   if (D.pool) return poolIn(D, fx, fy) - DEPTH_DEEP / D.amp * D.edge; // a pool is deep from there in
   const dx = fx - D.x, dy = fy - D.y;
   const a = dx * D.c + dy * D.s, b = -dx * D.s + dy * D.c;
-  const r = Math.hypot(a / D.a, b / D.b), th = Math.atan2(b * D.flip / D.b, a / D.a);
+  const r = Math.hypot(a / D.a, b / D.b), th = Math.atan2(b * D.flip / D.b, (D.self ? Math.abs(a) : a) / D.a);
   const wob = 1 + BRUSH_WOB * (vnoise(Math.cos(th) * 2 + D.key * 7.3, Math.sin(th) * 2 + D.key * 3.1) - 0.5) * 2
     + BRUSH_WOB2 * (vnoise(Math.cos(th) * 5 + D.key * 11.7, Math.sin(th) * 5 + D.key * 5.9) - 0.5) * 2;
   return (wob - r) * D.b;
@@ -161,10 +161,13 @@ function layBrush() {
   brushes.length = 0;
   BRUSH_PATCHES.forEach(([u, s, a, b, ang], k) => {
     const t = baseTile(0, u, s);
-    for (const side of Math.abs(u - (WORLD - 1) / 2) < 0.01 ? [0] : [0, 1]) {
+    // a patch on the mirror line is its own twin: laid at -45 degrees its long
+    // axis crosses the line square, so its rim wobbles alike either side of it (D.self)
+    const self = Math.abs(u - (WORLD - 1) / 2) < 0.01;
+    for (const side of self ? [0] : [0, 1]) {
       const g = (side ? 90 - ang : ang) * Math.PI / 180;
       const D = {
-        brush: true, key: k, x: side ? t.ty : t.tx, y: side ? t.tx : t.ty, a, b, c: Math.cos(g), s: Math.sin(g), flip: side ? -1 : 1,
+        brush: true, key: k, self, x: side ? t.ty : t.tx, y: side ? t.tx : t.ty, a, b, c: Math.cos(g), s: Math.sin(g), flip: side ? -1 : 1,
         len: a * (1 + BRUSH_WOB + BRUSH_WOB2) + BRUSH_SKIRT, head: 0, wid: 0, bend: 0, // driftTiles' reach
       };
       brushes.push(D); drifts.push(D);
