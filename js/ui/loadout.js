@@ -99,10 +99,13 @@ function loadoutKey(k) {
 function loadoutTip(L) {
   const h = loadoutHit(L), lo = selLoadout();
   if (!h || h === 'loP') return null;
-  if (h === 'loC') return tipCalling(lo.calling);
-  if (h.startsWith('loT')) return tipTrick(lo.tricks[+h.slice(3)]);
+  // the card stands over the open picker's plate, else over the pick's brief above the well: never on the wells, LOCK IN beside them or the hero's own name
+  const W = loLayout(L), opts = loOptions(W), B = selBrief(L);
+  const well = h === 'loC' ? W.calling : h.startsWith('loT') ? W.tricks[+h.slice(3)] : null;
+  const over = opts.length ? { x: opts[0].x - LO_PAD, y: opts[0].y - LO_PAD } : { x: well.x, y: B ? B.y : well.y };
   const id = h.slice(4);
-  return state.menu.loPick === 'c' ? tipCalling(id) : tipTrick(id);
+  const d = h === 'loC' ? tipCalling(lo.calling) : well ? tipTrick(lo.tricks[+h.slice(3)]) : state.menu.loPick === 'c' ? tipCalling(id) : tipTrick(id);
+  return d && Object.assign(d, { over });
 }
 
 // ---- the cards ------------------------------------------------------------------
