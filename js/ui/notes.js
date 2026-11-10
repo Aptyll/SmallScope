@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE TITLE STANDS BY THE FROZEN RIVER', '0.770'],
     ['Clivus and Arcus have proper side views and Arcus a proper back', '0.769'],
     ['THE FROZEN RIVER HAS ITS OWN ICE: A CHANNEL, STREAKS AND CRACKS', '0.768'],
     ['SOLDIERS BREAK APART AND BEASTS SINK INTO THE SNOW WHERE THEY FALL', '0.767'],
