@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.864';
+const PATCH_TXT = 'PATCH 0.869';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -51,6 +51,11 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.869', 'ANIMAL TRAILS RUN BETWEEN THE JUNGLE CAMPS AND THE WIND HAS CUT THIN RIDGES IN THE OPEN SNOW'],
+  ['0.868', 'VELOX\'S WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
+  ['0.867', 'BELLA\'S PARRY BLADE AND PIPS ARE DRAWN FINE BEHIND THE SWITCH.'],
+  ['0.866', 'EACH BAY STANDS ON A KERBED ROUND OF PAVING LIKE THE TOWERS.'],
+  ['0.865', 'SALVIA\'S WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
   ['0.864', 'A BLOW SCUFFS THE SNOW IN LOW MARKS, NOT A DOTTED RING'],
   ['0.863', 'RUPES\'S ICE MAUL IS ONE LENGTH CARRIED AND SWUNG, AND HIS WHOLE KIT IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
   ['0.862', 'BELLA\'S SWUNG SPATHA IS DRAWN AT 32 PX BEHIND THE SWITCH.'],
