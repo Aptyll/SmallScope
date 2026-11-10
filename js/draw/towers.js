@@ -40,6 +40,7 @@ function drawTowerTop(o, sx, sy) {
   const gun = set.towerGun[towerHead(o.ang || 0)][towerFrame(o)];
   drawSpriteFlash(gun, sx + t[0] + g[0], sy + t[1] + g[1], o.flash);
   drawSpriteFlash(set.towerFront, sx, sy, o.flash);
+  drawHourLit(set.towerFront, sx, sy, true); // the hour on the parapet as on the body (js/draw/structs.js)
   // the bar stands over the tallest the gun ever gets, always up: a tower is
   // a thing to bring down, and how far along that is is the whole read
   drawHealthBar(sx + (structSprite(o).width >> 1), sy + t[1] + g[1] - 2, o.hp, o.maxHp, evenBarW(40), o.team, undefined, o);
