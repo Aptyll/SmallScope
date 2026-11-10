@@ -66,10 +66,8 @@ fire          bow held: rising edge draws, falling edge looses; any of it ends
 work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered: the hop off the roosted bird (hopOff,
-              js/sim/eagle.js; read at the top of updatePlay's player loop,
-              before the air skips the body) - and
-              on the ground the zipline's: clip on under any side's cable,
+jump          edge-triggered (read at the top of updatePlay's player loop,
+              before the air skips the body): on the ground the zipline's: clip on under any side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
               js/sim/world.js; E sets it there)
@@ -991,9 +989,9 @@ what the rest of the code needs to know is this:
   starts no ally push and is no ally's anchor. A human's ping does steer its side's bots for either kind (`isHuman`). Notices (`raiseNotice`) and
   the own-bird alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
-  stats and `markDropped` never run on a client's screen, so
+  stats never run on a client's screen, so
   `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `earned` climbing is gold,
-  `kills` climbing a kill, `dead` rising a death, `aboard` falling the hop, and the first step of
+  `kills` climbing a kill, `dead` rising a death, and the first step of
   the ride the match and its first day. Its own landing (mode `play` and the landing's hard music
   cut once its bird is `down`) is `netClientMode`'s. A new local-only side effect in the sim needs its edge there.
 
@@ -1002,10 +1000,9 @@ what the rest of the code needs to know is this:
 Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()`. Each
 bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), RED's the
 bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
-the whole side on its back. The bots hop off one by one once the wings fold; a human hops off
-with E, the roll button or by walking, under the E HOP OFF indicator, after the
-[drop brief](rendering/eagle-drop-mode-drop.md#the-drop-brief) on a profile's first flight. Each rider's `spawn` comes
-from `landPlayer()`, the nearest open tile to where its hop came down, and that tile is what the
+the whole side on its back. The whole crew, bots and humans alike, leaps off together a beat
+after the impact ([the arrival](rendering/eagle-drop-mode-drop.md)), with no key to press. Each rider's `spawn` comes
+from `landPlayer()`, the nearest open tile to where its leap came down, and that tile is what the
 bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
 resources near a landing. `ringPts` (six points on a ring
 `SPAWN_D` tiles from the centre — `RING_N` is frozen at 6, decoupled from the player count) is the

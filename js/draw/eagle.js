@@ -52,8 +52,10 @@ function drawDropAir(ex, ey, now, air) {
     ctx.restore();
     ctx.globalAlpha = 1;
   }
+  if (air) drawDropSky(ex, ey, now, false);
   for (const e of d.eagles) if (dropFlies(e) === air) drawEagle(e, ex, ey, now);
   if (!air) return;
+  drawDropSky(ex, ey, now, true);
   // fallers: a hop off the wing, then the shrink from rider scale to the
   // ground's, shadow growing under them. This is a WORLD pass, so the cull is
   // against WV_*, not VIEW_* - the old VIEW_* bounds were half the zoomed-out
@@ -73,6 +75,104 @@ function drawDropAir(ex, ey, now, air) {
     const dw = Math.round(16 * sc);
     ctx.drawImage(ps, Math.round(px - dw / 2), Math.round(py - alt - 12 * sc), dw, dw);
   }
+}
+
+// THE SKY of the ride: height you can see. While your own bird flies, a pale
+// veil of altitude lies over the ground, a few clouds drift by between the
+// bird and the pines, and a couple of big ones slide past over it at the
+// frame's edges - each layer nearer the camera than the ground, so it slides
+// faster than the ground does (its parallax, DROP_SKY_UNDER/OVER). The
+// stoop takes it all away: the veil lifts and the clouds swell past the
+// frame as the bird drops through them. Pure reads of the bird's clock and
+// the camera, painted on the pixel grid (cloudSprite), seeded by hash2: every
+// screen grows the same sky, and nothing here touches the match.
+const DROP_SKY_UNDER = 1.35;  // the low clouds' parallax: how much faster than the ground they slide
+const DROP_SKY_OVER = 2.1;    // ...and the high ones, near the camera
+const DROP_VEIL = 'rgba(226,236,248,0.30)'; // altitude: the ground under a flying bird, paled
+const SKY_LIGHT = '#f6f9fe', SKY_MID = '#dfe8f4', SKY_SHADE = '#bccbe0'; // a cloud's three values, lit from the top left
+const SKY_DROP_SHADOW = 'rgba(30,48,84,0.28)'; // where a cloud's shadow falls on the ground
+const SKY_SHADOW_DX = 18, SKY_SHADOW_DY = 30; // world px from a low cloud to its shadow (the sun is high in the top left)
+const cloudCache = new Map();
+// one cloud, w x h world px, on a 2 px block grid: a cluster of round puffs
+// (stepped circles, never smoothed), lit on the top-left rim, shaded on the
+// bottom-right, flat between
+function cloudSprite(w, h, seed) {
+  const key = w + 'x' + h + ':' + seed;
+  let cv = cloudCache.get(key);
+  if (cv) return cv;
+  const B = 2, cw = w / B | 0, ch = h / B | 0;
+  const puffs = [];
+  const n = 5 + Math.floor(hash2(seed, 1) * 4);
+  for (let i = 0; i < n; i++) {
+    const u = (i + 0.5) / n, mid = 1 - Math.abs(u - 0.5) * 1.1; // biggest in the middle, a long low heap
+    const r = ch * (0.3 + 0.22 * hash2(seed, 10 + i)) * (0.55 + 0.45 * mid);
+    puffs.push({ x: cw * (0.16 + 0.68 * u), y: ch * (0.52 + (hash2(seed, 20 + i) - 0.5) * 0.36 * mid), r: Math.max(2, r) });
+  }
+  const inside = (x, y) => puffs.some((p) => (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= p.r * p.r);
+  cv = document.createElement('canvas');
+  cv.width = cw * B; cv.height = ch * B;
+  const g = cv.getContext('2d');
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    g.fillStyle = !inside(x + 0.5, y + 2.5) || !inside(x + 2.5, y + 1.5) ? SKY_SHADE
+      : !inside(x - 0.5, y - 0.5) ? SKY_LIGHT : SKY_MID;
+    g.fillRect(x * B, y * B, B, B);
+  }
+  // ...and its shadow on the pines below: the same shape, flat and cool
+  const sh = document.createElement('canvas');
+  sh.width = cv.width; sh.height = cv.height;
+  const g2 = sh.getContext('2d');
+  g2.drawImage(cv, 0, 0); g2.globalCompositeOperation = 'source-in';
+  g2.fillStyle = SKY_DROP_SHADOW; g2.fillRect(0, 0, sh.width, sh.height);
+  cv.shadow = sh;
+  cloudCache.set(key, cv);
+  return cv;
+}
+// the clouds of one layer, world-anchored on a grid of cells (one cloud or
+// none per cell, by hash2), so the sky has no edge wherever the ride goes:
+// `over` picks the high layer, bigger and sparser
+const SKY_CELL = 180, SKY_CELL_OVER = 400;
+function skyClouds(over, x0, y0, x1, y1) {
+  const out = [], C = over ? SKY_CELL_OVER : SKY_CELL, salt = over ? 900 : 300;
+  for (let gy = Math.floor(y0 / C) - 1; gy <= Math.floor(y1 / C) + 1; gy++) {
+    for (let gx = Math.floor(x0 / C) - 1; gx <= Math.floor(x1 / C) + 1; gx++) {
+      if (hash2(gx + salt, gy) > (over ? 0.4 : 0.7)) continue;
+      const sd = (gx * 73 + gy * 151 + salt) | 0;
+      out.push({
+        x: (gx + 0.2 + 0.6 * hash2(sd, 2)) * C, y: (gy + 0.2 + 0.6 * hash2(sd, 3)) * C,
+        w: over ? 200 + Math.round(hash2(sd, 4) * 120) : 100 + Math.round(hash2(sd, 4) * 110),
+        h: over ? 80 + Math.round(hash2(sd, 5) * 40) : 44 + Math.round(hash2(sd, 5) * 34), sd,
+      });
+    }
+  }
+  return out;
+}
+// how high the camera's bird still is: 1 in level flight, 0 on the ground
+function skyLift(e) {
+  if (state.mode !== 'drop' || !e) return 0;
+  if (e.state === 'fly') return 1;
+  if (e.state !== 'dive') return 0;
+  const u = Math.min(1, e.diveT / EAGLE_DIVE_T);
+  return 1 - u * u;
+}
+function drawDropSky(ax, ay, now, over) {
+  const e = state.drop.eagles[player.team], lift = skyLift(e);
+  if (lift <= 0) return;
+  if (!over) { ctx.fillStyle = DROP_VEIL; ctx.globalAlpha = lift; ctx.fillRect(0, 0, WV_W, WV_H); ctx.globalAlpha = 1; }
+  // the camera's centre in the world: what every layer's parallax turns about
+  const cx = ax + WV_W / 2, cy = ay + WV_H / 2;
+  const s = (over ? DROP_SKY_OVER : DROP_SKY_UNDER) * (1 + (1 - lift) * 1.6); // the stoop drops the bird through them
+  ctx.globalAlpha = Math.min(1, lift * 1.6);
+  const hw = WV_W / 2 / s, hh = WV_H / 2 / s;
+  for (const c of skyClouds(over, cx - hw, cy - hh, cx + hw, cy + hh)) {
+    const sp = cloudSprite(c.w, c.h, c.sd);
+    const x = Math.round(WV_W / 2 + (c.x - cx) * s - sp.width / 2 + Math.sin(now * 0.3 + c.sd) * 2);
+    const y = Math.round(WV_H / 2 + (c.y - cy) * s - sp.height / 2);
+    if (x > WV_W + 60 || y > WV_H + 60 || x + sp.width < -60 || y + sp.height < -60) continue;
+    if (!over) { const a = ctx.globalAlpha; ctx.globalAlpha = lift; ctx.drawImage(sp.shadow, x + SKY_SHADOW_DX, y + SKY_SHADOW_DY); ctx.globalAlpha = a; }
+    ctx.drawImage(sp, x, y);
+  }
+  ctx.globalAlpha = 1;
 }
 
 // The WIND TRAIL: level flight tears the air. ONE continuous ribbon streams
@@ -291,25 +391,15 @@ function drawEagle(e, ex, ey, now) {
         PR.put(ctx, PR.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
         ctx.globalAlpha = 1;
       }
-      // whoever rode the landing, still seated - world-sized now, the bird at
-      // rest is just a big bird - breathing with it, facing where it points
-      // (the local player: their first ground is this bird's back), with the
-      // gold landing ring pulsing under the bird once the brief has handed
-      // back - where the hop lands
+      // the crew for the beat before it leaps (CREW_HOP_T) - world-sized
+      // now, the bird at rest is just a big bird - breathing with it, facing
+      // where it points; only your name, as in flight
       const rd = riderDir(e);
       for (const p of players) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
         drawSeated(classSet(p), rd, sx + dx, sy + breath + dy, 1);
-        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, boardName(p), p.team);
-      }
-      if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
-        const ph = (now * 1.2) % 1;
-        ctx.globalAlpha = 0.8 - ph * 0.6;
-        ctx.strokeStyle = '#ffd95c';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(sx, sy, 10 + ph * 14, 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = 1;
+        if (p === player) seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, p.name, p.team);
       }
       // the pool, in team colour, up from the moment it roosts - the bar IS
       // the objective's introduction, so it never waits for a first hit.
@@ -344,7 +434,7 @@ function drawEagle(e, ex, ey, now) {
 
 // the ride's HUD: the gold arrow over you on the wing, the DRIFT key while
 // you step down, and the MAP key. The wider read is the M map.
-const FLIGHT_OPEN = '#ffd95c'; // the gold every "do it now" wears: your arrow on the wing, the HOP OFF key
+const FLIGHT_OPEN = '#ffd95c'; // the gold of your arrow on the wing
 function renderDropUI(now) {
   const d = state.drop;
   if (!d || window.DBG.hideUI) return;
@@ -374,15 +464,6 @@ function drawYouArrow(now, e) {
   ctx.fillStyle = FLIGHT_OPEN;
   for (let r = 0; r < 4; r++) ctx.fillRect(cx - 4 + r, cy + r, 9 - 2 * r, 1);
 }
-// an action's key cap - the shared one (drawKeyCap, js/ui/wheel.js), its
-// face lit white when `lit` - with its one word beside it in `col`, the pair centred on x with its top at y.
-// The roost's HOP OFF wears it.
-function drawCapBind(act, verb, x, y, col, lit) {
-  const vw = pixelTextWidth(verb);
-  const lab = keyCap(act), x0 = Math.round(x - (pixelTextWidth(lab) + 6 + 3 + vw) / 2);
-  const cw = drawKeyCap(ctx, x0, y, lab, false, lit ? 1 : 0);
-  drawPixelTextOutline(ctx, verb, x0 + cw + 3, y + 3, col, '#0f1632');
-}
 // one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
 // the keyboard - the key the action is bound to (keyCap, input.js).
 // Centred on x, or ending at x when `centre` is false.
@@ -391,59 +472,36 @@ function drawDropBind(act, verb, x, y, col, ts, centre) {
   drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
 }
 
-// The way off the roost, for a rider still seated after the brief: a keybind
-// indicator - the work key's cap with the one word beside it, bobbing at the seated
-// player's shoulder (beside, not above: above is the bird's own bar and
-// whoever is standing on the far side of it) - and the gold landing ring
-// pulsing under the bird (drawEagle). Play mode's UI pass, over the world (wToSX/wToSY), gone
-// the moment the hop starts.
-function drawHopPrompt(now) {
-  if (!state.drop || !player.aboard || state.dropBrief || window.DBG.hideUI) return;
-  const e = state.drop.eagles[player.team];
-  if (e.state !== 'down') return;
-  const bob = Math.round(Math.sin(now * 4) * 2);
-  // centred over your head, its foot HOP_GAP clear of your name tag's top
-  // (seatedName: the tag sits 8 world px over the seated body's head)
-  const set = classSet(player), dir = riderDir(e);
-  const tagTop = Math.round(wToSY(player.y - (set[dir][0].height - 5) - 8));
-  const y = tagTop - HOP_GAP - 10 + bob, cx = Math.round(wToSX(player.x));
-  drawCapBind('work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
-}
-
-
-// the brief's two headlines, one per roost: the bird on screen is the
-// picture, this says what to DO about it (the headline carve-out - a match
-// has exactly one win condition, and this is the once it is ever written
-// down). One line, verb first, nothing under it: the roost's team colour at
-// four times the drop HUD's text scale, low in the view under the bird, on
-// no plate - a 2 px dark rim carries it over the pines instead. Baked opaque
-// and faded as a canvas: an outline stamped under
-// globalAlpha goes blotchy (the CLAUDE.md text rule).
-let briefCv = null, briefCvKey = '';
-function drawDropBrief() {
-  const b = state.dropBrief;
-  if (!b || window.DBG.hideUI) return;
-  if (b.ph !== 'ours' && b.ph !== 'theirs') return;
-  const hold = b.ph === 'ours' ? BRIEF_HOLD_OURS : BRIEF_HOLD;
-  const a = Math.min(1, b.t / 0.25, Math.max(0, (hold - b.t) / 0.3));
+// the landing's headline: PROTECT YOUR EAGLE, low in the view under your
+// own roost, every match, while its wings settle (HEADLINE_IN, HEADLINE_HOLD
+// off the bird's own restT, so a client shows it on the same beat). The
+// headline carve-out: a match has exactly one win condition, and this is the
+// once it is ever written down. Verb first, nothing under it, in your side's
+// paint at HEADLINE_TEXT times the drop HUD's text scale, on no plate - a
+// dark rim carries it over the pines. Baked opaque and faded as a canvas: an
+// outline stamped under globalAlpha goes blotchy (the CLAUDE.md text rule).
+let headCv = null, headCvKey = '';
+function drawDropHeadline() {
+  const e = state.drop && state.drop.eagles[player.team];
+  if (PRACTICE || !e || e.state !== 'down' || window.DBG.hideUI || endScreen()) return; // the practice field boots with its birds down: no arrival
+  const t = e.restT - HEADLINE_IN;
+  const a = Math.min(1, t / 0.25, Math.max(0, (HEADLINE_HOLD - t) / 0.4));
   if (a <= 0) return;
   const ts = VIEW_H >= 500 ? 2 : 1; // the drop HUD's own text scale (renderDropUI)
-  const key = b.ph + ts;
-  if (!briefCv || briefCvKey !== key) {
-    const team = b.ph === 'ours' ? player.team : 1 - player.team;
-    const t1 = b.ph === 'ours' ? 'PROTECT YOUR EAGLE' : 'ATTACK THEIR EAGLE';
-    const hs = BRIEF_TEXT * ts, rim = BRIEF_RIM;
-    briefCv = document.createElement('canvas');
-    briefCv.width = pixelTextWidth(t1, hs) + rim * 2;
-    briefCv.height = 5 * hs + rim * 2;
-    const c2 = briefCv.getContext('2d');
+  const key = player.team + ':' + ts;
+  if (!headCv || headCvKey !== key) {
+    const t1 = 'PROTECT YOUR EAGLE', hs = HEADLINE_TEXT * ts, rim = HEADLINE_RIM;
+    headCv = document.createElement('canvas');
+    headCv.width = pixelTextWidth(t1, hs) + rim * 2;
+    headCv.height = 5 * hs + rim * 2;
+    const c2 = headCv.getContext('2d');
     for (let dy = -rim; dy <= rim; dy++) for (let dx = -rim; dx <= rim; dx++) {
       if (dx || dy) drawPixelText(c2, t1, rim + dx, rim + dy, '#0f1632', hs);
     }
-    drawPixelText(c2, t1, rim, rim, TEAMS[skin(team)].mark, hs);
-    briefCvKey = key;
+    drawPixelText(c2, t1, rim, rim, TEAMS[skin(player.team)].mark, hs);
+    headCvKey = key;
   }
   ctx.globalAlpha = a;
-  ctx.drawImage(briefCv, Math.round((VIEW_W - briefCv.width) / 2), Math.round(VIEW_H * BRIEF_Y));
+  ctx.drawImage(headCv, Math.round((VIEW_W - headCv.width) / 2), Math.round(VIEW_H * HEADLINE_Y));
   ctx.globalAlpha = 1;
 }

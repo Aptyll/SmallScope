@@ -297,10 +297,9 @@ function keyPress(e) {
   // that decides which prompt is showing) - but NOT over a merchant, which
   // takes the key ahead of the work itself; ordinary work is suppressed
   // while any wheel is up, and while the counter is open
-  // (sampleHumanInput). Seated on the roost, it is the hop (updateDrop reads
-  // the held work intent) and nothing else: the merchant stands beside the
-  // roost, and the counter opening instead would swallow the very key that
-  // gets you down.
+  // (sampleHumanInput). Seated on the bird it does nothing: the crew leaps
+  // off on its own (updateDrop), and the merchant standing beside the roost
+  // must not open its counter under the leap.
   if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
       !state.settingsOpen && !player.dead && !player.aboard) {
     // Riding a zipline, the key lets go of it - ahead of everything, since a
@@ -365,7 +364,7 @@ function keyPress(e) {
   // js/sim/abilities.js).
   const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
-  if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); }
+  if (keyIs(e, 'map') && !state.settingsOpen) { state.wheel = null; state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); }
   if (e.key === 'Escape') {
     // an open wheel goes first: a gesture half-finished, and Escape is how
     // it is thought better of
@@ -571,11 +570,10 @@ const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
 //        | {kind:'use', what:'shop'|'pkdie'|'agbell', o, tx, ty}
 // lock: the unit the tool is on; arm: A pressed, the next left press lays the attack-move; follow: the
-// right button is down over open ground; hop: a right press while seated on
-// the roost; mark: the last ring on the snow
-const ck = { order: null, lock: null, arm: false, follow: false, hop: false, mark: null };
+// right button is down over open ground; mark: the last ring on the snow
+const ck = { order: null, lock: null, arm: false, follow: false, mark: null };
 function ckOn() { return settings.scheme === 'click'; }
-function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; ck.hop = false; }
+function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; }
 function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
 // where a press landed, in the world: the chart's tile, the disc's point,
 // or the ground under the pointer - null over the HUD or off the map. `far`
@@ -608,14 +606,13 @@ function ckRightPress() {
   const pt = ckPoint();
   if (!pt) return;
   const { wx, wy, tx, ty } = pt;
-  // riding in, the press waits for the landing; seated, it is the hop
-  if (state.mode === 'drop') return;
-  if (player.aboard) ck.hop = true;
+  // riding in, and seated for the beat before the crew leaps, the press waits
+  if (state.mode === 'drop' || player.aboard) return;
   // on a zipline the press lets go of it, and walking to one it calls the
   // walk off; a press ON a drawn cable (zipUnder, js/sim/zipline.js - the
   // strand the hover lights) clips on under it or walks there and clips on
   // (a press anywhere else is the walk it always was)
-  else if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
+  if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
   else if (zipUnder(wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far && !player.aboard) {
@@ -703,9 +700,8 @@ function ckUse(p, o, walk, r) {
 function ckStep(p, dt) {
   const inp = p.input;
   const r = { mx: 0, my: 0, aimX: mouseWX(), aimY: mouseWY(), fire: null, work: false };
-  // seated on the roost: the right press was the hop (updateDrop reads the work intent)
-  if (p.aboard) { r.work = ck.hop; return r; }
-  ck.hop = false;
+  // seated on the bird there is nothing to order: the crew leaps on its own
+  if (p.aboard) return r;
   if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
   // falling off the roost: there is no route from mid-air (the seat is over
   // the bird's own solid tiles, and navTo would hand the goal back as
@@ -830,7 +826,7 @@ function sampleHumanInput(p, dt) {
     if (keyHeld('left') || (ar && keys['arrowleft'])) mx -= 1;
     if (keyHeld('right') || (ar && keys['arrowright'])) mx += 1;
   }
-  const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine && !state.dropBrief;
+  const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine;
   const c = ckOn() && live ? ckStep(p, dt) : null;
   if (c) { mx = c.mx; my = c.my; inp.aimX = c.aimX; inp.aimY = c.aimY; }
   // The chart does not stop the world, so it does not stop the player: you
@@ -851,7 +847,7 @@ function sampleHumanInput(p, dt) {
     p.fireArmed = false;
     return;
   }
-  // state.eagleCine / state.dropBrief: a ceremony has the camera - hands off
+  // state.eagleCine: the ceremony has the camera - hands off
   // the controls until it hands back, exactly as pause zeroes them
   if (!live) {
     inp.mx = inp.my = 0;

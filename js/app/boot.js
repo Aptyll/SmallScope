@@ -217,7 +217,6 @@ window.DBG = {
   players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
   // the eagle drop: the live flight records, or fly the birds in from scratch
   get drop() { return state.drop; }, beginDrop, landPlayer, hopOff, makeEagles, inAir,
-  hopOff: (p) => hopOff(p || player), // E off the roost for a rider who rode the landing (refused while the brief runs)
   // the two objectives: read them, chip one, or fell one outright without a siege
   get eagles() { return state.drop && state.drop.eagles; },
   // Perch's painter, every bird skin (js/sprites/perch.js); wear one with PROFILE.wear('bird', id)

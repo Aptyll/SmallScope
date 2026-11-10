@@ -37,7 +37,6 @@ sets it nowhere.** The only things that grant it are deliberate:
 | `Player.reset` — so `respawnPlayer` | 3 s (0 on the very first spawn) | nobody is spawn-camped |
 | `landPlayer`, `practiceRevive` | 2 s | a beat of grace while the snow settles |
 | the ice-hole scramble (`updatePlayer`, js/sim/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
-| the drop briefing (`js/sim/eagle.js`) | 0.4 s, refreshed | the lesson is not a fight |
 
 `rollTackle` **drops** them ([the roll is a hit](dodge-roll.md#the-roll-is-a-hit)).
 
