@@ -1035,6 +1035,41 @@
       '....osssssso....',
       '................',
     ],
+    // ...and round a roost, where the blast threw them (stumpLook): a stump
+    // drifted under, only its top showing...
+    [
+      '................',
+      '................',
+      '................',
+      '.......oo.......',
+      '.....wwvuww.....',
+      '...wWWWWWWWww...',
+      '..swwwwwwwwwss..',
+      '...ssssssssss...',
+    ],
+    // ...and two broken trunks lying in the snow, one each way
+    [
+      '................',
+      '.oooo...........',
+      'ocCcuooooooooo..',
+      'occcuuuuUuuuuuo.',
+      'ovcvuUuuuuUuuvo.',
+      '.oovvvvvvvvvvo..',
+      '.sssssssssssss..',
+      '................',
+    ],
+    [
+      '................',
+      '...........oooo.',
+      '..ooooooooouCcco',
+      '.ouuuuuUuuuucCco',
+      '.ovuuUuuuuuuvcvo',
+      '..ovvvvvvvvvvoo.',
+      '..ssssssssssssss',
+      '................',
+    ],
+    // ...and none: one under the roost's kerbed round, paved over
+    ['................'],
   ];
 
   // Dead trees: bare snags, the wiki's THE WORKS figure (js/ui/wiki.js). Same
