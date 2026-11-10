@@ -49,8 +49,9 @@ function drawAnimal(a, ex, ey, now) {
 // threat, bare track at rest and filling from the first flicker of
 // interest to the full bar it charges on (updateWolf, js/sim/wildlife.js); a
 // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
-// each is one, spent on the run and on the dash. Over the frame, the stun
-// stars or the noticed mark, never both. The bar's width is the kind's
+// each is one, spent on the run and on the dash. On its right, the status
+// plate while a control holds it (drawStatusPlate); over it, the noticed mark
+// unless it is stunned. The bar's width is the kind's
 // (beastFrame): BEAST_BAR_W, or a camp monster's own `frame` row - a bear's
 // is drawn at its body's 2x, cut into fixed `segs`, and centred whole,
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
@@ -63,11 +64,17 @@ function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
   const bc = F.centre ? mid + levelBadgeW(e.level) * k / 2 : cx; // the bar's centre: the plate's half off a centred frame's
   const bx = Math.round(bc - F.w * k / 2);                       // the bar's own left column (drawHealthBar's x)
   // a hero's summon (HERO_SUMMON) wears its side's bar, so it is never taken for a den's
-  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, e.summon ? e.team : undefined, undefined, u, k, F.segs);
+  const st = statusOf(e), team = e.summon ? e.team : undefined;
+  // a plate's total stands past the plate, where a player's does (drawPlayer)
+  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, team, undefined, st ? undefined : u, k, F.segs);
   drawHealthBar(bc, fy - 5 * k, two, 1, F.w, undefined, camp ? THREAT_COL : STAM_COL, undefined, k);
   drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
-  if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
-  else if (e.senseT > 0) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
+  if (st) {
+    drawStatusPlate(bx + (F.w + 1) * k, fy - 10 * k, e, st, k); // its left column the bar backing's right wall
+    if (u) queueTally(u, bx + (F.w + 1 + STATUS_W) * k, fy - 7 * k, barCol(team));
+  }
+  // the noticed mark over the head, unless its stunned plate says it is seeing nothing
+  if (e.senseT > 0 && !(e.stunT > 0)) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
   // a hero's marks on it (HERO_OVER) stand over all of that: the '!' tops the stack at fy - 16k
   if (now !== undefined) heroOver(e, mid, fy - 16 * k - 5, now);
 }
@@ -515,9 +522,10 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
-    // the colour-blind cap or the stun plate, whichever stands furthest out,
+    // the colour-blind cap or the status plate, whichever stands furthest out,
     // centred on the 7-row frame the badge spans (hy-8 .. hy-2)
-    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 4.5, unitBarCol(p));
+    const st = statusOf(p);
+    queueTally(p, fx + 8 + (st ? STATUS_W : foeCue(p.team) ? 1 : 0), hy - 4.5, unitBarCol(p));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
@@ -570,31 +578,17 @@ function drawPlayer(p, ex, ey, now, stage) {
       drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
       queueTally(p.mount, Math.round(cx - 7) + 15, Math.round(hy), MOUNT_BAR_COL); // where drawHealthBar puts a total
     }
-    // stunned: the mirror of the level badge on the other side of the frame -
-    // same backing, same track, sharing its left frame column with the health
-    // bar backing's right edge, so the stack still reads as one outline. The
-    // sparks say what the state is and the track drains from the bottom as the
-    // window runs out, which answers the only question a stun asks.
-    //
-    // Nothing is drawn here while nothing is stunning - an empty plate parked
-    // over every head is a bar that is never a bar. That does mean the resting
+    // the status plate: what has this body pinned, the mirror of the level
+    // badge on the frame's other side (drawStatusPlate, js/draw/overhead.js),
+    // the one state that matters most and nothing while nothing holds.
+    // That does mean the resting
     // frame is only the level badge plus the bars, 22 px spanning cx-14..cx+7,
     // sitting three pixels left of the sprite's own seam; turn the pink centre
     // column on under '.' (drawHitboxes) and you can see it. Fixing that by
     // shifting the badge and both bars 3 px right would take the BARS off the
     // body to square up a badge, and the frame would still grow rightwards the
-    // moment a stun landed, so it is left as it is.
-    if (p.stunT > 0) {
-      const bx = fx + 8, by = hy - 8;
-      ctx.fillStyle = BAR_FRAME;
-      ctx.fillRect(bx, by, 6, 7); // 6 wide: the column to its left is the bar backing, already painted
-      ctx.fillStyle = BAR_TRACK;
-      ctx.fillRect(bx, by + 1, 5, 5);
-      const h = Math.max(1, Math.round(5 * Math.min(1, p.stunT / Math.max(0.01, p.stunMax))));
-      ctx.fillStyle = '#b06a14'; // bright enough to read as a fill against the track, dim enough to sit under the sparks
-      ctx.fillRect(bx, by + 6 - h, 5, h);
-      drawStunStars(bx + 2, by + 3, p, 1.5, 1);
-    }
+    // moment a state landed, so it is left as it is.
+    if (st) drawStatusPlate(fx + 8, hy - 9, p, st);
     // bow draw meter: gold while charging, blinking white and settling to
     // pale gold the moment the draw is full - brighter, never a new hue, so it
     // stays the bow's colour next to a red rival's bar. Drawn for everyone -

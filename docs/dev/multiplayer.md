@@ -340,7 +340,7 @@ key unlocked once, then the basics maxed in the hero's own `rankOrder`.
 The level shows as a 7-tall badge in `drawPlayer`, flush against the left edge of the overhead
 bars' backing and spanning the health bar + stamina bar stacked (`py-8 .. py-1`), drawn for every
 player in the bars' backing/track colours with the digit in gold — it sizes itself to the number
-and grows left, so a two-digit level overhangs like the stun plate does on the other side.
+and grows left, so a two-digit level overhangs like the status plate does on the other side.
 `DBG.gainGold(n, p?)` pays a
 player (default local) the way a pickup would, which is how to stage a level.
 

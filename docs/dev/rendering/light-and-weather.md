@@ -62,7 +62,7 @@ the tint, the depth wash and the rim. It is the same carve-out the two debug ove
 the same reason. **The frames over a body are held back the same way**: `overheadPlate(fn)` queues
 one closure per body (`worldPlates`, with the `globalAlpha` and transform standing at the call),
 and `flushPlates`, first thing in `flushWorldInk`, runs
-them in draw order. A player's whole frame (bars, level plate, stun plate, meter and name), a
+them in draw order. A player's whole frame (bars, level plate, status plate, meter and name), a
 beast's, every `drawHealthBar` (robots, buildings, the regrow clocks) and the roost's PERCH bar
 go through it, so a bar is the same pixels in any light and nothing standing in front of a body
 (a pine, another body, a god ray, a cloud's edge) cuts into it; a nearer body's whole frame
