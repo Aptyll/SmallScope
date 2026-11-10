@@ -173,8 +173,8 @@ function renderMinimap(now) {
   if (state.drop) for (const e of state.drop.eagles) {
     if (e.state !== 'down') continue;
     const dx = (e.x / TILE - ptx) * s, dy = (e.y / TILE - pty) * s;
-    if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, HUD_INK);
+    if (Math.hypot(dx, dy) > MM_R - 5) continue;
+    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, HUD_INK, 1);
   }
   // the camps' glyphs - a name would not fit inside the disc (the
   // world map is where they are read by name)
