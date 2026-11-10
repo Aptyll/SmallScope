@@ -94,6 +94,13 @@
     // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
     // own `hand` letter (a glove), else its skin, ringed in its outline
     set.hand = sp[row.hand || hand || 'k']; set.ink = sp.o;
+    // the arm reached out behind a thrust staff (heroSleeve): the colour its side-on
+    // grid paints just over the near hand, else the side's coat; a row's `sleeve: 'r'`
+    // keeps the coat where that pixel is a scarf's end (IGNIA)
+    const hk = row.hand || hand || 'k', sg = grids.side;
+    let sl = 'r';
+    for (let y = sg.length - 4; y > sg.length / 2 && sl === 'r' && !row.sleeve; y--) { const x = sg[y].indexOf(hk), c = x > 0 ? sg[y - 1][x] : '.'; if (c !== '.' && c !== 'o' && c !== hk && sp[c]) sl = c; }
+    set.sleeve = sp[sl];
     // standing still: the breath's two frames a facing (heroBreath, js/sprites/armatos.js),
     // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
     // baked on first ask (drawPlayer's idle, js/draw/idle.js)

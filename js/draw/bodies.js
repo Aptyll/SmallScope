@@ -766,7 +766,10 @@ function swingFrame(p) {
 }
 // the body's offset for a blow or a staff's cast ({ dx, dy } whole px), or null
 function attackLean(p) {
-  if (heroStaffOf(p)) return staffCasting(p) ? { dx: 0, dy: -1 } : null; // a staff's cast lifts the body with it (staffCasting, js/draw/heroes.js)
+  if (heroStaffOf(p)) { // a staff's cast lifts the body as it gathers, then leans it in behind the thrust (staffBeat, js/draw/heroes.js)
+    const beat = staffBeat(p), th = STAFF_THRUST[p.dir];
+    return beat === 1 ? { dx: 0, dy: -1 } : beat === 2 ? { dx: Math.sign(th[0]), dy: Math.sign(th[1]) } : null;
+  }
   if (!attackOf(p).cut) return null;
   let a, s;
   if (swingFrame(p) >= 0) { a = p.slashA; s = 1; } // the strike and the held finish

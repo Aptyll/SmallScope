@@ -230,8 +230,10 @@ and held through a cast; the lantern's heart flickers between two baked frames. 
 carries it its own way** so two of them are two shapes on the snow: a `HERO_STAVES` row's `hold`
 names a `STAFF_HOLDS` entry (none is the leading hand; `far` the other hand, SALVIA and HIEMS).
 A staff is always upright with its foot by the hero's own. A draw or a cast brings it into the
-leading hand; a draw lifts it 1 px, and a cast or the beat after a shot raises it up and a pixel out,
-still in the hand, with the body a pixel up (`staffCasting`).
+leading hand; a draw lifts it 1 px, and a cast is two beats (`staffBeat`): its first half gathers the
+staff up and a pixel out with the body a pixel up (a row's own `cast` sets it: BUCINA's horn at her lips, LUCERNA holds
+her lantern aloft), its second half and the beat after a shot thrust it the way she faces
+(`STAFF_THRUST`) with the body leaning in and the sleeve reaching out behind the fist (`heroSleeve`).
 
 **Every hero body shows its side from every facing**: the side's coat letters (`r`/`R`/`d`) fill 16 px
 or more of the torso facing down and up and 12 or more side-on, the lower back from behind

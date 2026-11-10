@@ -22,7 +22,7 @@ const HERO_SHOTS = {};
 // A hero whose CLASSES row names a `staff` carries it upright, its foot by the
 // hero's own, in every facing, drawn or not (a mage's staff is held, never swung
 // or aimed): HERO_STAVES[name] = { art() -> [frame, frame] canvases (the flame's
-// two beats), grip: [x, y] where the hand closes on the art, hold, lean }. `hold` is
+// two beats), grip: [x, y] where the hand closes on the art, hold, lean, cast }. `hold` is
 // which hand THIS hero carries it in at rest (STAFF_HOLDS; none is 'lead'), so two
 // staff heroes side by side are not one shape. A draw or a cast brings it into the
 // leading hand: the staff coming across is part of the tell.
@@ -55,13 +55,23 @@ function heldLeansLeft(img) {
 }
 function heldFlip(img) { return heldBaked(heldFlips, img, SPR.flipH); }
 function heldDrop(img) { return heldBaked(heldDrops, img, SPR.flipV); }
-// THE CAST POSE: a key's cast, and the beat a shot leaves the staff, raise it
-// up and out from the body (STAFF_CAST px) while the body rises a
-// pixel with it (attackLean, js/draw/bodies.js); a draw lifts it 1 px. Drawn
-// only, off the cast and the cycle the sim keeps (castT, nockT).
-const STAFF_CAST = { up: 2, out: 1 }; // out 1, so the hand stays on it; a row's own `cast` replaces it (BUCINA's horn goes to her lips)
-const STAFF_SHOT_T = 1 / 6; // s the staff stays raised after a shot leaves it (two body frames)
-function staffCasting(p) { return p.castT > 0 || (p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T); }
+// THE CAST POSE, two beats. GATHER: the first half of a key's cast raises the staff
+// up and out from the body (STAFF_CAST px, or the row's own `cast`: BUCINA's horn goes
+// to her lips, LUCERNA holds her lantern aloft) while the body rises a pixel with it.
+// LOOSE: the second half, and the beat a shot leaves the staff, thrusts it the way she
+// faces (STAFF_THRUST) with the body leaning in behind it (attackLean,
+// js/draw/bodies.js). A draw lifts it 1 px. Drawn only, off the cast and the cycle
+// the sim keeps (castT and castMax, nockT).
+const STAFF_CAST = { up: 2, out: 1 }; // out 1, so the hand stays on it; a row's own `cast` replaces it
+const STAFF_SHOT_T = 1 / 6; // s the staff stays thrust after a shot leaves it (two body frames)
+const STAFF_GATHER = 0.5; // the share of a cast spent gathering before the thrust
+const STAFF_THRUST = { right: [2, 0], left: [-2, 0], down: [0, 2], up: [0, -1] }; // px; up 1, under the health frame
+// 0 carried, 1 gathering, 2 loosing
+function staffBeat(p) {
+  if (p.castT > 0) return castProg(p) < STAFF_GATHER ? 1 : 2;
+  return p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T ? 2 : 0;
+}
+function staffCasting(p) { return staffBeat(p) > 0; }
 function heroStaff(p, px, py) {
   const s = heroStaffOf(p);
   if (!s) return false;
@@ -75,11 +85,22 @@ function heroStaff(p, px, py) {
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
-  const up = staffCasting(p), use = up && s.cast || STAFF_CAST, rc = heroReach(p) + (up ? use.out : 0);
-  const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? use.up : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
+  const beat = staffBeat(p), use = beat === 1 ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 ? STAFF_THRUST[p.dir] : [0, 0];
+  const hx = (back ? px + 2 - rc : px + 13 + rc) + th[0];
+  const hy = py + 10 - (use ? use.up : p.charging ? 1 : 0) + th[1]; // a draw lifts it, a cast gathers it up, then looses it forward
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
+  if (th[0]) heroSleeve(p, px, hy, back ? -1 : 1); // the arm reaches out behind the thrust
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
+}
+// the sleeve between a side-on body and a fist thrust out past it: SLEEVE px of the
+// side's coat at the fist's height, ink over and under, from the cell's column 12
+// (or 3, mirrored) outward
+const SLEEVE = 2;
+function heroSleeve(p, px, y, out) {
+  const set = classSet(p), x0 = Math.round(out > 0 ? px + 12 : px + 4 - SLEEVE), y0 = Math.round(y) - FIST + 1;
+  ctx.fillStyle = set.ink; ctx.fillRect(x0, y0 - 1, SLEEVE, FIST + 2);
+  ctx.fillStyle = set.sleeve; ctx.fillRect(x0, y0, SLEEVE, FIST);
 }
 // A look on a larger cell stands taller and wider than the 16 px one every offset
 // here was first set for: `heroRise` rows over it (the overhead frame lifts by
