@@ -82,6 +82,7 @@ function updateRecall(p, dt) {
         p.x = (t.tx + 0.5) * TILE; p.y = (t.ty + 0.5) * TILE;
         p.vx = p.vy = 0; p.kbx = p.kby = 0;
         navClear(p);
+        p.backT = BACK_FX_T; // the feathers that carried it fall away (drawBackFeathers, js/draw/recall.js)
         burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
         sfxAt('warp', p.x, p.y);
       }

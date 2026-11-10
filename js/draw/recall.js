@@ -118,3 +118,29 @@ function drawRecallFeathers(p, cx, cy, front) {
     }
   }
 }
+
+// SET DOWN BY THE BIRD (a respawn, the recall's far end; p.backT, js/sim/player.js): the
+// take-off run backwards. The feathers come down round the body together, close and
+// turning fast, open out as they sink to the waist, and drift off one by one. Read off
+// p.backT alone, so every screen shows the same feathers; they stay with the body if it
+// walks off.
+const BACK_FEATHERS = 6, BACK_DROP_PX = 5; // how many, and how far up they come down from: head height, under the plate over the head
+const BACK_LAND = 0.35, BACK_GO = 0.55;     // the share of the time they take to come down, and the share they start leaving at
+function drawBackFeathers(p, cx, cy, front) {
+  const u = 1 - p.backT / BACK_FX_T, tc = u * BACK_FX_T, T = TEAMS[skin(p.team)], vane = featherTint(T.mark);
+  const fall = Math.max(0, 1 - u / BACK_LAND), drop = fall * fall * BACK_DROP_PX; // quick, easing onto the waist
+  const r = FEATHER_R_MIN + (FEATHER_R + 3 - FEATHER_R_MIN) * Math.min(1, u / BACK_GO);
+  for (let i = 0; i < BACK_FEATHERS; i++) {
+    if (u > BACK_GO + (1 - BACK_GO) * (i + 1) / BACK_FEATHERS) continue; // gone, one by one
+    const a = i * 2.399 - tc * (4.2 - 3 * u);
+    if ((Math.sin(a) >= 0) !== !!front) continue;
+    const h = 5 + (i % 3) * 2.5 + drop - Math.max(0, u - BACK_GO) * 10; // waist to shoulder, clear of the face, sinking as they leave
+    const art = featherFrames()[Math.floor(tc * 2.5 + i * 0.6) % 2], flip = i % 2 === 1;
+    const c0 = Math.cos(a), side = fall > 0 ? Math.sign(c0 || 1) * Math.max(Math.abs(c0), 0.7) : c0; // coming down, they keep to his sides: never across the face
+    const x0 = Math.round(cx + side * r), y0 = Math.round(cy + Math.sin(a) * r * 0.5 - h) - 4;
+    for (const [x, y, c] of art) {
+      ctx.fillStyle = c === 'V' ? vane : c === 'Q' ? T.coat : FEATHER_RIM;
+      ctx.fillRect(x0 + (flip ? 5 - x : x - 5), y0 + y, 1, 1);
+    }
+  }
+}

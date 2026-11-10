@@ -32,7 +32,8 @@ blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll
 (js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
 one-pixel circles, baked once); a recalling body gathers feathers in a pale tint of its side's colour
 (`drawRecallFeathers`): they drift down one by one, turn round the body closer and quicker as the
-channel fills, and take off together at the end, with no ring on the snow; the overhead frame's bar slot fills
+channel fills, and take off together at the end, with no ring on the snow; at the bird the same feathers come down round the
+body and drift off (`drawBackFeathers` off `p.backT`, set by the recall's arrival and by `respawnPlayer`); the overhead frame's bar slot fills
 in the side's glow for the channel (`drawPlayer`, js/draw/bodies.js).
 
 **Bots** (`aiRecall`, js/ai/ai.js, read after the ladder in `updateAI`): with no rival player or
