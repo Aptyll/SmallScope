@@ -95,9 +95,10 @@ function updateShop() {
 function shopDeny(p) { sfxFor(p, 'deny'); }
 
 // the coin popping off the body that traded - the same floater a payout uses,
-// so money moving always looks the same wherever it moved
+// so money moving always looks the same wherever it moved; the number is for
+// the trader's own screen (the floater's `own`, drawPops), the motes for all
 function shopFx(p, txt, col) {
-  addFloater(p.x, p.y - 20, txt, col);
+  addFloater(p.x, p.y - 20, txt, col, { own: p.id });
   burst(p.x, p.y - 8, col, 5, 40, 0.4);
 }
 
