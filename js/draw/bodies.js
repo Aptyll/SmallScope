@@ -517,7 +517,8 @@ function drawPlayer(p, ex, ey, now, stage) {
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
-    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined); // your own in green (unitBarCol, js/draw/overhead.js)
+    const stam = staminaShown(p); // a full stamina bar shows over your own head only (js/draw/overhead.js)
+    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team, undefined, undefined, 1, undefined, local ? SELF_COL : undefined, stam ? 2 : HP_ROWS_ALONE); // your own in green (unitBarCol, js/draw/overhead.js)
     if (p.healCutT > 0) drawHealCut(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14); // FROSTBITE: its heals are cut
     if (shL) drawShieldBar(fx - 7, hy - 10, dawn);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
@@ -540,18 +541,19 @@ function drawPlayer(p, ex, ey, now, stage) {
     const tag = boardName(p);
     drawWorldText(tag,
       centreTextX(p.x - ex, tag), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
-      TEAMS[skin(p.team)].mark);
+      TEAMS[skin(p.team)].mark, undefined, undefined, local ? undefined : NAME_RIM_SOFT); // your own name keeps the full rim
     drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
     heroOver(p, Math.round(p.x - ex), stackTop - 5, now); // ...and over it all, a hero's marks on this body
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete
-    // in the sim, the bar just shows the pooled total. Drawn for every player
-    // (a rival out of rolls is a tell, and the level badge spans both bars, so
-    // a lone hp bar would look broken).
+    // in the sim, the bar just shows the pooled total. Yours always shows;
+    // another hero's only while it is short of a roll (staminaShown: a rival
+    // out of rolls is a tell, a full bar is not), and its health bar stands a
+    // row taller in the meantime, under the same level badge.
     // The gap row between the two is the hp backing's own bottom row, frame
     // colour, as between every pair of bars on a beast (drawBeastFrame).
-    {
+    if (stam) {
       const bx = fx - 7, by = hy - 4;
       ctx.fillStyle = BAR_FRAME;
       ctx.fillRect(bx - 1, by, 16, 3); // rows under the hp backing only
