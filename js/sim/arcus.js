@@ -68,6 +68,7 @@ const ARCUS_AB = [
   },
   {
     id: 'twin', name: 'TWIN NOCK', cd: [14, 13, 12, 11, 10], cast: 0.05,
+    worn: { t: 'twinT', look: 'power' }, // the look it leaves on the body (drawWorn, js/draw/abilities.js)
     rank: { share: [0.5, 0.6, 0.7, 0.8, 0.9] }, // share: the second arrow's damage x this
     tip: 'FOR A WHILE, EVERY SHOT IS TWO ARROWS',
     blurb: 'FOR A FEW SECONDS EVERY BASIC SHOT LOOSES TWO ARROWS SIDE BY SIDE. THE SECOND HITS FOR A SHARE OF THE FIRST.',

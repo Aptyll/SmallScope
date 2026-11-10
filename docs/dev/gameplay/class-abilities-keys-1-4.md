@@ -125,7 +125,7 @@ blade in [js/sprites/fortiva.js](../../../js/sprites/fortiva.js). She has the mo
 and a step less speed than ARMATOS, so a hero who keeps away can beat her. Her cut is his
 greatsword's (her `attack` row, the CHAIN GREATSWORD), drawn as her own blade, in a body of her own
 ([hero looks](../sprites.md#hero-looks)); what her state wears on her body (high-resolve
-glints, the shield's shell, the after's embers) is `drawFortBody`, a `HERO_BODY_FX` row:
+glints) is `drawFortBody`, a `HERO_BODY_FX` row; DEFIANT HEART's ward and NO KNEELING's after wear the shared guard and power rims (`worn`, below the tables):
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
@@ -455,7 +455,21 @@ Every wind-up with an area is **telegraphed on the snow for both sides** (`drawA
 wedge, a line box) — in
 `TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
 (`castProg`, off `p.castMax`) — and every landing flashes the same shape in the blow's own colour
-for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). The shapes are `drawWedge`/`drawRing`/
+for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). Its first `AB_IMPACT` share is the loud
+beat (`drawImpact`): the shape filled solid on the pixel grid (`fillPolyPx`) inside an ink rim,
+a ring or wedge wider than `IMPACT_BAND` filled only as its outer band (a shockwave, not a painted
+disc), and a pale blow's colour swapped for `TELE_HOT` (`impactCol`), because white on snow lands
+nothing. So a key is loudest the moment it lands, never during its warning.
+
+**What a key leaves worn on a body.** A key that changes a body without moving it names the clock
+it sets and one shared look on its row: `worn: { t: 'braceT', look: 'guard' }` (`wornOf` gathers
+them from every `CLASS_AB` row, so a clock set on an ally, BUCINA's `rallyT` or SALVIA's `cloakT`,
+reads the same). GUARD is a gold rim round the model's own silhouette (hits cut; every ward,
+`wardHp`, wears it too), POWER an orange rim (its blows hit harder or faster), both drawn under the
+sprite by `drawWornRim` from `drawPlayer`; HASTE is three inked white streaks trailing it
+(`drawWorn`). The same look means the same thing on every hero, for both sides, and fades over
+`WORN_FADE` before its clock ends. The colours follow the one ability key (damage red, control ice
+blue, heal green, protect gold, move white) the strip's icons share. The shapes are `drawWedge`/`drawRing`/
 `drawTeleLine`/`drawLineBox`, and the sword's sweep (`drawSlashes`, called from js/draw/render.js beside the E swing
 arcs) is the same wedge. A telegraphed cast keeps the body facing the live aim the whole wind-up
 (`updateAbilities`), so the shape and the body agree about where it is going.

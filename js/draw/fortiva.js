@@ -62,27 +62,6 @@ function drawFortBody(p, ax, ay, now, front) {
       ctx.fillRect(Math.round(cx + Math.cos(t) * 8), Math.round(cy + Math.sin(t) * 3), 1, 1);
     }
   }
-  if (!front) return;
-  // DEFIANT HEART: the shell, thinning as its clock runs out
-  if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
-    ctx.globalAlpha = 0.35 + 0.5 * Math.min(1, p.defyT / DEFY_T);
-    ctx.fillStyle = '#f2cc6a';
-    for (let i = 0; i < 20; i++) {
-      if ((i + Math.floor(now * 10)) % 5 === 0) continue;
-      const t = (i / 20) * Math.PI * 2;
-      ctx.fillRect(Math.round(cx + Math.cos(t) * 9), Math.round(ay + 8 + Math.sin(t) * 10), 1, 1);
-    }
-    ctx.globalAlpha = 1;
-  }
-  // NO KNEELING's after: embers rising off her shoulders
-  if (p.nkT > 0) {
-    for (let k = 0; k < 3; k++) {
-      const u = (now * 1.5 + k / 3) % 1;
-      ctx.globalAlpha = 1 - u;
-      ctx.fillStyle = k % 2 ? '#f2cc6a' : '#ffd95c';
-      ctx.fillRect(ax + (k === 1 ? 12 : 3 + k), Math.round(ay + 4 - u * 8), 1, 1);
-    }
-    ctx.globalAlpha = 1;
-  }
+  // DEFIANT HEART's ward and NO KNEELING's after wear the shared GUARD and POWER looks (drawWorn, js/draw/abilities.js)
 }
 HERO_BODY_FX.push(drawFortBody);
