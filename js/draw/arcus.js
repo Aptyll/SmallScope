@@ -102,17 +102,19 @@ function drawVolleyTele(p, a0, closing, ex, ey) {
   }
   paintArrowPx(AC_PX);
 }
-// GATHER UP: every arrow of his in the snow shakes loose and leans out toward him, a short
-// streak behind it showing the way it will fly, so a rival standing on one sees it coming
+// GATHER UP: every arrow of his in the snow shakes loose and turns tail first toward him,
+// working a short furrow in the snow the way it will fly and kicking up snow at its foot,
+// so a rival standing on one sees it coming
 function drawGatherTele(p, closing, now, ex, ey) {
   for (const s of arcusShafts) {
     if (s.owner !== p.id || s.team !== p.team) continue;
     const dx = p.x - s.x, dy = p.y - s.y, d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
     const jig = Math.floor(now * 30) % 2, x = Math.round(s.x - ex) + jig, y = Math.round(s.y - ey);
-    const L = Math.min(d, 10 + 30 * closing);
-    ctx.globalAlpha = 0.45 + 0.45 * closing;
-    for (let k = 3; k < L; k++) { ctx.fillStyle = k < 8 ? AC_WHITE : AC_GOLD; ctx.fillRect(Math.round(x + nx * k), Math.round(y - 3 + ny * k), 1, 1); }
-    ctx.globalAlpha = 1;
+    const L = Math.min(d, 3 + 7 * closing), sx = Math.round(s.x - ex), sy = Math.round(s.y - ey);
+    ctx.fillStyle = '#8fa4c4'; // the furrow: pressed snow, a value or two darker, ragged at its end
+    for (let k = 1; k < L; k++) ctx.fillRect(Math.round(sx + nx * k), Math.round(sy + ny * k), 1 + (k < L - 2 && Math.abs(nx) > 0.5 ? 1 : 0), 1);
+    ctx.fillStyle = AC_WHITE; // snow kicked up off its foot
+    for (let k = 0; k < 3; k++) { const t = (now * 3 + k * 0.37) % 1; ctx.fillRect(Math.round(sx + (k - 1) * 2 - nx * t * 3), Math.round(sy - t * 4), 1, 1); }
     acArrow(x, y - 3, Math.atan2(ny, nx) + Math.PI, ARROW_LEN - 2, p.team); // turned to come home, tail first
   }
 }
@@ -163,6 +165,11 @@ function arcusCarry(p, px, py) {
   const art = bodySet(p).dens > 1 ? arcusBowsFine().carry : ARCUS_BOW_CARRY; // his fine body's bow is fine too
   const img = lead ? art : heldFlip(art);
   ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : heldW(img) - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1], heldW(img), heldH(img));
+  if (p.twinT > 0 && p.dir !== 'up') { // TWIN NOCK: two arrows pinched in the bow hand, heads up on the stave's far side (clear of his face), ready to go on the string together
+    const o = lead ? 2 : -2;
+    acArrow(hx + o, hy - 8, -Math.PI / 2, 10, p.team);
+    acArrow(hx + o * 2, hy - 6, -Math.PI / 2, 9, p.team);
+  }
   if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }
