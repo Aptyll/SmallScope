@@ -124,7 +124,7 @@ function drawRecallFeathers(p, cx, cy, front) {
 // turning fast, open out as they sink to the waist, and drift off one by one. Read off
 // p.backT alone, so every screen shows the same feathers; they stay with the body if it
 // walks off.
-const BACK_FEATHERS = 6, BACK_DROP_PX = 24; // how many, and how far up they come down from
+const BACK_FEATHERS = 6, BACK_DROP_PX = 5; // how many, and how far up they come down from: head height, under the plate over the head
 const BACK_LAND = 0.35, BACK_GO = 0.55;     // the share of the time they take to come down, and the share they start leaving at
 function drawBackFeathers(p, cx, cy, front) {
   const u = 1 - p.backT / BACK_FX_T, tc = u * BACK_FX_T, T = TEAMS[skin(p.team)], vane = featherTint(T.mark);
