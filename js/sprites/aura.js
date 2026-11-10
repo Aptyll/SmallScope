@@ -252,14 +252,14 @@ const AURA_SKINS = [
 
 // ------------------------------------------------------------ aura staff
 // Her STAR-GLASS as the weapon art the HUD shows and the hands aim on a draw
-// (SPRITES.weaponArt, js/sprites/weapons.js): a fallen star's pale shard bound to a
+// (SPRITES.weaponArt, js/sprites/weapons.js): a fallen star, warm white and gold, bound to a
 // dark staff, head left like the sword's point. Carried, it is upright (HERO_STAVES.shard, js/draw/aura.js).
 WEAPON_FWD.starstaff = Math.PI;
 SPRITES.weaponArt.starstaff = SPR.bake([
-  '............', '............', '............', '..oo........',
-  '.oCCoo......', 'oCCcco.ooooo', 'occcCyoGgGgo', '.oooyo.ooooo',
-  '............', '............', '............', '............',
-], { '.': null, o: '#2e2440', C: '#e6f8ff', c: '#7cc4e8', y: '#f2cc6a', g: '#3a2c40', G: '#5c4868' });
+  '............', '............', '............', '...o........',
+  '..oCo.......', '.oCWCo.ooooo', 'oCWWWCyGgGgo', '.oCWCo.ooooo',
+  '..oCo.......', '...o........', '............', '............',
+], { '.': null, o: '#2e2440', C: '#fff3b0', W: '#ffffff', y: '#f2cc6a', g: '#3a2c40', G: '#5c4868' });
 
 // ------------------------------------------------------------ aura registry
 // AURA in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and

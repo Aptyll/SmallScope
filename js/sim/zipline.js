@@ -33,6 +33,7 @@
 // through the same zipBoard/zipRide/zipEnd as a player, minus the hands.
 const ZIP_MID_GAP = 20 * MAP_K; // u short of the road's centre the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
+const ZIP_CLEAR = 1;       // tiles round a pylon no pine stands (zipLay), so a crown never hides the pole
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
 const ZIP_SPD = 220;       // px/s - 3x walk
 const ZIP_GRAB = 32;       // px off the cable's ground track a body may clip on from: two tiles, so the press works from the lane and the body hops the rest
@@ -85,6 +86,12 @@ function zipLay(team, lane, tiles) {
       const o = objects[idx(qx, qy)];
       if (o && !laneFells(o)) continue;
       placeObj(qx, qy, 'pylon', { team });
+      // the pole stands clear: no pine on the tiles round it, whose crowns would hide it
+      for (let dy = -ZIP_CLEAR; dy <= ZIP_CLEAR; dy++) for (let dx = -ZIP_CLEAR; dx <= ZIP_CLEAR; dx++) {
+        if (!inWorld(qx + dx, qy + dy)) continue;
+        const j = idx(qx + dx, qy + dy);
+        if (objects[j] && laneFells(objects[j])) objects[j] = null;
+      }
       tx = qx; ty = qy;
       break;
     }

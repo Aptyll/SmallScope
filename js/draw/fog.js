@@ -16,6 +16,8 @@ const FOG_CELL = 4;   // world px between the corners the edge is measured at
 const FOG_STEP = 2;   // world px per step of the rim
 const FOG_ARC = 3;    // world px of arc between two sight lines at the end of their reach
 const FOG_CLAMP = 16; // px either side of the edge a corner's distance is kept to
+const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is two flat steps, not one hard line
+const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that band's multiply, halfway to no dim
 
 const fogEyesDraw = [];
 let fogNow = -1, fogTeam = -1, fogLines = new Map();
@@ -130,6 +132,7 @@ function fogMask(ox, oy) {
   fogCorners(gx0, gy0);
   const g = fogGrid, GW = fogGW, px = fogPx;
   const FOG = (255 << 24) | (FOG_TINT[2] << 16) | (FOG_TINT[1] << 8) | FOG_TINT[0]; // RGBA bytes, little-endian
+  const HALF = (255 << 24) | (FOG_HALF[2] << 16) | (FOG_HALF[1] << 8) | FOG_HALF[0];
   for (let j = 0; j < fogGH - 1; j++) {
     const py0 = (gy0 + j) * per - my0;
     if (py0 >= H || py0 + per <= 0) continue;
@@ -143,13 +146,13 @@ function fogMask(ox, oy) {
         if (px0 >= W) break;
         const a = g[j * GW + i], b = g[j * GW + i + 1], c = g[(j + 1) * GW + i], d = g[(j + 1) * GW + i + 1];
         const lo = Math.min(a, b, c, d), hi = Math.max(a, b, c, d);
-        if (lo >= 0 || hi < 0) {
+        if (lo >= 0 || hi < -FOG_BAND) {
           // a run of whole cells all lit or all fog, filled at once
           const v = lo >= 0 ? 0 : FOG;
           let e = i + 1;
           while (e < GW - 1) {
             const a2 = g[j * GW + e], b2 = g[j * GW + e + 1], c2 = g[(j + 1) * GW + e], d2 = g[(j + 1) * GW + e + 1];
-            if (v ? Math.max(a2, b2, c2, d2) >= 0 : Math.min(a2, b2, c2, d2) < 0) break;
+            if (v ? Math.max(a2, b2, c2, d2) >= -FOG_BAND : Math.min(a2, b2, c2, d2) < 0) break;
             e++;
           }
           const x0 = Math.max(0, px0), x1 = Math.min(W, (gx0 + e) * per - mx0);
@@ -162,7 +165,7 @@ function fogMask(ox, oy) {
           if (x < 0 || x >= W) continue;
           const fx = (xx + 0.5) / per;
           const m = (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
-          px[row + x] = m >= 0 ? 0 : FOG;
+          px[row + x] = m >= 0 ? 0 : m >= -FOG_BAND ? HALF : FOG;
         }
         i++;
       }

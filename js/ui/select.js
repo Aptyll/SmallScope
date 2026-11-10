@@ -274,6 +274,7 @@ function drawShowcase(L, now, a) {
   ctx.save();
   ctx.beginPath(); ctx.rect(S.x, S.y, S.w, S.h); ctx.clip();
   ctx.translate(L.cx, feet - 4 * sc); ctx.scale(sc, sc); // a model's soles sit 4 px under its (x, y)
+  ctx.globalAlpha = a; // body and weapon fade with the screen
   drawPlayer(showBody, 0, 0, now, true);
   ctx.restore();
   ctx.globalAlpha = a;

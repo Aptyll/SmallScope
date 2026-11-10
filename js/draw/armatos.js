@@ -36,6 +36,27 @@ function drawStandard(fx, fy, h, dir, col, fill, now, sway) {
   ctx.fillRect(fx, fy - h - 1, 1, 1);
   drawStdCloth(fx, fy - h + 1, dir, col, fill, now, sway);
 }
+// ...and on a body drawn fine (bodySet's `dens` 2): the same pole and cloth on half px, the
+// pole lit and shaded down its two art px and inked either side, the cloth's tear in ten rows
+const STD_TEAR_FINE = [8, 8, 8, 8, 8, 8, 7, 6, 4, 3];
+function drawStandardFine(fx, fy, h, dir, col, fill, now, sway) {
+  const u = 0.5;
+  ctx.fillStyle = STD_INK;
+  ctx.fillRect(fx - u, fy - h - 2 * u, u, h + 2 * u); ctx.fillRect(fx + 1, fy - h - 2 * u, u, h + 2 * u);
+  ctx.fillRect(fx, fy - h - 2 * u, 1, u);
+  ctx.fillStyle = STD_POLE; ctx.fillRect(fx, fy - h, u, h);
+  ctx.fillStyle = STD_GOLD_D; ctx.fillRect(fx + u, fy - h, u, h);
+  ctx.fillStyle = STD_GOLD; ctx.fillRect(fx, fy - h - u, 1, u); // the finial
+  const y = fy - h + 1, rows = STD_TEAR_FINE, gold = Math.round(fill * rows.length);
+  for (let r = 0; r < rows.length; r++) {
+    const g = r >= rows.length - gold, n = Math.max(2, rows[r] + 2 * (sway || 0));
+    for (let c = 0; c < n; c++) {
+      ctx.fillStyle = g ? (c >= n - 1 ? STD_GOLD_D : STD_GOLD) : c >= n - 1 ? STD_INK : col;
+      ctx.fillRect(dir > 0 ? fx + 1 + u + c * u : fx - u - (c + 1) * u, y + r * u, u, u);
+    }
+  }
+  if (fill >= 1 && Math.floor(now * 4) % 3 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(dir > 0 ? fx + 2.5 : fx - 3, y + 1, u, u); }
+}
 // The standard on his back, at the body's cell (ax, ay, its top-left).
 // Facing away it is drawn over the body (the back is what shows); otherwise
 // behind it, over the far shoulder. While it stands planted in the snow the
@@ -47,7 +68,8 @@ function drawHeroBack(p, ax, ay, now, front) {
   const fx = ax + (p.dir === 'left' ? 11 : 4); // over the shoulder the sword is not in
   const dir = p.dir === 'left' ? 1 : -1; // the cloth streams out away from the body
   const idle = idleShown(p); // it rides his shoulders' breath, and its cloth hangs behind his stop or turn
-  drawStandard(fx, ay + 10, 11 - idle.b, dir, TEAMS[skin(p.team)].mark, p.resolve, now, idle.lag ? idle.lag.dx * dir : 0); // its head beside his, under the plate
+  const draw = bodySet(p).dens > 1 ? drawStandardFine : drawStandard; // the body's own pixel size
+  draw(fx, ay + 10, 11 - idle.b, dir, TEAMS[skin(p.team)].mark, p.resolve, now, idle.lag ? idle.lag.dx * dir : 0); // its head beside his, under the plate
 }
 
 // ---- the greatsword in his hands -----------------------------------------------
@@ -60,7 +82,14 @@ function armSwords() {
   if (armSwordArt) return armSwordArt;
   return (armSwordArt = { flat: bakeBladeArt(ARM_SWORD, ARM_SWORD_PAL), diag: bakeBladeArt(ARM_SWORD_DIAG, ARM_SWORD_PAL) });
 }
-HERO_BLADES.oath = { art: armSwords, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: ARM_GRIP };
+// ...and at 32 px for his fine body (ARM_SWORD_FINE), the grips the same world px
+let armSwordFine = null;
+function armSwordsFine() {
+  if (armSwordFine) return armSwordFine;
+  const tag = (c) => { c.dens = 2; return c; };
+  return (armSwordFine = { flat: tag(bakeBladeArt(ARM_SWORD_FINE, ARM_SWORD_PAL)), diag: tag(bakeBladeArt(ARM_SWORD_DIAG_FINE, ARM_SWORD_PAL)) });
+}
+HERO_BLADES.oath = { art: armSwords, fine: armSwordsFine, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: ARM_GRIP };
 
 // ---- on the snow --------------------------------------------------------------
 // a box laid down a bearing, (px, py) its near end: a landing's line with no look of its own

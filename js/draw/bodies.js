@@ -353,7 +353,7 @@ const BODY_REACH = 30, BODY_REACH_UP = 44;
 // the overhead tells, on any mode.
 // the pose set a body is drawn from here: its look's finer one (`fine`, champLook) in a
 // world layer, which is WD dense; its 16 px one anywhere else (a menu's showcase)
-function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && inWorldLayer() ? s.fine : s; }
+function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && worldDense() ? s.fine : s; }
 // a frame drawn at (x, y) at its world size: a finer look's (`dens`) at 1/dens, every pixel kept
 function frameW(spr) { return spr.width / (spr.dens || 1); }
 function frameH(spr) { return spr.height / (spr.dens || 1); }
@@ -462,7 +462,8 @@ function drawPlayer(p, ex, ey, now, stage) {
       ctx.save();
       ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, frameW(spr) + 64, 64); ctx.clip();
     }
-    if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
+    const a0 = ctx.globalAlpha; // the caller's fade (the pick screen's showcase fading in and out): the weapon keeps it too
+    if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = a0 * 0.45;
     const fade = heroFade(p); if (fade < 1) ctx.globalAlpha = Math.min(ctx.globalAlpha, fade); // a hero hidden by its own kit, as its side sees it (HERO_FADE, js/draw/heroes.js)
     heroBodyFx(p, ax, ay, now, false); // a hero's own marks behind the body: ARMATOS's standard (HERO_BODY_FX, js/draw/heroes.js)
     if (pose && pose.rot) {
@@ -477,7 +478,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
     if (seat) ctx.restore();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = a0;
     if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
@@ -668,7 +669,8 @@ const CARRY_HAND_Y = { down: 1, up: -1, left: 0, right: 0 };
 function heldBehind(a) { return Math.sin(a) < -HELD_RISE; }
 // one held art at the hand (hx, hy), turned by `rot`, the hand closed on grip
 function drawGripped(img, grip, hx, hy, rot) {
-  drawTurned(Math.round(hx), Math.round(hy), rot, Math.ceil(Math.hypot(img.width, img.height)), () => ctx.drawImage(img, -grip[0], -grip[1]));
+  const w = heldW(img), h = heldH(img); // a finer art (`dens`) at its world size, its grip in world px
+  drawTurned(Math.round(hx), Math.round(hy), rot, Math.ceil(Math.hypot(w, h)), () => ctx.drawImage(img, -grip[0], -grip[1], w, h), img.dens || 1);
 }
 // Art turned by `rot` about (tx, ty), a whole world px: `draw` paints it about
 // the origin, within `r` world px of it. A turn is resampled onto the art's own
@@ -777,9 +779,9 @@ const bladeLens = new WeakMap();
 function bladeLen(img, grip) {
   let L = bladeLens.get(img);
   if (L !== undefined) return L;
-  const d = SPR.pixelsOf(img);
+  const d = SPR.pixelsOf(img), k = img.dens || 1; // a finer art's px are 1/dens of a world px
   L = 0;
-  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x - grip[0], y - grip[1]));
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (d[(y * img.width + x) * 4 + 3]) L = Math.max(L, Math.hypot(x / k - grip[0], y / k - grip[1]));
   bladeLens.set(img, L);
   return L;
 }

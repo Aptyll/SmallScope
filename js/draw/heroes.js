@@ -5,7 +5,8 @@
 // draw file registers HERO_BLADES[name] = { art() -> { flat, diag } canvases,
 // hilt: [x, y] where the hands close on the flat art (the blade turns about it,
 // WEAPON_GRIP's rule), hip: { down, up } where the grip sits on the 16 px cell
-// by facing, grip: where the hands close on the slanted grid }.
+// by facing, grip: where the hands close on the slanted grid, and optionally fine() ->
+// the same pair at `dens` px a world px for a body drawn fine (bladeArt) }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
 function bakeBladeArt(rows, pal) { return SPR.bake(rows, pal); } // the shared bake, which keeps the art's pixels (SPR.pixelsOf)
@@ -37,7 +38,7 @@ function heroStaffOf(p) { const c = CLASSES[p.cls]; return c && c.staff ? HERO_S
 // a held art mirrored left to right, or top to bottom, baked once (SPR's flips keep its pixels)
 const heldFlips = new Map(), heldDrops = new Map();
 function heldBaked(cache, img, flip) {
-  if (!cache.has(img)) cache.set(img, flip(img));
+  if (!cache.has(img)) { const f = flip(img); if (img.dens) f.dens = img.dens; cache.set(img, f); }
   return cache.get(img);
 }
 // true when an art, as drawn, leans left (its top left of its foot), read once off
@@ -55,10 +56,10 @@ function heldLeansLeft(img) {
 function heldFlip(img) { return heldBaked(heldFlips, img, SPR.flipH); }
 function heldDrop(img) { return heldBaked(heldDrops, img, SPR.flipV); }
 // THE CAST POSE: a key's cast, and the beat a shot leaves the staff, raise it
-// up and out from the body (STAFF_RAISE, STAFF_OUT px) while the body rises a
+// up and out from the body (STAFF_CAST px) while the body rises a
 // pixel with it (attackLean, js/draw/bodies.js); a draw lifts it 1 px. Drawn
 // only, off the cast and the cycle the sim keeps (castT, nockT).
-const STAFF_RAISE = 2, STAFF_OUT = 1; // out 1, so the hand stays on it
+const STAFF_CAST = { up: 2, out: 1 }; // out 1, so the hand stays on it; a row's own `cast` replaces it (BUCINA's horn goes to her lips)
 const STAFF_SHOT_T = 1 / 6; // s the staff stays raised after a shot leaves it (two body frames)
 function staffCasting(p) { return p.castT > 0 || (p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T); }
 function heroStaff(p, px, py) {
@@ -74,8 +75,8 @@ function heroStaff(p, px, py) {
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
-  const up = staffCasting(p), rc = heroReach(p) + (up ? STAFF_OUT : 0);
-  const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? STAFF_RAISE : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
+  const up = staffCasting(p), use = up && s.cast || STAFF_CAST, rc = heroReach(p) + (up ? use.out : 0);
+  const hx = back ? px + 2 - rc : px + 13 + rc, hy = py + 10 - (up ? use.up : p.charging ? 1 : 0); // a draw lifts it, a cast or a shot raises it
   ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]));
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
@@ -92,6 +93,8 @@ function heroReach(p) { return classSet(p).reach || 0; }
 // under it (`out` +1 when the grip is right of the body, -1 left of it).
 const FIST = 2;
 function heroFist(p, x, y, out) {
+  const fine = bodySet(p);
+  if (fine.dens > 1) { heroFistFine(fine, Math.round(x), Math.round(y), out); return; }
   const set = classSet(p), gx = Math.round(x), gy = Math.round(y);
   const x0 = out > 0 ? gx - FIST + 1 : gx, y0 = gy - FIST + 1;
   ctx.fillStyle = set.ink;
@@ -99,6 +102,19 @@ function heroFist(p, x, y, out) {
   ctx.fillRect(x0, y0 + FIST, FIST, 1);                         // under the knuckles
   ctx.fillStyle = set.hand;
   ctx.fillRect(x0, y0, FIST, FIST);
+}
+// ...and a body drawn fine's (bodySet, `dens` art px a world px): the same fist on the art's
+// own px, FIST_FINE of them square, its edge one art px, so the hand is the
+// body's pixel size; it closes on the same grip (its far corner where the coarse one's is)
+const FIST_FINE = 3;
+function heroFistFine(set, gx, gy, out) {
+  const u = 1 / set.dens, f = FIST_FINE * u;
+  const x0 = out > 0 ? gx + 1 - f : gx, y0 = gy + 1 - f;
+  ctx.fillStyle = set.ink;
+  ctx.fillRect(out > 0 ? x0 + f : x0 - u, y0, u, f + u); // the outer edge
+  ctx.fillRect(x0, y0 + f, f, u);                         // under the knuckles
+  ctx.fillStyle = set.hand;
+  ctx.fillRect(x0, y0, f, f);
 }
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 // A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
@@ -110,7 +126,13 @@ function heroBodyDraw(p, px, py, now) { for (const f of HERO_BODY_DRAW) if (f(p,
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
-function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
+function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: bladeArt(p, b).flat, grip: b.hilt } : null; }
+// a blade row's art for this body: its finer pair (`fine`, the art at `dens` px a world px,
+// its grips still in world px) for a body drawn fine (bodySet), else its own
+function bladeArt(p, b) { return b.fine && bodySet(p).dens > 1 ? b.fine() : b.art(); }
+// an art's size in world px: a finer one's (`dens`) at 1/dens
+function heldW(img) { return img.width / (img.dens || 1); }
+function heldH(img) { return img.height / (img.dens || 1); }
 // A shot weapon with its own DRAWN aim frames (a bow's string and arrow, a knife cocked
 // back): HERO_AIMED[art] = fn(heading, step, p) -> { img, grip, hand }. `heading` is the aim
 // snapped to eight, 0..7 clockwise from +x (aimHeading); `step` is 0 the beat after the shot
@@ -146,11 +168,11 @@ function heroCarry(p, px, py, back) {
   const pass = (p.dir === 'up') === back; // a carried thing is behind a body facing away
   const b = heroBladeOf(p);
   if (b && b.hip.down && attackOf(p).cut) {
-    const hold = BLADE_HOLDS[b.hold || 'slant'], img = b.art().diag, up = p.dir === 'up';
+    const hold = BLADE_HOLDS[b.hold || 'slant'], img = bladeArt(p, b).diag, up = p.dir === 'up';
     const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
     // (ax, ay) the grip on the screen; `out` the blade runs right of it
-    const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : img.width - 1 - b.grip[0])), Math.round(ay - gy));
+    const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : heldW(img) - 1 - b.grip[0])), Math.round(ay - gy), heldW(im), heldH(im));
     if (hold.shoulder) {
       if (back === up) return true; // behind the head; over the back of a body facing away
       const sx = lead ? px + 13 + rc : px + 2 - rc;
@@ -162,7 +184,7 @@ function heroCarry(p, px, py, back) {
     } else if (hold.rest && (p.dir === 'down' || p.dir === 'up')) { // side-on it is carried slanted like any haft
       if (!pass) return true;
       const sx = lead ? px + 13 + rc : px + 2 - rc;
-      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, img.height - 1 - b.grip[1]);
+      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, heldH(img) - 1 - b.grip[1]);
       heroFist(p, sx, py + 9, lead ? 1 : -1);
     } else {
       if (!pass) return true;
@@ -170,7 +192,7 @@ function heroCarry(p, px, py, back) {
       const out = up ? true : hold.far && p.dir === 'down' ? false : lead;
       const sx = out ? px + at[0] + rc : px + 15 - at[0] - rc;
       const im = hold.low ? heldDrop(img) : img; // the point down
-      put(out ? im : heldFlip(im), out, sx, py + at[1], hold.low ? img.height - 1 - b.grip[1] : b.grip[1]);
+      put(out ? im : heldFlip(im), out, sx, py + at[1], hold.low ? heldH(img) - 1 - b.grip[1] : b.grip[1]);
       if (!up) heroFist(p, sx, py + at[1], out ? 1 : -1); // facing away the hand is the body's far side
     }
     return true;

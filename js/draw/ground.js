@@ -441,10 +441,11 @@ function repaintGround(tx, ty) {
 const ICE_STYLES = [
   { id: 'lip',   w: 1, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2 },
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
+  { id: 'river', w: 0, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2, river: true }, // never rolled: the frozen creek's own (riverTone)
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
 const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's pool's style, whatever its roll (bakeLakes)
-const CREEK_ICE_STYLE = ICE_STYLES.findIndex((s) => !s.deep); // ...and the frozen creek's: plain ice, lane to lane
+const CREEK_ICE_STYLE = ICE_STYLES.findIndex((s) => s.river); // ...and the frozen creek's: river ice, lane to lane
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -563,6 +564,7 @@ function depthAtPx(x, y) {
 }
 // the sheet's colour at a pixel (hp: the pixel's own roll)
 function iceTone(x, y, s, hp) {
+  if (s.river) return riverTone(x, y);
   const k = vnoise(x / 37 + 3, y / 29 + 5) + (hp - 0.5) * 0.18 > 0.5 ? 0 : 1;
   if (s.deep) {
     const d = depthAtPx(x, y) + (hp - 0.5) * 0.6;
@@ -571,6 +573,41 @@ function iceTone(x, y, s, hp) {
     if (d > 2.4) return ICE_MID[k];
   }
   return ICE_TONE[k];
+}
+
+// THE FROZEN RIVER's own ice, so it never reads as one more pond: a sheet
+// that remembers it flowed. Down its middle runs the clear channel, darker,
+// where the current froze last; wind-laid snow lies on it in long thin
+// streaks along the flow; and now and then a crack runs bank to bank across
+// it, a dark line with its lit lip under. The streaks keep off the channel. Flat tones meeting on clean edges,
+// no dither. Read in the creek's own frame (creekAt: CQ.a along the water,
+// CQ.n across it from its centre), so every streak follows the bends.
+const RIVER_SHEET = rgbOf('#bddeed');      // the sheet
+const RIVER_CHANNEL = rgbOf('#a9d0e4');    // the clear channel down the middle
+const RIVER_CORE = rgbOf('#9cc6de');       // ...its deepest thread
+const RIVER_STREAK = rgbOf('#d4eaf4');     // wind-laid snow along the flow, on the sheet either side of the channel
+const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
+const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
+const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
+const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
+function riverTone(x, y) {
+  const fx = (x + 0.5) / TILE - 0.5, fy = (y + 0.5) / TILE - 0.5;
+  creekAt(fx, fy);
+  const a = CQ.a, n = CQ.n, hw = creekHW(a, n < 0 ? -1 : 1) || 1, t = Math.abs(n) / hw;
+  // a crack across: where the along-position, bent a little by a slow noise, crosses a crack's line
+  const ca = a + (vnoise(n * 0.35 + 4.1, a * 0.05) - 0.5) * 1.6, ci = Math.floor(ca / RIVER_CRACK_EVERY);
+  if (hash2(ci * 7 + 3, 91) < 0.7) {
+    const off = (ca - (ci + 0.5) * RIVER_CRACK_EVERY) * TILE; // px from the crack's line
+    if (off >= 0 && off < 1) return RIVER_CRACK;
+    if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
+  }
+  // a streak: 2 px rows across the flow, each with its own runs along it
+  const row = Math.floor((n * TILE) / RIVER_STREAK_ROW);
+  if (t > RIVER_CHANNEL_W + 0.12 && vnoise(a * 0.22 + row * 5.3, row * 1.9) > 0.72) return RIVER_STREAK; // on the sheet only: a streak down the channel reads as a road's paint
+  const wob = (vnoise(a * 0.18, 7.7) - 0.5) * 0.22;
+  if (t < RIVER_CHANNEL_W * 0.45 + wob * 0.5) return RIVER_CORE;
+  if (t < RIVER_CHANNEL_W + wob) return RIVER_CHANNEL;
+  return RIVER_SHEET;
 }
 
 // one tile's edge, and the pixels round it the bank reads: SHORE_M before
@@ -1002,17 +1039,23 @@ const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
 const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
 const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
+const SHADE_ROW = TILE; // px a pine's shade is drawn down when another stands on the tile below
+const SHADE_ROW_DIP = 0.5; // the share of the shade's reach the fill gives up halfway between two pines: how deep the rim's teeth are cut
+function treeInRow(tx, ty) { const o = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)]; return !!o && o.type === 'tree'; }
 const CASTERS = {
   // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
   // shade is cut once per pair and lands under the art where it was nudged;
   // every palette row of a height has the same silhouette, so the art is the
   // height's first row (treeSize)
+  // ...and whether a pine stands on the tile below it (treeInRow): then its
+  // shade is drawn down to that pine's (SHADE_ROW), so a stand's edge throws
+  // one mass of shade with a toothed rim, not a wedge a tree with snow between
   tree:     { code: (o, tx, ty) => 1000 + treeRestFrame(tx, ty) + SPRITES.treeAtlas.cols *
-                (((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y) * 3 + treeSize(tx, ty)),
+                ((((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y) * 3 + treeSize(tx, ty)) * 2 + (treeInRow(tx, ty) ? 1 : 0)),
               art: (c) => {
-                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, m = Math.floor((c - 1000) / A.cols), size = m % 3, n = (m - size) / 3;
+                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, k = Math.floor((c - 1000) / A.cols), row = k % 2, m = (k - row) / 2, size = m % 3, n = (m - size) / 3;
                 const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
-                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh]; // the height's own rows of the atlas
+                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh, row ? SHADE_ROW : 0]; // the height's own rows of the atlas
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
   stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
@@ -1062,8 +1105,21 @@ const shadeByCode = new Map();
 function shadeFor(C, c) {
   let m = shadeByCode.get(c);
   if (m !== undefined) return m;
-  const [src, sx, sw, sh, ax, ay, sy] = C.art(c);
+  const [src, sx, sw, sh, ax, ay, sy, down] = C.art(c);
   m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1, sy);
+  if (m && down) {
+    // drawn down `down` px to the next one's shade - but only its trunk-side
+    // share, least halfway between the two, so the crowns' tips stay teeth on
+    // the mass's lit rim and no straight edge is ruled down the snow
+    const w = document.createElement('canvas'); w.width = m.width; w.height = m.height + down;
+    const wg = w.getContext('2d');
+    wg.drawImage(m, 0, 0);
+    for (let d = 1; d <= down; d++) {
+      const cw = Math.round(m.width * (1 - SHADE_ROW_DIP * Math.sin(Math.PI * d / down)));
+      wg.drawImage(m, 0, 0, cw, m.height, 0, d, cw, m.height);
+    }
+    w.oy = m.oy; m = w;
+  }
   if (m) {
     m.ax = ax; m.ay = ay + m.oy;
     if (Math.floor(ax / TILE) < CAST_REACH[0] || Math.floor(m.ay / TILE) < CAST_REACH[1] ||

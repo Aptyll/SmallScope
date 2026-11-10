@@ -18,7 +18,7 @@ const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each ax
 const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24], [-104, -4], [-102, -52]];
 const TITLE_LOGO = [232, 64];  // view px: the logo's room under LOGO_Y (the picture's size, a little air)
 const TITLE_WORDS = [72, 6];   // view px half-width of the word column (its widest word and the diamond), and the rows it may hold
-const TITLE_BODY = [14, 12, 10]; // world px a hero needs clean: each side of it, over its feet's row, under it
+const TITLE_BODY = [18, 12, 44]; // world px a hero needs clean: each side of it, over its feet's row, and under it (a pine to its south stands that tall over it)
 const TITLE_REACH = 44;        // tiles from the centre the search goes
 const TITLE_STEP = 8;          // world px between two spots tried, and between two points of a rect sampled
 let titleBodies = null;
@@ -46,8 +46,9 @@ function titleSpotOk(X, Y) {
   const k = 1 / ZOOM_TITLE, hh = VIEW_H / 2;
   // the logo's room and the word column's, from the view's layout into world px
   if (titleRectGround(X - TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y - hh) * k, X + TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y + TITLE_LOGO[1] - hh) * k) === 'X') return false;
-  const wy1 = VIEW_H - MENU_BOTTOM, wy0 = wy1 - TITLE_WORDS[1] * MENU_TXT_PITCH;
-  if (titleRectGround(X - TITLE_WORDS[0] * k, Y + (wy0 - hh) * k, X + TITLE_WORDS[0] * k, Y + (wy1 - hh) * k) === 'X') return false;
+  // ...the column runs to the view's foot, so nothing is cut off under the last word
+  const wy0 = VIEW_H - MENU_BOTTOM - TITLE_WORDS[1] * MENU_TXT_PITCH;
+  if (titleRectGround(X - TITLE_WORDS[0] * k, Y + (wy0 - hh) * k, X + TITLE_WORDS[0] * k, Y + hh * k) === 'X') return false;
   let g = null;
   for (const sp of TITLE_SPOTS) for (const m of [1, -1]) {
     const c = titleRectGround(X + m * sp[0] - TITLE_BODY[0], Y + sp[1] - TITLE_BODY[1], X + m * sp[0] + TITLE_BODY[0], Y + sp[1] + TITLE_BODY[2]);
