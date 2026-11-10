@@ -1,20 +1,31 @@
 // ------------------------------------------------------------ recall's pixels
 // Flat on the snow, under everything that walks it (drawn in the world
 // flat pass, drawFlatPass in js/draw/passes.js): each roost's healing ring, and the recall's channel
-// closing on the feet of whoever is leaving (js/sim/recall.js).
+// feathers round whoever is leaving (js/sim/recall.js).
 //
 // THE ROOST RING is a soft glowing edge in the bird's side's colour round the
 // packed-earth disc (BOOM_R, js/sim/eagle.js): four one-pixel circles stepping
 // in from the rim, bright to faint, so the edge reads without a hard line. One
 // mirrored step pattern (circlePts), baked once per colour and size into a
 // canvas, since the rim is hundreds of pixels.
-// THE CHANNEL is a dotted ring at the start radius and a solid ring closing
-// from it to the feet as the channel runs, squashed to the ground's 3/4 view
-// like every footprint ring; the bar over the head fills with it (drawPlayer,
-// js/draw/bodies.js).
+// THE CHANNEL is the bird's own feathers (drawRecallFeathers, called by drawPlayer,
+// js/draw/bodies.js, behind the body and again over it): slate flight feathers
+// drift down one by one as the channel runs and turn round the body, closer and
+// quicker as it fills, and lift as the bird takes it; the bar over the head fills
+// with it. No ring on the snow: a count of feathers is the read.
 const ROOST_GLOW = [0.85, 0.5, 0.28, 0.14]; // the rim's four rings, outside in
-const RECALL_R = 16, RECALL_R_MIN = 3;      // px: the channel ring's start and end
-const RECALL_SQ = 0.6;                      // its squash onto the ground
+const RECALL_FEATHERS = 8;                  // how many have come down by three quarters of the channel
+const FEATHER_R = 15, FEATHER_R_MIN = 9;    // px out from the body they turn at, start and end
+const FEATHER_DROP = 22, FEATHER_DROP_T = 0.8; // px a feather comes down from, and the s it takes
+const FEATHER_COL = { B: '#2a3042', L: '#8e9cba', T: '#f4f7ff' }; // the eagle's own slate and white (js/sprites/perch.js): the dark vane is its own outline on snow
+// the three ways a feather lies as it sways: level, quill down, quill up (whole pixels, never turned)
+const FEATHER_W = 9;
+const FEATHER_WIND = '#8fa6c8', FEATHER_WIND_2 = '#b4c4de'; // two steps under the snow, so it holds on it
+const FEATHER_ART = [
+  ['....BBBB.', 'TTLLLLLLB', '..BBBBB..'],
+  ['.....BBB.', '...BBLLLB', '..BLLLLB.', '.BLLBBB..', 'TTBB.....'],
+  ['TTBB.....', '.BLLBBB..', '..BLLLLB.', '...BBLLLB', '.....BBB.'],
+];
 
 // a midpoint circle's pixels, each once: the eight octants mirror one step pattern
 const circleMemo = new Map();
@@ -60,20 +71,31 @@ function drawRecallGround(ex, ey) {
     if (x > WV_W || y > WV_H || x + 2 * r < 0 || y + 2 * r < 0) continue;
     ctx.drawImage(roostRingArt(TEAMS[skin(e.team)].mark, r), x, y);
   }
-  for (const p of players) {
-    if (!p.active || p.dead || !(p.recallT > 0) || !fogShown(p)) continue; // a rival in the fog leaves no ring either
-    const t = TEAMS[skin(p.team)], q = 1 - p.recallT / RECALL_T;
-    const cx = Math.round(p.x - ex), cy = Math.round(p.y - ey) + 6;
-    if (cx < -RECALL_R || cy < -RECALL_R || cx > WV_W + RECALL_R || cy > WV_H + RECALL_R) continue;
-    ctx.fillStyle = t.coatD;
-    ctx.globalAlpha = 0.7;
-    for (const [x, y] of circlePts(RECALL_R)) if (((x + y) & 1) === 0) ctx.fillRect(cx + x, cy + Math.round(y * RECALL_SQ), 1, 1);
-    const rr = Math.max(RECALL_R_MIN, Math.round(RECALL_R - (RECALL_R - RECALL_R_MIN) * q));
-    for (const [x, y] of circlePts(rr)) {
-      const yy = cy + Math.round(y * RECALL_SQ);
-      ctx.globalAlpha = 1; ctx.fillStyle = t.mark; ctx.fillRect(cx + x, yy, 1, 1);
-      ctx.globalAlpha = 0.8; ctx.fillStyle = t.coatD; ctx.fillRect(cx + x, yy + 1, 1, 1);
+  ctx.globalAlpha = 1;
+}
+
+// the channel's feathers round one body: (cx, cy) its feet on screen, `front` the
+// half nearer the camera (drawn over the body), else the far half (drawn before it).
+// All of it is read off p.recallT, so every screen shows the same feathers.
+function drawRecallFeathers(p, cx, cy, front) {
+  const q = 1 - p.recallT / RECALL_T, tc = q * RECALL_T;
+  const r = FEATHER_R - (FEATHER_R - FEATHER_R_MIN) * q, lift = Math.max(0, q - 0.88) / 0.12 * 26;
+  for (let i = 0; i < RECALL_FEATHERS; i++) {
+    const age = tc - (Math.max(0, i - 1) / RECALL_FEATHERS) * 0.75 * RECALL_T; // the first two come together
+    if (age < 0) break;
+    const a = i * 2.399 + tc * (1.2 + 1.4 * q);
+    if ((Math.sin(a) >= 0) !== !!front) continue;
+    const h = 4 + (i % 3) * 3 + Math.max(0, 1 - age / FEATHER_DROP_T) * FEATHER_DROP + lift;
+    const art = FEATHER_ART[[0, 1, 0, 2][Math.floor(tc * 5 + i * 1.7) % 4]], flip = Math.cos(a) < 0; // the quill leads
+    const x0 = Math.round(cx + Math.cos(a) * r) - (FEATHER_W >> 1), y0 = Math.round(cy + Math.sin(a) * r * 0.5 - h) - (art.length >> 1);
+    if (age > FEATHER_DROP_T) for (let k = 1; k <= 3; k++) { // the air it turns on, trailing where it has been
+      const b = a - 0.3 - k * 0.2;
+      ctx.fillStyle = k < 3 ? FEATHER_WIND : FEATHER_WIND_2;
+      ctx.fillRect(Math.round(cx + Math.cos(b) * r) - 1, Math.round(cy + Math.sin(b) * r * 0.5 - h), k < 3 ? 2 : 1, 1);
+    }
+    for (let y = 0; y < art.length; y++) for (let x = 0; x < FEATHER_W; x++) {
+      const c = art[y][flip ? FEATHER_W - 1 - x : x];
+      if (c !== '.') { ctx.fillStyle = FEATHER_COL[c]; ctx.fillRect(x0 + x, y0 + y, 1, 1); }
     }
   }
-  ctx.globalAlpha = 1;
 }

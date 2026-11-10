@@ -1040,6 +1040,7 @@ function playerAttack(p, dt) {
     if (p.nockT === 0) { p.readyFlash = 0.16; sfxFor(p, 'nock'); }
   }
   p.readyFlash = Math.max(0, p.readyFlash - dt);
+  p.lvT = Math.max(0, p.lvT - dt);
   p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (cutAttack, js/sim/attack.js)
 
   // The basic attack: pressing arms it, releasing lands it. The press does

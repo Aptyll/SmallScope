@@ -417,6 +417,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
+  if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // the far half of the recall's feathers (js/draw/recall.js)
 
   // the model itself - never the shade or the rings at its feet - goes
   // through the canopy window's hero layer (js/draw/canopy.js) when it is the
@@ -501,6 +502,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
     if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true); // the near half of a buff's motes, over the body
     if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true);
+    if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
+    if (p.lvT > 0) drawLevelUp(p, spr, sx, sy, Math.round(p.x - ex), Math.round(p.y - ey) + 5);
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
@@ -549,7 +552,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
     // hy-2) - the plate every animal wears too (drawLevelBadge)
-    drawLevelBadge(fx - 8, hy - 8, p.level);
+    drawLevelBadge(fx - 8, hy - 8, p.level, 1, p.lvT > 0 && ((p.lvT * 10) | 0) % 2 === 0);
     if (local) queueXp(p, fx - 8 - levelBadgeW(p.level), hy - 4.5); // your XP, mirroring the damage total off the badge's left (js/draw/overhead.js)
     // Every player carries a name tag in its team colour so a fight stays
     // legible - your own included: the profile name is what the rest of the

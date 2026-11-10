@@ -30,9 +30,10 @@ blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll
 
 **It reads without a word** ([UI rule](../rendering/show-dont-label.md)): `drawRecallGround`
 (js/draw/recall.js) draws each down bird's ring as a soft glowing rim in its side's colour (four
-one-pixel circles, baked once), and under a recalling body a dotted ring with a solid one closing
-from it to the feet; the overhead frame's bar slot fills in the side's glow for the channel
-(`drawPlayer`, js/draw/bodies.js).
+one-pixel circles, baked once); a recalling body gathers the bird's slate feathers
+(`drawRecallFeathers`): they drift down one by one, turn round the body closer and quicker as the
+channel fills, and lift at the end, with no ring on the snow; the overhead frame's bar slot fills
+in the side's glow for the channel (`drawPlayer`, js/draw/bodies.js).
 
 **Bots** (`aiRecall`, js/ai/ai.js, read after the ladder in `updateAI`): with no rival player or
 machine inside `AI_RECALL_SAFE`, a bot under `AI_RECALL_HP` of its health, or out of a fight with

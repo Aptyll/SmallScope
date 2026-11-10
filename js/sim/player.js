@@ -562,6 +562,7 @@ function shareXp(dead, xp, team, src) {
   const each = xp * (1 + XP_SHARE * (who.length - 1)) / who.length;
   for (const q of who) gainXp(q, each);
 }
+const LEVEL_FX_T = 0.9; // s the level-up shows on the body
 function levelUp(p) {
   p.level++;
   p.skillPts++;
@@ -569,7 +570,7 @@ function levelUp(p) {
   p.hp = Math.min(p.maxHp, p.hp + (CLASSES[p.cls].grow.hp || 0));
   // the early levels come too fast to be news; the late ones say who is ahead
   if (p.level >= LOG_LEVEL) logEvent(boardName(p) + ' REACHED LEVEL ' + p.level, p);
-  if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
+  p.lvT = LEVEL_FX_T; // the gold climbing the body and the plate's blink (drawLevelUp, js/draw/hitfx.js)
   sfxFor(p, 'levelUp');
 }
 // the pose set a body draws from: its hero in the look it wears, in its
@@ -794,6 +795,7 @@ class Player {
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (cutAttack, js/sim/attack.js; drawHeldTool, js/draw/bodies.js)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0;                           // the HUD's tell: renocked
+    this.lvT = 0;                                  // a level just gained, counting down (levelUp)
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
     this.dodgeCharges = DODGE_CHARGES; this.dodgeRegenT = 0;
     this.rollHit = [];                             // what this roll has already swiped (once each)

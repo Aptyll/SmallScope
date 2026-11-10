@@ -164,3 +164,42 @@ function drawHitPuff(h, fx, fy, t) {
   }
   hitInked(pts, HIT_PUFF_RIM);
 }
+
+// ------------------------------------------------------------ a level gained
+// THE LEVEL-UP, on the body for LEVEL_FX_T (p.lvT, js/sim/player.js): a band of gold
+// light climbs the hero from the boots to the head, its trail fading under it, and
+// gold streaks leap from the snow round the feet, each on its own beat; the level
+// plate blinks over (drawLevelBadge). No words: the plate carries the number.
+const LV_GOLD = '#ffe9a0', LV_MID = '#f2cc6a', LV_DARK = '#8a5f1c';
+const LV_STREAKS = 7, LV_SWEEP = 0.5; // how many leap, and the share of the time the band takes to climb
+function drawLevelUp(p, spr, sx, sy, cx, cy) {
+  const u = 1 - p.lvT / LEVEL_FX_T, w = frameW(spr), h = frameH(spr), d = spr.dens || 1;
+  if (u < LV_SWEEP && spr.width <= scratch.width && spr.height <= scratch.height) {
+    sctx.clearRect(0, 0, spr.width, spr.height);
+    sctx.globalCompositeOperation = 'source-over';
+    sctx.drawImage(spr, 0, 0);
+    sctx.globalCompositeOperation = 'source-in';
+    sctx.fillStyle = LV_GOLD;
+    sctx.fillRect(0, 0, spr.width, spr.height);
+    sctx.globalCompositeOperation = 'source-over';
+    const top = Math.round(h - 4 - (u / LV_SWEEP) * h); // the band's top row in the frame
+    const rows = (y0, n, a) => {
+      const y = Math.max(0, y0), m = Math.min(h, y0 + n) - y;
+      if (m <= 0) return;
+      ctx.globalAlpha = a;
+      ctx.drawImage(scratch, 0, y * d, spr.width, m * d, sx, sy + y, w, m);
+    };
+    rows(top, 4, 0.95); rows(top + 4, 4, 0.5); rows(top + 8, 5, 0.22);
+    ctx.globalAlpha = 1;
+  }
+  for (let i = 0; i < LV_STREAKS; i++) {
+    const t0 = fxRoll(p.id, i, 31) * 0.45, v = (u - t0) / 0.5;
+    if (v < 0 || v >= 1) continue;
+    const side = i % 2 ? 1 : -1, x = cx + side * (5 + Math.round(fxRoll(p.id, i, 32) * 6));
+    const rise = Math.round((1 - (1 - v) * (1 - v)) * (14 + fxRoll(p.id, i, 33) * 8)), len = v > 0.7 ? 2 : 4;
+    const y = cy - rise - len;
+    ctx.fillStyle = LV_DARK; ctx.fillRect(x + 1, y + 1, 1, len); // its shade, away from the light
+    ctx.fillStyle = LV_MID; ctx.fillRect(x, y, 1, len);
+    ctx.fillStyle = LV_GOLD; ctx.fillRect(x, y, 1, Math.min(2, len));
+  }
+}

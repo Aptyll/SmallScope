@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| each down bird's healing ring (a soft glowing rim in its side's colour, baked per colour), and the recall's rings under a channelling body (dotted at the start radius, solid closing to the feet) | `ROOST_GLOW`, `RECALL_R`/`RECALL_R_MIN`/`RECALL_SQ`, `circlePts` (a midpoint circle's pixels), `roostRingArt`, `drawRecallGround` (before `drawClickMarks` in `render()`) | `recall's pixels` (the state: js/sim/recall.js) |
+| each down bird's healing ring (a soft glowing rim in its side's colour, baked per colour), and the recall's feathers round a channelling body (slate feathers drifting down and turning round it, read off `p.recallT`) | `ROOST_GLOW`, `circlePts` (a midpoint circle's pixels), `roostRingArt`, `drawRecallGround` (before `drawClickMarks` in `render()`), `RECALL_FEATHERS`, `FEATHER_*`, `drawRecallFeathers` (from `drawPlayer`, behind the body and over it) | `recall's pixels` (the state: js/sim/recall.js) |

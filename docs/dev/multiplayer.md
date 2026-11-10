@@ -315,7 +315,7 @@ neither.
 
 Growth is the hero's own: each level past 1 adds its `CLASSES[c].grow` to the
 [hero stats](gameplay/hero-stats.md) (ARMATOS +10 hp, +1.4 damage, +0.8% attack speed, +2.9 armor;
-each row sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+each row sized when the cap went to 18 so 17 levels grow about what 11 did), the health healed on the spot in `levelUp`. A level-up sets `p.lvT` (`LEVEL_FX_T`: gold light climbing the body and the level plate's blink, `drawLevelUp`, js/draw/hitfx.js; no words) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
 is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
 lane as the [stat sheet](rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md), the rows it grew

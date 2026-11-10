@@ -21,7 +21,7 @@
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
 5. flat objects (stumps);
-6. `drawRecallGround` (the roost rings and the recall's) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
+6. `drawRecallGround` (the roost rings) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
    ground marks, `HERO_GROUND`, and every wind-up's telegraph);
 7. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets, sorted by feet Y; empty player slots draw as team-tinted
