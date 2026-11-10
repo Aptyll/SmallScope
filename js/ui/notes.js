@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['TITLE HEROES STAND ON OPEN SNOW, CLEAR OF THE WORDS', '0.764'],
     ['A CLEAR STRIP OF SNOW BETWEEN EVERY LANE AND THE WOODS', '0.763'],
     ['STUMPS IN THREE CUTS, NO LONGER IN ROWS', '0.762'],
     ['Hiems\'s staff top is a clear snowflake; resting staves show their whole head from the front', '0.761'],

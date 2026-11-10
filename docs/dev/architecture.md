@@ -207,7 +207,7 @@ order, so the script tags still interleave them:
 | [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar other screens share |
 | [js/ui/heroes.js](../../js/ui/heroes.js) | ~140 | shared scope, no `window.*` export | the champ select's hero grid: a head per hero, the coming heroes as silhouettes, banned and taken cells, the position filters and the search field |
 | [js/ui/draft.js](../../js/ui/draft.js) | ~380 | shared scope, no `window.*` export | the lobby's draft: the positions, bans, everyone's blind pick, the bots' choices, the host's copy per side |
-| [js/ui/titlescene.js](../../js/ui/titlescene.js) | ~60 | shared scope, no `window.*` export | the title's scene: its camera (`titleCamTarget`) and the ten heroes standing in the stone ring at the middle (`titleCast`) |
+| [js/ui/titlescene.js](../../js/ui/titlescene.js) | ~60 | shared scope, no `window.*` export | the title's scene: its camera (`titleCamTarget`) and the clean spot it finds near the middle (`titleSceneAt`) and the ten heroes standing there (`titleCast`) |
 | [js/ui/select.js](../../js/ui/select.js) | ~410 | shared scope, no `window.*` export | the champ select's look: the headline and clock, the seat rows, the showcase and the skin strip, the mode |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~430 | shared scope, no `window.*` export | the skins screen the coins buy from, and the title's coin tag |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~800 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the emotes |

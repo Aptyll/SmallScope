@@ -1,28 +1,74 @@
 'use strict';
 // The title's scene: what the landing page shows behind the logo and the
-// words. Ten heroes stand in the stone ring at the middle, five a side, facing
-// each other across the mid road at the match's own zoom - the game in one picture before a word is
+// words. Ten heroes stand near the middle of the map, five a side, facing
+// each other at the match's own zoom - the game in one picture before a word is
 // read. They are this screen's own bodies (never in `players`, never stepped
 // by the sim, never sent): drawPlayer paints them in the sorted pass like
 // any body, so they wear the real sprites, weapons, shade and team rings.
 // Your own hero (the profile's last pick) leads the blue side; the other nine
 // are dealt fresh each time the title opens.
-const TITLE_AT = [14, 12];     // world px off the boat's tile the scene is framed on, the boat nearest the
-                               // middle; off the map's centre on a map with no boat (today's: the ring's floor is snow)
+//
+// WHERE it stands is found, not written (titleSceneAt): the spot nearest the
+// map's centre where the logo, the word column and all ten heroes each sit on
+// one clean ground - open snow or plain paving, nothing standing on it, no
+// brush, no ice. So the picture stays clean whatever the map's middle becomes.
 const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each axis
 // where each side's five stand, world px off the scene's centre, the leader first
 // (your side as written, left of the centre; the rivals mirrored across it)
 const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24], [-104, -4], [-102, -52]];
+const TITLE_LOGO = [232, 64];  // view px: the logo's room under LOGO_Y (the picture's size, a little air)
+const TITLE_WORDS = [72, 6];   // view px half-width of the word column (its widest word and the diamond), and the rows it may hold
+const TITLE_BODY = [14, 12, 10]; // world px a hero needs clean: each side of it, over its feet's row, under it
+const TITLE_REACH = 44;        // tiles from the centre the search goes
+const TITLE_STEP = 8;          // world px between two spots tried, and between two points of a rect sampled
 let titleBodies = null;
+let titleSpot = null;          // the found spot and the view it was found for: { x, y, key }
 
-function titleSceneAt() {
-  const c = WORLD * TILE / 2;
-  let at = { x: c, y: c }, bd = Infinity;
-  for (const l of landmarks) {
-    const d = Math.hypot(l.tx * TILE - c, l.ty * TILE - c);
-    if (l.key === 'boat' && d < bd) { bd = d; at = { x: l.tx * TILE, y: l.ty * TILE }; }
+// what a world point stands on, for the picture: 'S' open snow, 'L' plain paving, 'X' anything else
+function titleGround(x, y) {
+  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  if (!inWorld(tx, ty)) return 'X';
+  const i = idx(tx, ty);
+  if (objects[i] != null || cisternTouches(tx, ty)) return 'X';
+  return ground[i] === 3 ? 'L' : ground[i] === 0 && !deepAt(x, y) ? 'S' : 'X';
+}
+// the one ground a world rect lies on, or 'X' when it is mixed or busy
+function titleRectGround(x0, y0, x1, y1) {
+  let g = null;
+  for (let y = y0; y <= y1; y += TITLE_STEP) for (let x = x0; x <= x1; x += TITLE_STEP) {
+    const c = titleGround(x, y);
+    if (c === 'X' || (g && c !== g)) return 'X';
+    g = c;
   }
-  return { x: at.x + TITLE_AT[0], y: at.y + TITLE_AT[1] };
+  return g || 'X';
+}
+function titleSpotOk(X, Y) {
+  const k = 1 / ZOOM_TITLE, hh = VIEW_H / 2;
+  // the logo's room and the word column's, from the view's layout into world px
+  if (titleRectGround(X - TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y - hh) * k, X + TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y + TITLE_LOGO[1] - hh) * k) === 'X') return false;
+  const wy1 = VIEW_H - MENU_BOTTOM, wy0 = wy1 - TITLE_WORDS[1] * MENU_TXT_PITCH;
+  if (titleRectGround(X - TITLE_WORDS[0] * k, Y + (wy0 - hh) * k, X + TITLE_WORDS[0] * k, Y + (wy1 - hh) * k) === 'X') return false;
+  let g = null;
+  for (const sp of TITLE_SPOTS) for (const m of [1, -1]) {
+    const c = titleRectGround(X + m * sp[0] - TITLE_BODY[0], Y + sp[1] - TITLE_BODY[1], X + m * sp[0] + TITLE_BODY[0], Y + sp[1] + TITLE_BODY[2]);
+    if (c === 'X' || (g && c !== g)) return false;
+    g = c;
+  }
+  return true;
+}
+// the nearest clean spot to the centre, ring by ring outward; the centre itself when the map has none
+function titleSceneAt() {
+  const key = VIEW_W + 'x' + VIEW_H;
+  if (titleSpot && titleSpot.key === key) return titleSpot;
+  const c = WORLD * TILE / 2, n = Math.floor(TITLE_REACH * TILE / TITLE_STEP);
+  let best = null, bd = Infinity;
+  for (let j = -n; j <= n; j++) for (let i = -n; i <= n; i++) {
+    const d = i * i + j * j;
+    if (d >= bd || !titleSpotOk(c + i * TITLE_STEP, c + j * TITLE_STEP)) continue;
+    bd = d; best = { x: c + i * TITLE_STEP, y: c + j * TITLE_STEP };
+  }
+  titleSpot = Object.assign(best || { x: c, y: c }, { key });
+  return titleSpot;
 }
 // the title's camera: the scene, breathing a few px so the picture is never dead still
 function titleCamTarget() {
