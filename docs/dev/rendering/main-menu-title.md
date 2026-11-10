@@ -15,7 +15,7 @@ mirrored; `titleSpots()` fits them to the view, sliding the formation down so it
 under the logo's foot and squeezing it only when a small view has less room than it needs): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
 stepped or sent - your profile's hero leading your side and nine others dealt fresh each boot
 (`titleDeal`), `titleCastPose` moves them off the menu's clock (a few px of pacing, a face turned to you; the two leaders hold), and `titleCastDraws` hands them to the sorted pass, so `drawPlayer` paints the real
-sprites, weapons, shade and team rings. `drawTitleBackdrop` leaves the scene in daylight: a thin wash
+sprites, weapons, shade and team rings. Every `TITLE_FLY_EVERY` s an eagle passes over: `titleFlyDraw` (called after the sorted pass) lays the flying bird's own shadow frame (`SPRITES.perch.shadow`) across the snow and the ten, one way then the other; only the shadow, so no dark lines ever cross the logo or the words. `drawTitleBackdrop` leaves the scene in daylight: a thin wash
 (`TITLE_WASH`, thickening to `TITLE_WASH_DEEP` under a panel or a full screen) and two bands behind
 the logo and the words. Everything else lives in the `main menu` banner and on `state.menu`:
 

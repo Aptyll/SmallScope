@@ -151,6 +151,25 @@ function titleCastPose(b, i, t) {
   if (b.moving) b.animT = t * SHOW_STRIDE; // a walk's stride (js/ui/select.js)
   b.x = Math.round(b.x);
 }
+// AN EAGLE PASSES OVER. Every TITLE_FLY_EVERY s the shadow of a bird in
+// flight crosses the snow and the ten, wings beating, one way and then the
+// other - only the shadow: the bird itself is above the picture, so nothing
+// with lines ever crosses the logo or the words. Off the menu's own clock.
+const TITLE_FLY_FIRST = 4;     // s the title is up before the first pass
+const TITLE_FLY_EVERY = 24;    // s from one pass to the next
+const TITLE_FLY_T = 5;         // s a pass takes, edge to edge
+const TITLE_FLY_RISE = 36;     // world px a pass climbs across the view
+const TITLE_FLY_PAD = 100;     // world px past each edge it starts and ends: the wings' reach
+const titleFlyer = {};         // whose frames these are, to SPRITES.perch (it holds the last one a busy frame falls back on)
+function titleFlyDraw(ex, ey) {
+  if (state.mode !== 'title') return;
+  const t = state.menu.camT - TITLE_FLY_FIRST, n = Math.floor(t / TITLE_FLY_EVERY), u = (t - n * TITLE_FLY_EVERY) / TITLE_FLY_T;
+  if (t < 0 || u > 1) return;
+  const PR = SPRITES.perch, at = titleSceneAt(), dir = n % 2 ? -1 : 1, span = WV_W / 2 + TITLE_FLY_PAD;
+  const x = at.x + dir * (u * 2 - 1) * span, y = at.y + TITLE_FLY_RISE / 2 - u * TITLE_FLY_RISE;
+  const shw = PR.shadow(PR.look, skin(player.team), Math.atan2(-TITLE_FLY_RISE, dir * span * 2), 's' + strokeAt(t, PR.STROKE_N), titleFlyer);
+  PR.put(ctx, shw, Math.round(x - ex) - (shw.fw >> 1), Math.round(y - ey) - (shw.fh >> 1));
+}
 // into the sorted pass (bodyDraws, js/draw/passes.js), by the feet like every body
 function titleCastDraws(draws) {
   if (state.mode !== 'title') return;
