@@ -251,6 +251,29 @@ function roadStoneAt(wx, wy, cell, jit) {
 }
 // is the stone whose middle is (x, y) world px part of the path: its middle inside the edge
 function roadStoneIn(x, y) { return laneDist(x / TILE - 0.5, y / TILE - 0.5) < -0.12; }
+// is this world pixel paved: the path's last stones are laid whole (a stone
+// is in by its middle, roadStoneIn) but only inside a narrow band round the
+// lane's own line - a stone that would notch deeper than ROAD_EDGE_IN is laid
+// anyway and one that would stick out past ROAD_EDGE_OUT is cut on the line,
+// so the edge keeps a straight run a walker can read
+const ROAD_EDGE_IN = 0.3, ROAD_EDGE_OUT = 0.1; // tiles inside and outside the line the edge may wander
+function roadPavedAt(wx, wy) {
+  const d = laneDist((wx + 0.5) / TILE - 0.5, (wy + 0.5) / TILE - 0.5);
+  if (d < -ROAD_EDGE_IN) return true;
+  if (d >= ROAD_EDGE_OUT) return false;
+  const st = roadStoneAt(wx, wy, ROAD_FLAG, 0.8);
+  return roadStoneIn(st.x1, st.y1);
+}
+// what an unpaved pixel beside the path wears: 1 the earth round the last
+// stone (a paved pixel touches it), 2 the snow's lip facing the light (paving
+// within ROAD_LIP down-right of it), 3 the lip facing away, 0 nothing
+const ROAD_LIP_LIT = [[2, 2], [3, 0], [0, 3], [2, 0], [0, 2]], ROAD_LIP_SHD = [[-2, -2], [-3, 0], [0, -3], [-2, 0], [0, -2], [2, -2], [-2, 2]];
+function roadLipAt(wx, wy) {
+  if (roadPavedAt(wx + 1, wy) || roadPavedAt(wx - 1, wy) || roadPavedAt(wx, wy + 1) || roadPavedAt(wx, wy - 1)) return 1;
+  for (const [i, j] of ROAD_LIP_LIT) if (roadPavedAt(wx + i, wy + j)) return 2;
+  for (const [i, j] of ROAD_LIP_SHD) if (roadPavedAt(wx + i, wy + j)) return 3;
+  return 0;
+}
 // a stone's own pixel: three greys by its roll, a lit rim toward the light
 // and a shaded one away from it, the joint dark
 function roadStonePx(st, joint) {
@@ -283,30 +306,26 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     // so the melt reads as patches of snow and mud rather than sand
     const clump = vnoise(wx / 6 + 3.1, wy / 6 + 7.7);
     let c = null;
-    // the stone under the pixel and the next one over; well inside the path
-    // both are laid, and past a stone's reach of the edge neither is
+    // the stone under the pixel; near the edge the path's own line decides (roadPavedAt)
     const near = d > -1.1 && d < 1.1;
     const st = d < 1.1 ? roadStoneAt(wx, wy, ROAD_FLAG, 0.8) : null;
-    const in1 = st && (near ? roadStoneIn(st.x1, st.y1) : d < 0), in2 = st && (near ? roadStoneIn(st.x2, st.y2) : d < 0);
-    if (in1) {
-      // a flagstone, earth in its joints - and round the path's last stones
+    const pv = near ? roadPavedAt(wx, wy) : d < 0, lipAt = near && !pv ? roadLipAt(wx, wy) : 0;
+    if (pv) {
+      // a flagstone, earth in its joints
       c = roadStonePx(st, ROAD_COL_DEEP);
       // a drift lapping over the stones by the edge: a clean clump of snow,
       // its shade on the stone below and right of it
       if (near && !onIce && st.gap >= 1.1) {
-        const lap = (x, y) => vnoise(x / 7 + 3.1, y / 7 + 7.7) > 0.74 - (laneDist(x / TILE - 0.5, y / TILE - 0.5) + 1.1) * 0.12;
-        if (d > -0.8 && lap(wx, wy)) c = ROAD_COL_SNOW;
-        else if (d > -0.9 && lap(wx - 1, wy - 1)) c = ROAD_COL_LAP_SHD;
+        const lap = (x, y) => vnoise(x / 7 + 3.1, y / 7 + 7.7) > 0.8 - (laneDist(x / TILE - 0.5, y / TILE - 0.5) + 1.1) * 0.12;
+        if (d > -0.5 && lap(wx, wy)) c = ROAD_COL_SNOW;
+        else if (d > -0.6 && lap(wx - 1, wy - 1)) c = ROAD_COL_LAP_SHD;
       }
-    } else if (in2 && st.gap < 1.1) {
-      c = ROAD_COL_DEEP; // the joint round the last stone
-    } else if (onIce) {
-      // the bank: broken ice along the crossing's own edge, and open water past it
-      if (in2 && st.gap < ROAD_LIP) c = ROAD_COL_RIM;
-    } else if (in2 && st.gap < ROAD_LIP) {
-      // the snow's lip: it faces the light where the stone lies down-right of it
-      c = (st.x2 - wx) + (st.y2 - wy) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
-    } else {
+    } else if (lipAt === 1) {
+      c = ROAD_COL_DEEP; // the earth round the path's last stones
+    } else if (lipAt) {
+      // the snow's lip (on ice, the broken rim): it faces the light where the stone lies down-right of it
+      c = onIce ? ROAD_COL_RIM : lipAt === 2 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
+    } else if (!onIce) { // (open ice past the crossing's rim is the lake's own pixels)
       // the shoulder: snow greyed by the march in patches thinning to the
       // field, dry grass poking through it
       const k = 1 - Math.max(0, d) / ROAD_SHOULDER;

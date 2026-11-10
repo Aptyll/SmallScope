@@ -102,7 +102,10 @@ function reedAtlas() {
   reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H;
   const g = reedCv.getContext('2d');
   for (let v = 0; v < REED_VARS; v++) {
-    const n = 4 + (v % 3), tall = REED_H - 5 + ((v * 5) % 4), tilt = ((v * 3) % 5 - 2) * 0.12;
+    // three kinds, so a stand is not one tuft stamped over: four tall, two short and thin, two bent over by the wind
+    const short = v === 4 || v === 5, bent = v > 5;
+    const n = short ? 3 : bent ? 4 : 4 + (v % 3), tall = short ? 6 + (v & 1) : REED_H - 5 + ((v * 5) % 4);
+    const tilt = bent ? (v & 1 ? 0.4 : -0.4) : ((v * 3) % 5 - 2) * 0.12;
     const x0 = v * REED_W + (REED_W >> 1), y0 = REED_H - 3;
     const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
     // the foot's shade on the drift, down-right of the root, then the root itself
