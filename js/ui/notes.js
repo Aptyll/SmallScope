@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Burning shows as flames off the shoulders; the tangle is a cord with stone weights', '0.835'],
     ['Lane edges end on whole flagstones, and tower kerbs join the lane', '0.834'],
     ['The black bear has a lair yard; the pump walk is laid planks', '0.833'],
     ['HERO PICK: CALLING AND TRICK CARDS NO LONGER COVER LOCK IN', '0.832'],
