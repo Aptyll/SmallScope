@@ -421,6 +421,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // the far half of the recall's feathers (js/draw/recall.js)
   if (p.backT > 0) drawBackFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // ...and of the ones that set it down
+  if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // ...and of the one settling on a body its bird is mending
 
   // the model itself - never the shade or the rings at its feet - goes
   // through the canopy window's hero layer (js/draw/canopy.js) when it is the
@@ -509,6 +510,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true);
     if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.backT > 0) drawBackFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
+    if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.lvT > 0) drawLevelUp(p, spr, sx, sy, Math.round(p.x - ex), Math.round(p.y - ey) + 5);
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }

@@ -88,11 +88,13 @@ function updateRecall(p, dt) {
       }
     }
   }
+  const mend = p.mendT; p.mendT = 0; // the mending clock runs only while the bird gives something back
   if (p.fightT > 0 || !roostRing(p)) return;
   let fed = healPlayer(p, p.maxHp * RING_HP * dt) > 0;
   // the roll's clock runs the extra (RING_STAM - 1) here; playerStamina runs the 1 and refills
   if (p.dodgeCharges < DODGE_CHARGES) { p.dodgeRegenT -= dt * (RING_STAM - 1); fed = true; }
   if (!fed) return;
+  p.mendT = mend + dt; // a feather settles on the body, from its first mending frame (drawMendFeathers, js/draw/recall.js)
   p.ringFxT -= dt;
   if (p.ringFxT <= 0) {
     p.ringFxT = RING_FX_T;

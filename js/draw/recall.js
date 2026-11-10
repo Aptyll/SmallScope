@@ -1,13 +1,12 @@
 // ------------------------------------------------------------ recall's pixels
-// Flat on the snow, under everything that walks it (drawn in the world
-// flat pass, drawFlatPass in js/draw/passes.js): each roost's healing ring, and the recall's channel
-// feathers round whoever is leaving (js/sim/recall.js).
+// The bird's feathers on a body (js/sim/recall.js): the recall's channel, the set-down
+// at its far end, and the mending at the roost.
 //
-// THE ROOST RING is a soft glowing edge in the bird's side's colour round the
-// packed-earth disc (BOOM_R, js/sim/eagle.js): four one-pixel circles stepping
-// in from the rim, bright to faint, so the edge reads without a hard line. One
-// mirrored step pattern (circlePts), baked once per colour and size into a
-// canvas, since the rim is hundreds of pixels.
+// THE ROOST has no ring: its kerbed paving marks the place (js/draw/footings.js), and
+// the mending shows on the mended body (drawMendFeathers below). The soft glowing rim
+// (roostRingArt: four one-pixel circles stepping in from the rim, bright to faint, one
+// mirrored step pattern, circlePts, baked once per colour and size) is what a pump
+// wears (drawPumpRings, js/draw/structs.js).
 // THE CHANNEL is the bird's own feathers (drawRecallFeathers, called by drawPlayer,
 // js/draw/bodies.js, behind the body and again over it): feathers in a pale tint of
 // the side's colour drift down one by one as the channel runs and turn round the
@@ -84,18 +83,6 @@ function roostRingArt(col, r) {
   return cv;
 }
 
-function drawRecallGround(ex, ey) {
-  if (!state.drop) return;
-  const r = Math.round(BOOM_R * TILE);
-  for (const e of state.drop.eagles) {
-    if (e.state !== 'down') continue;
-    const x = Math.round(e.x - ex) - r, y = Math.round(e.y - ey) - r;
-    if (x > WV_W || y > WV_H || x + 2 * r < 0 || y + 2 * r < 0) continue;
-    ctx.drawImage(roostRingArt(TEAMS[skin(e.team)].mark, r), x, y);
-  }
-  ctx.globalAlpha = 1;
-}
-
 // the channel's feathers round one body: (cx, cy) its feet on screen, `front` the
 // half nearer the camera (drawn over the body), else the far half (drawn before it).
 // All of it is read off p.recallT, so every screen shows the same feathers.
@@ -143,4 +130,25 @@ function drawBackFeathers(p, cx, cy, front) {
       ctx.fillRect(x0 + (flip ? 5 - x : x - 5), y0 + y, 1, 1);
     }
   }
+}
+
+// MENDED BY THE BIRD (p.mendT, the time its roost has been giving health or the roll
+// back without a break, js/sim/recall.js): a white feather off the bird's breast comes
+// down beside the body and settles at its waist, then the next on its other side, from
+// the first mending frame. White with a dark quill on every side; beside the body,
+// never across the face or the plate.
+const MEND_FALL = 1.1, MEND_DROP = 6;  // s one feather takes to settle, and the px it comes down
+const MEND_OUT = 12;                   // px out from the body's middle it falls at
+function drawMendFeathers(p, cx, cy, front) {
+  const n = Math.floor(p.mendT / MEND_FALL), u = p.mendT / MEND_FALL - n; // which feather, and how far down it is
+  if (!front === (n % 3 !== 2)) return; // two in front of the body, then one behind it
+  const side = n % 2 ? 1 : -1, sway = Math.round(Math.sin(u * Math.PI * 2.5) * 2);
+  const art = featherFrames()[Math.floor(u * 3) % 2];
+  const x0 = cx + side * (MEND_OUT - Math.round(u * 3)) + sway, y0 = cy - 6 - Math.round((1 - u) * MEND_DROP) - 4;
+  ctx.globalAlpha = u > 0.8 ? (1 - u) / 0.2 : 1; // it settles into the cloth
+  for (const [x, y, c] of art) {
+    ctx.fillStyle = c === 'V' ? '#f4f7ff' : c === 'Q' ? '#8a93a8' : FEATHER_RIM;
+    ctx.fillRect(x0 + (side > 0 ? 5 - x : x - 5), y0 + y, 1, 1);
+  }
+  ctx.globalAlpha = 1;
 }

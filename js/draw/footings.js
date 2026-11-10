@@ -169,8 +169,8 @@ function drawFooting(o, ex, ey) {
   const c = footingOf(o);
   ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
 }
-// the roosts' rounds go down before the flat pass, so the healing ring
-// (drawRecallGround) and the flat objects lie on the paving, not under it
+// the roosts' rounds go down before the flat pass, so the flat objects lie on the
+// paving, not under it
 function drawRoostFootings(ex, ey) {
   for (const sp of pads) drawRoostFooting(sp, roostStalls(sp), ex, ey);
 }
