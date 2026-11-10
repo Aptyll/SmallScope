@@ -1088,7 +1088,11 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
   if (!dot) shakeFor(p, crit ? 6 : 3);
   tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
-  burst(p.x, p.y - 6, dot ? '#ff9440' : '#cfd8e8', 8, 50, 0.45);
+  // a burn's embers rise off the body; a blow's snow is kicked up at the
+  // feet, never sprayed over the model (pale motes over a hero read as the
+  // body going see-through: Noah, 2026-11-10)
+  if (dot) burst(p.x, p.y - 6, '#ff9440', 8, 50, 0.45);
+  else burst(p.x, p.y + 3, '#cfd8e8', 6, 40, 0.35, 60);
   if (p.hp <= 0) die(p, src, cause);
 }
 

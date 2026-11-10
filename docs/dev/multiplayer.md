@@ -399,7 +399,7 @@ so a fast shot never steps over one ([a shot in flight](gameplay/the-basic-attac
 `ARROW_HIT_R` (10 px) disc round the player's centre — wider than the 4.5 px body a walker
 collides with, because a walking target crosses its own width twice in the quarter second a
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
-rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for knockback, flash,
+rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, src, cause)` for the shove a key's blow lands (an attack lands none on a player), the hit's spark (js/draw/hitfx.js), the
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
 shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
 FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale and doubles
