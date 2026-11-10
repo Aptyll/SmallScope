@@ -739,8 +739,19 @@ const SWING_FPS = 12;      // frames a second of a swing
 const SWING_FIRST = 0.45;  // how far across the arc the blade is on the strike's first frame
 const SWISH_FRAMES = 3;    // the swish shows on the strike's frames and one more as it goes
 const SWISH_TAIL = 0.4;    // ...that last one keeps only this leading part of the arc
-const SWISH_W = [2, 6];   // the swish's depth in px at its tail and at the blade
-const SWISH_COL = ['#f8fcff', '#9cb6d4', '#1b2233']; // light edge, body, ink outline
+const SWISH_COL_0 = ['#f8fcff', '#9cb6d4', '#1b2233']; // a swish's light edge, body, ink outline
+// What each weapon family's swing leaves in the air (a blade row's `smear`, HERO_BLADES;
+// a sword's `edge` when it names none): `w` the swish's depth at its tail and at the
+// blade, `from` how far along the arc it starts, `col` its own light, body and ink.
+// `thrust` leaves none: the point is pushed straight out (SWING_JAB) and drawSlashes
+// (js/draw/abilities.js) draws its lines.
+const SWISH_KIND = {
+  edge: { w: [2, 5], from: 0 },                                              // a sword: a long thin bright edge
+  chop: { w: [4, 9], from: 0.55 },                                           // an axe or a pick: short and heavy, the end of the swing only
+  blunt: { w: [6, 10], from: 0.3, col: ['#dfe6f0', '#8494b0', '#1b2233'] },  // a hammer: broad and dull
+  nick: { w: [1, 3], from: 0.5 },                                            // a dirk: a small quick cut
+};
+const SWING_JAB = [-3, 5, 4, 2, 0]; // px a thrust's point is out along the aim, by the swing's frame
 const SWING_FRAMES = 5;    // frames from the loose to the recover: the last two are the held finish
 // which frame of its blow a blade is on, or -1. The sweep (slashT) runs the
 // strike; the held finish runs on into the cycle (nockT) that no draw can start inside.
@@ -774,14 +785,16 @@ function bladeLen(img, grip) {
 }
 // The swish: one solid crescent of pixels along the arc the blade's outer part
 // swept, from angle a0 to the blade at e, deepest at the blade and thinning to
-// its tail (SWISH_W); a light outer edge, a body, and an ink line along the
+// its tail (its family's `w`, SWISH_KIND); a light outer edge, a body, and an ink line along the
 // outside so it reads on snow. Each pixel takes the pass its own angle would
 // (heldBehind), and none lands on the head (rules.md rule 1), sized by the
 // swinger p's cell (heroRise, heroReach). `hand(a)` is where the hands are at
 // angle a, L the blade's reach from them, (px, cyp) the cell's left and the
 // hands' row.
-function drawSwish(p, px, cyp, hand, L, a0, e, back) {
+function drawSwish(p, px, cyp, hand, L, a0, e, back, S) {
   if (L < 4) return;
+  const SWISH_W = S.w, SWISH_COL = S.col || SWISH_COL_0;
+  a0 += (e - a0) * S.from;
   const cx = px + 8, span = e - a0, dir = span < 0 ? -1 : 1, R = Math.ceil(L + 8);
   const rise = heroRise(p), reach = heroReach(p), headTop = cyp - 10 - rise, headBot = cyp - 4; // the head's rows, taller on a larger cell
   for (let y = Math.round(cyp) - R; y <= Math.round(cyp) + R; y++) for (let x = Math.round(cx) - R; x <= Math.round(cx) + R; x++) {
@@ -851,8 +864,14 @@ function drawHeldTool(p, px, py, back) {
     const sw = f === 0 ? SWING_FIRST : 1;
     const a0 = p.slashA - p.slashHalf, e = a0 + sw * p.slashHalf * 2;
     const hand = (a) => [cxp + Math.cos(a) * BLADE_HAND[0], cyp + Math.sin(a) * BLADE_HAND[1]];
+    const hbo = heroBladeOf(p), smear = (hbo && hbo.smear) || 'edge';
+    if (smear === 'thrust') { // a spear is not swung: its point goes straight out along the aim and comes back
+      const a = p.slashA, j = SWING_JAB[Math.min(f, SWING_JAB.length - 1)];
+      if (heldBehind(a) === back) { const h = hand(a); drawGripped(wHeld, hGrip, h[0] + Math.round(Math.cos(a) * j), h[1] + Math.round(Math.sin(a) * j), a - fwd); }
+      return;
+    }
     // the swish runs at the cut's true reach, however short the blade drawn in the hand
-    if (f < SWISH_FRAMES) drawSwish(p, px, cyp, hand, Math.max(bladeLen(wHeld, hGrip), cut.reach - BLADE_HAND[0]), f === 2 ? e - (e - a0) * SWISH_TAIL : a0, e, back);
+    if (f < SWISH_FRAMES) drawSwish(p, px, cyp, hand, Math.max(bladeLen(wHeld, hGrip), cut.reach - BLADE_HAND[0]), f === 2 ? e - (e - a0) * SWISH_TAIL : a0, e, back, SWISH_KIND[smear] || SWISH_KIND.edge);
     if (heldBehind(e) === back) { const h = hand(e); drawGripped(wHeld, hGrip, h[0], h[1], e - fwd); }
     return;
   }

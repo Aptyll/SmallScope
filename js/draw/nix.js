@@ -109,7 +109,7 @@ let nixDirkArt = null;
 function nixDirks() {
   return nixDirkArt || (nixDirkArt = { flat: bakeBladeArt(NIX_DIRK, NIX_DIRK_PAL), diag: bakeBladeArt(NIX_DIRK_DIAG, NIX_DIRK_PAL) });
 }
-HERO_BLADES.dirk = { art: nixDirks, hilt: [18, 11], hip: { down: [13, 10], up: [13, 10] }, grip: NIX_DIRK_GRIP, hold: 'low' };
+HERO_BLADES.dirk = { smear: 'nick', art: nixDirks, hilt: [18, 11], hip: { down: [13, 10], up: [13, 10] }, grip: NIX_DIRK_GRIP, hold: 'low' };
 
 HERO_GROUND.push(drawNixGround);
 HERO_AIR.push(drawNixAir);

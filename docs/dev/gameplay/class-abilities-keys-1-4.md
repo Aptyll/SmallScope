@@ -459,8 +459,8 @@ band), never a dotted circle. Quick melee swings (about 0.2 s or less) and insta
 shows the reach. Every landing pushes an `abFx` entry (ticked in `updateAbilityWorld`); one with `fx` is drawn by
 `AB_FX_LOOK[fx]` for its own `life` (in the hero's draw file, built from the shared `drawSwoosh`, `drawFlung`,
 `drawCracks` and `fxRoll` in js/draw/abilities.js), and one without falls back to a plain shape in the blow's colour for
-`AB_FX_T` (`drawWedge`/`drawRing`/`drawLineBox`). The sword's sweep (`drawSlashes`, called from js/draw/render.js beside
-the E swing arcs) is drawn with `drawWedge`. A telegraphed cast keeps the body facing the live aim the whole wind-up
+`AB_FX_T` (`drawWedge`/`drawRing`/`drawLineBox`). A basic attack's own marks (`drawSlashes`, called from js/draw/render.js beside
+the E swing arcs) are its weapon family's: [the basic attack](the-basic-attack.md). A telegraphed cast keeps the body facing the live aim the whole wind-up
 (`updateAbilities`), so the shape and the body agree about where it is going.
 
 A player's movement caps fold through one function — `abilityMoveMul(p)`: a root pins, a cast
