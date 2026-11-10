@@ -54,7 +54,7 @@
 14. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](debug-overlays-hitboxes-and-routes.md));
 15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
-    the riders and every faller) → the zipline riders (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
+    the riders and every faller) → the zipline riders and a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see

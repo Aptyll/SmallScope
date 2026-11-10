@@ -291,6 +291,7 @@ const CLIVUS_AXE_DIAG = [
 const CLIVUS_AXE_GRIP = [3, 9]; // where the hands close on the slanted grid
 const CLIVUS_AXE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8', w: '#a8794a', u: '#6e4a28' };
 
+// ------------------------------------------------------------ clivus registry
 heroArt('clivus', {
   looks: CLIVUS_SKINS, pal: CLIVUS_PAL,
   glyph: ['.wwwww..', 'w..w..w.', '...w....', '...w....', '..w.....', '..w.....', '.w......', '.w......'],

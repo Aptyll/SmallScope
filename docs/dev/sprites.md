@@ -68,7 +68,7 @@ Only the end screens read it: the emotes (`EMOTES`, js/ui/screens.js; the flop g
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each hero look (ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`; [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`; [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and hero palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -259,6 +259,16 @@ are used only for the roll. `LIGNUM_PAL` is `ARM_PAL` with the fur `j`/`f`/`F`, 
 the leather `a`/`A`, the hood `q`/`Q` and the buckle `y`/`Y`. His FELLING AXE is a `HERO_BLADES`
 row (`blade: 'felling'`, js/draw/lignum.js). BARK SKIN lays bark plates on his shoulders
 (`HERO_BODY_FX`); TIMBER's trunk is drawn on the snow (`HERO_GROUND`).
+
+CLIVUS has one look (`CLIVUS_SKINS`, js/sprites/clivus.js): GUIDE (free; a knit cap with snow
+goggles pushed up on the brow, a coil of rope over his left shoulder across to the right hip, a
+belt). It is drawn on ARMATOS's frame (15 rows tall, 10 wide from the front, 8 from the side) and
+runs as its drawn body (`run: 'drawn'`); its doll (`Guide` in app/bake-player/bodies.py: the cap in
+`cap`, the rope in `hair`, the belt in `trim`) is used only for the roll. `CLIVUS_PAL` is `ARM_PAL`
+with the cap `c`/`C` and the rope `a`/`A`. His ICE AXE is a `HERO_BLADES` row (`blade: 'iceaxe'`,
+js/draw/clivus.js); the rope out and tied is drawn in the air (`HERO_AIR`), the rope ring on its
+stakes on the snow (`HERO_GROUND`), and a readied FOOTHOLD as a glint running up his rope
+(`HERO_BODY_FX`). In the air on his vault he joins the air layer, over the pines.
 
 LUCERNA has two looks (`LUCERNA_SKINS`, js/sprites/lucerna.js): LAMPLIGHTER (free: a flat cap over
 dark hair, a warm brown greatcoat open on the side's waistcoat, brass buttons) and DUSK ROAD (rare,
