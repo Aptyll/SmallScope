@@ -268,31 +268,38 @@ function drawHeroRing(p, cx, cy) {
   const T = TEAMS[skin(p.team)];
   for (const q of heroRingPts || heroRingShape()) { ctx.fillStyle = q[0] + q[1] * 2 < -3 ? T.mark : T.coat; ctx.fillRect(cx + q[0], cy + q[1], 1, 1); } // the lit side a step brighter
 }
-function drawBuffRing(p, cx, cy, now) {
-  drawBuffMotes(cx, cy, 8, p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, now, 0);
+function drawBuffRing(p, cx, cy, now, front) {
+  drawBuffMotes(cx, cy, 8, p.buffT / CAMP_BUFF_EPIC_T, (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL, now, 0, 2, front);
 }
-// the orca buff (p.pushT), the same motes a size out in the orca's colour, so
-// a hero wearing both shows both
-function drawPushRing(p, cx, cy, now) {
-  drawBuffMotes(cx, cy, 11, p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol, now, 0.5);
+// the orca buff (p.pushT), the same motes a size up and a step out in the orca's colour,
+// standing between the bear's, so a hero wearing both shows both
+function drawPushRing(p, cx, cy, now, front) {
+  drawBuffMotes(cx, cy, 10, p.pushT / ORCA_PUSH_T, MONSTER.orca.buffCol, now, 0.5, 3, front);
 }
 // `share` of the motes, standing `r` px out round the feet (squashed to the ground's
-// 3/4 view), each rising a dozen px on its own beat and thinning to a fleck before it
-// goes; `off` shifts where they stand so two buffs never share a spot
-function drawBuffMotes(cx, cy, r, share, col, now, off) {
+// 3/4 view), each `sz` px square with a bright core on a dark rim so it holds on snow
+// and on ice, rising from the feet to the shoulders on its own beat and shrinking to
+// a point before it goes: never above the head. `off` shifts where they stand so two
+// buffs never share a spot. Drawn twice: the far half before the body, the near half
+// (`front`) over it, so the buff is read against the body too.
+const BUFF_RISE = 13;
+function drawBuffMotes(cx, cy, r, share, col, now, off, sz, front) {
   const n = Math.ceil(BUFF_MOTES * Math.min(1, share)), dark = buffShade(col);
   for (let i = 0; i < n; i++) {
-    const a = ((i + off) / BUFF_MOTES) * Math.PI * 2 + 0.4, u = (now * 0.8 + i * 0.37) % 1;
-    const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r * 0.55 - u * 12);
-    if (u > 0.75) { ctx.fillStyle = dark; ctx.fillRect(x, y + 1, 1, 1); ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); }
-    else fxMote(x, y, col, dark);
+    const a = ((i + off) / BUFF_MOTES) * Math.PI * 2 + 0.4;
+    if ((Math.sin(a) >= 0) !== !!front) continue;
+    const u = (now * 0.7 + i * 0.37) % 1, s = u > 0.8 ? 1 : u > 0.5 ? 2 : sz;
+    const x = Math.round(cx + Math.cos(a) * r * (1 - 0.25 * u)) - (s >> 1), y = Math.round(cy + Math.sin(a) * r * 0.5 * (1 - u) - u * BUFF_RISE) - (s >> 1); // every one tops out at the same height
+    ctx.fillStyle = dark; ctx.fillRect(x - 1, y, s + 2, s); ctx.fillRect(x, y - 1, s, s + 2);
+    ctx.fillStyle = col; ctx.fillRect(x, y, s, s);
+    if (s > 1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, 1, 1); }
   }
 }
-// a buff colour's own darker step, for a mote's glow
+// a buff colour's own darker step, for a mote's rim
 const buffShades = {};
 function buffShade(col) {
   if (buffShades[col]) return buffShades[col];
-  const v = parseInt(col.slice(1), 16), k = (c) => Math.round(c * 0.55);
+  const v = parseInt(col.slice(1), 16), k = (c) => Math.round(c * 0.4);
   return (buffShades[col] = 'rgb(' + k(v >> 16) + ',' + k((v >> 8) & 255) + ',' + k(v & 255) + ')');
 }
 
@@ -491,6 +498,8 @@ function drawPlayer(p, ex, ey, now, stage) {
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
+    if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true); // the near half of a buff's motes, over the body
+    if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now, true);
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
