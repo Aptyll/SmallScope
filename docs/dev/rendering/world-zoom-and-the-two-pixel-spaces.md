@@ -56,8 +56,9 @@ not stored as a float at all:
   `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3), and re-rungs it from `kWant` itself on
   a resize, never from `zoomCur`, which a ride or a show may be holding elsewhere. The wheel still
   steps out to `ZOOM_MIN`.
-- **The shows hold `ZOOM_SHOW` (1)**, the framing they were composed at: the title's backdrop,
-  and the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then ease back to the wheel's
+- **The title holds `ZOOM_TITLE`** (`ZOOM_REST`: its ten heroes stand at the size they are played
+  at, [main menu](main-menu-title.md)). **The shows hold `ZOOM_SHOW` (1)**, the framing they were
+  composed at: the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then ease back to the wheel's
   zoom. The ride itself runs `DROP_OPEN_ZOOM` → `DROP_ZOOM`, then `dropStoopZoom` walks it in to
   the wheel's zoom through your bird's stoop, so the landing is never a cut.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
