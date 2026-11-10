@@ -126,16 +126,21 @@ function layJungle() {
 }
 // THE CORNERS: where two cuts meet, a lane's shelf and a path, the wall
 // ends in a square block. Each such corner gives up a slant of pines across
-// it, JUNGLE_ROUND_CUT along each side, but only where the block behind is
-// JUNGLE_ROUND_THICK pines deep both ways: a corner rounds off, and no thin
-// wall or wall's tip is eaten, so no way through gets shorter by more than
-// the slant
-const JUNGLE_ROUND_CUT = 3;   // pines along each side of a corner the slant takes (the corner's own counted)
-const JUNGLE_ROUND_THICK = 6; // pines deep the block behind a corner must stand, both ways, for its corner to go
+// it, 2 to 4 (JUNGLE_ROUND_CUTS) along each side, but only where the block
+// behind is JUNGLE_ROUND_THICK pines deep both ways: a corner rounds off, and
+// no thin wall or wall's tip is eaten, so no way through gets shorter by more
+// than the slant. A corner's slant is rolled (worldRng('jungleRound')), never
+// the same as the nearest corner rolled before it, so the map's corners are
+// not all one ruled cut; a corner and its mirrors in the other three quarters
+// (jungleMirror's frame) share one roll, so both sides walk the same woods
+const JUNGLE_ROUND_CUTS = [2, 3, 4]; // pines along each side of a corner the slant takes (the corner's own counted)
+const JUNGLE_ROUND_THICK = 6;        // pines deep the block behind a corner must stand, both ways, for its corner to go
+const JUNGLE_ROUND_TWIN = 2.5;       // tiles apart in the first quarter's frame that two corners still count as one corner's mirrors
+const JUNGLE_ROUND_NEAR = 16;        // tiles: the corner rolled before it that a slant must differ from, if one is this close
 function jungleRound(inside) {
   const wallAt = (x, y) => { const o = inWorld(x, y) && objects[idx(x, y)]; return !!o && o.type === 'tree' && o.wall; };
   const openAt = (x, y) => inWorld(x, y) && !objects[idx(x, y)] && ground[idx(x, y)] !== 2;
-  const take = [];
+  const corners = [];
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!inside[idx(tx, ty)] || !wallAt(tx, ty)) continue;
     for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
@@ -144,11 +149,37 @@ function jungleRound(inside) {
       // ...and the block behind it whole
       let whole = true;
       for (let j = 0; j < JUNGLE_ROUND_THICK && whole; j++) for (let i = 0; i < JUNGLE_ROUND_THICK && whole; i++) whole = wallAt(tx + i * sx, ty + j * sy);
-      // the slant: every pine within JUNGLE_ROUND_CUT steps of the corner
-      if (whole) for (let j = 0; j < JUNGLE_ROUND_CUT; j++) for (let i = 0; i + j < JUNGLE_ROUND_CUT; i++) take.push([tx + i * sx, ty + j * sy]);
+      if (whole) corners.push({ tx, ty, sx, sy, ...jungleRoundHome(tx, ty, sx, sy) });
     }
   }
+  // one roll a corner, in the first quarter's frame: its mirrors take the same
+  corners.sort((a, b) => a.u - b.u || a.s - b.s || a.dx - b.dx || a.dy - b.dy);
+  const rng = worldRng('jungleRound'), rolled = [];
+  for (const c of corners) {
+    let twin = null, near = null, nd = JUNGLE_ROUND_NEAR;
+    for (const r of rolled) {
+      const d = Math.hypot(r.u - c.u, r.s - c.s);
+      if (d <= JUNGLE_ROUND_TWIN && r.dx === c.dx && r.dy === c.dy) { twin = r; break; }
+      if (d < nd) { nd = d; near = r; }
+    }
+    if (twin) { c.cut = twin.cut; continue; }
+    const pick = JUNGLE_ROUND_CUTS.filter((n) => !near || n !== near.cut);
+    c.cut = pick[Math.floor(rng() * pick.length)];
+    rolled.push(c);
+  }
+  // the slant: every pine within its cut's steps of the corner
+  const take = [];
+  for (const c of corners) for (let j = 0; j < c.cut; j++) for (let i = 0; i + j < c.cut; i++) take.push([c.tx + i * c.sx, c.ty + j * c.sy]);
   for (const [x, y] of take) objects[idx(x, y)] = null;
+}
+// a corner's place in the first quarter of the road's frame (jungleMirror's
+// u and s), with its heading into the block carried across the same mirrors:
+// u -> WORLD - 1 - u swaps x and y, s -> -s turns both round and swaps them
+function jungleRoundHome(tx, ty, sx, sy) {
+  let u = roadAlong(tx, ty), s = (tx + ty - (WORLD - 1)) / Math.SQRT2, dx = sx, dy = sy;
+  if (u > (WORLD - 1) / 2) { u = WORLD - 1 - u; [dx, dy] = [dy, dx]; }
+  if (s < 0) { s = -s; [dx, dy] = [-dy, -dx]; }
+  return { u, s, dx, dy };
 }
 // the junctions' landmarks (JUNGLE_MARKS), each on open snow or not at all
 function jungleMarks() {
