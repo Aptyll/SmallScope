@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FALCO\'s STOOP shows him carried by his hawk, with a shadow that crosses the snow', '0.897'],
     ['The road runs whole to the pillars of each gate in the stone ring', '0.896'],
     ['A lost match goes straight to DEFEAT', '0.895'],
     ['AURA: DRIFTING LIGHT is a light with rays and a trail', '0.894'],
