@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE SHOP OPENS ON WHAT YOUR GOLD BUYS NOW', '0.776'],
     ['THE SIGHT EDGE STEPS DOWN IN TWO BANDS', '0.775'],
     ['Bucina raises the horn to her lips when she attacks or casts', '0.773'],
     ['PINE STANDS THROW ONE MASS OF SHADE', '0.772'],

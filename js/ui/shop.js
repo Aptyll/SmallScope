@@ -169,7 +169,7 @@ function openShop(b) {
   state.shop = b;
   state.charOpen = false; // one slab at a time - they would sit on each other
   if (!SHOP_TABS.some((t) => t.id === state.shopTab)) state.shopTab = 'rec';
-  if (!state.shopSel) state.shopSel = shopRecNext(); // open on the next item of your hero's most picked path
+  state.shopSel = shopOpenPick(); state.shopSlot = -1; // open on what to buy now: BUY is lit whenever your gold buys a piece of the next item
   SFX.place();
   SFX.music.hold('village', { in: 0.6, out: 0.5 });
   return true;
@@ -221,6 +221,30 @@ function shopRecNext() {
     return id;
   }
   return botNextItem(player) || ITEM_DONE[0];
+}
+// the pieces of an item still to buy, the way its price is worked out (itemCost,
+// js/sim/items.js): a held piece is skipped, each slot counted once, and a piece not held is looked into
+function shopMissing(id) {
+  const used = [], out = [];
+  const walk = (k) => {
+    for (const part of BUILD_ITEMS[k].from || []) {
+      const i = player.items.findIndex((x, j) => x === part && !used.includes(j));
+      if (i >= 0) { used.push(i); continue; }
+      out.push(part); walk(part);
+    }
+  };
+  walk(id);
+  return out;
+}
+// what the panel opens on: the next item of your build, or, while its price is
+// out of reach, the dearest piece of it your gold buys now - so a first visit
+// with a starting purse opens on something BUY will sell
+function shopOpenPick() {
+  const next = shopRecNext();
+  if (shopBuyState(next).ok) return next;
+  let best = null, n = 0;
+  for (const id of shopMissing(next)) { const b = shopBuyState(id); if (b.ok && b.n > n) { best = id; n = b.n; } }
+  return best || next;
 }
 // THE ALL ITEMS GRID: a row a kind - the potion and the basics, every pair of
 // boots, the epics, the legendaries - cheapest first, a kind too long for one

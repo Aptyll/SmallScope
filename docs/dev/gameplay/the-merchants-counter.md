@@ -254,7 +254,7 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
   (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE, SUPPORT), the same rows holding only the
   legendaries and boots whose `styles` name it. A style is what an item is for, not the lane role
-  a hero is drafted into. The counter opens on RECOMMENDED;
+  a hero is drafted into. The counter opens on RECOMMENDED, with the pick on what to buy now (`shopOpenPick`: your build's next item, or the dearest piece of it your gold buys);
 - the **left bar** filters by stat in every tab (`state.shopCat`: ALL, then one a stat in
   `ITEM_STAT_ORDER`, each the stat panel's own icon, `STAT_ICON`). A filter **dims** every item
   without that stat rather than hiding it, so nothing on the grid moves; picking it again clears it;

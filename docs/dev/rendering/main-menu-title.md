@@ -11,7 +11,8 @@ room (`TITLE_LOGO`), the word column (`TITLE_WORDS`) and all ten heroes (`TITLE_
 clean ground (`titleSpotOk`; `titleGround` passes open snow or plain paving with nothing standing on it,
 no brush, no ice), found once per view size, so text never sits over reeds or a wall whatever the map
 becomes. The scene is ten heroes, five a side, facing each other (`TITLE_SPOTS`, the rivals
-mirrored): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
+mirrored; `titleSpots()` fits them to the view, sliding the formation down so its back row's heads start
+under the logo's foot and squeezing it only when a small view has less room than it needs): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
 stepped or sent - your profile's hero leading your side and nine others dealt fresh each boot
 (`titleDeal`), `titleCastPose` moves them off the menu's clock (a few px of pacing, a face turned to you; the two leaders hold), and `titleCastDraws` hands them to the sorted pass, so `drawPlayer` paints the real
 sprites, weapons, shade and team rings. `drawTitleBackdrop` leaves the scene in daylight: a thin wash
