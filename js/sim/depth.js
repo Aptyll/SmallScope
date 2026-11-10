@@ -120,7 +120,8 @@ const BRUSH_PATCHES = [
 const BRUSH_AMP = 0.95;   // the depth in a patch past its rim's slope
 const BRUSH_EDGE = 0.6;   // tiles in from the rim it takes to reach BRUSH_AMP
 const BRUSH_SKIRT = 1;    // tiles out from the rim its skirt (the MID band) runs
-const BRUSH_WOB = 0.12;   // how far the rim wanders, as a share of the radius
+const BRUSH_WOB = 0.16;   // how far the rim wanders in two or three slow lobes, as a share of the radius...
+const BRUSH_WOB2 = 0.07;  // ...and in smaller bays and bulges on top, so no patch reads as a drawn oval
 const BRUSH_CLEAR = 1;    // tiles out from the rim the scenery is cleared and the ice turned to snow
 const brushes = [];       // the patches, as drifts with brush: true (also in drifts)
 // tiles in from a deep drift's rim at a tile-space point (negative outside):
@@ -130,7 +131,8 @@ function brushIn(D, fx, fy) {
   const dx = fx - D.x, dy = fy - D.y;
   const a = dx * D.c + dy * D.s, b = -dx * D.s + dy * D.c;
   const r = Math.hypot(a / D.a, b / D.b), th = Math.atan2(b * D.flip / D.b, a / D.a);
-  const wob = 1 + BRUSH_WOB * (vnoise(Math.cos(th) * 2 + D.key * 7.3, Math.sin(th) * 2 + D.key * 3.1) - 0.5) * 2;
+  const wob = 1 + BRUSH_WOB * (vnoise(Math.cos(th) * 2 + D.key * 7.3, Math.sin(th) * 2 + D.key * 3.1) - 0.5) * 2
+    + BRUSH_WOB2 * (vnoise(Math.cos(th) * 5 + D.key * 11.7, Math.sin(th) * 5 + D.key * 5.9) - 0.5) * 2;
   return (wob - r) * D.b;
 }
 // one patch's depth: DEEP from its rim in, rising to BRUSH_AMP; a skirt in
@@ -163,7 +165,7 @@ function layBrush() {
       const g = (side ? 90 - ang : ang) * Math.PI / 180;
       const D = {
         brush: true, key: k, x: side ? t.ty : t.tx, y: side ? t.tx : t.ty, a, b, c: Math.cos(g), s: Math.sin(g), flip: side ? -1 : 1,
-        len: a * (1 + BRUSH_WOB) + BRUSH_SKIRT, head: 0, wid: 0, bend: 0, // driftTiles' reach
+        len: a * (1 + BRUSH_WOB + BRUSH_WOB2) + BRUSH_SKIRT, head: 0, wid: 0, bend: 0, // driftTiles' reach
       };
       brushes.push(D); drifts.push(D);
       const R = Math.ceil(D.len + BRUSH_CLEAR);
