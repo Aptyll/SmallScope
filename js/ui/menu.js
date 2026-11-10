@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.902';
+const PATCH_TXT = 'PATCH 0.903';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.903', 'A HERO THE BIRD SETS DOWN ARRIVES IN ITS FEATHERS.'],
   ['0.902', 'THE RECOMMENDED TAB KEEPS ITS BOOTS ON A NARROW SCREEN.'],
   ['0.901', 'THE FIRST MATCH COACH STEPS OUT OF THE PICTURE WHEN A BIRD IS DRIVEN OFF.'],
   ['0.900', 'A CABLES SIGHT IS A CLEAN BAND IN THE FOG'],
