@@ -36,7 +36,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.709';
+const PATCH_TXT = 'PATCH 0.710';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -52,6 +52,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.710', 'UNDER THE HOOD: THE BUILD CHECK NOW CATCHES A NAME THE CODE USES BUT NEVER DEFINES, BEFORE IT CAN CRASH A MATCH. NOTHING LOOKS DIFFERENT.'],
   ['0.709', 'ONE MAP: EVERY MATCH IS PLAYED ON THE SAME VALLEY, ON EVERY SCREEN. A REMATCH OR A JOIN NO LONGER CHANGES IT.'],
   ['0.708', 'HEROES BREATHE WHEN THEY STAND STILL, AND HAIR, BRAIDS, SCARVES, FEATHERS, ROBES AND ARMATOS\'S BANNER SWING A BEAT BEHIND WHEN A HERO STOPS OR TURNS.'],
   ['0.707', 'BIG HITS LAND: THE STRUCK HERO HOLDS FOR A BEAT, A SPARK FLIES BACK TOWARD THE BLOW AND THE SNOW KICKS UP; A HERO NEVER FLASHES WHITE OR TURNS SEE-THROUGH WHEN HIT, AND ATTACKS NO LONGER KNOCK PLAYERS BACK.'],
