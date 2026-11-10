@@ -110,18 +110,19 @@ function fortSwordsFine() {
 HERO_BLADES.chain = { art: fortSwords, fine: fortSwordsFine, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: FORT_GRIP, hold: 'far' };
 
 // ---- on her body ------------------------------------------------------------------
-// DEFIANT HEART's plate: a gold heart seven px wide, inked, lit on its left lobe, shaded down its right; (x, y) its
-// top middle. `cracks` 0-2 ink lines run down it as the shield is spent; `lit` whitens it for a frame.
-const HEART_PLATE = ['.oo.oo.', 'oGGoGgo', 'oGWGGgo', 'oGGGGgo', '.oGGgo.', '..oGo..', '...o...'];
+// DEFIANT HEART's plate: a small gold heart, inked, lit on its left lobe, shaded on its right, narrow enough that
+// her coat shows her side's colour either side of it; (x, y) its top middle. `cracks` 0-2 ink px run down it as
+// the shield is spent; `lit` whitens it for a frame.
+const HEART_PLATE = ['.o.o.', 'oWoGo', 'oGGgo', '.oGo.', '..o..'];
 function drawHeartPlate(x, y, cracks, lit) {
   const pal = { o: FT_INK, G: lit ? '#fff3b0' : FT_GOLD, g: FT_GOLD_D, W: '#ffffff' };
-  for (let r = 0; r < 7; r++) for (let i = 0; i < 7; i++) {
+  for (let r = 0; r < 5; r++) for (let i = 0; i < 5; i++) {
     const ch = HEART_PLATE[r][i];
-    if (ch !== '.') { ctx.fillStyle = pal[ch]; ctx.fillRect(x - 3 + i, y + r, 1, 1); }
+    if (ch !== '.') { ctx.fillStyle = pal[ch]; ctx.fillRect(x - 2 + i, y + r, 1, 1); }
   }
   ctx.fillStyle = FT_INK;
-  if (cracks > 0) { ctx.fillRect(x + 1, y + 1, 1, 1); ctx.fillRect(x, y + 2, 1, 1); } // one crack, from the notch down
-  if (cracks > 1) { ctx.fillRect(x, y + 3, 1, 1); ctx.fillRect(x - 1, y + 4, 1, 1); } // ...and on to the tip
+  if (cracks > 0) ctx.fillRect(x, y + 2, 1, 1); // a crack down from the notch
+  if (cracks > 1) ctx.fillRect(x + 1, y + 1, 1, 1); // ...and a lobe gone dark
 }
 function drawFortBody(p, ax, ay, now, front) {
   if (CLASSES[p.cls].passive !== 'unbroken') return;
@@ -137,21 +138,22 @@ function drawFortBody(p, ax, ay, now, front) {
   }
   if (!front) return;
   // DEFIANT HEART: her chest thrown out with a flash as it starts and links bursting off her, then, for as
-  // long as it holds, her chains worn crossed over her in gold, two px thick, and on her chest where they
-  // cross a gold heart plate. The plate is the shield: it cracks once it has lost a third and again at two
+  // long as it holds, her chains worn down from her shoulders in gold, two px thick, and on her chest where
+  // they meet a gold heart plate. The plate is the shield: it cracks once it has lost a third and again at two
   // thirds. From behind only the crossed chains show.
   if (p.defyT > 0 && shieldOf(p, 'ward') > 0) {
     const age = DEFY_T - p.defyT, side = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0, hx = ax + 8 + side, hy = ay + 10;
     const glint = Math.floor(now * 8) % 12; // a light running down the chains now and then
-    for (let s = -4; s <= 4; s++) for (const d of [1, -1]) { // the crossed chains, shoulder to hip
+    for (let s = -4; s <= 4; s++) for (const d of [1, -1]) { // the crossed chains
       const x = hx + s, y = hy + s * d;
+      if (y > hy && p.dir !== 'up') continue; // in front they run shoulder to plate only, so her coat below it keeps her side's colour
       ctx.fillStyle = FT_INK; ctx.fillRect(x, y + 2, 1, 1);
       ctx.fillStyle = s + 4 === glint ? '#ffffff' : (s & 1) ? FT_GOLD : '#ffe08a'; ctx.fillRect(x, y, 1, 1);
       ctx.fillStyle = (s & 1) ? FT_GOLD_D : FT_GOLD; ctx.fillRect(x, y + 1, 1, 1);
     }
     if (p.dir !== 'up') {
       const left = shieldOf(p, 'ward') / Math.max(1, p.defyHp);
-      drawHeartPlate(hx, hy - 3, left < 0.67 ? (left < 0.34 ? 2 : 1) : 0, glint === 6);
+      drawHeartPlate(hx, hy - 2, left < 0.67 ? (left < 0.34 ? 2 : 1) : 0, glint === 6);
     }
     if (age < 0.3) {
       const u = age / 0.3, k = Math.round(4 * (1 - u));
