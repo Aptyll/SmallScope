@@ -1810,13 +1810,14 @@ SPRITES.weaponArt.longbow = SPR.bake([
 
 // The same bow as he CARRIES it (arcusCarry, js/draw/arcus.js): strung and at rest it is a
 // shallow D, twelve rows tall, the string toward him and the belly away, so it stands beside
-// the body in every facing and never lies across his face. Drawn belly right; the hand closes
+// the body in every facing and never lies across his face. The string is pale and the belly's outer
+// edge is lit, a px clear of him, so brown wood never melts into his brown coat. Drawn belly right; the hand closes
 // on the stave's middle (ARCUS_BOW_GRIP).
 const ARCUS_BOW_GRIP = [4, 6];
 const ARCUS_BOW_CARRY = SPR.bake([
-  '..Go..', '.FGo..', '.F.Go.', '.F.Go.', '.F..Go', '.F..Go',
-  '.F..Go', '.F..go', '.F.go.', '.F.go.', '.Fgo..', '..go..',
-], { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', F: '#9c917c' });
+  '..Go...', '.FGHo..', '.F.GHo.', '.F.GHo.', '.F..GHo', '.F..GHo',
+  '.F..GHo', '.F..gho', '.F.gho.', '.F.gho.', '.Fgho..', '..go...',
+], { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', H: '#e0b47c', h: '#c0935c', F: '#f0eadc' });
 
 // His longbow at 32 px (dens 2) for his fine body: the carried bow and the drawn bow's three set headings,
 // three steps each, laid from the bow's own geometry on twice the px (a two px stave, a one px string, the
@@ -2082,7 +2083,7 @@ const ARCUS_BOW_FINE = {
 // is, px from the chest (out on the aim through the draw, back by the body once it has shot,
 // so the fist never leaves the stave and the bow never floats off him).
 const ARCUS_BOW_AIM = (() => {
-  const pal = { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', F: '#9c917c', A: '#c8a46a', h: '#2a3044' };
+  const pal = { '.': null, o: '#241a12', g: '#b0844e', G: '#d0a46c', F: '#f0eadc', A: '#c8a46a', h: '#2a3044' }; // the carried bow's lit wood and pale string
   const E = [[
     '......Go......', '.....FGo......', '.....F.Go.....', '.....F.Go.....', '.....F..Go....', '.....F..Go....', '.....F..Go....',
     '.....F..go....', '.....F..go....', '.....F.go.....', '.....F.go.....', '.....Fgo......', '......go......',
@@ -2137,7 +2138,7 @@ function arcusBowAim(E, SE, S, pal, d) {
 }
 // ...and at 32 px for his fine body (ARCUS_BOW_FINE): the same headings, grips and hands; the arrow's
 // fletching (f) is its own letter there. Built on first use.
-const ARCUS_BOW_FINE_PAL = { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', w: '#5e4128', F: '#9c917c', A: '#c8a46a', h: '#2a3044', f: '#e8e2d4' };
+const ARCUS_BOW_FINE_PAL = { '.': null, o: '#241a12', g: '#b0844e', G: '#d0a46c', w: '#5e4128', F: '#f0eadc', A: '#c8a46a', h: '#2a3044', f: '#e8e2d4' };
 let arcusBowFine = null;
 function arcusBowsFine() {
   if (arcusBowFine) return arcusBowFine;
