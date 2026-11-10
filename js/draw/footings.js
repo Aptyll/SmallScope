@@ -36,7 +36,7 @@ function footingOf(o) {
     if (ob && ob.type === 'tree') continue; // under a pine: the forest's ground
     let col = null;
     if (r1) col = roadStonePx(st, ROAD_COL_DEEP);
-    else if (roadStoneIn(st.x1, st.y1)) continue; // the lane's own stone: the ground's
+    else if (roadPavedAt(wx, wy)) continue; // the lane's own paving: the ground's
     else if (r2 && st.gap < 1.1) col = ROAD_COL_DEEP;
     else if (r2 && st.gap < ROAD_LIP) col = (st.x2 - wx) + (st.y2 - wy) > 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD;
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
