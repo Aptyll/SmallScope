@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Each bay stands in its own clearing at the edge of the base, no longer half hidden in the pines', '0.891'],
     ['Two keys that showed nothing now read: flames in the hands of Ignia for WARM HANDS, and a linen cape on the ally Salvia wraps with WARM CLOAK', '0.890'],
     ['The logo shows the instant the game opens', '0.889'],
     ['HIEMS clear ice, LUCERNA lantern and SALVIA thaw lie on the snow as ice, light and melt instead of flat discs', '0.888'],
