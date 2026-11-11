@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The orca\'s pool is frozen like the river', '0.921'],
     ['NIX, BELLA, FALCO, FABER and ARCUS: clearer SNOW CLOUD, SQUALL, PERFECT PARRY, KNIFE FAN, SPARK, TWIN NOCK and GATHER UP', '0.920'],
     ['The fog\'s edge rounds off where two sight circles meet', '0.919'],
     ['A few felled stumps rest on the open snow beside each lane', '0.918'],
