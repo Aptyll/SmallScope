@@ -74,7 +74,9 @@ stand alone along the bottom edge while the HUD slides in.
 gates. It also takes the HUD away for the match's last picture: it slides out over `HUD_OUT_T` while
 a bird driven off has the camera (`state.eagleCine`) and stays out through a loss's one line
 (`lostBeat`), and a respawn wait's recap, spectate bar and countdown step aside with it
-(`replayShowing`, `renderDead`), so the frame is the bird alone until an end screen takes it. Pressing the plate buys the level,
+(`replayShowing`, `renderDead`), so the frame is the bird alone until an end screen takes it. A
+side that surrendered watches its bird leave the same way: its record is drawn once the flight is
+over, and no key or click reaches the dead screens meanwhile (`deadKey`, `deadClick`). Pressing the plate buys the level,
 pressing the well casts — two surfaces, so neither can steal the other's click, and the well's
 rim carries combat states only. On top of that it
 tells the ability's moments: the rim goes **white while the body

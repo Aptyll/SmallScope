@@ -440,7 +440,7 @@ function toLobby() {
 }
 
 function deadKey(k) {
-  if (state.fade) return;
+  if (state.fade || state.eagleCine) return; // a bird driven off has the frame (renderDead draws nothing): no press lands on a screen nobody can see
   if (state.deadView === 'scores') { scoresKey(k); return; } // the post-game record owns its own controls
   // the recap takes every back key and puts itself away: the allies are underneath
   if (replayFull()) {
@@ -462,7 +462,7 @@ function deadKey(k) {
 }
 
 function deadClick() {
-  if (state.fade) return;
+  if (state.fade || state.eagleCine) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
   if (replayFull()) { if (!recapClick()) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do
   if (state.deadView === 'spec') {
@@ -486,7 +486,7 @@ function drawRespawnLine() {
 }
 
 function renderDead(now) {
-  if (state.eagleCine) return; // ...and so do the wait's spectate bar and countdown
+  if (state.eagleCine) return; // ...and so do the wait's spectate bar and countdown, and a surrender's record, which opens once the flight is over
   if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
   // the recap owns the frame: only a respawn wait's countdown reads over it
   if (replayFull()) { if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); } return; }

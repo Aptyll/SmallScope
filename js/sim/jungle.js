@@ -121,7 +121,66 @@ function layJungle() {
     if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) continue;
     placeObj(tx, ty, 'tree', { hp: TREE_HP, rare: treeRare(tx, ty), wall: true });
   }
+  jungleRound(inside);
+  jungleShelf(inside);
   jungleMarks();
+}
+// THE CORNERS: where two cuts meet, a lane's shelf and a path, the wall
+// ends in a square block. Each such corner gives up a slant of pines across
+// it, 2 to 4 (JUNGLE_ROUND_CUTS) along each side, but only where the block
+// behind is JUNGLE_ROUND_THICK pines deep both ways: a corner rounds off, and
+// no thin wall or wall's tip is eaten, so no way through gets shorter by more
+// than the slant. A corner's slant is rolled (worldRng('jungleRound')), never
+// the same as the nearest corner rolled before it, so the map's corners are
+// not all one ruled cut; a corner and its mirrors in the other three quarters
+// (jungleMirror's frame) share one roll, so both sides walk the same woods
+const JUNGLE_ROUND_CUTS = [2, 3, 4]; // pines along each side of a corner the slant takes (the corner's own counted)
+const JUNGLE_ROUND_THICK = 6;        // pines deep the block behind a corner must stand, both ways, for its corner to go
+const JUNGLE_ROUND_TWIN = 2.5;       // tiles apart in the first quarter's frame that two corners still count as one corner's mirrors
+const JUNGLE_ROUND_NEAR = 16;        // tiles: the corner rolled before it that a slant must differ from, if one is this close
+function jungleRound(inside) {
+  const wallAt = (x, y) => { const o = inWorld(x, y) && objects[idx(x, y)]; return !!o && o.type === 'tree' && o.wall; };
+  const openAt = (x, y) => inWorld(x, y) && !objects[idx(x, y)] && ground[idx(x, y)] !== 2;
+  const corners = [];
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (!inside[idx(tx, ty)] || !wallAt(tx, ty)) continue;
+    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      // open on the five sides away from the block...
+      if (!openAt(tx - sx, ty) || !openAt(tx, ty - sy) || !openAt(tx - sx, ty - sy) || !openAt(tx - sx, ty + sy) || !openAt(tx + sx, ty - sy)) continue;
+      // ...and the block behind it whole
+      let whole = true;
+      for (let j = 0; j < JUNGLE_ROUND_THICK && whole; j++) for (let i = 0; i < JUNGLE_ROUND_THICK && whole; i++) whole = wallAt(tx + i * sx, ty + j * sy);
+      if (whole) corners.push({ tx, ty, sx, sy, ...jungleRoundHome(tx, ty, sx, sy) });
+    }
+  }
+  // one roll a corner, in the first quarter's frame: its mirrors take the same
+  corners.sort((a, b) => a.u - b.u || a.s - b.s || a.dx - b.dx || a.dy - b.dy);
+  const rng = worldRng('jungleRound'), rolled = [];
+  for (const c of corners) {
+    let twin = null, near = null, nd = JUNGLE_ROUND_NEAR;
+    for (const r of rolled) {
+      const d = Math.hypot(r.u - c.u, r.s - c.s);
+      if (d <= JUNGLE_ROUND_TWIN && r.dx === c.dx && r.dy === c.dy) { twin = r; break; }
+      if (d < nd) { nd = d; near = r; }
+    }
+    if (twin) { c.cut = twin.cut; continue; }
+    const pick = JUNGLE_ROUND_CUTS.filter((n) => !near || n !== near.cut);
+    c.cut = pick[Math.floor(rng() * pick.length)];
+    rolled.push(c);
+  }
+  // the slant: every pine within its cut's steps of the corner
+  const take = [];
+  for (const c of corners) for (let j = 0; j < c.cut; j++) for (let i = 0; i + j < c.cut; i++) take.push([c.tx + i * c.sx, c.ty + j * c.sy]);
+  for (const [x, y] of take) objects[idx(x, y)] = null;
+}
+// a corner's place in the first quarter of the road's frame (jungleMirror's
+// u and s), with its heading into the block carried across the same mirrors:
+// u -> WORLD - 1 - u swaps x and y, s -> -s turns both round and swaps them
+function jungleRoundHome(tx, ty, sx, sy) {
+  let u = roadAlong(tx, ty), s = (tx + ty - (WORLD - 1)) / Math.SQRT2, dx = sx, dy = sy;
+  if (u > (WORLD - 1) / 2) { u = WORLD - 1 - u; [dx, dy] = [dy, dx]; }
+  if (s < 0) { s = -s; [dx, dy] = [-dy, -dx]; }
+  return { u, s, dx, dy };
 }
 // the junctions' landmarks (JUNGLE_MARKS), each on open snow or not at all
 function jungleMarks() {
@@ -161,6 +220,36 @@ function jungleMarks() {
       const { ln, tiles } = trunkAt(k, tx, ty);
       for (const [x, y] of tiles) placeObj(x, y, 'trunk', ln);
     });
+  }
+}
+// THE SHELF: the strip of open snow between a lane's verge and the wall
+// facing it, where the lane was cut through the woods. A few knots of the
+// felled pines' stumps are left on it: JUNGLE_SHELF_KNOTS of its tiles start
+// one, and each takes up to JUNGLE_SHELF_KNOT stumps within two tiles, rolled
+// on worldRng('jungleShelf'). Some are drawn as a trunk left lying
+// (stumpLook, js/draw/footings.js). A stump never blocks a walker, so no way
+// through changes; none stands on ice, by a cable or a tower, or near the creek
+const JUNGLE_SHELF = [2.5, 4.2];   // tiles past the road's edge a knot starts on
+const JUNGLE_SHELF_SPREAD = [1.6, 5]; // ...and its other stumps stand on, so a knot spreads off the edge line, not along it
+const JUNGLE_SHELF_KNOTS = 0.03, JUNGLE_SHELF_KNOT = 3;
+function jungleShelfAt(inside, tx, ty, band) {
+  if (!inWorld(tx, ty)) return false;
+  const i = idx(tx, ty);
+  if (!inside[i] || objects[i] || ground[i] !== 0) return false;
+  const d = roadDist(tx, ty, true);
+  if (d < band[0] || d > band[1]) return false;
+  if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) return false;
+  return creekAt(tx + 0.5, ty + 0.5) >= JUNGLE_CREEK_KEEP + 2;
+}
+function jungleShelf(inside) {
+  const rng = worldRng('jungleShelf');
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (rng() >= JUNGLE_SHELF_KNOTS || !jungleShelfAt(inside, tx, ty, JUNGLE_SHELF)) continue;
+    placeObj(tx, ty, 'stump');
+    for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
+      const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
+      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump');
+    }
   }
 }
 const JUNGLE_FELLS = { tree: true, stump: true, snag: true };

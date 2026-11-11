@@ -132,6 +132,28 @@ function drawBackFeathers(p, cx, cy, front) {
   }
 }
 
+// KNOCKED OFF A STRUCK BIRD (a particle with art 'feather', knockFeather in js/sim/eagle.js):
+// a white breast feather with a dark quill and rim, turning over as it sinks and swaying
+// side to side. Drawn over the bird, after the particle pass.
+function drawLooseFeathers(ex, ey) {
+  for (const p of particles) {
+    if (p.art !== 'feather') continue;
+    const x = Math.round(p.x - ex), y = Math.round(p.y - ey);
+    if (x < -8 || y < -8 || x > WV_W + 8 || y > WV_H + 8) continue;
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife)); // it fades over its last moment
+    drawLooseFeather(p, x, y);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawLooseFeather(p, x, y) {
+  const age = FEATHER_LIFE - p.life, art = featherFrames()[Math.floor(age * 5) % 2], flip = (p.side > 0) !== (Math.floor(age * 2.5) % 2 === 1);
+  const x0 = x + Math.round(Math.sin(age * 6) * 3), y0 = y - 2;
+  for (const [ax, ay, c] of art) {
+    ctx.fillStyle = c === 'V' ? '#f4f7ff' : c === 'Q' ? '#8a93a8' : FEATHER_RIM;
+    ctx.fillRect(x0 + (flip ? 5 - ax : ax - 5), y0 + ay, 1, 1);
+  }
+}
+
 // MENDED BY THE BIRD (p.mendT, the time its roost has been giving health or the roll
 // back without a break, js/sim/recall.js): a white feather off the bird's breast comes
 // down beside the body and settles at its waist, then the next on its other side, from

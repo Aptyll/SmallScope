@@ -96,6 +96,14 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['The fog\'s edge rounds off where two sight circles meet', '0.919'],
+    ['A few felled stumps rest on the open snow beside each lane', '0.918'],
+    ['A waypost stands beside each base fork, where the lanes part', '0.917'],
+    ['Each forest wall corner slants off by its own amount', '0.916'],
+    ['EAGLE: a blow knocks a white feather loose, no red specks', '0.915'],
+    ['The forest walls\' square corners slant off', '0.914'],
+    ['SURRENDER: no blind presses while the bird flies off', '0.913'],
+    ['HURT: the screen edge darkens on a blow, no red wash', '0.912'],
     ['HIEMS\'s WHITEOUT shows wind-driven snow', '0.911'],
     ['RUPES and SALVIA: SHOULDER ploughs a furrow in the snow, POULTICE is a tied linen bundle with sage', '0.910'],
     ['POTION: green hearts lift off the body while it heals', '0.908'],

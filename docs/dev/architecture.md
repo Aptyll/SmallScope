@@ -69,7 +69,7 @@ order, so the script tags still interleave them:
 | [js/sprites/falco.js](../../js/sprites/falco.js) | ~300 | shared scope, no `window.*` export | FALCO's 32 px ability and passive icons (`FALCO_ICON32`), his look (`FALCO_BODY`, `FALCO_PAL`, `FALCO_SKINS`) and his THROWING KNIFE (`SPRITES.weaponArt.knife`) |
 | [js/sprites/bella.js](../../js/sprites/bella.js) | ~340 | shared scope, no `window.*` export | BELLA's 32 px ability and passive icons (`BELLA_ICON32`), her looks' 16 px grids and skins table (`BELLA_BODY`, `BELLA_SKINS`), and her spatha (`BELLA_SPATHA`) |
 | [js/sprites/ignia.js](../../js/sprites/ignia.js) | ~310 | shared scope, no `window.*` export | IGNIA's 32 px ability and passive icons (`IGNIA_ICON32`), her looks' 16 px grids and skins table (`IGNIA_BODY`, `IGNIA_SKINS`) |
-| [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat |
+| [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~55 | → `SPRITES` | the story landmarks: the frozen boat, the base forks' waypost |
 | [js/baked/sfxdata.js](../../js/baked/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/app/audio.js](../../js/app/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/baked/logodata.js](../../js/baked/logodata.js) | ~5 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |

@@ -532,7 +532,7 @@ rounding thresholds at different heights, so 21 of the 24 frames are distinct pi
 
 Every frame being the same tree, each atlas row holds **forty-eight**: the 24 again, mirrored, with
 the tile's `hash2` sending half the forest into them. `TPAL` above it stays: it still dresses the
-`stumps` a felled pine leaves (three cuts, picked and nudged by `stumpLook`, js/draw/footings.js; round a roost also a stump drifted under, two broken trunks lying, and none under the roost's paving, `STUMP_LAIN`/`STUMP_BURIED`/`STUMP_THIN`).
+`stumps` a felled pine leaves (three cuts, picked and nudged by `stumpLook`, js/draw/footings.js; round a roost also a stump drifted under, two broken trunks lying, and none under the roost's paving, `STUMP_LAIN`/`STUMP_BURIED`/`STUMP_THIN`; on a lane's shelf some lie as a trunk, `STUMP_SHELF_LAIN`).
 
 **No pine draws in `TSPAL` as is: it is the source of twelve palettes** (`treePals`), one atlas row
 each for each height (row = size × 12 + variant × 4 + tone), filtered in OKLCH at bake time rather than drawn. The drawn pine
@@ -685,7 +685,7 @@ js/draw/abilities.js) bake lazily beside their drawer.
 **The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of
 `docs/media/concepts/landmarks-concepts-1.png`: the rowboat (50×24 over 3×1). The paint on the hull is a
 weathered rust, never a saturated red, because red and blue are the teams' inks. The other
-candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat sled, until 4.34) live only in the sheet. How they stand on their tiles:
+candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat sled, until 4.34) live only in the sheet. The waypost beside each base fork (20×26 over 1×1) is two boards pointing the lanes' ways in the same weathered wood. How they stand on their tiles:
 [world.md](world.md#story-landmarks).
 
 ## The shape of a sprite file
@@ -722,7 +722,7 @@ with it.
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `items.js` | items, gold nugget, gold sack, axe icon | `itemPotion` (the health potion's 11×12 flask), `itemAnim` + the gold's live icon, `goldSack`, `itemAxe` |
 | `buildings.js` | the barracks bay, soldiers, the merchant's stall, fire | `teamBuild` (`spawner`, `stall`), `robotTeam`, `robot`, `fire` |
-| `landmarks.js` | landmarks | `landmark` (`boat`) |
+| `landmarks.js` | landmarks | `landmark` (`boat`, `waypost`) |
 | `icons.js` | cursors | `cursor`, `cursorShadow` |
 | `item-icons.js` | item icons | `item_<id>` (one a `BUILD_ITEMS` entry) |
 

@@ -1135,19 +1135,16 @@ function renderWeather(ex, ey) {
 // a blit of the same pixels under 1 ms. Baked at device px under the same
 // devScale transform, so it matches the fill it replaces to within the
 // gradient's own dither (2 levels in 255).
+const HURT_EDGE_T = 0.25, HURT_EDGE_N = 2; // s the edge takes to let go after a blow (the sim's hurtT), and how many times over the vignette is laid at its darkest
 const vigCv = document.createElement('canvas');
 let vigKey = '';
 function renderVignettes() {
-  // hurt flash
-  if (player.hurtT > 0) {
-    ctx.globalAlpha = player.hurtT * 0.9;
-    ctx.fillStyle = 'rgba(200,40,50,0.35)';
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    ctx.globalAlpha = 1;
-  }
-  // soft frame vignette (a VIDEO toggle - the hurt flash above is feedback
-  // and never goes)
-  if (!settings.vidVig) return;
+  // a blow taken: the frame's dark edge closes in for a beat and lets go (player.hurtT),
+  // the middle of the view left clear. Never a wash over the whole screen, and never
+  // red: a lane fight lands a blow every second, and a red screen reads as blood.
+  // It is feedback, so it shows with the VIDEO vignette off too.
+  const hurt = player.hurtT > 0 ? Math.min(1, player.hurtT / HURT_EDGE_T) : 0;
+  if (!hurt && !settings.vidVig) return;
   const key = VIEW_W + 'x' + VIEW_H + '@' + devScale;
   if (vigKey !== key) {
     vigKey = key;
@@ -1160,5 +1157,9 @@ function renderVignettes() {
     g.fillStyle = grd;
     g.fillRect(0, 0, VIEW_W, VIEW_H);
   }
-  ctx.drawImage(vigCv, 0, 0, VIEW_W, VIEW_H);
+  if (settings.vidVig) ctx.drawImage(vigCv, 0, 0, VIEW_W, VIEW_H); // the soft frame vignette (a VIDEO toggle)
+  if (!hurt) return;
+  ctx.globalAlpha = hurt;
+  for (let i = 0; i < HURT_EDGE_N; i++) ctx.drawImage(vigCv, 0, 0, VIEW_W, VIEW_H);
+  ctx.globalAlpha = 1;
 }
