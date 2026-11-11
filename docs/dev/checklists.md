@@ -68,6 +68,9 @@ declare victory. The affordances:
     the client takes the smaller side's first AI slot, or its own slot back after a reload. In
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
+  - **`node app/check-boot.js`** — run it after touching index.html's script tags or the top of
+    boot.js: a page missing one script (its first request, or every request) must reload once and
+    play the first wave, or name the file and never start. It serves the game itself on its own port.
   - **`node app/check-join.js`** — run it after touching the party screen, a join path or
     `js/net/`: two headless pages join a party by code on the relay, by code on Steam, from a
     Steam invite, from the friends panel's row and from its invite card (Steam faked in the script with the wrapper's bridge calls), and each must end

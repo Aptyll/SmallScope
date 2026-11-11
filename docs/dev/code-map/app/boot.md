@@ -3,6 +3,7 @@
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | boot order, `DBG` | `startGame`, `window.DBG` | `boot` |
+| a script that never arrived (index.html's `window.BOOT_MISSED`): reload once, then name the file and stop before anything starts | `bootMissed`, `BOOT_RETRY_KEY` | `boot` |
 | the match between screens: the sim's recorded cosmetics, roles, host and client, the snapshot, its delta and bytes, the two transports | not here: the five [js/net/](../net/events.md) sections above, in load order | - |
 | a hidden tab's frames: a worker's clock drives loop() while the page is hidden (stepping, never drawing), rAF when it is not | `hiddenTimer`, `hiddenTick`, `watchHidden` | `the fixed step` |
 | the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), renders once after; `loop` asks for the next frame in a `finally`, so a throw in a step or a draw costs one frame, never the game | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop`/`loop1`; the frames drawn in between steps (the camera by its centre and zoom, players, wildlife, robots, birds, shots and loot; render-only): `tween`, `tweenMark`, `tweenIn`, `tweenOut`, `TWEEN_SNAP` | `the fixed step` |

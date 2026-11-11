@@ -55,6 +55,14 @@
   var el = document.getElementById('bootmark');
   el.style.transform = 'translate(calc(-50% + ' + nudge + 'px), ' + top + 'px) scale(' + s + ')';
 })();
+// every script below that never arrives (a dropped request, the web build
+// mid-update): its names would stay undefined and crash a later frame, so
+// js/app/boot.js reads this list before it starts anything (bootMissed)
+window.BOOT_MISSED = [];
+addEventListener('error', function (e) {
+  var t = e.target;
+  if (t && t.tagName === 'SCRIPT') window.BOOT_MISSED.push(t.getAttribute('src'));
+}, true);
 </script>
 <!-- every script is `defer`: still run in this order, after the page is parsed.
      The CSP <meta> above turns off Chrome's look-ahead fetch, so without defer
