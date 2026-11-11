@@ -928,6 +928,7 @@ const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
 const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
 const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
+const STUMP_CODE = 100000; // where the stumps' caster codes begin (CASTERS.stump)
 const SHADE_ROW = TILE; // px a pine's shade is drawn down when another stands on the tile below
 const SHADE_ROW_DIP = 0.5; // the share of the shade's reach the fill gives up halfway between two pines: how deep the rim's teeth are cut
 function treeInRow(tx, ty) { const o = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)]; return !!o && o.type === 'tree'; }
@@ -947,8 +948,9 @@ const CASTERS = {
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh, row ? SHADE_ROW : 0]; // the height's own rows of the atlas
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
-  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
-              art: (c) => whole(SPRITES.stumps[Math.floor((c - 300) / 100)], Math.floor((c - 300) % 100 / 10) - TREE_NUDGE_X, 4 + (c - 300) % 10 - TREE_NUDGE_Y) },
+  // (STUMP_CODE up, clear of the pines' codes: a look, then dx and dy each -9..9)
+  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
+              art: (c) => { const k = c - STUMP_CODE, r = k % 400; return whole(SPRITES.stumps[Math.floor(k / 400)], Math.floor(r / 20) - 9, 4 + r % 20 - 9); } },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
   stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides

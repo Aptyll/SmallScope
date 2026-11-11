@@ -149,6 +149,8 @@ const STUMP_LAIN = 0.12;   // the share of a roost's stumps drawn as a trunk lyi
 const STUMP_BURIED = 0.7;  // the share drifted under at the blast's outer edge (none at the round's)...
 const STUMP_THIN = 0.3;    // ...which lies this far out past the round, as a share of its size
 const STUMP_SHELF_LAIN = 0.35; // the share of a lane shelf's stumps drawn as a trunk lying
+const STUMP_GONE = 0.3;    // the share of the blast's stumps past a roost's round not drawn at all: blown off or snowed under
+const STUMP_SCATTER = [6, 6]; // px every stump stands off its tile's middle, across and up, so a felled stand loses the forest's grid
 function stumpLook(tx, ty) {
   let v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
   for (const sp of pads) {
@@ -158,6 +160,7 @@ function stumpLook(tx, ty) {
     const R = FOOTINGS.roost, e = Math.hypot((tx - sp.tx) * TILE / (R.rx - FOOT_PAD), (ty - sp.ty) * TILE / (R.ry - FOOT_PAD));
     if (e < 1) { v = 6; break; }
     const f = Math.min(1, (e - 1) / STUMP_THIN), h = hash2(tx * 13 + 5, ty * 17 + 9);
+    if (hash2(tx * 41 + 3, ty * 37 + 8) < STUMP_GONE) { v = 6; break; }
     if (h < STUMP_LAIN) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
     else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
     break;
@@ -167,7 +170,11 @@ function stumpLook(tx, ty) {
     const d = roadDist(tx, ty, true);
     if (d >= JUNGLE_SHELF_SPREAD[0] && d <= JUNGLE_SHELF_SPREAD[1]) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
   }
-  return { v, dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
+  // a felled stand (the blast's ring, a merchant's or a hero's clearing) was
+  // cut on the forest's grid, one stump a tile: each stands off its middle
+  const dx = Math.round((hash2(tx * 19 + 6, ty * 23 + 1) * 2 - 1) * STUMP_SCATTER[0]);
+  const dy = -Math.floor(hash2(tx * 29 + 2, ty * 31 + 5) * (STUMP_SCATTER[1] + 1));
+  return { v, dx, dy };
 }
 function drawFooting(o, ex, ey) {
   const F = FOOTINGS[o.type], f = F.at(o), rx = F.rx + FOOT_PAD, ry = F.ry + FOOT_PAD;
