@@ -4,6 +4,27 @@
 // requestAnimationFrame loop. The eagle drop it starts is js/sim/eagle.js.
 
 // ------------------------------------------------------------ boot
+// A script that never arrived (window.BOOT_MISSED, index.html) leaves its names
+// undefined, and the match would crash in whatever reads one first (a missed
+// js/baked/soldiers.js threw in drawRobot at the first wave). So boot stops
+// here: the page loads again once, and if the file is still missing it says
+// which, plainly, in English (js/app/text.js may be the one that's missing).
+const BOOT_RETRY_KEY = 'softfall.bootRetry';
+function bootMissed(missed) {
+  let tried = false;
+  try { tried = sessionStorage.getItem(BOOT_RETRY_KEY) === '1'; sessionStorage.setItem(BOOT_RETRY_KEY, '1'); } catch (e) { tried = true; }
+  if (!tried) { location.reload(); return; }
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;color:#d6dde8;font:16px monospace;text-align:center;white-space:pre';
+  msg.textContent = 'Softfall could not load ' + missed.join(', ') + '\nReload the page to try again.';
+  document.body.appendChild(msg);
+}
+if (window.BOOT_MISSED.length) {
+  bootMissed(window.BOOT_MISSED);
+  throw new Error('boot stopped: ' + window.BOOT_MISSED.join(', ') + ' did not load');
+}
+try { sessionStorage.removeItem(BOOT_RETRY_KEY); } catch (e) { }
+
 function startGame() {
   SFX.unlock();
   beginDrop();

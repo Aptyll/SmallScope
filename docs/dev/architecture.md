@@ -250,6 +250,10 @@ tag `pre-split` keeps the one-file history.
   `pageListen(target, type, fn)` (js/sim/core.js), and boot.js attaches them all with
   `pageListenStart()` once every global stands. A listener attached at load could fire while the
   later files were still loading and call a name that did not exist yet.
+- **A missed file stops boot**: index.html's first inline script lists every script that fails to
+  arrive (`window.BOOT_MISSED`), and boot.js reads it before anything starts: the page loads again
+  once, and if the file is still missing it names it (`bootMissed`). A missed file used to boot a
+  game that crashed at the first read of one of its names. `node app/check-boot.js` proves it.
 - **Performance**: the file count changes nothing at runtime — same total parse, same JIT, and the
   deferred tags fetch in parallel. The
   files are for maintainability, a sim/render seam, and files a session can load whole.
@@ -516,6 +520,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   missing), a `function`/`var` declared twice (**OVERRIDE**: the later one silently replaces the
   earlier everywhere), and a js file `index.html` never loads or loads twice. Git merges both
   kinds of collision cleanly and `node --check` passes each file alone, so nothing else catches them.
+- **`app/check-boot.js`** — the boot check (Playwright): a page that never receives one script
+  must reload once and then play, or name the file and never start; it blocks `js/baked/soldiers.js`.
 - **`app/check-join.js`** — the join check (Playwright): two headless pages meet through every
   way a friend joins a party (relay code, Steam code, Steam invite, the friends panel's join and
   its invite card, Steam faked with the wrapper's bridge calls) and must end welcomed with both pages still drawing;
