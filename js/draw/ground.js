@@ -116,7 +116,7 @@ function paintGroundTile(g, tx, ty) {
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
-        if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py); // the orca's pool: rough ice that holds a foot (slickUnder)
+        if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py, RIVER_GLINTS); // the orca's pool: the river's few glints of frost (rough ice that holds a foot, slickUnder)
         else if (inner && lakeStyle[idx(tx, ty)] === CREEK_ICE_STYLE) paintRime(g, tx, ty, px, py, RIVER_GLINTS); // the river: a few glints of the same frost
         // ...and, where any road reaches the lake, the earth spilling over
         // this tile's share of the crossing, rimmed along its own ragged edge
@@ -407,6 +407,7 @@ function depthAtPx(x, y) {
 // the sheet's colour at a pixel (hp: the pixel's own roll)
 function iceTone(x, y, s, hp) {
   if (s.river) return riverTone(x, y);
+  if (s.deep && orcaLakeAt(Math.floor(x / TILE), Math.floor(y / TILE))) return poolTone(x, y);
   const k = vnoise(x / 37 + 3, y / 29 + 5) + (hp - 0.5) * 0.18 > 0.5 ? 0 : 1;
   if (s.deep) {
     const d = depthAtPx(x, y) + (hp - 0.5) * 0.6;
@@ -462,6 +463,19 @@ function riverTone(x, y) {
   if (t < RIVER_CHANNEL_W * 0.45 + wob * 0.5) return RIVER_CORE;
   if (t < RIVER_CHANNEL_W + wob) return RIVER_CHANNEL;
   return RIVER_SHEET;
+}
+
+// THE ORCA'S POOL in the river's ice: its tones, flat and on clean edges, no
+// dither. The sheet at the shore deepens to the clear channel's blue and then
+// the core's at the middle (lakeDepth, its edges wandering on a low noise),
+// with the river's few frost glints over it (paintRime), so the map has one
+// ice. The river's wind-swept tongues are left off: across a wide round sheet
+// they line up into one ruled hatch
+const POOL_CHANNEL = 2.2, POOL_CORE = 4.4; // tiles in from the shore where the channel's tone, then the core's, begins
+const POOL_WANDER = 1.1;                   // tiles those edges wander by
+function poolTone(x, y) {
+  const d = depthAtPx(x, y) + (vnoise(x / 23 + 1.5, y / 19 + 4.5) - 0.5) * 2 * POOL_WANDER;
+  return d > POOL_CORE ? RIVER_CORE : d > POOL_CHANNEL ? RIVER_CHANNEL : RIVER_SHEET;
 }
 
 // one tile's edge, and the pixels round it the bank reads: SHORE_M before
