@@ -119,21 +119,29 @@ AB_FX_LOOK.white = drawWhiteStrikeFx;
 // and settling as she comes out; under it (its abFx look) the snow it presses down
 function drawSquallWhirl(f, px, py) {
   const u = f.t / f.life, seed = fxSeed(f), spin = 9 * u + 3 * u * u;
-  const loose = Math.max(0, (u - 0.6) / 0.4); // the last of it: the whirl opens out and sinks
-  ctx.globalAlpha = 1 - loose * 0.8;
-  for (let k = 0; k < 30; k++) {
+  const loose = Math.max(0, (u - 0.6) / 0.4); // the last of it: the whirl breaks up and is flung off
+  for (let k = 0; k < 22; k++) {
     const h = fxRoll(seed, k, 1), born = fxRoll(seed, k, 2) * 0.2; // how high on the whirl, when it is caught up
     if (u < born) continue;
     const th = fxRoll(seed, k, 3) * Math.PI * 2 + spin * (1.3 - h * 0.5); // the low snow turns faster
-    const r = (5 + h * 7 + fxRoll(seed, k, 4) * 2) * (1 + loose * 0.8), up = Math.round((1 + h * 14) * Math.min(1, (u - born) * 6) * (1 - loose * 0.7));
-    const x = Math.round(px + Math.cos(th) * r), y = Math.round(py + 2 + Math.sin(th) * r * 0.4) - up;
-    const near = Math.sin(th) > 0, len = Math.max(2, Math.round((near ? 5 : 3) * (1 - loose * 0.5) - fxRoll(seed, k, 5) * 2));
-    const x0 = near ? x - len + 1 : x; // the streak trails back along the way it turns
-    ctx.fillStyle = near ? NIX_SNOW_D : NIX_CLOUD_D; ctx.fillRect(x0, y + 1, len, 1); // its shaded underside
-    ctx.fillStyle = near ? '#ffffff' : NIX_SNOW_D; ctx.fillRect(x0, y, len, 1);
-    if (near && len > 3 && !(k % 3)) { ctx.fillStyle = NIX_ICE_D; ctx.fillRect(near ? x0 - 1 : x0 + len, y, 1, 1); } // a glint of ice at its head
+    const r = 5 + h * 7 + fxRoll(seed, k, 4) * 3, up = (1 + h * 14) * Math.min(1, (u - born) * 6);
+    const at = (t) => [Math.round(px + Math.cos(t) * r), Math.round(py + 2 + Math.sin(t) * r * 0.4 - up)];
+    if (!loose) { // a curved streak of powder along the whirl, its head bright, trailing back the way it turns
+      const len = 3 + Math.round(fxRoll(seed, k, 5) * 6), step = 1.1 / r;
+      for (let j = 0; j < len; j++) {
+        const t = th - j * step, [x, y] = at(t), near = Math.sin(t) > 0;
+        ctx.fillStyle = near ? (j < len * 0.6 ? '#ffffff' : NIX_SNOW) : (j < len * 0.6 ? NIX_SNOW_D : NIX_CLOUD_D);
+        ctx.fillRect(x, y, 1, 1);
+      }
+      continue;
+    }
+    for (let j = 0; j < 3; j++) { // flung off: each streak breaks into specks thrown out on their own lines, falling
+      const t = th - j * 0.4 + (fxRoll(seed, k * 3 + j, 6) - 0.5), go = loose * (6 + fxRoll(seed, k * 3 + j, 7) * 12);
+      const [x0, y0] = at(t), x = Math.round(x0 + Math.cos(t) * go), y = Math.round(y0 + Math.sin(t) * go * 0.4 + loose * loose * 8);
+      ctx.globalAlpha = 1 - loose * 0.7; ctx.fillStyle = Math.sin(t) > 0 ? '#ffffff' : NIX_SNOW_D; ctx.fillRect(x, y, 1, 1);
+    }
+    ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha = 1;
 }
 function drawSquallFx(f, px, py, now) {
   const u = f.t / f.life, seed = fxSeed(f);

@@ -9,6 +9,10 @@
 const FA_INK = '#2e2440', FA_BRASS = '#f2cc6a', FA_DEEP = '#b98a2e', FA_WHITE = '#fff6d8', FA_STEEL = '#c8d2e4', FA_IRON = '#6a7286';
 
 // ---- shots -----------------------------------------------------------------------
+// a round glow of light at (x, y), row by row from its half widths (top row first), so
+// it steps evenly at 1x and never reads as a square
+const FA_GLOW3 = [1, 2, 3, 3, 3, 2, 1], FA_GLOW2 = [1, 2, 2, 2, 1];
+function faGlow(x, y, rows) { const h = rows.length >> 1; rows.forEach((w, j) => ctx.fillRect(x - w + 1, y - h + j, w * 2 - 1, 1)); }
 // the SPARK: a ball of brass light (light may glow: a soft halo round a white-hot core,
 // never a plus), a forked crackle trailing behind it that changes every frame, and
 // specks thrown off its sides
@@ -23,7 +27,7 @@ function drawSparkShot(a, sx, sy, now) {
     if (s === 6 && roll(s, 2) < 0.6) { const sg = roll(s, 3) < 0.5 ? 1 : -1; ctx.fillStyle = FA_DEEP; ctx.fillRect(qx - ny * sg * 2, qy + nx * sg * 2, 1, 1); ctx.fillRect(Math.round(qx - ny * sg - nx), Math.round(qy + nx * sg - ny), 1, 1); } // a fork off it
     lx = qx; ly = qy;
   }
-  ctx.globalAlpha = 0.45; ctx.fillStyle = FA_BRASS; fillEllipsePx(x, y, 3, 3); ctx.globalAlpha = 1; // its glow
+  ctx.globalAlpha = 0.45; ctx.fillStyle = FA_BRASS; faGlow(x, y, FA_GLOW3); ctx.globalAlpha = 1; // its glow, round
   ctx.fillStyle = FA_BRASS; ctx.fillRect(x - 1, y - 1, 3, 3);
   ctx.fillStyle = f % 2 ? FA_WHITE : '#ffffff'; ctx.fillRect(x - 1, y, 2, 1); ctx.fillRect(x, y - 1, 1, 2); // its white-hot heart
   for (let k = 0; k < 2; k++) { const sg = k ? 1 : -1, d = 3 + Math.round(roll(k, 4) * 3); ctx.fillStyle = FA_WHITE; ctx.fillRect(Math.round(x - nx * d - ny * sg * 3), Math.round(y - ny * d + nx * sg * 3), 1, 1); } // specks off its sides
@@ -90,7 +94,7 @@ function drawFaberAir(ex, ey, now) {
     const x0 = Math.round(w.x0 - ex), y0 = Math.round(w.y0 - ey), x1 = Math.round(w.x1 - ex), y1 = Math.round(w.y1 - ey);
     ctx.globalAlpha = 0.4; faberZig(x0, y0 - 1, x1, y1 - 1, now + 0.3); faberZig(x0, y0 + 1, x1, y1 + 1, now + 0.6); ctx.globalAlpha = 1;
     faberZig(x0, y0, x1, y1, now);
-    ctx.fillStyle = FA_BRASS; ctx.fillRect(x1 - 2, y1 - 1, 5, 3); ctx.fillStyle = '#ffffff'; ctx.fillRect(x1 - 1, y1, 3, 1); // where it lands
+    ctx.globalAlpha = 0.6; ctx.fillStyle = FA_BRASS; faGlow(x1, y1, FA_GLOW2); ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.fillRect(x1, y1, 1, 1); ctx.fillRect(x1 - 1, y1, 1, 1); // where it lands: a round flash, white at its heart
   }
 }
 HERO_AIR.push(drawFaberAir);
