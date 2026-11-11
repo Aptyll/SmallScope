@@ -123,6 +123,7 @@ function layJungle() {
   }
   jungleRound(inside);
   jungleShelf(inside);
+  jungleGlades(inside);
   jungleMarks();
 }
 // THE CORNERS: where two cuts meet, a lane's shelf and a path, the wall
@@ -245,10 +246,49 @@ function jungleShelf(inside) {
   const rng = worldRng('jungleShelf');
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (rng() >= JUNGLE_SHELF_KNOTS || !jungleShelfAt(inside, tx, ty, JUNGLE_SHELF)) continue;
-    placeObj(tx, ty, 'stump');
+    placeObj(tx, ty, 'stump', { cut: true });
     for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
       const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
-      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump');
+      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump', { cut: true });
+    }
+  }
+}
+// THE GLADES: the open snow pockets deep in the woods, where a path widens
+// or two cross, keep a knot or two of stumps where pines were taken: a tile
+// JUNGLE_GLADE_DEEP or more from anything standing, the road and the creek
+// (a BFS over the open snow) starts one at JUNGLE_GLADE_KNOTS, each up to
+// JUNGLE_SHELF_KNOT stumps within two tiles, on worldRng('jungleGlades').
+// None in a camp's ground or a brush patch's, and none blocks a walker
+const JUNGLE_GLADE_DEEP = 4, JUNGLE_GLADE_KNOTS = 0.02;
+const JUNGLE_GLADE_CAMP = 5; // tiles past a camp's footprint a glade's stumps keep off
+function jungleGlades(inside) {
+  const N = WORLD * WORLD, deep = new Int16Array(N).fill(-1), q = [];
+  const sites = campSites().map((c) => ({ t: campTile(c.u, c.s), r: CAMPS[c.key].r + JUNGLE_GLADE_CAMP }));
+  const open = (tx, ty) => {
+    const i = idx(tx, ty);
+    if (!inside[i] || objects[i] || ground[i] !== 0) return false;
+    if (roadDist(tx, ty, true) < JUNGLE_ROAD_KEEP || creekAt(tx + 0.5, ty + 0.5) < JUNGLE_CREEK_KEEP) return false;
+    if (baseAt(tx, ty, BASE_KEEP) >= 0 || cisternTouches(tx, ty) || towerKeeps(tx, ty)) return false;
+    if (brushes.some((D) => brushIn(D, tx + 0.5, ty + 0.5) > -BRUSH_CLEAR - 2)) return false;
+    return !sites.some((c) => Math.hypot(tx - c.t.tx, ty - c.t.ty) < c.r);
+  };
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) if (!open(tx, ty)) { deep[idx(tx, ty)] = 0; q.push(idx(tx, ty)); }
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h], x = i % WORLD, y = (i / WORLD) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      if (!inWorld(x + dx, y + dy)) continue;
+      const j = idx(x + dx, y + dy);
+      if (deep[j] < 0) { deep[j] = deep[i] + 1; q.push(j); }
+    }
+  }
+  const rng = worldRng('jungleGlades');
+  const at = (tx, ty, d) => inWorld(tx, ty) && deep[idx(tx, ty)] >= d && !objects[idx(tx, ty)];
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (rng() >= JUNGLE_GLADE_KNOTS || !at(tx, ty, JUNGLE_GLADE_DEEP)) continue;
+    placeObj(tx, ty, 'stump', { cut: true });
+    for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
+      const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
+      if (at(x, y, JUNGLE_GLADE_DEEP - 2)) placeObj(x, y, 'stump', { cut: true });
     }
   }
 }

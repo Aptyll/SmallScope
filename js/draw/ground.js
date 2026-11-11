@@ -933,7 +933,7 @@ const CASTERS = {
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny, size * A.pals * A.fh, row ? SHADE_ROW : 0]; // the height's own rows of the atlas
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
-  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
+  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty, o); return 300 + L.v * 100 + (L.dx + TREE_NUDGE_X) * 10 + L.dy + TREE_NUDGE_Y; },
               art: (c) => whole(SPRITES.stumps[Math.floor((c - 300) / 100)], Math.floor((c - 300) % 100 / 10) - TREE_NUDGE_X, 4 + (c - 300) % 10 - TREE_NUDGE_Y) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
