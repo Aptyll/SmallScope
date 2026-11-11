@@ -148,7 +148,6 @@ function drawRoostFooting(sp, stalls, ex, ey) {
 const STUMP_LAIN = 0.12;   // the share of a roost's stumps drawn as a trunk lying
 const STUMP_BURIED = 0.7;  // the share drifted under at the blast's outer edge (none at the round's)...
 const STUMP_THIN = 0.3;    // ...which lies this far out past the round, as a share of its size
-const STUMP_CUT_LAIN = 0.35; // the share of worldgen's cut stumps drawn as a trunk lying
 function stumpLook(tx, ty, o) {
   let v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
   for (const sp of pads) {
@@ -162,9 +161,8 @@ function stumpLook(tx, ty, o) {
     else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
     break;
   }
-  // a stump worldgen left where pines were cut (`cut`: a lane's shelf, a
-  // glade, js/sim/jungle.js) some lie as the trunk the cutters left
-  if (o && o.cut && v < 3 && hash2(tx * 13 + 5, ty * 17 + 9) < STUMP_CUT_LAIN) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
+  // the one trunk a knot of felled pines left lying (`cut` 2, jungleKnot, js/sim/jungle.js)
+  if (o && o.cut === 2) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
   return { v, dx: treeNudgeX(tx, ty), dy: Math.min(0, treeNudgeY(tx, ty)) };
 }
 function drawFooting(o, ex, ey) {

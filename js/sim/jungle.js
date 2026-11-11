@@ -223,13 +223,33 @@ function jungleMarks() {
     });
   }
 }
+// THE KNOTS: where pines were felled in a glade, a few stumps are left by
+// the wood's edge. A knot is a triangle of up to three, never
+// a line: one of JUNGLE_KNOT_SHAPES turned a quarter at a time and maybe
+// flipped, its stumps where `ok` allows. At most one of them is drawn as the
+// trunk left lying (`cut` 2, stumpLook, js/draw/footings.js; 1 a stump), and
+// knots keep JUNGLE_KNOT_GAP apart. A stump never blocks a walker, so no way
+// through changes
+const JUNGLE_KNOT_SHAPES = [[[0, 0], [2, 1], [-1, 2]], [[0, 0], [2, -1], [1, 2]], [[0, 0], [1, 2], [-2, 1]]];
+const JUNGLE_KNOT_LIE = 0.5; // the chance a knot leaves one trunk lying
+const JUNGLE_KNOT_GAP = 7;   // tiles between two knots' first stumps
+function jungleKnot(tx, ty, ok, rng, knots) {
+  if (knots.some(([x, y]) => Math.hypot(tx - x, ty - y) < JUNGLE_KNOT_GAP)) return;
+  const shape = JUNGLE_KNOT_SHAPES[Math.floor(rng() * JUNGLE_KNOT_SHAPES.length)];
+  const turn = Math.floor(rng() * 4), flip = rng() < 0.5 ? -1 : 1, lie = rng() < JUNGLE_KNOT_LIE ? Math.floor(rng() * 3) : -1;
+  knots.push([tx, ty]);
+  shape.forEach(([u, v], k) => {
+    let x = u * flip, y = v;
+    for (let t = 0; t < turn; t++) [x, y] = [-y, x];
+    if (k && !ok(tx + x, ty + y)) return;
+    placeObj(tx + x, ty + y, 'stump', { cut: k === lie ? 2 : 1 });
+  });
+}
 // THE SHELF: the strip of open snow between a lane's verge and the wall
-// facing it, where the lane was cut through the woods. A few knots of the
-// felled pines' stumps are left on it: JUNGLE_SHELF_KNOTS of its tiles start
-// one, and each takes up to JUNGLE_SHELF_KNOT stumps within two tiles, rolled
-// on worldRng('jungleShelf'). Some are drawn as a trunk left lying
-// (stumpLook, js/draw/footings.js). A stump never blocks a walker, so no way
-// through changes; none stands on ice, by a cable or a tower, or near the creek
+// facing it, where the lane was cut through the woods: JUNGLE_SHELF_KNOTS of
+// its tiles start a knot of up to JUNGLE_SHELF_KNOT stumps, the others within
+// two tiles and further off the road's edge, on worldRng('jungleShelf'). None
+// on ice, by a cable or a tower, or near the creek
 const JUNGLE_SHELF = [2.5, 4.2];   // tiles past the road's edge a knot starts on
 const JUNGLE_SHELF_SPREAD = [1.6, 5]; // ...and its other stumps stand on, so a knot spreads off the edge line, not along it
 const JUNGLE_SHELF_KNOTS = 0.03, JUNGLE_SHELF_KNOT = 3;
@@ -246,20 +266,21 @@ function jungleShelf(inside) {
   const rng = worldRng('jungleShelf');
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (rng() >= JUNGLE_SHELF_KNOTS || !jungleShelfAt(inside, tx, ty, JUNGLE_SHELF)) continue;
-    placeObj(tx, ty, 'stump', { cut: true });
+    // its trunk, if it leaves one, is its first stump: hashed, so the rolls stay the knots'
+    placeObj(tx, ty, 'stump', { cut: hash2(tx * 13 + 5, ty * 17 + 9) < JUNGLE_KNOT_LIE ? 2 : 1 });
     for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
       const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
-      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump', { cut: true });
+      if (jungleShelfAt(inside, x, y, JUNGLE_SHELF_SPREAD)) placeObj(x, y, 'stump', { cut: 1 });
     }
   }
 }
-// THE GLADES: the open snow pockets deep in the woods, where a path widens
-// or two cross, keep a knot or two of stumps where pines were taken: a tile
-// JUNGLE_GLADE_DEEP or more from anything standing, the road and the creek
-// (a BFS over the open snow) starts one at JUNGLE_GLADE_KNOTS, each up to
-// JUNGLE_SHELF_KNOT stumps within two tiles, on worldRng('jungleGlades').
-// None in a camp's ground or a brush patch's, and none blocks a walker
-const JUNGLE_GLADE_DEEP = 4, JUNGLE_GLADE_KNOTS = 0.02;
+// THE GLADES: the open snow pockets in the woods, where a path widens or two
+// cross. A glade is open snow (a BFS from anything standing, the road and the
+// creek) with a tile JUNGLE_GLADE_DEEP in somewhere within JUNGLE_GLADE_REACH;
+// a knot there starts by its edge, a wall pine within JUNGLE_GLADE_HUG, at
+// JUNGLE_GLADE_KNOTS, on worldRng('jungleGlades'). None in a camp's ground or
+// a brush patch's
+const JUNGLE_GLADE_DEEP = 5, JUNGLE_GLADE_REACH = 6, JUNGLE_GLADE_HUG = 2, JUNGLE_GLADE_KNOTS = 0.015;
 const JUNGLE_GLADE_CAMP = 5; // tiles past a camp's footprint a glade's stumps keep off
 function jungleGlades(inside) {
   const N = WORLD * WORLD, deep = new Int16Array(N).fill(-1), q = [];
@@ -281,15 +302,17 @@ function jungleGlades(inside) {
       if (deep[j] < 0) { deep[j] = deep[i] + 1; q.push(j); }
     }
   }
-  const rng = worldRng('jungleGlades');
-  const at = (tx, ty, d) => inWorld(tx, ty) && deep[idx(tx, ty)] >= d && !objects[idx(tx, ty)];
+  const near = (tx, ty, r, test) => {
+    for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (inWorld(x, y) && test(idx(x, y))) return true;
+    return false;
+  };
+  const pine = (i) => !!objects[i] && objects[i].type === 'tree';
+  const at = (tx, ty) => inWorld(tx, ty) && deep[idx(tx, ty)] >= 1 && !objects[idx(tx, ty)] && near(tx, ty, JUNGLE_GLADE_HUG, pine);
+  const rng = worldRng('jungleGlades'), knots = [];
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-    if (rng() >= JUNGLE_GLADE_KNOTS || !at(tx, ty, JUNGLE_GLADE_DEEP)) continue;
-    placeObj(tx, ty, 'stump', { cut: true });
-    for (let k = 1; k < JUNGLE_SHELF_KNOT; k++) {
-      const x = tx + Math.floor(rng() * 5) - 2, y = ty + Math.floor(rng() * 5) - 2;
-      if (at(x, y, JUNGLE_GLADE_DEEP - 2)) placeObj(x, y, 'stump', { cut: true });
-    }
+    if (rng() >= JUNGLE_GLADE_KNOTS || !at(tx, ty)) continue;
+    if (!near(tx, ty, JUNGLE_GLADE_REACH, (i) => deep[i] >= JUNGLE_GLADE_DEEP)) continue;
+    jungleKnot(tx, ty, at, rng, knots);
   }
 }
 const JUNGLE_FELLS = { tree: true, stump: true, snag: true };
