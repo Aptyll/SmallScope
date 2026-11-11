@@ -9,18 +9,28 @@
 const FA_INK = '#2e2440', FA_BRASS = '#f2cc6a', FA_DEEP = '#b98a2e', FA_WHITE = '#fff6d8', FA_STEEL = '#c8d2e4', FA_IRON = '#6a7286';
 
 // ---- shots -----------------------------------------------------------------------
-// the SPARK: a bright point with a crackling tail
+// a round glow of light at (x, y), row by row from its half widths (top row first), so
+// it steps evenly at 1x and never reads as a square
+const FA_GLOW3 = [1, 2, 3, 3, 3, 2, 1], FA_GLOW2 = [1, 2, 2, 2, 1];
+function faGlow(x, y, rows) { const h = rows.length >> 1; rows.forEach((w, j) => ctx.fillRect(x - w + 1, y - h + j, w * 2 - 1, 1)); }
+// the SPARK: a ball of brass light (light may glow: a soft halo round a white-hot core,
+// never a plus), a forked crackle trailing behind it that changes every frame, and
+// specks thrown off its sides
 function drawSparkShot(a, sx, sy, now) {
-  const nx = Math.cos(a.ang), ny = Math.sin(a.ang);
-  const x = Math.round(sx), y = Math.round(sy);
-  for (let s = 6; s > 0; s -= 2) {
-    const j = Math.sin(now * 40 + s * 2 + a.ox) > 0 ? 1 : -1; // the tail jitters a pixel side to side
-    ctx.fillStyle = s > 3 ? FA_DEEP : FA_BRASS;
-    ctx.fillRect(Math.round(sx - nx * s - ny * j), Math.round(sy - ny * s + nx * j), 1, 1);
+  const nx = Math.cos(a.ang), ny = Math.sin(a.ang), x = Math.round(sx), y = Math.round(sy);
+  const f = Math.floor(now * 30), roll = (k, j) => hash2(f * 13 + k + (a.ox | 0) * 7, j * 31 + 3);
+  let lx = x, ly = y; // the crackle: a crooked tail, a px of brass and a deep shade, 12 px long
+  for (let s = 2; s <= 12; s += 2) {
+    const j = Math.round((roll(s, 1) * 2 - 1) * (1 + s / 6)), qx = Math.round(sx - nx * s - ny * j), qy = Math.round(sy - ny * s + nx * j);
+    const m = Math.max(Math.abs(qx - lx), Math.abs(qy - ly)) || 1;
+    for (let t = 1; t <= m; t++) { const ux = Math.round(lx + (qx - lx) * t / m), uy = Math.round(ly + (qy - ly) * t / m); ctx.fillStyle = s > 7 ? FA_DEEP : FA_BRASS; ctx.fillRect(ux, uy, 1, 1); }
+    if (s === 6 && roll(s, 2) < 0.6) { const sg = roll(s, 3) < 0.5 ? 1 : -1; ctx.fillStyle = FA_DEEP; ctx.fillRect(qx - ny * sg * 2, qy + nx * sg * 2, 1, 1); ctx.fillRect(Math.round(qx - ny * sg - nx), Math.round(qy + nx * sg - ny), 1, 1); } // a fork off it
+    lx = qx; ly = qy;
   }
-  ctx.fillStyle = FA_INK; ctx.fillRect(x - 1, y - 1, 3, 3);
-  ctx.fillStyle = Math.sin(now * 30) > 0 ? FA_WHITE : FA_BRASS;
-  ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1);
+  ctx.globalAlpha = 0.45; ctx.fillStyle = FA_BRASS; faGlow(x, y, FA_GLOW3); ctx.globalAlpha = 1; // its glow, round
+  ctx.fillStyle = FA_BRASS; ctx.fillRect(x - 1, y - 1, 3, 3);
+  ctx.fillStyle = f % 2 ? FA_WHITE : '#ffffff'; ctx.fillRect(x - 1, y, 2, 1); ctx.fillRect(x, y - 1, 1, 2); // its white-hot heart
+  for (let k = 0; k < 2; k++) { const sg = k ? 1 : -1, d = 3 + Math.round(roll(k, 4) * 3); ctx.fillStyle = FA_WHITE; ctx.fillRect(Math.round(x - nx * d - ny * sg * 3), Math.round(y - ny * d + nx * sg * 3), 1, 1); } // specks off its sides
 }
 HERO_SHOTS.spark = drawSparkShot;
 
@@ -67,11 +77,6 @@ function drawFaberGround(ex, ey, now) {
     ctx.fillStyle = FA_BRASS; ctx.fillRect(x - 2, y - 1, 5, 1); ctx.fillRect(x - 1, y - 2, 3, 3);
     ctx.fillStyle = FA_INK; ctx.fillRect(x, y - 1, 1, 1);
   }
-  // the spark's jump
-  for (const w of faberArcs) {
-    if (w.t < 0 || w.x1 === undefined) continue;
-    faberZig(Math.round(w.x0 - ex), Math.round(w.y0 - ey), Math.round(w.x1 - ex), Math.round(w.y1 - ey), now);
-  }
   // the small machines' bolts: a brass pin
   for (const w of faberBolts) {
     const x = Math.round(w.x - ex), y = Math.round(w.y - ey);
@@ -81,6 +86,18 @@ function drawFaberGround(ex, ey, now) {
   }
 }
 HERO_GROUND.push(drawFaberGround);
+// the spark's jump, over the bodies it leaps between (HERO_AIR): a bolt of brass light
+// body to body, its glow a px either side, kinks moving each frame, bright where it lands
+function drawFaberAir(ex, ey, now) {
+  for (const w of faberArcs) {
+    if (w.t < 0 || w.x1 === undefined) continue;
+    const x0 = Math.round(w.x0 - ex), y0 = Math.round(w.y0 - ey), x1 = Math.round(w.x1 - ex), y1 = Math.round(w.y1 - ey);
+    ctx.globalAlpha = 0.4; faberZig(x0, y0 - 1, x1, y1 - 1, now + 0.3); faberZig(x0, y0 + 1, x1, y1 + 1, now + 0.6); ctx.globalAlpha = 1;
+    faberZig(x0, y0, x1, y1, now);
+    ctx.globalAlpha = 0.6; ctx.fillStyle = FA_BRASS; faGlow(x1, y1, FA_GLOW2); ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.fillRect(x1, y1, 1, 1); ctx.fillRect(x1 - 1, y1, 1, 1); // where it lands: a round flash, white at its heart
+  }
+}
+HERO_AIR.push(drawFaberAir);
 
 // ---- the keys' own looks -----------------------------------------------------------------
 // a brass cog at (x, y): `r` px to its rim, `n` teeth, turned to `a`

@@ -7,41 +7,68 @@
 
 const NIX_INK = '#2e2440', NIX_SNOW = '#f4f8fd', NIX_SNOW_D = '#a9bdd6', NIX_ICE = '#bfe6f8', NIX_ICE_D = '#7cc4e8';
 
-// a filled pixel disc, row by row, centre (x, y)
-function nixDisc(x, y, r) {
+// a filled pixel disc, row by row, centre (x, y), on `g` (the frame's ctx by default)
+function nixDisc(x, y, r, g = ctx) {
   for (let j = -r; j <= r; j++) {
     const w = Math.floor(Math.sqrt(r * r - j * j + r * 0.8));
-    ctx.fillRect(x - w, y + j, w * 2 + 1, 1);
+    g.fillRect(x - w, y + j, w * 2 + 1, 1);
   }
 }
-// the cloud's shadow on the snow, under the bodies
-function drawNixCloudShadow(c, ex, ey) {
-  const left = 1 - c.t / c.life, grow = Math.min(1, c.t / 0.25);
-  ctx.globalAlpha = 0.14 * Math.min(1, left * 3); ctx.fillStyle = NIX_INK;
-  nixDisc(Math.round(c.x - ex), Math.round(c.y - ey) + 2, Math.round(CLOUD_R * 0.9 * grow));
+// The cloud is one heap of puffs, painted solid on its own small canvas and laid on the
+// frame at one strength, so the puffs never show as overlapping see-through circles.
+// Puffs sit where the clock and the spot put them: a big one in the middle, a ring
+// round it out to the cloud's whole reach (CLOUD_R), and loose wisps off the edge that
+// break the round. Each drifts on its own slow beat; the heap swells in as it is thrown
+// and sinks and thins as its time runs down.
+const NIX_CLOUD_D = '#8ea3c2', NIX_CLOUD_PAD = 8, nixCloudCv = document.createElement('canvas'), nixCloudG = nixCloudCv.getContext('2d');
+nixCloudCv.width = (CLOUD_R + NIX_CLOUD_PAD) * 2; nixCloudCv.height = CLOUD_R + NIX_CLOUD_PAD * 4;
+function nixPuffs(c, now) {
+  const k0 = (c.x * 7 + c.y * 3) | 0, grow = Math.min(1, c.t / 0.25), left = 1 - c.t / c.life;
+  const sink = Math.max(0, 1 - left * 4), out = [];
+  const roll = (i, j) => hash2(k0 + i * 31, j * 17 + 5);
+  out.push([0, -2, 15]); // the heap's crown
+  for (let i = 0; i < 10; i++) { // the ring, uneven: each puff its own size and reach
+    const ang = (i + roll(i, 1) * 0.6) / 10 * Math.PI * 2 + now * 0.06 * (i % 2 ? 1 : -1);
+    const r = 8 + Math.round(roll(i, 2) * 6), reach = CLOUD_R - r - 1 - roll(i, 3) * 6;
+    out.push([Math.cos(ang) * reach, Math.sin(ang) * reach * 0.55, r]);
+  }
+  for (let i = 0; i < 7; i++) { // the wisps, drifting off and back on their own beat
+    const ang = roll(i, 4) * Math.PI * 2 + now * 0.1, breathe = 0.5 + 0.5 * Math.sin(now * 0.9 + i * 2.1);
+    const reach = CLOUD_R - 3 + breathe * 3;
+    out.push([Math.cos(ang) * reach, Math.sin(ang) * reach * 0.55, 2 + Math.round(roll(i, 5) * 3)]);
+  }
+  return out.map(([x, y, r]) => [Math.round(x * grow), Math.round(y * grow + sink * 3), Math.max(1, Math.round(r * grow * (1 - sink * 0.35)))]);
+}
+// the cloud's shadow on the snow, under the bodies: the same heap pressed flat, lobed at
+// its edge like the cloud over it
+function drawNixCloudShadow(c, ex, ey, now) {
+  const left = 1 - c.t / c.life, W = nixCloudCv.width, H = nixCloudCv.height, ox = W >> 1, oy = H >> 1;
+  nixCloudG.clearRect(0, 0, W, H); nixCloudG.fillStyle = NIX_INK;
+  for (const [x, y, r] of nixPuffs(c, now)) nixDisc(ox + x, oy + Math.round(y * 0.8) + 4, Math.max(1, r - 2), nixCloudG);
+  ctx.globalAlpha = 0.16 * Math.min(1, left * 3);
+  ctx.drawImage(nixCloudCv, Math.round(c.x - ex) - ox, Math.round(c.y - ey) - oy);
   ctx.globalAlpha = 1;
 }
-// The cloud, over the bodies: puffs of powder heaped round its middle, each on its own slow
-// drift from the clock (never a roll), thinning out as its time runs down
+// The cloud, over the bodies: each puff a shaded underside and a lit top, the ones in
+// front laid over the ones behind, the crown's top caught white; flecks hang over it
 function drawNixCloud(c, ex, ey, now) {
-  const cx = Math.round(c.x - ex), cy = Math.round(c.y - ey);
-  const left = 1 - c.t / c.life, grow = Math.min(1, c.t / 0.25);
-  const k0 = (c.x * 7 + c.y * 3) | 0;
-  const a = 0.5 * Math.min(1, left * 3);
-  for (let pass = 0; pass < 2; pass++) {
-    for (let i = 0; i < 9; i++) {
-      const ang = i * 0.7 + k0 * 0.13 + now * 0.25 * (i % 2 ? 1 : -1);
-      const rr = (i === 0 ? 0 : CLOUD_R * 0.55) * grow;
-      const x = Math.round(cx + Math.cos(ang) * rr), y = Math.round(cy - 6 + Math.sin(ang) * rr * 0.6);
-      const r = Math.round((i === 0 ? 16 : 11 + (i % 3) * 2) * grow);
-      ctx.globalAlpha = pass ? a : a * 0.6;
-      ctx.fillStyle = pass ? NIX_SNOW : NIX_SNOW_D;
-      nixDisc(x, y + (pass ? 0 : 2), pass ? r - 2 : r);
-    }
+  const left = 1 - c.t / c.life, W = nixCloudCv.width, H = nixCloudCv.height, ox = W >> 1, oy = (H >> 1) - 6;
+  const puffs = nixPuffs(c, now).sort((a, b) => a[1] - b[1]); // back to front
+  nixCloudG.clearRect(0, 0, W, H);
+  for (const [x, y, r] of puffs) {
+    if (r < 6) { nixCloudG.fillStyle = NIX_SNOW; nixDisc(ox + x, oy + y, r, nixCloudG); continue; } // a wisp: lit powder, too thin to shade
+    nixCloudG.fillStyle = NIX_CLOUD_D; nixDisc(ox + x, oy + y + 1, r, nixCloudG); // its shaded underside
+    nixCloudG.fillStyle = NIX_SNOW_D; nixDisc(ox + x, oy + y, r - 1, nixCloudG);
+    nixCloudG.fillStyle = NIX_SNOW; nixDisc(ox + x - 1, oy + y - 2, r - 2, nixCloudG); // its lit top, the light from the upper left
+    nixCloudG.fillStyle = '#ffffff'; nixDisc(ox + x - (r >> 2) - 1, oy + y - (r >> 1) - 1, r >> 2, nixCloudG);
   }
+  ctx.globalAlpha = 0.7 * Math.min(1, left * 3);
+  const cx = Math.round(c.x - ex), cy = Math.round(c.y - ey);
+  ctx.drawImage(nixCloudCv, cx - ox, cy - (H >> 1));
   // flecks in the air above it
   ctx.globalAlpha = Math.min(1, left * 3);
   ctx.fillStyle = '#ffffff';
+  const k0 = (c.x * 7 + c.y * 3) | 0;
   for (let i = 0; i < 10; i++) {
     const t = (now * 0.6 + i * 0.37 + k0 * 0.01) % 1;
     const x = Math.round(cx + Math.sin(i * 2.3 + k0) * CLOUD_R * 0.8), y = Math.round(cy - 4 - t * 26);
@@ -86,6 +113,43 @@ function drawWhiteStrikeFx(f, px, py, now) {
   });
 }
 AB_FX_LOOK.white = drawWhiteStrikeFx;
+// SQUALL's whirl: where she vanished the snow spins up round the spot she stood on,
+// over the bodies (drawNixAir), streaks of powder wheeling round it, the near ones lit
+// and the far ones shaded, no taller than she is, wound up fast and then flung loose
+// and settling as she comes out; under it (its abFx look) the snow it presses down
+function drawSquallWhirl(f, px, py) {
+  const u = f.t / f.life, seed = fxSeed(f), spin = 9 * u + 3 * u * u;
+  const loose = Math.max(0, (u - 0.6) / 0.4); // the last of it: the whirl breaks up and is flung off
+  for (let k = 0; k < 22; k++) {
+    const h = fxRoll(seed, k, 1), born = fxRoll(seed, k, 2) * 0.2; // how high on the whirl, when it is caught up
+    if (u < born) continue;
+    const th = fxRoll(seed, k, 3) * Math.PI * 2 + spin * (1.3 - h * 0.5); // the low snow turns faster
+    const r = 5 + h * 7 + fxRoll(seed, k, 4) * 3, up = (1 + h * 14) * Math.min(1, (u - born) * 6);
+    const at = (t) => [Math.round(px + Math.cos(t) * r), Math.round(py + 2 + Math.sin(t) * r * 0.4 - up)];
+    if (!loose) { // a curved streak of powder along the whirl, its head bright, trailing back the way it turns
+      const len = 3 + Math.round(fxRoll(seed, k, 5) * 6), step = 1.1 / r;
+      for (let j = 0; j < len; j++) {
+        const t = th - j * step, [x, y] = at(t), near = Math.sin(t) > 0;
+        ctx.fillStyle = near ? (j < len * 0.6 ? '#ffffff' : NIX_SNOW) : (j < len * 0.6 ? NIX_SNOW_D : NIX_CLOUD_D);
+        ctx.fillRect(x, y, 1, 1);
+      }
+      continue;
+    }
+    for (let j = 0; j < 3; j++) { // flung off: each streak breaks into specks thrown out on their own lines, falling
+      const t = th - j * 0.4 + (fxRoll(seed, k * 3 + j, 6) - 0.5), go = loose * (6 + fxRoll(seed, k * 3 + j, 7) * 12);
+      const [x0, y0] = at(t), x = Math.round(x0 + Math.cos(t) * go), y = Math.round(y0 + Math.sin(t) * go * 0.4 + loose * loose * 8);
+      ctx.globalAlpha = 1 - loose * 0.7; ctx.fillStyle = Math.sin(t) > 0 ? '#ffffff' : NIX_SNOW_D; ctx.fillRect(x, y, 1, 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+function drawSquallFx(f, px, py, now) {
+  const u = f.t / f.life, seed = fxSeed(f);
+  ctx.globalAlpha = 0.25 * (1 - u); ctx.fillStyle = NIX_INK; // the pressed snow under it
+  for (let k = 0; k < 5; k++) ctx.fillRect(Math.round(px - 7 + fxRoll(seed, k, 7) * 10), py + 2 + Math.round(fxRoll(seed, k, 8) * 3), 3 + Math.round(fxRoll(seed, k, 9) * 3), 1);
+  ctx.globalAlpha = 1;
+}
+AB_FX_LOOK.squall = drawSquallFx;
 // DRIFT STEP's path: the drift snow her step sweeps up, low over the ground. Scattered,
 // never rows: big curls bunched where she left, thinning to a few flecks where she
 // comes out, strays off both sides; thrown up as she passes, settling from the near end
@@ -107,10 +171,11 @@ function drawDriftFx(f, px, py, now) {
   }
 }
 AB_FX_LOOK.drift = drawDriftFx;
-function drawNixGround(ex, ey) { for (const c of nixClouds) drawNixCloudShadow(c, ex, ey); }
+function drawNixGround(ex, ey, now) { for (const c of nixClouds) drawNixCloudShadow(c, ex, ey, now); }
 function drawNixAir(ex, ey, now) {
   for (const c of nixClouds) drawNixCloud(c, ex, ey, now);
   for (const s of nixShards) drawNixShard(s, ex, ey);
+  for (const f of abFx) if (f.fx === 'squall') drawSquallWhirl(f, Math.round(f.x - ex), Math.round(f.y - ey));
 }
 // see-through to her own side while the cloud or SQUALL hides her
 function nixFade(p) {

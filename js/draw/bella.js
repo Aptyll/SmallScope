@@ -35,34 +35,34 @@ function drawBellaMarks(e, px, py, w, h, now) {
   if (e instanceof Player && CLASSES[e.cls].passive === 'calculated') {
     const full = e.prec >= PREC_MAX;
     for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD, true);
-    if (e.parryT > 0) {
-      const a = aimAngle(e);
-      const cx = px + 8 + Math.round(Math.cos(a) * 6), cy = py + 8 + Math.round(Math.sin(a) * 4);
-      const nx = -Math.sin(a), ny = Math.cos(a); // the blade lies across the aim
-      const age = PARRY_T - e.parryT, run = Math.floor(now * 14) % 16 - 7; // a glint walks the edge
-      if (WD > 1 && worldDense()) { // drawn fine: the blade steps on half px, a px of ink round it, its lower half in shade
-        const at = (v) => Math.round(v * 2) / 2;
-        ctx.fillStyle = BELLA_INK;
-        for (let s = -13.5; s <= 13.5; s++) ctx.fillRect(at(cx + nx * s / 2) - 0.5, at(cy + ny * s / 2) - 0.5, 2, 2);
-        for (let s = -12; s <= 12; s++) {
-          const x = at(cx + nx * s / 2), y = at(cy + ny * s / 2), gold = Math.abs(s) < 4, lit = Math.round(s / 2) === run;
-          ctx.fillStyle = lit ? '#ffffff' : gold ? BELLA_GOLD : '#eef2f8'; ctx.fillRect(x, y, 1, 1);
-          if (!lit) { ctx.fillStyle = gold ? BELLA_GOLD_D : '#a9b6c9'; ctx.fillRect(x + (ny > 0.7 ? 0.5 : 0), y + (ny > 0.7 ? 0 : 0.5), ny > 0.7 ? 0.5 : 1, ny > 0.7 ? 1 : 0.5); }
-        }
-      } else {
-        for (let s = -7; s <= 7; s++) { const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s); ctx.fillStyle = BELLA_INK; ctx.fillRect(x - 1, y - 1, 3, 3); }
-        for (let s = -6; s <= 6; s++) {
-          const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
-          ctx.fillStyle = s === run ? '#ffffff' : Math.abs(s) < 2 ? BELLA_GOLD : '#dfe6f0'; ctx.fillRect(x, y, 1, 1);
-        }
-      }
-      if (age < 0.18) { // the blade snapped into guard: one glint off it
-        const k = Math.round(5 * (1 - age / 0.18));
-        ctx.fillStyle = BELLA_INK; ctx.fillRect(cx - k - 1, cy - 1, 2 * k + 3, 3); ctx.fillRect(cx - 1, cy - k - 1, 3, 2 * k + 3);
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - k, cy, 2 * k + 1, 1); ctx.fillRect(cx, cy - k, 1, 2 * k + 1);
-      }
-    }
+    if (e.parryT > 0) drawBellaGuard(e, px, py, now);
   }
+}
+// PERFECT PARRY's stance: her spatha held across her front in guard, slanted (never
+// upright, so it never reads as a cross), hilt low at her fist and point up and out;
+// a glint walks the edge, and as the blade snaps into guard a flash runs up it to the point
+function drawBellaGuard(e, px, py, now) {
+  const a = aimAngle(e), ax = Math.cos(a), ay = Math.sin(a);
+  let nx = -ay, ny = ax; if (ny > 0) { nx = -nx; ny = -ny; } // across the aim, the end that points up
+  if (Math.abs(ay) < 0.6) { nx += ax * 0.6; ny -= 0.1; } else { ny -= 0.6; } // slanted: out toward the aim facing sideways, up facing the screen or away
+  const n = Math.hypot(nx, ny); nx /= n; ny /= n;
+  const cx = px + 8 + Math.round(ax * 5), cy = py + 10 + Math.round(ay * 3); // her fist
+  const age = PARRY_T - e.parryT, fine = WD > 1 && worldDense(), h = fine ? 0.5 : 1;
+  const at = (v) => (fine ? Math.round(v * 2) / 2 : Math.round(v));
+  const pt = (s) => [at(cx + nx * s), at(cy + ny * s)];
+  const TIP = 11, flash = age < 0.18 ? -2 + (TIP + 2) * (age / 0.18) : -99, run = -1 + (Math.floor(now * 14) % 18) * 0.75;
+  ctx.fillStyle = BELLA_INK; // a px of ink round it all
+  for (let s = -2; s <= TIP + 0.5; s += h) { const [x, y] = pt(s); ctx.fillRect(x - h, y - h, 3 * h, 3 * h); }
+  for (let k = -1.5; k <= 1.5; k += h) { const [x, y] = pt(0); ctx.fillRect(at(x - ny * k) - h, at(y + nx * k) - h, 3 * h, 3 * h); } // round the guard
+  for (let s = 1; s <= TIP; s += h) { // the blade: bright, its lower edge in shade, the glint
+    const [x, y] = pt(s), lit = Math.abs(s - run) < h * 0.6 || Math.abs(s - flash) < 1.5;
+    ctx.fillStyle = lit ? '#ffffff' : '#e4eaf3'; ctx.fillRect(x, y, h, h);
+    if (!lit && s < TIP - 1) { ctx.fillStyle = '#a9b6c9'; ctx.fillRect(at(x + Math.abs(ny) * h), at(y + Math.abs(nx) * h), h, h); }
+  }
+  for (let k = -1.5; k <= 1.5; k += h) { const [x, y] = pt(0); ctx.fillStyle = Math.abs(k) > 1 ? BELLA_GOLD_D : BELLA_GOLD; ctx.fillRect(at(x - ny * k), at(y + nx * k), h, h); } // the gold guard, across the blade
+  for (let s = -1; s < 0; s += h) { const [x, y] = pt(s); ctx.fillStyle = BELLA_GOLD_D; ctx.fillRect(x, y, h, h); } // the grip in her fist
+  { const [x, y] = pt(-2); ctx.fillStyle = BELLA_GOLD; ctx.fillRect(x, y, h, h); } // the pommel
+  if (age < 0.18 && flash > TIP - 3) { const [x, y] = pt(TIP + 1); ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, h, h); ctx.fillRect(at(x + nx * h * 2), at(y + ny * h * 2), h, h); } // the flash leaving the point
 }
 // over the stack (HERO_OVER): the pip of a body she marked OUT, flanked when it is her duel's
 const bellaDuelOn = (e) => e instanceof Player && players.some((b) => b.duelT > 0 && b.duelId === e.id);

@@ -46,7 +46,7 @@ function drawFalcoPerch(p, ax, ay, now, front) {
 }
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
-  for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now);
+  for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now, true);
   for (const p of players) if (p.falcoSkyT > 0 && fogShown(p, now)) drawFalcoStoop(p, Math.round(p.x - 8 - ex), Math.round(p.y - 12 - ey), now); // the body's own box corner
 }
 
@@ -62,13 +62,15 @@ function drawHawkOut(b, ex, ey, now) {
 
 // ---- knives -----------------------------------------------------------------------
 // a thrown knife at its tip (x, y) flying along (nx, ny): the knife his hand carries (FALCO_KNIFE), pale steel,
-// a gold guard and the tan grip behind it, turning end over end every other frame
-function drawThrownKnife(x, y, nx, ny, now) {
-  const spin = Math.floor(now * 16) % 2;
+// a gold guard and the tan grip behind it, turning end over end every other frame; a
+// KNIFE FAN knife (`flat`) is thrown point first and flies true, a px longer, so three in
+// a fan read as three blades and never as a knot of crosses
+function drawThrownKnife(x, y, nx, ny, now, flat) {
+  const spin = !flat && Math.floor(now * 16) % 2, n = flat ? 8 : 7;
   const ax = spin ? -ny : nx, ay = spin ? nx : ny;
-  for (let k = 2; k <= 6; k++) { ctx.fillStyle = k < 5 ? '#4f6288' : '#7f98bc'; ctx.fillRect(Math.round(x - nx * (5 + k)), Math.round(y - ny * (5 + k)), 1, 1); } // the air it cut
-  for (let k = 0; k < 7; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
-  for (let k = 0; k < 7; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < 4 ? FC_STEEL : k < 5 ? FC_GOLD : '#a3794f'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
+  for (let k = 2; k <= 6; k++) { ctx.fillStyle = k < 5 ? '#4f6288' : '#7f98bc'; ctx.fillRect(Math.round(x - nx * (n - 2 + k)), Math.round(y - ny * (n - 2 + k)), 1, 1); } // the air it cut
+  for (let k = 0; k < n; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
+  for (let k = 0; k < n; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < n - 3 ? FC_STEEL : k < n - 2 ? FC_GOLD : '#a3794f'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
 }
 HERO_SHOTS.knife = (a, sx, sy, now) => drawThrownKnife(Math.round(sx), Math.round(sy), Math.cos(a.ang), Math.sin(a.ang), now);
 
@@ -144,17 +146,17 @@ function drawTalonsTele(x, y, closing, now) {
     }
   }
 }
-// KNIFE FAN's wind-up: the three blades fanned out of his hand, each with a glint
-// running out along the line it will fly
+// KNIFE FAN's wind-up: the three blades fanned out of his hand, each with a thin glint
+// running out along the line it will fly (a streak down the line, no backing, never a plus)
 function drawFanTele(p, a0, closing, now, ex, ey) {
   for (let k = -1; k <= 1; k++) {
     const a = a0 + k * FAN_SPREAD, nx = Math.cos(a), ny = Math.sin(a), x0 = p.x - ex, y0 = p.y - BOW_Y - ey;
-    drawThrownKnife(Math.round(x0 + nx * 15), Math.round(y0 + ny * 15), nx, ny, 0);
+    const ha = a0 + k * 0.38, hx = Math.cos(ha), hy = Math.sin(ha); // in his hand they fan wide, as cards do
+    if (Math.sin(a0) > -0.5) drawThrownKnife(Math.round(x0 + hx * (13 + (k ? 0 : 2))), Math.round(y0 + hy * (13 + (k ? 0 : 2))), hx, hy, 0, true); // aimed away they are in front of him, out of sight (and never over his head)
     const s = 20 + (FAN_LEN * closing - 20) * ((now * 2.2 + (k + 1) * 0.17) % 1);
     if (s <= 20) continue;
     const gx = Math.round(x0 + nx * s), gy = Math.round(y0 + ny * s);
-    ctx.fillStyle = '#4f6288'; ctx.fillRect(gx - 2, gy, 5, 1); ctx.fillRect(gx, gy - 2, 1, 5);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(gx - 1, gy, 3, 1); ctx.fillRect(gx, gy - 1, 1, 3);
+    for (let j = 0; j < 4; j++) { ctx.fillStyle = j ? (j < 2 ? '#7f98bc' : '#4f6288') : '#ffffff'; ctx.fillRect(Math.round(gx - nx * j), Math.round(gy - ny * j), 1, 1); }
   }
 }
 // TALONS' strike: three rakes torn across the snow under the body it took, opening one
