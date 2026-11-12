@@ -23,7 +23,7 @@ grammar) over wildlife, the practice dummy and anything handed no team (under a 
 palette a rival's bar wears a raised dark cap on its right end, `foeCue`). Health reads in **even
 segments**: N blocks of one width with a 1 px dark tick between (`hpSegCount`), so a `w`-wide bar
 splits only where `w + 1` divides by N, and every bar width is picked for that (`evenBarW` snaps a
-free one); of the counts a width allows, the one nearest `maxHp / HP_SEG` wins, so a bigger pool shows more segments. `col` overrides the side
+free one); of the counts a width allows, the one nearest `maxHp / HP_SEG` wins, so a bigger pool shows more segments. **A soldier's bar is the exception**: one row of fill, uncut (`SOLDIER_BAR_ROWS`, `SOLDIER_BAR_SEGS`, in `drawRobot`), League's minion line, so a wave clash of ten reads as bodies and not a comb of plates. `col` overrides the side
 for the bars that are not health, every one hung under the health bar the way a player's stamina is
 (3 rows down, sharing a frame wall; **health is always the top bar**, at the same height on every
 animal): a camp monster's leash (`THREAT_COL` red, bare track at rest:

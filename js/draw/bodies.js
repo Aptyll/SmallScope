@@ -128,10 +128,13 @@ function drawRobot(b, ex, ey, now) {
   // the four shared tells, same as any other body (js/sim/abilities.js)
   drawUnitStates(b, bx + rx, by + ry, spr.width, spr.height, now);
   bodyLayerClose(lit);
-  drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b);
+  // a soldier's bar is a thin one-row line with no segments, League-style: in a wave clash
+  // ten of them stack, and full hero-weight bars buried the bodies under a comb of plates
+  drawHealthBar(b.x - ex, by - 3, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b, 1, SOLDIER_BAR_SEGS, SOLDIER_BAR_ROWS);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
   heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
 }
+const SOLDIER_BAR_ROWS = 1, SOLDIER_BAR_SEGS = 1; // a soldier's bar: one row of fill, uncut
 // a shot in the air (soldierShot, js/sim/robots.js), by its kind's `look`
 // (SOLDIER_SHOTS): a snowball thrown from the hand to where it lands on a low
 // arc, its shadow on the snow under it, 2 px with an ink rim; or a ballista
