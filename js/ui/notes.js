@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Clearings in the woods keep a few felled stumps by the trees', '0.927'],
     ['REPLAY on the DEFEAT screen shows the last four seconds again', '0.925'],
     ['A kerbed stone round where the lanes cross outside each base', '0.924'],
     ['Felled stumps scatter instead of standing in rows', '0.922'],
