@@ -46,7 +46,7 @@ function drawFalcoPerch(p, ax, ay, now, front) {
 }
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
-  for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now);
+  for (const k of falcoKnives) if (fogShown(k, now)) drawThrownKnife(Math.round(k.x - ex), Math.round(k.y - ey) - BOW_Y, k.nx, k.ny, now, true);
   for (const p of players) if (p.falcoSkyT > 0 && fogShown(p, now)) drawFalcoStoop(p, Math.round(p.x - 8 - ex), Math.round(p.y - 12 - ey), now); // the body's own box corner
 }
 
@@ -62,13 +62,16 @@ function drawHawkOut(b, ex, ey, now) {
 
 // ---- knives -----------------------------------------------------------------------
 // a thrown knife at its tip (x, y) flying along (nx, ny): the knife his hand carries (FALCO_KNIFE), pale steel,
-// a gold guard and the tan grip behind it, turning end over end every other frame
-function drawThrownKnife(x, y, nx, ny, now) {
-  const spin = Math.floor(now * 16) % 2;
+// a gold guard and the tan grip behind it, nine px long, turning end over end every other frame
+function drawThrownKnife(x, y, nx, ny, now, flat) {
+  const spin = flat ? 0 : Math.floor(now * 16) % 2; // `flat`: point first all the way, so three thrown together stay three blades
   const ax = spin ? -ny : nx, ay = spin ? nx : ny;
-  for (let k = 2; k <= 6; k++) { ctx.fillStyle = k < 5 ? '#4f6288' : '#7f98bc'; ctx.fillRect(Math.round(x - nx * (5 + k)), Math.round(y - ny * (5 + k)), 1, 1); } // the air it cut
-  for (let k = 0; k < 7; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
-  for (let k = 0; k < 7; k++) { ctx.fillStyle = k < 2 ? '#ffffff' : k < 4 ? FC_STEEL : k < 5 ? FC_GOLD : '#a3794f'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
+  for (let k = 2; k <= 13; k++) { // the air it cut: a pale wake behind it, white by the knife and blue at its end
+    ctx.fillStyle = k < 6 ? '#ffffff' : k < 10 ? '#c8d8e8' : '#7f98bc';
+    ctx.fillRect(Math.round(x - nx * (8 + k)), Math.round(y - ny * (8 + k)), 1, 1);
+  }
+  for (let k = 0; k < 9; k++) { ctx.fillStyle = FC_INK; ctx.fillRect(Math.round(x - ax * k) - 1, Math.round(y - ay * k) - 1, 3, 3); }
+  for (let k = 0; k < 9; k++) { ctx.fillStyle = k < 3 ? '#ffffff' : k < 5 ? FC_STEEL : k < 6 ? FC_GOLD : '#a3794f'; ctx.fillRect(Math.round(x - ax * k), Math.round(y - ay * k), 1, 1); }
 }
 HERO_SHOTS.knife = (a, sx, sy, now) => drawThrownKnife(Math.round(sx), Math.round(sy), Math.cos(a.ang), Math.sin(a.ang), now);
 
