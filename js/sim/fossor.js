@@ -19,6 +19,7 @@ const DIGIN_CUT = 0.15;         // share of every hit he shrugs off planted
 const SPADE_R = 34;             // px of wedge
 const SPADE_HALF = 0.75;        // rad either side of the aim
 const SPADE_SLOW_T = 1.5;       // s the snow slows for
+const SPADE_FX_LIFE = 0.45;     // s the flung snow is in the air (its look: js/draw/fossor.js)
 // W UNDER THE SNOW: under the snow down the aim, up beneath whoever is there
 const BURROW_LEN = 110;         // px he travels
 const BURROW_SPD = 300;         // px/s
@@ -43,7 +44,6 @@ const FOSSOR_AB = [
     tip: 'FLING SNOW AHEAD. IT SLOWS',
     blurb: 'SWING YOUR SPADE THROUGH THE WEDGE AHEAD AND FLING SNOW. RIVALS IT HITS ARE STRUCK AND SLOWED.',
     use: (p) => fossorSpade(p),
-    tele: (p, px, py, a, col, closing) => drawWedge(px, py, a, SPADE_R, SPADE_HALF, col, 0.5 + 0.4 * closing, closing * 0.5),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 1 : -1, rot: 0 }), // dug in, then flung up
     icon: FOSSOR_ICON32.spade,
     bot: (p, foe, d) => d < SPADE_R - 4,
@@ -54,11 +54,6 @@ const FOSSOR_AB = [
     tip: 'GO UNDER. COME UP AND THROW THEM',
     blurb: 'DIG DOWN AND RUN UNDER THE SNOW DOWN THE AIM, PAST ANYONE IN THE WAY. WHERE YOU COME UP, RIVALS ARE STRUCK AND THROWN INTO THE AIR.',
     use: (p) => fossorBurrow(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => {
-      const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, BURROW_LEN);
-      drawTeleLine(p.x, p.y, nx, ny, L, col, 0.45 + 0.4 * closing, now, ex, ey);
-      drawRing(Math.round(p.x + nx * L - ex), Math.round(p.y + ny * L - ey), BURROW_HIT_R, col, 0.4 + 0.4 * closing, closing * 0.4);
-    },
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // ducked to dig
     icon: FOSSOR_ICON32.burrow,
     bot: (p, foe, d) => foe instanceof Player && d > 30 && d < BURROW_LEN,
@@ -69,10 +64,7 @@ const FOSSOR_AB = [
     tip: 'HEAP A WALL OF SNOW ACROSS THE WAY',
     blurb: 'HEAP A BANK OF SNOW ACROSS THE AIM, JUST AHEAD OF YOU. FOR A FEW SECONDS NOBODY WALKS THROUGH IT, YOUR SIDE OR THEIRS.',
     use: (p) => fossorBank(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => {
-      const nx = Math.cos(a), ny = Math.sin(a), cx = p.x + nx * BANK_AHEAD, cy = p.y + ny * BANK_AHEAD;
-      drawLineBox(Math.round(cx + ny * BANK_HALF - ex), Math.round(cy - nx * BANK_HALF - ey), a + Math.PI / 2, BANK_HALF * 2, 6, col, 0.45 + 0.4 * closing, closing * 0.5);
-    },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawBankTele(p, a, closing, ex, ey), // the snow heaping up across the way (js/draw/fossor.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0 }), // a heave of the spade
     icon: FOSSOR_ICON32.bank,
     bot: (p, foe, d) => foe instanceof Player && p.hp < p.maxHp * 0.45 && d < 80, // between him and a rival when he is losing
@@ -83,7 +75,7 @@ const FOSSOR_AB = [
     tip: 'BREAK THE GROUND. IT THROWS ALL IT PASSES',
     blurb: 'DRIVE YOUR SPADE IN AND BREAK THE GROUND. A LINE OF HEAVING EARTH RUNS OUT DOWN THE AIM, STRIKING EVERY RIVAL IT PASSES AND THROWING THEM INTO THE AIR.',
     use: (p) => fossorQuake(p),
-    tele: (p, px, py, a, col, closing) => drawLineBox(px, py, a, QUAKE_LEN, QUAKE_W, col, 0.45 + 0.4 * closing, closing * 0.5),
+    tele: (p, px, py, a, col, closing, now, ex, ey) => drawQuakeTele(p, a, closing, ex, ey), // the ground splitting down the line (js/draw/fossor.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 2, rot: 0 }), // the spade up, then driven down
     icon: FOSSOR_ICON32.quake,
     bot: (p, foe, d) => foe instanceof Player && d < QUAKE_LEN - 20,
@@ -118,7 +110,7 @@ function fossorSpade(p) {
   }
   for (const s of structsInCone(p, p.x, p.y, a, SPADE_R, SPADE_HALF)) hurtStruct(s, dmg, p);
   if (PRACTICE) abHitDummies(p.x + nx * SPADE_R * 0.5, p.y + ny * SPADE_R * 0.5, SPADE_R * 0.5, dmg);
-  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SPADE_R, half: SPADE_HALF, t: 0, col: '#f4f7ff' });
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SPADE_R, half: SPADE_HALF, t: 0, col: '#f4f7ff', fx: 'spade', life: SPADE_FX_LIFE });
   for (let k = 0; k < 3; k++) burst(p.x + nx * (12 + k * 8), p.y + ny * (12 + k * 8) - 4, '#f4f7ff', 3, 40, 0.35, true); // the flung snow
   sfxAt('swing', p.x, p.y);
 }
@@ -155,7 +147,6 @@ function fossorSurface(p) {
   for (const s of structsNear(p, p.x, p.y, BURROW_HIT_R)) hurtStruct(s, p.fsUpDmg || 0, p);
   if (PRACTICE) abHitDummies(p.x, p.y, BURROW_HIT_R, p.fsUpDmg || 0);
   burst(p.x, p.y + 2, '#f4f7ff', 12, 55, 0.5, true);
-  shakeFor(p, 3);
   sfxAt('hit', p.x, p.y);
 }
 function isBurrowing(p) { return p.rushT > 0 && p.dash === 'burrow'; }
@@ -209,7 +200,6 @@ function fossorQuake(p) {
   const a = fossorAim(p);
   fossorQuakes.push({ x0: Math.round(p.x), y0: Math.round(p.y), nx: Math.cos(a), ny: Math.sin(a), d: 0, team: p.team, owner: p.id,
     dmg: abDmg(p, 'quake', abRk(p, 'quake', 'dmg')), up: abRk(p, 'quake', 'up'), n: p.fsQuakeN * 64 + p.id });
-  shakeFor(p, 5);
   sfxAt('chop', p.x, p.y);
 }
 function updateFossorQuakes(dt) {

@@ -69,6 +69,47 @@ function drawFossorGround(ex, ey, now) {
   for (const g of fossorQuakes) drawFossorQuake(g, ex, ey);
 }
 
+// ---- his keys' own looks ------------------------------------------------------------------------
+// SPADEFUL: clods of snow flung out across the wedge and falling back, no swish (a spade is no blade)
+function drawSpadeFx(f, px, py) {
+  const u = f.t / f.life;
+  drawFlung(px, py + 2, f.a, f.half, f.r + 6, 0.35, 9, 11, Math.min(1, u * 1.3), fxSeed(f), (x, y, k) => fxChip(x, y, k, FS_SNOW, FS_SNOW_M, FS_SNOW_D));
+}
+AB_FX_LOOK.spade = drawSpadeFx;
+// BANK UP's wind-up: lumps of snow heaping where the bank will stand, across the aim
+// at its full width, taller as the heave comes
+function drawBankTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), cx = p.x + nx * BANK_AHEAD, cy = p.y + ny * BANK_AHEAD;
+  const h = 1 + Math.round(closing * 3);
+  for (let s = -BANK_HALF, k = 0; s <= BANK_HALF; s += 6, k++) {
+    const x = Math.round(cx - ny * s - ex), y = Math.round(cy + nx * s - ey), w = 3 + (k % 2), hk = Math.max(1, h - (k % 3 === 2 ? 1 : 0));
+    ctx.fillStyle = FS_SNOW_D; ctx.fillRect(x - w, y + 1, w * 2 + 1, 1);
+    ctx.fillStyle = FS_SNOW_M; ctx.fillRect(x - w + 1, y + 1 - hk, w * 2 - 1, hk);
+    ctx.fillStyle = FS_SNOW; ctx.fillRect(x - w + 2, y + 1 - hk, w * 2 - 3, 1);
+  }
+}
+// BREAK GROUND's wind-up: the ground splitting from his spade down the whole line,
+// the split running out as the spade comes down, and the snow lifting in flakes at
+// the edges it will throw from
+function drawQuakeTele(p, a, closing, ex, ey) {
+  const nx = Math.cos(a), ny = Math.sin(a), L = teleLen(p.x, p.y, nx, ny, QUAKE_LEN), run = L * (0.3 + 0.7 * closing);
+  const ox = -ny, oy = nx, seed = p.id * 29 + 5;
+  for (let s = 8; s <= run; s += 0.5) { // the split: a wandering dark line with its lit lip under it
+    const w = Math.round((fxRoll(seed, s >> 2, 3) - 0.5) * 3);
+    const x = Math.round(p.x + nx * s + ox * w - ex), y = Math.round(p.y + 3 + ny * s + oy * w - ey);
+    ctx.fillStyle = FS_EARTH_L; ctx.fillRect(x, y + 1, 1, 1);
+    ctx.fillStyle = FS_EARTH_D; ctx.fillRect(x, y, 1, 1);
+  }
+  for (let s = 16, k = 0; s <= L; s += 14, k++) { // its throw's width: the snow lifting off both edges, the whole length, nearer up first
+    if (s > run + 10) break;
+    for (const side of [-1, 1]) {
+      const o = QUAKE_W * side + Math.round((fxRoll(seed, k, side + 7) - 0.5) * 3);
+      const x = Math.round(p.x + nx * s + ox * o - ex), y = Math.round(p.y + 3 + ny * s + oy * o - ey);
+      fxChip(x, y - (s <= run ? 1 : 0), k + side, FS_SNOW, FS_SNOW_M, FS_SNOW_D);
+    }
+  }
+}
+
 // ---- on his body ------------------------------------------------------------------------------
 // under the snow: a mound of snow running over him, his lamp glinting out of its front;
 // planted: snow kicked up round his feet
