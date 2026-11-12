@@ -2,11 +2,14 @@
 // The bird's feathers on a body (js/sim/recall.js): the recall's channel, the set-down
 // at its far end, and the mending at the roost.
 //
-// THE ROOST has no ring: its kerbed paving marks the place (js/draw/footings.js), and
-// the mending shows on the mended body (drawMendFeathers below). The soft glowing rim
-// (roostRingArt: four one-pixel circles stepping in from the rim, bright to faint, one
-// mirrored step pattern, circlePts, baked once per colour and size) is what a pump
-// wears (drawPumpRings, js/draw/structs.js).
+// THE ROOST'S REACH (BOOM_R, js/sim/eagle.js: where the bird heals, smaller than its kerbed
+// paving) is a line inlaid in the stones, drawn flat under everything that walks
+// (drawRecallGround, from drawFlatPass in js/draw/passes.js): one unbroken circle in a pale
+// tint of the side's colour, a fainter row inside it, set between two of the kerb's dark
+// joints (roostLineArt, baked once per side and size). The mending also shows on the
+// mended body (drawMendFeathers below). The soft glowing rim (roostRingArt: four one-pixel
+// circles stepping in from the rim, bright to faint, one mirrored step pattern, circlePts,
+// baked once per colour and size) is what a pump wears (drawPumpRings, js/draw/structs.js).
 // THE CHANNEL is the bird's own feathers (drawRecallFeathers, called by drawPlayer,
 // js/draw/bodies.js, behind the body and again over it): feathers in a pale tint of
 // the side's colour drift down one by one as the channel runs and turn round the
@@ -81,6 +84,36 @@ function roostRingArt(col, r) {
   });
   roostRingCv.set(key, cv);
   return cv;
+}
+
+// THE ROOST'S REACH: rows out from the middle, each an unbroken circle (circlePts):
+// the outer joint, the inlay, the inlay's fainter inner row, the inner joint
+const ROOST_LINE = [[1, 'joint', 0.9], [0, 'tint', 1], [-1, 'tint', 0.55], [-2, 'joint', 0.5]];
+const roostLineCv = new Map(); // 'mark|r' -> the baked line, (2r+5) px square
+function roostLineArt(T, r) {
+  const key = T.mark + '|' + r;
+  let cv = roostLineCv.get(key);
+  if (cv) return cv;
+  cv = document.createElement('canvas');
+  cv.width = cv.height = 2 * r + 5;
+  const g = cv.getContext('2d'), c = r + 2;
+  for (const [dr, kind, a] of ROOST_LINE) {
+    g.globalAlpha = a;
+    g.fillStyle = kind === 'joint' ? FOOT_KERB_COL.joint : featherTint(T.mark);
+    for (const [x, y] of circlePts(r + dr)) g.fillRect(c + x, c + y, 1, 1);
+  }
+  roostLineCv.set(key, cv);
+  return cv;
+}
+function drawRecallGround(ex, ey) {
+  if (!state.drop) return;
+  const r = Math.round(BOOM_R * TILE);
+  for (const e of state.drop.eagles) {
+    if (e.state !== 'down') continue;
+    const x = Math.round(e.x - ex), y = Math.round(e.y - ey);
+    if (x - r > WV_W || y - r > WV_H || x + r < 0 || y + r < 0) continue;
+    ctx.drawImage(roostLineArt(TEAMS[skin(e.team)], r), x - r - 2, y - r - 2);
+  }
 }
 
 // the channel's feathers round one body: (cx, cy) its feet on screen, `front` the

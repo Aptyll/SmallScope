@@ -455,7 +455,7 @@ Every wind-up that reaches past the caster is **shown on the snow for both sides
 own `tele`, eased in by `castProg`, off `p.castMax`), drawn as the key's own thing, never a generic shape: a sword's shadow,
 frost creeping down a line, stakes driven round a reach, a fin circling where MARIS comes up. A line keeps its true range
 (`teleLen` stops it at the first tree or wall), and a zone's edge is drawn by what makes it (shields, gusts, a glowing
-band), never a dotted circle. Quick melee swings (about 0.2 s or less) and instant self-casts show none: the cut itself
+band), so no two heroes' keys read alike; a plain circle is kept for where it is the clearest read (a roost's reach). Quick melee swings (about 0.2 s or less) and instant self-casts show none: the cut itself
 shows the reach. Every landing pushes an `abFx` entry (ticked in `updateAbilityWorld`); one with `fx` is drawn by
 `AB_FX_LOOK[fx]` for its own `life` (in the hero's draw file, built from the shared `drawSwoosh`, `drawFlung`,
 `drawCracks` and `fxRoll` in js/draw/abilities.js), and one without falls back to a plain shape in the blow's colour for
