@@ -59,8 +59,8 @@ const portitorCrates = []; // {x, y, ox, oy, t, team, owner, dmg, shield} - Q's 
 // His row in CLASS_AB (js/sim/abilities.js), in ARM_AB's shape (js/sim/armatos.js).
 const PORTITOR_AB = [
   {
-    id: 'crate', name: 'SUPPLY CRATE', cd: [10, 9.5, 9, 8.5, 8], ap: 0.5, cast: 0.2, aim: { ring: CRATE_RANGE },
-    rank: { dmg: [60, 85, 110, 135, 160] }, // dmg: each rival where it lands
+    id: 'crate', name: 'SUPPLY CRATE', cd: [10, 9.5, 9, 8.5, 8], ap: 0.35, cast: 0.2, aim: { ring: CRATE_RANGE },
+    rank: { dmg: [35, 50, 65, 80, 95] }, // dmg: each rival where it lands
     tip: 'STRIKES RIVALS, SHIELDS ALLIES',
     blurb: 'LOB A SUPPLY CRATE ONTO A SPOT. WHERE IT LANDS, RIVALS ARE STRUCK AND SLOWED AND ALLIES, YOU TOO, TAKE A SHIELD.',
     use: (p) => portitorCrate(p),
@@ -84,8 +84,8 @@ const PORTITOR_AB = [
     botAim: (p, foe) => { const q = portNeedy(p, CARRY_REACH, 0.45); return q ? { x: q.x, y: q.y } : { x: foe.x, y: foe.y }; },
   },
   {
-    id: 'plough', name: 'PLOUGH ON', cd: [13, 12, 11, 10, 9], ap: 0.6, cast: 0.12, aim: { line: PLOUGH_LEN },
-    rank: { dmg: [50, 75, 100, 125, 150] }, // dmg: each rival in the way
+    id: 'plough', name: 'PLOUGH ON', cd: [13, 12, 11, 10, 9], ap: 0.4, cast: 0.12, aim: { line: PLOUGH_LEN },
+    rank: { dmg: [30, 45, 60, 75, 90] }, // dmg: each rival in the way
     tip: 'CHARGE, SHOVING RIVALS ASIDE',
     blurb: 'CHARGE A SHORT WAY. EVERY RIVAL IN THE WAY IS STRUCK AND SHOVED ASIDE. AN ALLY ON YOUR BACK COMES TOO.',
     use: (p) => portitorPlough(p),
@@ -96,7 +96,7 @@ const PORTITOR_AB = [
   {
     id: 'home', name: 'CARRY HOME', cd: [110, 95, 80], ap: 0.5, cast: 0.25, aim: { ring: HOME_RANGE },
     ok: (p) => !!homePick(p),
-    rank: { dmg: [100, 150, 200] }, // dmg: each rival run through
+    rank: { dmg: [70, 105, 140] }, // dmg: each rival run through
     tip: 'RUN TO A FAR ALLY AND CARRY THEM',
     blurb: 'RUN TO AN ALLY FAR AWAY, THROUGH EVERY BODY IN THE WAY: RIVALS RUN THROUGH ARE STRUCK AND SHOVED ASIDE. THE ALLY IS LIFTED WITH A BIG SHIELD AND YOU CARRY THEM FASTER, FOR LONGER.',
     use: (p) => portitorHome(p),
