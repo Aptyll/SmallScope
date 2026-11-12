@@ -28,8 +28,8 @@ off the bird where it sits, so it follows the roost wherever a map puts it (`roo
 your own side's ring and out of a fight (`p.fightT`, the items' clock: `ITEM_FIGHT_T` after any
 blow given or taken, js/sim/items.js), `updateRecall` heals and refills the roll, with green motes rising off the body and `p.mendT` counting how long it has mended without a break. A rival in it gets nothing.
 
-**It reads without a word** ([UI rule](../rendering/show-dont-label.md)): the roost has no drawn ring, its kerbed
-paving marks the place, and the mending shows on the mended body: a white feather comes down beside it and settles at
+**It reads without a word** ([UI rule](../rendering/show-dont-label.md)): the reach is a line inlaid in the roost's paving, one unbroken circle in a pale tint of the side's
+colour between two dark joints at `BOOM_R` (`drawRecallGround`, js/draw/recall.js), since the kerbed paving runs wider than the heal; and the mending shows on the mended body: a white feather comes down beside it and settles at
 its waist, from the first mending frame (`drawMendFeathers` off `p.mendT`, js/draw/recall.js); a recalling body gathers feathers in a pale tint of its side's colour
 (`drawRecallFeathers`): they drift down one by one, turn round the body closer and quicker as the
 channel fills, and take off together at the end, with no ring on the snow; at the bird the same feathers come down round the

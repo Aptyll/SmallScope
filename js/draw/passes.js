@@ -88,6 +88,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
+  drawRecallGround(ex, ey); // each roost's reach, the line inlaid where its bird heals (js/draw/recall.js)
   drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
