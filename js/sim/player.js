@@ -1394,6 +1394,7 @@ function endMatch(how) {
   if (awardWin || firstLoss) payMatchCoins(awardWin);
   if (awardWin || firstLoss) rankResult(awardWin); // RANKED's rating (js/ui/rooms.js)
   if (awardWin || firstLoss) buildsNote(awardWin); // every person's build and result, for the shop's RECOMMENDED (js/app/builds.js)
+  if (awardWin || firstLoss) historyNote(awardWin); // the whole match, for the profile's MATCH HISTORY (js/app/history.js)
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;

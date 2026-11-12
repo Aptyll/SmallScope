@@ -51,6 +51,11 @@
   function randomName() {
     return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)];
   }
+  function randomPid() {
+    let s = '';
+    for (let i = 0; i < 8; i++) s += Math.floor(Math.random() * 16).toString(16);
+    return s;
+  }
   function blankStats() {
     return { wins: 0, matches: 0, gold: 0, kills: 0, deaths: 0 };
   }
@@ -85,7 +90,12 @@
   function blank() {
     return {
       v: 4,
+      // who this profile is to other screens: 8 hex digits dealt once, so a
+      // player met twice is the same entry in their list of people (PROFILE.people)
+      // whatever they are called now. Nothing checks it: there is no server.
+      pid: randomPid(),
       name: randomName(),
+      pic: '',         // the profile picture: a hero's face by name ('' the hero last picked)
       named: false,    // the player chose the name; until then it follows the Steam name (steamName)
       stats: blankStats(),
       hero: '',        // the hero last locked in, by name ('' none): where the pick opens next time
@@ -191,6 +201,8 @@
         if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
         // a profile from before the flag: a name out of the winter pool was dealt, not chosen
         profile.named = typeof s.named === 'boolean' ? s.named : NAME_POOL.indexOf(profile.name) < 0;
+        if (typeof s.pid === 'string' && /^[0-9a-f]{8}$/.test(s.pid)) profile.pid = s.pid; // else the fresh one blank() dealt is kept
+        if (typeof s.pic === 'string' && HERO_NAME.test(s.pic)) profile.pic = s.pic;
         if (typeof hero === 'string' && HERO_NAME.test(hero)) profile.hero = hero; // a name the game no longer has opens on the default (profileHero, js/sim/player.js)
         else if (typeof hero === 'number' && isFinite(hero)) profile.hero = V3_HEROES[Math.floor(hero)] || '';
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
@@ -219,7 +231,7 @@
         } catch (e) { }
         saveNow();
       }
-      if (s && s.v !== 4) saveNow(); // a migrated save is written back in its new shape at once
+      if (s && (s.v !== 4 || s.pid !== profile.pid)) saveNow(); // a migrated save is written back in its new shape at once
       clearOldSaves();
       return profile;
     },
@@ -246,8 +258,14 @@
       profile.name = r.name; saveNow();
       return true;
     },
-    // a fresh winter word, unsaved: the profile card's die offers it
-    rollName() { return randomName(); },
+    pid() { return profile.pid; },
+    // the picture by hero name ('' none chosen: the screens show the hero last picked)
+    pic() { return profile.pic; },
+    setPic(name) {
+      if (typeof name !== 'string' || (name && !HERO_NAME.test(name)) || profile.pic === name) return;
+      profile.pic = name;
+      saveNow();
+    },
     // the hero by name ('' for none yet); the sim turns it into a CLASSES index (profileHero)
     hero() { return profile.hero; },
     setHero(name) {
@@ -392,10 +410,42 @@
       try { localStorage.setItem(BUILDS_KEY, JSON.stringify(list)); } catch (e) { }
     },
 
+    // ---- match history ----------------------------------------------------------
+    // This screen's own finished matches, oldest first (js/app/history.js owns
+    // their shape and checks each one on the way in). A key of their own for
+    // the same reason as the builds: many, and written once a match.
+    history() {
+      if (!histRecs) {
+        try { const a = JSON.parse(localStorage.getItem(HISTORY_KEY)); histRecs = Array.isArray(a) ? a.map(historyClean).filter(Boolean) : []; } catch (e) { histRecs = []; }
+      }
+      return histRecs;
+    },
+    putHistory(list) {
+      histRecs = list;
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) { }
+    },
+
+    // the people this screen has sat in a party with: their cards as last
+    // heard, keyed by their pid (js/app/history.js owns the shape)
+    people() {
+      if (!peopleRecs) {
+        try { const a = JSON.parse(localStorage.getItem(PEOPLE_KEY)); peopleRecs = Array.isArray(a) ? a.map(peopleClean).filter(Boolean) : []; } catch (e) { peopleRecs = []; }
+      }
+      return peopleRecs;
+    },
+    putPeople(list) {
+      peopleRecs = list;
+      try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(list)); } catch (e) { }
+    },
+
     flush,
   };
+  const PEOPLE_KEY = 'softfall.people';
+  let peopleRecs = null;
   const BUILDS_KEY = 'softfall.builds';
   let buildRecs = null;
+  const HISTORY_KEY = 'softfall.history';
+  let histRecs = null;
 
   function clearOldSaves() {
     try {

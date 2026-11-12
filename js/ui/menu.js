@@ -1950,7 +1950,7 @@ function renderTitle(now) {
     const phot = !m.panel && overPatchTag();
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
-    drawProfileTag(); // your name and its quill, opposite corner: the way to the profile card
+    drawProfileTag(); // your picture, name and quill, opposite corner: the way to the profile (js/ui/profile.js)
     drawCoinTag();    // the purse, top-right: the way into the skins screen
     drawGear();       // ...and the settings beside it
     ctx.globalAlpha = 1;
@@ -1967,7 +1967,7 @@ function renderTitle(now) {
   if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (nc + tc > 0.005) drawPageTabs(Math.min(1, nc + tc) * (1 - out)); // one row over both, so a switch never fades it
-  if (kc > 0.005) renderProfileCard(now, kc * (1 - out));
+  if (kc > 0.005) renderProfile(now, kc * (1 - out));
   if (rc > 0.005) renderRoom(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
   drawFriendCard(); // a Steam friend's invite, over whichever screen (js/ui/friends.js)

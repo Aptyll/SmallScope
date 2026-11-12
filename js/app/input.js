@@ -767,6 +767,7 @@ pageListen(canvas, 'wheel', (e) => {
     if (state.menu.screen === 'notes' && state.menu.notesT >= 1) { e.preventDefault(); notesScrollBy(e.deltaY > 0 ? 16 : -16); }
     else if (state.menu.panel === 'settings') { e.preventDefault(); settingsScrollBy(e.deltaY > 0 ? 14 : -14); }
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) { e.preventDefault(); wikiScrollBy(e.deltaY > 0 ? 14 : -14); }
+    else if (state.menu.screen === 'profile' && state.menu.charT >= 1) { e.preventDefault(); profileScrollBy(e.deltaY > 0 ? 1 : -1); } // a profile tab's list (js/ui/profile.js)
     else if (state.menu.screen === 'skins' && state.menu.skinT >= 1 && skinsTabsOver()) { e.preventDefault(); skinsScrollBy(e.deltaY > 0 ? 1 : -1); } // the skins' tab row (js/ui/skins.js)
     else if (state.menu.screen === 'room' && friendsOver()) { e.preventDefault(); friendsScrollBy(e.deltaY > 0 ? 1 : -1); } // the friends' column (js/ui/friends.js)
     return;

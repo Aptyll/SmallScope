@@ -223,7 +223,7 @@ each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots
   [multiplayer.md](multiplayer.md).
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
   design constraint, not a style preference.
-- **Not an account.** The player profile is **one name and its lifetime numbers** — plus the
+- **Not an account.** The player profile is **one name, a picture and its lifetime numbers and match history** — plus the
   hero last locked in and a record of which kinds you have held, in the browser. No passwords,
   no sign-in, nothing to log into. **Heroes are picked at the start of each match**, League
   style, and a hero is drawn only in its own looks, picked as hero skins on the skins screen, never
@@ -231,6 +231,9 @@ each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots
   is stopped at a form. **A profile is never power**: a match reads its name and the hero picked
   and nothing else — everything about a match is decided inside that match, and every item is
   on sale to everybody alike. See [architecture.md](architecture.md#profilejs),
-  [the hero grid](rendering.md#lobby) and [the profile card](rendering/main-menu-title.md#the-profile-card). An
-  online lobby sends the host exactly that name and hero and nothing more; if a server ever
-  holds the profile, it holds the same object.
+  [the hero grid](rendering.md#lobby) and [the profile](rendering/main-menu-title.md#the-profile). An
+  online lobby sends the host that name and hero, and a **player card** to show (the picture, the
+  rating, the record and the last ten matches; `cardMine`, js/app/history.js) that the match never
+  reads. Each screen keeps its own **match history** (every finished match with all ten seats) and
+  the cards it has heard; with no server, search finds only the people met. If a server ever holds
+  the profile, it holds the same objects.
