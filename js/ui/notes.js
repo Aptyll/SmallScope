@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['REPLAY on the DEFEAT screen shows the last four seconds again', '0.925'],
     ['A kerbed stone round where the lanes cross outside each base', '0.924'],
     ['Felled stumps scatter instead of standing in rows', '0.922'],
     ['The orca\'s pool is frozen like the river', '0.921'],
