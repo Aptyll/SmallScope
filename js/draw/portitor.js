@@ -1,8 +1,8 @@
 'use strict';
 // ------------------------------------------------------------ portitor
 // PORTITOR's pixels (its rules: js/sim/portitor.js): its walking pole in its hands
-// (HERO_BLADES), the supply crate in the air (HERO_AIR) and the ring where it will land
-// (HERO_GROUND), and BEDROLL's mend on an ally resting beside it (HERO_MARK). The ally it
+// (HERO_BLADES), the supply crate in the air (HERO_AIR) and its shade where it will land
+// (HERO_GROUND), its keys' own looks (AB_FX_LOOK), and BEDROLL's mend on an ally resting beside it (HERO_MARK). The ally it
 // carries is drawn up on its back by drawPlayer itself (HERO_HELD; heldSeat, js/draw/bodies.js).
 
 const PT_INK = '#141a2c', PT_WOOD = '#a8794a', PT_WOOD_D = '#6e4a28', PT_MEND = '#9cc87a';
@@ -70,16 +70,48 @@ function drawPortitorAir(ex, ey, now) {
     drawCrateAt(Math.round(x - ex), Math.round(y - ey) - 3);
   }
 }
-// where it will land: a ring in its side's colour, and the shadow under the crate
+// The shade where a crate will come down, u 0..1 as it nears: the crate's own square
+// shadow darkening in the middle, and round it, as far as it will strike and shield, the
+// snow trodden into a ragged patch (the edge is the reach, drawn as ground, not a ring)
+function drawCrateShade(x, y, u, seed) {
+  ctx.globalAlpha = 0.14 + 0.14 * u; fxPatch(x, y, CRATE_R, 0.7, 3, seed * 17 + 3, PT_INK);
+  ctx.globalAlpha = 0.25 + 0.4 * u; const r = 1 + Math.round(3 * u);
+  ctx.fillStyle = PT_INK; ctx.fillRect(x - r, y - r + 1, r * 2 + 1, r * 2 - 1);
+  ctx.globalAlpha = 1;
+}
+// in the air: its shade on the spot, filling in as it falls
 function drawPortitorGround(ex, ey, now) {
   for (const w of portitorCrates) {
     if (!fogShown(w, now)) continue;
-    const k = Math.min(1, w.t / CRATE_T), x = Math.round(w.x - ex), y = Math.round(w.y - ey);
-    drawRing(x, y, CRATE_R, TEAMS[skin(w.team)].mark, 0.5, 0.1 + 0.15 * k);
-    const sx = Math.round(w.ox + (w.x - w.ox) * k - ex), sy = Math.round(w.oy + BOW_Y + (w.y - w.oy - BOW_Y) * k - ey), r = 1 + Math.round(3 * k);
-    ctx.globalAlpha = 0.3; ctx.fillStyle = PT_INK; ctx.fillRect(sx - r, sy, r * 2 + 1, 1); ctx.globalAlpha = 1;
+    drawCrateShade(Math.round(w.x - ex), Math.round(w.y - ey), 0.6 + 0.4 * Math.min(1, w.t / CRATE_T), w.owner);
   }
 }
+// where it broke: its planks and its stores flung out all round and falling back
+function drawCrateFx(f, px, py) {
+  const u = f.t / f.life;
+  drawFlung(px, py, 0, Math.PI, f.r, 0.3, 10, 12, Math.min(1, u * 1.4), fxSeed(f), (x, y, k) => fxChip(x, y, k, k % 3 ? PT_WOOD : '#eef4fb', k % 3 ? PT_WOOD_D : '#b8c6dc', PT_INK));
+}
+AB_FX_LOOK.crate = drawCrateFx;
+// CARRY HOME's wind-up: the way to the ally marked out in copper chevrons pointing at
+// them, running out from him as he leans into it, a light running down them toward the ally
+function drawHomeTele(p, q, closing, now, ex, ey) {
+  const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d, run = d * (0.35 + 0.65 * closing);
+  const ox = -ny, oy = nx;
+  for (let s = 14, k = 0; s < run - 6; s += 12, k++) {
+    const cx = p.x + nx * s, cy = p.y + 3 + ny * s;
+    for (let j = -2; j <= 2; j++) { // a chevron: two arms back from its point
+      const b = Math.abs(j), x = Math.round(cx - nx * b * 1.5 + ox * j * 1.5 - ex), y = Math.round(cy - ny * b * 1.5 + oy * j * 1.5 - ey);
+      ctx.fillStyle = PT_INK; ctx.fillRect(x, y + 1, 1, 1);
+      ctx.fillStyle = (k - Math.floor(now * 8)) % 4 === 0 ? '#ffd95c' : '#e8a060'; ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
+// where the run lifts them: the snow kicked up low and wide round his feet
+function drawLiftFx(f, px, py) {
+  const u = f.t / f.life;
+  drawFlung(px, py + 4, 0, Math.PI, f.r, 0.4, 4, 10, Math.min(1, u * 1.4), fxSeed(f), (x, y, k) => fxChip(x, y, k, '#eef4fb', '#b8c6dc', '#7f90b0'));
+}
+AB_FX_LOOK.lift = drawLiftFx;
 HERO_AIR.push(drawPortitorAir);
 HERO_GROUND.push(drawPortitorGround);
 

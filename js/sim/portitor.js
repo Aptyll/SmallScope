@@ -35,6 +35,7 @@ const CRATE_SLOW_T = 1.2;       // ...for this long
 const CRATE_SHIELD = 35;        // the shield on each ally in the ring...
 const CRATE_SHIELD_LV = 5;      // ...and this more for each of his levels
 const CRATE_SHIELD_T = 2.5;     // s it holds
+const CRATE_FX_LIFE = 0.5;      // s its planks fly when it breaks (its look: js/draw/portitor.js)
 // E PLOUGH ON: a short charge; every rival in the way is struck once and shoved aside
 const PLOUGH_LEN = 110;         // px
 const PLOUGH_SPD = 300;         // px/s
@@ -50,6 +51,7 @@ const HOME_T = 3.5;             // s the carry holds
 const HOME_WALK = 1.3;          // his walk x this while the carry holds
 const HOME_SHIELD = 80;         // the shield on the ally lifted...
 const HOME_SHIELD_LV = 10;      // ...and this more for each of his levels
+const LIFT_FX_LIFE = 0.4;       // s the snow kicked up where the run lifts them
 
 const portitorCrates = []; // {x, y, ox, oy, t, team, owner, dmg, shield} - Q's crates in the air, (x, y) where they land
 
@@ -62,7 +64,7 @@ const PORTITOR_AB = [
     tip: 'STRIKES RIVALS, SHIELDS ALLIES',
     blurb: 'LOB A SUPPLY CRATE ONTO A SPOT. WHERE IT LANDS, RIVALS ARE STRUCK AND SLOWED AND ALLIES, YOU TOO, TAKE A SHIELD.',
     use: (p) => portitorCrate(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = portSpot(p, CRATE_RANGE); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), CRATE_R, col, 0.5 + 0.45 * closing, closing * 0.25); },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = portSpot(p, CRATE_RANGE); drawCrateShade(Math.round(c.x - ex), Math.round(c.y - ey), closing * 0.6, p.id); }, // the crate's shadow on the spot (js/draw/portitor.js)
     pose: () => ({ dx: 0, dy: -1, rot: 0 }), // the crate up over the shoulder
     icon: PORTITOR_ICON32.crate,
     bot: (p, foe, d) => d < CRATE_RANGE - 10,
@@ -76,7 +78,6 @@ const PORTITOR_AB = [
     tip: 'LIFT AN ALLY. SHIELDED, HANDS FREE',
     blurb: 'LIFT THE ALLY NEAREST THE AIM ONTO YOUR BACK FOR A FEW SECONDS, WITH A SHIELD. THEY CANNOT WALK BUT CAN STILL FIGHT, AND MEND AS YOU CARRY THEM. PRESS AGAIN TO SET THEM DOWN WHERE YOU AIM. THEY CAN ROLL OFF.',
     use: (p) => portitorShoulder(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = p.castSlam ? null : shoulderPick(p); if (q) drawRing(Math.round(q.x - ex), Math.round(q.y - ey), 10, col, 0.5 + 0.45 * closing, 0); else { const c = portSpot(p, CARRY_SET); drawRing(Math.round(c.x - ex), Math.round(c.y - ey), 8, col, 0.5 + 0.45 * closing, 0); } },
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the crouch to lift
     icon: PORTITOR_ICON32.shoulder,
     bot: (p, foe, d) => portRider(p) === null && !!portNeedy(p, CARRY_REACH, 0.45) && d < 240,
@@ -88,7 +89,6 @@ const PORTITOR_AB = [
     tip: 'CHARGE, SHOVING RIVALS ASIDE',
     blurb: 'CHARGE A SHORT WAY. EVERY RIVAL IN THE WAY IS STRUCK AND SHOVED ASIDE. AN ALLY ON YOUR BACK COMES TOO.',
     use: (p) => portitorPlough(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => drawTeleLine(p.x, p.y, Math.cos(a), Math.sin(a), PLOUGH_LEN, col, 0.5 + 0.45 * closing, now, ex, ey),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // head down
     icon: PORTITOR_ICON32.plough,
     bot: (p, foe, d) => foe instanceof Player && d > 24 && d < PLOUGH_LEN - 10,
@@ -100,7 +100,7 @@ const PORTITOR_AB = [
     tip: 'RUN TO A FAR ALLY AND CARRY THEM',
     blurb: 'RUN TO AN ALLY FAR AWAY, THROUGH EVERY BODY IN THE WAY: RIVALS RUN THROUGH ARE STRUCK AND SHOVED ASIDE. THE ALLY IS LIFTED WITH A BIG SHIELD AND YOU CARRY THEM FASTER, FOR LONGER.',
     use: (p) => portitorHome(p),
-    tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = homePick(p); if (q) { drawRing(Math.round(q.x - ex), Math.round(q.y - ey), 12, col, 0.5 + 0.45 * closing, closing * 0.3); drawTeleLine(p.x, p.y, (q.x - p.x) / (Math.hypot(q.x - p.x, q.y - p.y) || 1), (q.y - p.y) / (Math.hypot(q.x - p.x, q.y - p.y) || 1), Math.hypot(q.x - p.x, q.y - p.y), col, 0.4 + 0.4 * closing, now, ex, ey); } },
+    tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = homePick(p); if (q) drawHomeTele(p, q, closing, now, ex, ey); }, // the way to the ally marked out (js/draw/portitor.js)
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
     acol: '#e8a060', activeF: (p) => (p.portFastT > 0 ? p.portFastT / HOME_T : 0),
     icon: PORTITOR_ICON32.home,
@@ -253,7 +253,7 @@ function crateLand(w) {
     shieldUnit(q, Math.round(itemMend(src, q, w.shield)), CRATE_SHIELD_T);
     burst(q.x, q.y - 8, '#e8a060', 5, 30, 0.35, true);
   }
-  abFx.push({ kind: 'ring', x: w.x, y: w.y, r: CRATE_R, t: 0, col: '#e8a060' });
+  abFx.push({ kind: 'ring', x: w.x, y: w.y, r: CRATE_R, t: 0, col: '#e8a060', fx: 'crate', life: CRATE_FX_LIFE });
   burst(w.x, w.y, '#c89a5a', 10, 50, 0.45, true);
   burst(w.x, w.y, '#eef4fb', 10, 45, 0.4, true);
   sfxAt('break_', w.x, w.y);
@@ -280,7 +280,6 @@ function portRunHits(p, ab) {
     const kx = -ny * s * 0.8 + nx * 0.6, ky = nx * s * 0.8 + ny * 0.6;
     hurtUnit(q, dmg, kx, ky, p, { kb: 160, kbMul: PLOUGH_KB, ab });
     burst(q.x, unitMidY(q), '#e8a060', 6, 40, 0.35, true);
-    shakeFor(p, 2, q);
   }
   for (const st of structsNear(p, p.x, p.y, PLOUGH_HIT)) {
     if (st.portRunHit === id) continue;
@@ -338,7 +337,7 @@ function homeStep(p, mv) {
     portRunEnd(p, 0);
     portLift(p, q, HOME_T, HOME_SHIELD + HOME_SHIELD_LV * p.level);
     p.portFastT = HOME_T;
-    abFx.push({ kind: 'ring', x: p.x, y: p.y, r: 20, t: 0, col: '#e8a060' });
+    abFx.push({ kind: 'ring', x: p.x, y: p.y, r: 20, t: 0, col: '#e8a060', fx: 'lift', life: LIFT_FX_LIFE });
     return;
   }
   p.rushNX = dx / d; p.rushNY = dy / d;
