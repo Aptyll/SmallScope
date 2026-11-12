@@ -315,12 +315,26 @@ const RUN_STEP = 2;
 function runFrame(p) { return Math.floor(p.animT * RUN_STEP) % SPRITES.runBob.length; }
 // A body whose hands are busy - a drawn weapon, a swing, a cast, the
 // shield up - runs on the held run instead, its arms at its
-// sides rather than pumping under what they hold. runBob is the bob of the
-// frame on show, whole px up, for what rides the body.
+// sides rather than pumping under what they hold.
 function handsBusy(p) {
   return p.charging || p.swingT > 0 || p.slashT > 0 || p.castT > 0 || p.shieldT > 0;
 }
-function runBob(p) { return (handsBusy(p) ? SPRITES.holdBob : SPRITES.runBob)[runFrame(p)]; }
+// THE ARM SWING: on the run a hand that carries something rides the body's bob
+// (set.bobY, the frame on show) and swings fore and aft against its leg, a frame at a
+// time, and the other hand the other way: side-on a px along the facing, head-on and
+// from behind a px up and down past the hip, where the coat hides the arm, so the thing
+// in the hand shows the stride. A held run's arms stay at its sides.
+const ARM_SWING = [-1, -1, 0, 1, 1, 1, 0, -1];
+// where a carried thing sits off its standing place on this frame, [dx, dy] in whole px
+// (off: in the other hand)
+function carryAt(p, off) {
+  if (!playerStrides(p)) return [0, 0];
+  const f = runFrame(p), busy = handsBusy(p), side = p.dir === 'left' || p.dir === 'right';
+  const B = bodySet(p).bobY; // a body with none is the doll's, its bob counted up
+  const dy = B ? B[busy ? 'hold' : 'run'][side ? 'side' : 'front'][f] : -(busy ? SPRITES.holdBob : SPRITES.runBob)[f];
+  const s = busy ? 0 : ARM_SWING[f] * (off ? -1 : 1);
+  return side ? [s * (p.dir === 'left' ? -1 : 1), dy] : [0, dy + s * (p.dir === 'up' ? -1 : 1)];
+}
 function rollFrame(prog) {
   const at = SPRITES.rollAt;
   let i = 0;
@@ -421,6 +435,9 @@ function drawPlayer(p, ex, ey, now, stage) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow
     if (p.dodgeT > 0) drawCastShade(S.roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
+    // ...but a runner's is its standing frame's, left on the snow, so the body bounds off its
+    // own shade and the float (THE BOUND, js/sprites/armatos.js) shows daylight under the feet
+    else if (running) { const st = set[0]; drawCastShade(st, px - ((frameW(st) - 16) >> 1), py + 16 - frameH(st)); }
     else drawCastShade(spr, bx, by);
   }
   if (!stage && p.fallT <= 0 && !zl) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
@@ -895,7 +912,8 @@ function drawHeldTool(p, px, py, back) {
   // (HERO_STAVES, js/draw/heroes.js), standing beside the body and behind it,
   // so its head stands clear of the face and the body's own edge overlaps it
   if (!swinging && heroStaffOf(p)) {
-    if (back) heroStaff(p, px, py + (!p.moving ? 0 : -runBob(p)));
+    const c = carryAt(p);
+    if (back) heroStaff(p, px + c[0], py + c[1]);
     return;
   }
 
@@ -977,7 +995,8 @@ function drawHeldTool(p, px, py, back) {
   // in the leading hand, riding the run's bob, turned to the facing - a work
   // tool's icon points up and is left as drawn, the way it always was. Facing
   // up it is behind the body. A worn body keeps the old one-pixel step.
-  const bob = !p.moving ? 0 : -runBob(p);
+  const [sx, bob] = carryAt(p);
+  px += sx;
   // a hero's own way of holding it, which picks its own pass (heroCarry, js/draw/heroes.js)
   if (!axeOut && heroCarry(p, px, py + bob, back)) return;
   if ((p.dir === 'up') !== back) return;

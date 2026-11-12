@@ -32,7 +32,8 @@ function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive
 function drawFalcoPerch(p, ax, ay, now, front) {
   if (!front || CLASSES[p.cls].passive !== 'hawk' || p.zip >= 0 || p.falcoSkyT > 0 || p.dodgeT > 0 || inAir(p)) return;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
-  const bob = !p.moving ? 0 : -runBob(p);
+  const [sx, bob] = carryAt(p, true); // the glove swings against the knife hand (THE ARM SWING)
+  ax += sx;
   // the glove: 3 px of tan on the off side, its outline outside and under it; the hawk stands on its outer px, so its head clears his hat
   const gx = lead ? ax + (side ? 1 : 0) - rc : ax + (side ? 12 : 13) + rc, gy = ay + (heroAimed(p) ? 12 : 10) + bob; // the bird's head at his eye line; down at the hip while the knife arm is up, so only one arm is raised
   const fine = bodySet(p).dens > 1; // his fine body's glove and hawk are fine too (FALCO_FINE_ART)

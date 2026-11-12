@@ -179,7 +179,7 @@ The weapon is also drawn **on the player** by `drawHeldTool()` (called from `dra
 rest the hands hold the hero's own weapon (`SPRITES.weaponArt[attackOf(p).art]`, or the blade at
 its length), so what someone fights with reads off their sprite from across the snow. It is carried
 at the leading hand while idle/walking (turned to the facing, drawn *before* the body sprite for
-`up` so it's occluded, riding the run's bob - `runBob`), and rotated toward the mouse while drawn.
+`up` so it's occluded, riding the run's bob and swinging with the stride - `carryAt`), and rotated toward the mouse while drawn.
 **The carry rule** (top of `drawHeldTool`) keeps it off the face: every art is turned about where
 the hand closes on it (`WEAPON_GRIP`, js/sprites/weapons.js, or a hero blade's `hilt`), never about
 its own middle, so a blade reaches out of the fist; a blade's hand rides an ellipse about the hips
