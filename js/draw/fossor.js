@@ -80,13 +80,8 @@ AB_FX_LOOK.spade = drawSpadeFx;
 // at its full width, taller as the heave comes
 function drawBankTele(p, a, closing, ex, ey) {
   const nx = Math.cos(a), ny = Math.sin(a), cx = p.x + nx * BANK_AHEAD, cy = p.y + ny * BANK_AHEAD;
-  const h = 1 + Math.round(closing * 3);
-  for (let s = -BANK_HALF, k = 0; s <= BANK_HALF; s += 6, k++) {
-    const x = Math.round(cx - ny * s - ex), y = Math.round(cy + nx * s - ey), w = 3 + (k % 2), hk = Math.max(1, h - (k % 3 === 2 ? 1 : 0));
-    ctx.fillStyle = FS_SNOW_D; ctx.fillRect(x - w, y + 1, w * 2 + 1, 1);
-    ctx.fillStyle = FS_SNOW_M; ctx.fillRect(x - w + 1, y + 1 - hk, w * 2 - 1, hk);
-    ctx.fillStyle = FS_SNOW; ctx.fillRect(x - w + 2, y + 1 - hk, w * 2 - 3, 1);
-  }
+  const h = 1 + Math.round(closing * 2); // a ridge of snow across the way, one piece end to end, fattening as the heave comes
+  fxStrip(cx + ny * BANK_HALF - ex, cy - nx * BANK_HALF - ey, -ny, nx, BANK_HALF * 2, h, h, p.id * 31 + 7, FS_SNOW_D, FS_SNOW_M, FS_SNOW);
 }
 // BREAK GROUND's wind-up: the ground splitting from his spade down the whole line,
 // the split running out as the spade comes down, and the snow lifting in flakes at
@@ -97,8 +92,9 @@ function drawQuakeTele(p, a, closing, ex, ey) {
   for (let s = 8; s <= run; s += 0.5) { // the split: a wandering dark line with its lit lip under it
     const w = Math.round((fxRoll(seed, s >> 2, 3) - 0.5) * 3);
     const x = Math.round(p.x + nx * s + ox * w - ex), y = Math.round(p.y + 3 + ny * s + oy * w - ey);
+    ctx.fillStyle = FS_SNOW_D; ctx.fillRect(x - 1, y - 1, 3, 1); // the snow broken back off its edges
     ctx.fillStyle = FS_EARTH_L; ctx.fillRect(x, y + 1, 1, 1);
-    ctx.fillStyle = FS_EARTH_D; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = FS_EARTH_D; ctx.fillRect(x - (s * 2 % 2 ? 0 : 1), y, 2, 1);
   }
   for (let s = 16, k = 0; s <= L; s += 14, k++) { // its throw's width: the snow lifting off both edges, the whole length, nearer up first
     if (s > run + 10) break;

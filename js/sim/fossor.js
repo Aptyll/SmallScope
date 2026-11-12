@@ -45,7 +45,7 @@ const FOSSOR_AB = [
     blurb: 'SWING YOUR SPADE THROUGH THE WEDGE AHEAD AND FLING SNOW. RIVALS IT HITS ARE STRUCK AND SLOWED.',
     use: (p) => fossorSpade(p),
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.6 ? 1 : -1, rot: 0 }), // dug in, then flung up
-    icon: FOSSOR_ICON32.spade,
+    icon: FOSSOR_ICON32.spade, mark: 'slow',
     bot: (p, foe, d) => d < SPADE_R - 4,
   },
   {
@@ -55,7 +55,7 @@ const FOSSOR_AB = [
     blurb: 'DIG DOWN AND RUN UNDER THE SNOW DOWN THE AIM, PAST ANYONE IN THE WAY. WHERE YOU COME UP, RIVALS ARE STRUCK AND THROWN INTO THE AIR.',
     use: (p) => fossorBurrow(p),
     pose: () => ({ dx: 0, dy: 2, rot: 0 }), // ducked to dig
-    icon: FOSSOR_ICON32.burrow,
+    icon: FOSSOR_ICON32.burrow, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d > 30 && d < BURROW_LEN,
   },
   {
@@ -77,7 +77,7 @@ const FOSSOR_AB = [
     use: (p) => fossorQuake(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => drawQuakeTele(p, a, closing, ex, ey), // the ground splitting down the line (js/draw/fossor.js)
     pose: (p, prog) => ({ dx: 0, dy: prog < 0.7 ? -1 : 2, rot: 0 }), // the spade up, then driven down
-    icon: FOSSOR_ICON32.quake,
+    icon: FOSSOR_ICON32.quake, mark: 'up',
     bot: (p, foe, d) => foe instanceof Player && d < QUAKE_LEN - 20,
   },
 ];

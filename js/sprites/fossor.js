@@ -294,6 +294,7 @@ const FOSSOR_SPADE_PAL = { o: '#241a12', T: '#e6ebf2', S: '#c8d2e4', s: '#8b93a8
 // ------------------------------------------------------------ fossor registry
 heroArt('fossor', {
   looks: FOSSOR_SKINS, pal: FOSSOR_PAL,
+  glow: ['#121210', '#22221c', '#36362a', '#4e4c38', '#6c684a'], // stone of the old works, brass in its dark
   glyph: ['....ww..', '....ww..', '....ww..', '....ww..', '..wwwwww', '..wwwwww', '..wwwwww', '...wwww.'],
   emblem: [ // his spade: a broad blade on a haft with a grip across the top
     '....oooo....',
