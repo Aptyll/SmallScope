@@ -5,7 +5,7 @@
 // ring of half-buried stones; a hog hut has a smaller trodden yard, a packed
 // path from its door out into the clearing, a woodpile against its wall and a
 // chopping block; the black bear's bend and the gold pump, a building, have
-// yards of their own (their rows). A yard is two pressed bands of snow with a shaded upper
+// yards of their own (their rows). A yard is two pressed bands of snow (a `trod` one, a core and prints) with a shaded upper
 // wall and a lit lower rim, like any hollow in this light. Pure dressing: one
 // canvas a camp, a function of its tile and hash2/vnoise alone, on open snow
 // only, drawn under every body (render, after the flat pass) the way a
@@ -20,6 +20,12 @@ const YARD_TRAIL_STEP = 5;                  // px between prints along a trail
 const YARD_TRACK_STEP = 9;                  // ...and between a heavy beast's
 const YARD_TRACK_COL = 'rgba(78,92,132,0.85)'; // ...which are pressed deeper, a tone darker
 const YARD_PATH_HW = 4.5;                   // px: half the width of a packed path
+// a `trod` yard has no outer band, and its packed core is only the `trod`
+// share of the radius: past it the snow is only walked, prints scattered one
+// to a YARD_TROD_STEP cell at most, YARD_TROD[0] of the cells at the core's
+// edge thinning out to none at YARD_TROD[1] of the radius, in clumps (the
+// noise), so its edge is where the pack stops walking, not a line round a puddle
+const YARD_TROD = [0.85, 1.2], YARD_TROD_STEP = [5, 4];
 // what lies in a yard, on 1 px grids: the den's rock (DNPAL, js/sprites/terrain.js), the hut's wood
 const YARD_PAL = { o: '#2b3040', y: '#7b8398', Y: '#99a1b6', v: '#5a6176', w: '#eef4fb', s: '#c9dcee', d: '#aab8d2',
   k: '#2a2018', l: '#6f4d38', L: '#4a3324', c: '#d9ad72', C: '#b9884f', m: '#aab4c4', h: '#8a6a48',
@@ -45,7 +51,7 @@ const YARD_THINGS = {
 };
 const YARDS = {
   den: {
-    rx: 70, ry: 42, rag: 0.4, dy: 8, mid: 0, step: [14, 13], trails: true,
+    rx: 70, ry: 42, rag: 0.4, dy: 8, mid: 0, step: [14, 13], trails: true, trod: 0.5,
     door: (C) => ({ x: (C.tx + 1) * TILE, y: (C.ty + 1) * TILE - 3 }), // the middle of the mouth's lip row
     things: [[-52, 2, 'rockA'], [44, -8, 'rockB'], [60, 16, 'rockD'], [-34, 30, 'rockC'], [26, 36, 'rockD'], [-66, 18, 'rockD'], [58, -22, 'rockC'], [-8, 42, 'rockB'], [-60, -14, 'rockB']],
   },
@@ -124,11 +130,14 @@ function yardOf(C, Y) {
   };
   // 0 at the yard's middle, 1 on its ragged edge; each camp's edge wanders its own way
   const sx0 = hash2(key, 5) * 97, sy0 = hash2(key, 11) * 97;
+  const rad = (x, y, rag = Y.rag) => {
+    const u = (x - cx) / Y.rx, w = (y - cy) / Y.ry;
+    return Math.sqrt(u * u + w * w) + (vnoise(x / 17 + sx0, y / 17 + sy0) - 0.5) * 2 * rag + (vnoise(x / 6 + 40, y / 6) - 0.5) * 0.12;
+  };
   const band = (x, y) => {
     if (!open(x, y)) return 0;
-    const u = (x - cx) / Y.rx, w = (y - cy) / Y.ry, p = pathAt(x, y);
-    const r = Math.sqrt(u * u + w * w) + (vnoise(x / 17 + sx0, y / 17 + sy0) - 0.5) * 2 * Y.rag + (vnoise(x / 6 + 40, y / 6) - 0.5) * 0.12;
-    return r < YARD_IN || p < YARD_PATH_HW ? 2 : r < 1 ? 1 : 0;
+    const r = rad(x, y, Y.trod ? Y.rag * Y.trod : Y.rag); // a trod yard's small core wanders as much for its size
+    return r < (Y.trod || YARD_IN) || pathAt(x, y) < YARD_PATH_HW ? 2 : r < 1 && !Y.trod ? 1 : 0;
   };
   // the doorstep: a tongue of dark earth straight out of the mouth, about a hero wide, its tip ragged
   const bare = (x, y) => {
@@ -152,6 +161,16 @@ function yardOf(C, Y) {
       if (dn < b && b === 2 && dn === 0) col = YARD_COL.lit; // a path's low side out on the open snow
     }
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
+  }
+  // a trod yard's prints: one to a cell at most, set off in it by the hash,
+  // pressed dark with the snow lit along their low lip
+  for (let gy = 0; Y.trod && gy < H; gy += YARD_TROD_STEP[1]) for (let gx = 0; gx < W; gx += YARD_TROD_STEP[0]) {
+    const px = c.wx + gx + Math.floor(hash2(gx + key, gy) * YARD_TROD_STEP[0]), py = c.wy + gy + Math.floor(hash2(gy + key, gx + 7) * YARD_TROD_STEP[1]), r = rad(px, py);
+    const thick = YARD_TROD[0] * Math.min(1, (YARD_TROD[1] - r) / (YARD_TROD[1] - Y.trod)) * (0.6 + vnoise(px / 13 + sy0, py / 13 + sx0) * 0.8);
+    if (hash2(px * 3 + key, py * 5) >= thick || !open(px, py) || !open(px + 1, py + 1) || bare(px, py)) continue;
+    const w = hash2(px + key, py * 3) < 0.35 ? 1 : 2; // a toe's dab or a whole pad
+    g.fillStyle = YARD_PRINT_COL; g.fillRect(px - c.wx, py - c.wy, w, 1);
+    g.fillStyle = YARD_COL.lit; g.fillRect(px - c.wx, py - c.wy + 1, w, 1);
   }
   // the trails: from the mouth past each wolf's spot and out into the open,
   // a print either side of the line by turns, bending a little off the hash
