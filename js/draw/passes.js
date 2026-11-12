@@ -85,7 +85,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (!o) continue;
       const px = tx * TILE - ox, py = ty * TILE - oy;
       // +4 - any lower and the canopy of a tree on the tile below buries it
-      if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
+      if (o.type === 'stump') { const L = stumpLook(tx, ty, o); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
   drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)

@@ -149,10 +149,9 @@ function drawRoostFooting(sp, stalls, ex, ey) {
 const STUMP_LAIN = 0.12;   // the share of a roost's stumps drawn as a trunk lying
 const STUMP_BURIED = 0.7;  // the share drifted under at the blast's outer edge (none at the round's)...
 const STUMP_THIN = 0.3;    // ...which lies this far out past the round, as a share of its size
-const STUMP_SHELF_LAIN = 0.35; // the share of a lane shelf's stumps drawn as a trunk lying
 const STUMP_GONE = 0.3;    // the share of the blast's stumps past a roost's round not drawn at all: blown off or snowed under
 const STUMP_SCATTER = [6, 6]; // px every stump stands off its tile's middle, across and up, so a felled stand loses the forest's grid
-function stumpLook(tx, ty) {
+function stumpLook(tx, ty, o) {
   let v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
   for (const sp of pads) {
     const d = Math.hypot(tx - sp.tx, ty - sp.ty);
@@ -166,11 +165,8 @@ function stumpLook(tx, ty) {
     else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
     break;
   }
-  // on a lane's shelf (JUNGLE_SHELF_SPREAD, js/sim/jungle.js) some lie where the lane's cutters left them
-  if (v < 3 && hash2(tx * 13 + 5, ty * 17 + 9) < STUMP_SHELF_LAIN) {
-    const d = roadDist(tx, ty, true);
-    if (d >= JUNGLE_SHELF_SPREAD[0] && d <= JUNGLE_SHELF_SPREAD[1]) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
-  }
+  // the one trunk a knot of felled pines left lying (`cut` 2, jungleKnot, js/sim/jungle.js)
+  if (v < 3 && o && o.cut === 2) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
   // a felled stand (the blast's ring, a merchant's or a hero's clearing) was
   // cut on the forest's grid, one stump a tile: each stands off its middle
   const dx = Math.round((hash2(tx * 19 + 6, ty * 23 + 1) * 2 - 1) * STUMP_SCATTER[0]);

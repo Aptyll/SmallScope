@@ -949,7 +949,7 @@ const CASTERS = {
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
   // (STUMP_CODE up, clear of the pines' codes: a look, then dx and dy each -9..9)
-  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
+  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty, o); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
               art: (c) => { const k = c - STUMP_CODE, r = k % 400; return whole(SPRITES.stumps[Math.floor(k / 400)], Math.floor(r / 20) - 9, 4 + r % 20 - 9); } },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
