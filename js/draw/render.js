@@ -407,7 +407,8 @@ function cursorInfo() {
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
-  if (state.mode === 'dead') return { kind: deadHit() >= 0 || specHit() || rpCloseHit() || recapHot() ? 'hand' : 'arrow' };
+  if (state.mode === 'dead' && profileUp()) { const h = state.menu.charT >= 1 ? profileHit() : null; return { kind: h && h.kind !== 'slab' && h.kind !== 'off' ? 'hand' : 'arrow' }; }
+  if (state.mode === 'dead') return { kind: deadHit() >= 0 || endRowHit() >= 0 || (state.deadView === 'scores' && (scoresHit() || {}).kind === 'who') || specHit() || rpCloseHit() || recapHot() ? 'hand' : 'arrow' };
   if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {

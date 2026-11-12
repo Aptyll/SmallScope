@@ -77,21 +77,60 @@ function drawProfileTag() {
 }
 
 // ---- in and out -----------------------------------------------------------
-function beginProfile(who) {
+// Open from the title (the name tag), from the party screen (a seat's face,
+// back to 'room' on the way out) or OVER A MATCH that has ended (an end
+// screen's row or the post-game's face: menu.pfOver, the match running on
+// under it, its own ease and keys - nothing of the match's screens moves).
+function beginProfile(who, back) {
   const m = state.menu;
+  m.pfBack = back || 'menu';
   m.screen = 'profile';
+  pfReset(who);
+}
+function beginProfileOver(who) {
+  state.menu.pfOver = true;
+  pfReset(who);
+}
+function pfReset(who) {
+  const m = state.menu;
   m.pfWho = who || null;
   m.pfTab = 0; m.pfScroll = 0; m.pfOpen = ''; m.pfMode = ''; m.pfPick = false; m.pfSearch = null;
   m.nameBuf = PROFILE.name();
   m.nameSel = false; m.nameEdit = false; m.nameShake = 0;
   SFX.place();
 }
-// out to the title, keeping the buffer when the store takes it (an unchanged name is a no-op)
+// out to where it was opened from, keeping the buffer when the store takes it (an unchanged name is a no-op)
 function leaveProfile() {
   const m = state.menu;
   pfNameKeep();
-  m.screen = 'menu';
+  if (m.pfOver) m.pfOver = false;
+  else m.screen = m.pfBack || 'menu';
   SFX.pickup();
+}
+// whether the profile has the keys and the pointer: on the title, or over an ended match
+function profileUp() {
+  const m = state.menu;
+  return state.mode === 'title' ? m.screen === 'profile' : state.mode === 'dead' && m.pfOver;
+}
+// over a match: the ease the title's update gives it there (from sim.js's dead branch)
+function updateProfileOver(dt) {
+  const m = state.menu;
+  m.charT = Math.max(0, Math.min(1, m.charT + (m.pfOver ? 1 : -1) * dt / 0.35));
+  if (m.pfOver) updateProfile(dt);
+}
+// a seat's profile, when this screen holds it: yours, or the card the seat's person sent
+function seatPid(id) {
+  if (player && id === player.id) return PROFILE.pid();
+  const c = NET.cards[id];
+  return c && PROFILE.people().some((q) => q.pid === c.pid) ? c.pid : null;
+}
+// open seat `id`'s profile from wherever the screen is; false when there is none to open
+function openSeatProfile(id, back) {
+  const pid = seatPid(id);
+  if (!pid) return false;
+  const who = pid === PROFILE.pid() ? null : pid;
+  if (state.mode === 'dead') beginProfileOver(who); else beginProfile(who, back);
+  return true;
 }
 function pfNameKeep() {
   const m = state.menu;

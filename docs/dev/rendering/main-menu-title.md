@@ -230,6 +230,11 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
   last matches as short rows (no builds or sides: a card is small) and the heroes in them; your own
   name under their numbers leads back. Nothing of theirs can be changed. **Esc** steps back one
   thing at a time: the picker, the search, an edit, their profile, then out to the title.
+- **Opened off a name**: a person's face in a party seat, their row on the end screen
+  (`endRowHit`) or their face in the post-game columns (`scoresHit`'s `who`) opens their profile
+  through `openSeatProfile` (`seatPid`: only a seat whose card this screen holds). From a party it
+  is the full screen and Esc returns to the party (`menu.pfBack`); over an ended match it eases in
+  on top (`beginProfileOver`, `menu.pfOver`) and Esc returns to the table.
 - A fresh install never sees a form: the profile arrives pre-named (a winter word), and the
   first press on the title goes to play.
 <a id="the-hero-pop-up"></a>

@@ -282,6 +282,9 @@ function scoresHit() {
     && mouse.y >= r.y - (pad || 0) && mouse.y < r.y + r.h + (pad || 0);
   for (let i = 0; i < L.tabs.length; i++) if (inR(L.tabs[i], 3)) return { kind: 'page', i };
   for (let i = 0; i < L.words.length; i++) if (inR(L.words[i], 2)) return { kind: 'word', i };
+  for (let i = 0; i < L.cols.length; i++) { // a face across the top: that player's profile, when this screen holds it (seatPid, js/ui/profile.js)
+    if (inR({ x: L.colX[i], y: L.faceY, w: L.colW, h: L.face + SCORE_NAME * 2 }) && seatPid(L.cols[i].id)) return { kind: 'who', id: L.cols[i].id };
+  }
   if (scores.page === 1) {
     if (!inR(L.list)) return null;
     for (const e of L.list.rows) {
@@ -325,6 +328,7 @@ function scoresClick() {
   const h = scoresHit();
   if (!h) return;
   if (h.kind === 'page') { scores.sel = h.i; scoresActivate(h.i); }
+  else if (h.kind === 'who') openSeatProfile(h.id);
   else if (h.kind === 'stat') { if (scores.stat !== h.i) { scores.stat = h.i; SFX.pickup(); } }
   else if (h.kind === 'group') {
     scores.shut[h.head] = !scores.shut[h.head];
