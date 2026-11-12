@@ -12,12 +12,15 @@ under the table on both.
 A loss goes there after one beat: the play screen dims under one line for `LOST_BEAT` s
 (`lostBeat()`), with nothing to press, and then the defeat screen opens itself (`renderDead` calls
 `openDefeat()`, `state.deadView = 'defeat'`; a press during the beat goes on at once, `endSkip`),
-which carries a single **LOBBY** word. Neither ceremony's LOBBY leaves, though: both open
+which carries **LOBBY** and, when this screen's replay ring holds any frames, **REPLAY**
+(`deadItems`): it sets `state.rpAgain`, and the match's
+[last four seconds](replay-the-last-four-seconds.md) play over the screen until a press puts them
+away (`replayClose`) and the defeat screen is back. Neither ceremony's LOBBY leaves, though: both open
 [the post-game lobby](the-post-game-lobby.md) first, and that screen's LOBBY is the door out. A
 respawn-pending death's LOBBY leaves directly — nothing has been lost yet, so there is no record
 to read. `endScreen()` is the one test for "a screen owns the frame" —
 `renderUI` and `replayShowing` both bow out under it (the recap would cover the
-whole ceremony), and so does every per-body tell in the world under the wash (`drawPlayer` bails
+whole ceremony; only the defeat screen's own REPLAY shows over one), and so does every per-body tell in the world under the wash (`drawPlayer` bails
 on it exactly as it does on the title's living world: a name plate with a health bar under it
 floating through the ceremony is the HUD showing up to a party it was not invited to); the
 held-TAB scoreboard and the info stack still draw over both. The post-game lobby answers it too.

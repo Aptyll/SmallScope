@@ -13,7 +13,10 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
   `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending is no death and never
-  opens it, so the guest sees THE HOST LEFT and LOBBY at once.
+  opens it, so the guest sees THE HOST LEFT and LOBBY at once. A lost match does not open it by
+  itself either: its defeat screen carries a **REPLAY** word (`deadItems`, `state.rpAgain`) that
+  plays the same full frame over that screen, without the death recap (`recapLive`: it is the
+  bird leaving, not a death to explain), until the same keys or any click put it away.
   In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
   of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
   it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's

@@ -196,7 +196,8 @@ function recapHover(L) {
   }
   return null;
 }
-function recapLive() { return replayFull() && player.deathLog && player.deathLog.length > 0; }
+// a death's recap only: the defeat screen's REPLAY is the bird leaving, not a death to explain
+function recapLive() { return replayFull() && !state.rpAgain && player.deathLog && player.deathLog.length > 0; }
 // the pointer over a button: the cursor's hand (render.js)
 function recapHot() {
   if (!recapLive()) return false;

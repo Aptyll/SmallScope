@@ -27,6 +27,7 @@ const TEXT = {
   'end.noResult': 'NO RESULT',
   'end.lobby': 'LOBBY',
   'end.back': 'BACK',
+  'end.replay': 'REPLAY',
   // how a 1V1 ended (onevoneWhy, js/sim/onevone.js): under either headline, and the feed's line
   'onevone.strike': 'FIRST STRIKE',
   'onevone.farm': '{n} SOLDIERS',

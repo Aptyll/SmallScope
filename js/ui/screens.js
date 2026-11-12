@@ -123,6 +123,7 @@ function replayShowing() {
   if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen || goingDown(player)) return false;
   if (state.paused) return true;
   if (state.eagleCine) return false; // a bird driven off has the frame (hudInT, js/ui/strip.js): a respawn wait's recap, bar and countdown step aside
+  if (state.rpAgain) return state.mode === 'dead' && state.deadView === 'defeat'; // asked for, off the defeat screen's REPLAY: over that screen until it is put away
   // not over an end screen: both are compositions, and the frame is theirs
   if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
   // a respawn wait only: a lost match has just been watched live (the bird's
@@ -149,7 +150,7 @@ function rpCloseHit() {
 // the recap is up: what draws under it (the ally view's strip, the death dim
 // and its planks) waits, and a press puts it away
 function replayFull() { return rpFull() && replayShowing(); }
-function replayClose() { state.rpClosed = true; SFX.pickup(); }
+function replayClose() { state.rpClosed = true; state.rpAgain = false; SFX.pickup(); }
 
 // the overlay tracks the game canvas: the window's rect, at the canvas's
 // scale, in device pixels
@@ -300,10 +301,12 @@ function renderReplay() {
 const DEAD_BW = 112, DEAD_BH = 20, DEAD_GAP = 12; // the title menu plank, side by side
 const DEAD_ITEMS = { lost: [], won: ['end.lobby'], respawning: [], hostleft: ['end.lobby'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
 
-// the planks on offer: the defeat summary has nothing left to offer but the
-// door, so it is the one view whose items are its own rather than the ending's
+// the planks on offer: the defeat summary offers the door and, when this
+// screen recorded any, the match's last four seconds again (REPLAY), so it
+// is the one view whose items are its own rather than the ending's
 function deadItems() {
-  return state.deadView === 'defeat' ? ['end.lobby'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.hostleft);
+  if (state.deadView === 'defeat') return rpCount ? ['end.lobby', 'end.replay'] : ['end.lobby'];
+  return DEAD_ITEMS[state.over] || DEAD_ITEMS.hostleft;
 }
 
 // a full-frame end screen is up: the HUD and the replay window both bow out
@@ -404,6 +407,7 @@ function deadActivate(i) {
   const label = deadLayout()[i].label;
   SFX.place();
   if (label === 'end.lobby') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
+  else if (label === 'end.replay') state.rpAgain = true; // the last four seconds, full frame, until a press puts them away (replayShowing)
 }
 
 // who can be watched while a respawn wait runs: a living ally only - the wait
