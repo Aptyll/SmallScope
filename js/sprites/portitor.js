@@ -313,6 +313,7 @@ const PORTITOR_POLE_PAL = { o: '#241a12', H: '#d08a58', h: '#7e4a2e', g: '#6b4a3
 // PORTITOR in the hero art registry (heroArt, js/sprites/hero-art.js): the looks and
 // their paint, the skins tab's 8x8 glyph and the 12x12 emblem
 heroArt('portitor', {
+  glow: ['#0a1614', '#122622', '#1c3c36', '#28564c', '#387668'], // verdigris on old copper
   looks: PORTITOR_SKINS, pal: PORT_PAL,
   glyph: ['.wwwwww.', 'w......w', 'w.w..w.w', 'w......w', '.wwwwww.', '..w..w..', '.ww..ww.', '........'],
   emblem: [ // its box head: the two lamp eyes and the mouth grille

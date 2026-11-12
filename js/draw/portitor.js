@@ -74,7 +74,7 @@ function drawPortitorAir(ex, ey, now) {
 // shadow darkening in the middle, and round it, as far as it will strike and shield, the
 // snow trodden into a ragged patch (the edge is the reach, drawn as ground, not a ring)
 function drawCrateShade(x, y, u, seed) {
-  ctx.globalAlpha = 0.14 + 0.14 * u; fxPatch(x, y, CRATE_R, 0.7, 3, seed * 17 + 3, PT_INK);
+  ctx.globalAlpha = 0.07 + 0.08 * u; fxPatch(x, y, CRATE_R, 0.7, 3, seed * 17 + 3, PT_INK);
   ctx.globalAlpha = 0.25 + 0.4 * u; const r = 1 + Math.round(3 * u);
   ctx.fillStyle = PT_INK; ctx.fillRect(x - r, y - r + 1, r * 2 + 1, r * 2 - 1);
   ctx.globalAlpha = 1;

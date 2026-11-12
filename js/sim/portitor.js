@@ -66,7 +66,7 @@ const PORTITOR_AB = [
     use: (p) => portitorCrate(p),
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const c = portSpot(p, CRATE_RANGE); drawCrateShade(Math.round(c.x - ex), Math.round(c.y - ey), closing * 0.6, p.id); }, // the crate's shadow on the spot (js/draw/portitor.js)
     pose: () => ({ dx: 0, dy: -1, rot: 0 }), // the crate up over the shoulder
-    icon: PORTITOR_ICON32.crate,
+    icon: PORTITOR_ICON32.crate, mark: 'shield',
     bot: (p, foe, d) => d < CRATE_RANGE - 10,
     botAim: (p, foe) => ({ x: foe.x + (foe.vx || 0) * CRATE_T, y: foe.y + (foe.vy || 0) * CRATE_T }), // where they will be when it lands
   },
@@ -79,7 +79,7 @@ const PORTITOR_AB = [
     blurb: 'LIFT THE ALLY NEAREST THE AIM ONTO YOUR BACK FOR A FEW SECONDS, WITH A SHIELD. THEY CANNOT WALK BUT CAN STILL FIGHT, AND MEND AS YOU CARRY THEM. PRESS AGAIN TO SET THEM DOWN WHERE YOU AIM. THEY CAN ROLL OFF.',
     use: (p) => portitorShoulder(p),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // the crouch to lift
-    icon: PORTITOR_ICON32.shoulder,
+    icon: PORTITOR_ICON32.shoulder, mark: 'shield',
     bot: (p, foe, d) => portRider(p) === null && !!portNeedy(p, CARRY_REACH, 0.45) && d < 240,
     botAim: (p, foe) => { const q = portNeedy(p, CARRY_REACH, 0.45); return q ? { x: q.x, y: q.y } : { x: foe.x, y: foe.y }; },
   },
@@ -103,7 +103,7 @@ const PORTITOR_AB = [
     tele: (p, px, py, a, col, closing, now, ex, ey) => { const q = homePick(p); if (q) drawHomeTele(p, q, closing, now, ex, ey); }, // the way to the ally marked out (js/draw/portitor.js)
     pose: () => ({ dx: 0, dy: 1, rot: 0 }),
     acol: '#e8a060', activeF: (p) => (p.portFastT > 0 ? p.portFastT / HOME_T : 0),
-    icon: PORTITOR_ICON32.home,
+    icon: PORTITOR_ICON32.home, mark: 'speed',
     bot: (p, foe) => { const q = homeNeedy(p); return !!q && Math.hypot(q.x - p.x, q.y - p.y) > 90; },
     botAim: (p, foe) => { const q = homeNeedy(p); return q ? { x: q.x, y: q.y } : { x: foe.x, y: foe.y }; },
   },
@@ -361,7 +361,7 @@ function updatePortitorWorld(dt) {
 // ---- the hooks he registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.bedroll = { tick: portitorTick, out: portitorOut,
   name: 'BEDROLL', blurb: 'AN ALLY YOU CARRY MENDS QUICKLY. AN ALLY STANDING STILL BESIDE YOU MENDS SLOWLY.',
-  icon: PORTITOR_ICON32.bedroll };
+  icon: PORTITOR_ICON32.bedroll, mark: 'heal' };
 HERO_MOVE.push(portMoveMul);
 HERO_HELD.push(portCarrier);
 HERO_TICK.push(updatePortitorWorld);
