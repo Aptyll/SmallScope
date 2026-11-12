@@ -1800,7 +1800,7 @@ const ARCUS_SKINS = [
 // His WILLOW LONGBOW as the weapon art the HUD shows and the hands hold (SPRITES.weaponArt,
 // js/sprites/weapons.js): a tall willow stave the full height of the grid, its string toward
 // him and its belly toward the shot (+x), no arrow on the string at rest. At rest he carries
-// its own carried art upright at his side (ARCUS_BOW_CARRY below).
+// its own carried art leaned out at his side (ARCUS_BOW_CARRY below).
 WEAPON_FWD.longbow = 0;
 WEAPON_GRIP.icon.longbow = [9, 5];
 SPRITES.weaponArt.longbow = SPR.bake([
@@ -1809,14 +1809,14 @@ SPRITES.weaponArt.longbow = SPR.bake([
 ], { '.': null, o: '#241a12', g: '#6b4a30', G: '#a3794f', F: '#d8d2c4' });
 
 // The same bow as he CARRIES it (arcusCarry, js/draw/arcus.js): strung and at rest it is a
-// shallow D, twelve rows tall, the string toward him and the belly away, so it stands beside
-// the body in every facing and never lies across his face. The string is pale and the belly's outer
+// shallow D, twelve rows tall, the string toward him and the belly away, leaned out at 45
+// degrees from the hand (look C of three, 11-12), so its outline stands clear of his body in every
+// facing instead of wrapping it, and never lies across his face. The string is pale and the belly's outer
 // edge is lit, a px clear of him, so brown wood never melts into his brown coat. Drawn belly right; the hand closes
 // on the stave's middle (ARCUS_BOW_GRIP).
-const ARCUS_BOW_GRIP = [4, 6];
+const ARCUS_BOW_GRIP = [9, 6];
 const ARCUS_BOW_CARRY = SPR.bake([
-  '..Go...', '.FGHo..', '.F.GHo.', '.F.GHo.', '.F..GHo', '.F..GHo',
-  '.F..GHo', '.F..gho', '.F.gho.', '.F.gho.', '.Fgho..', '..go...',
+  '.............Go...', '...........FGHo...', '..........F.GHo...', '.........F.GHo....', '........F..GHo....', '.......F..GHo.....', '......F..GHo......', '.....F..gho.......', '....F.gho.........', '...F.gho..........', '..Fgho............', '..go..............',
 ], { '.': null, o: '#241a12', g: '#8a623e', G: '#a3794f', H: '#e0b47c', h: '#c0935c', F: '#f0eadc' });
 
 // His longbow at 32 px (dens 2) for his fine body: the carried bow and the drawn bow's three set headings,
@@ -1824,30 +1824,30 @@ const ARCUS_BOW_CARRY = SPR.bake([
 // arrow fletched: /mnt/project-files/visuals-loop/heroes-a/fine/bow.py). The grips are the 16 px ones, in world px.
 const ARCUS_BOW_FINE = {
   carry: [
-    '...FGGo.....',
-    '...F.GGo....',
-    '...F.GGo....',
-    '...F..GGo...',
-    '...F..GGo...',
-    '...F...GGo..',
-    '...F...GGo..',
-    '...F...GGo..',
-    '...F....GGo.',
-    '...F....GGo.',
-    '...F....GGo.',
-    '...F....wwo.',
-    '...F....wwo.',
-    '...F....wwo.',
-    '...F....ggo.',
-    '...F....ggo.',
-    '...F...ggo..',
-    '...F...ggo..',
-    '...F...ggo..',
-    '...F..ggo...',
-    '...F..ggo...',
-    '...F.ggo....',
-    '...F.ggo....',
-    '...Fggo.....',
+    '.........................FGGo.....',
+    '........................F.GGo.....',
+    '.......................F.GGo......',
+    '......................F..GGo......',
+    '.....................F..GGo.......',
+    '....................F...GGo.......',
+    '...................F...GGo........',
+    '..................F...GGo.........',
+    '.................F....GGo.........',
+    '................F....GGo..........',
+    '...............F....GGo...........',
+    '..............F....wwo............',
+    '.............F....wwo.............',
+    '............F....wwo..............',
+    '...........F....ggo...............',
+    '..........F....ggo................',
+    '.........F...ggo..................',
+    '........F...ggo...................',
+    '.......F...ggo....................',
+    '......F..ggo......................',
+    '.....F..ggo.......................',
+    '....F.ggo.........................',
+    '...F.ggo..........................',
+    '...Fggo...........................',
   ],
   E: [[
     '...........FGGo.............',

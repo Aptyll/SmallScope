@@ -392,7 +392,7 @@ and FIRST SNOW (rare, 200 coins: the same cut in pale wool, its `pal` repainting
 feather), both on ARMATOS's frame. The cut is C off arcus-round1.png in the project files. His doll
 is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his drawn frames
 (`run: 'drawn'`). His WILLOW LONGBOW is his basic attack's `art` (`SPRITES.weaponArt.longbow`): at rest
-he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
+he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) leaned out 45 degrees from his leading hand, beside
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
 a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
