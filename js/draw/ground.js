@@ -1090,9 +1090,9 @@ function paintForestFloor(g, tx, ty, px, py) {
   g.fillStyle = FLOOR_FLECK;
   for (let i = 0; i < 3; i++) g.fillRect(px + Math.floor(hash2(tx * 41 + i, ty * 43 + 5) * 13), py + Math.floor(hash2(tx * 47 + 9, ty * 53 + i) * 10), 3, 1);
 }
-let castAt = null; // per tile: the caster code its reach was last painted with
+let castAt = null; // per tile: the caster code its reach was last painted with (a code that did not fit would never match, and its reach would repaint every frame)
 function noteCasts() {
-  castAt = new Int16Array(WORLD * WORLD);
+  castAt = new Int32Array(WORLD * WORLD); // 32 bits: a stump's code starts at STUMP_CODE, past what 16 hold
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) castAt[idx(tx, ty)] = castCode(tx, ty);
 }
 // every tile whose shade can reach the view: a caster that changed repaints its reach
