@@ -14,6 +14,7 @@ const FOOTINGS = {
   tower: { rx: 50, ry: 25, at: (o) => towerFoot(o), kerb: true },
   barracks: { rx: 42, ry: 23, at: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 8 }), kerb: true },
   roost: { rx: 88, ry: 76, kerb: true, over: true, kerbW: 6, block: 15 }, // round a roost's pad, wide of its stones, drawn over the paving (roostFootingOf)
+  fork: { rx: 124, ry: 100, kerb: true, over: true, kerbW: 6, block: 15 }, // where the lanes cross outside a base (forkFootingOf)
   stall: { rx: 56, ry: 24, at: (o) => ({ x: (o.tx + OBJECTS.stall.w / 2) * TILE, y: (o.ty + 1) * TILE - 8 }) }, // its anchor is the front-left tile
 };
 const FOOT_PAD = 4; // px round the round for its lip
@@ -182,9 +183,36 @@ function drawFooting(o, ex, ey) {
   const c = footingOf(o);
   ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
 }
+// A FORK's round: outside each base the side lanes leave the mid road, and
+// three roads crossing was a ragged blob of paving. It is a built place like
+// the roost: one kerbed round over the crossing, the lanes leaving through
+// its mouths. Paint only: the ground under it walks as it did. Its middle is
+// the side lanes' first and last point (laneLine, js/sim/lanes.js).
+const FORK_OUT = 1.4; // tiles toward the field from the lanes' first point the roads' crossing lies
+function forkFootingOf(i) {
+  const key = 'fork' + i;
+  let c = footingCvs.get(key);
+  if (c) return c;
+  const L = laneLine(0).pts, p = i ? L[L.length - 1] : L[0], F = FOOTINGS.fork, M = FOOT_PAD + FOOT_JOIN, o = (i ? -FORK_OUT : FORK_OUT) / Math.SQRT2;
+  const q = { cx: (p.x + o + 0.5) * TILE, cy: (p.y - o + 0.5) * TILE, ax: F.rx - FOOT_PAD, ay: F.ry - FOOT_PAD };
+  c = document.createElement('canvas'); c.width = (F.rx + M) * 2; c.height = (F.ry + M) * 2; c.kind = key;
+  c.wx = Math.floor(q.cx) - F.rx - M; c.wy = Math.floor(q.cy) - F.ry - M;
+  paintKerbRound(c.getContext('2d'), F, c, c.width, c.height, [q]);
+  footingCvs.set(key, c);
+  return c;
+}
+function drawForkFootings(ex, ey) {
+  if (ARENA) return;
+  for (let i = 0; i < 2; i++) {
+    const c = forkFootingOf(i);
+    if (c.wx - ex > WV_W || c.wy - ey > WV_H || c.wx + c.width < ex || c.wy + c.height < ey) continue;
+    ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
+  }
+}
 // the roosts' rounds go down before the flat pass, so the flat objects lie on the
 // paving, not under it
 function drawRoostFootings(ex, ey) {
+  drawForkFootings(ex, ey);
   for (const sp of pads) drawRoostFooting(sp, roostStalls(sp), ex, ey);
 }
 function drawFootings(ex, ey) {
