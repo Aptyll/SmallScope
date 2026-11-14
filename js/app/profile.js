@@ -111,6 +111,7 @@
       // retired and refunded (refundRetired).
       coins: START_COINS,
       rank: RANK_START,
+      rankedN: 0,      // RANKED matches played (addRank): none, and a profile shows no rank badge
       // the FIRST MATCH's coach was seen through or turned off: the title
       // stops offering it (js/ui/guide.js)
       guided: false,
@@ -214,6 +215,8 @@
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
         if (typeof s.rank === 'number' && isFinite(s.rank)) profile.rank = Math.max(RANK_MIN, Math.floor(s.rank));
+        // a profile from before the count: one game if the rating ever moved off the start
+        profile.rankedN = typeof s.rankedN === 'number' && isFinite(s.rankedN) && s.rankedN >= 0 ? Math.floor(s.rankedN) : profile.rank !== RANK_START ? 1 : 0;
         // a profile from before the coach is not offered it once it has played
         profile.guided = typeof s.guided === 'boolean' ? s.guided : profile.stats.matches > 0;
         if (Array.isArray(s.owned)) {
@@ -389,7 +392,8 @@
     addCoins(n) { n = Math.floor(n) || 0; if (n > 0) { profile.coins += n; saveNow(); } },
     // ---- ranked -------------------------------------------------------------
     rank() { return profile.rank; },
-    addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
+    addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); profile.rankedN++; saveNow(); },
+    rankedN() { return profile.rankedN; },
     // ---- new players ----------------------------------------------------------
     guided() { return profile.guided; },
     setGuided(on) { on = on !== false; if (profile.guided !== on) { profile.guided = on; saveNow(); } },

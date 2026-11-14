@@ -36,11 +36,11 @@ const PF_BADGE = 16, PF_BADGE_GAP = 4; // a badge under the name, and the space 
 // ---- badges -------------------------------------------------------------
 // A BADGE: a small mark under a profile's name (a founder's, a rank's). Each
 // is one entry here, never an if in the column: has(c) says whether the
-// profile shows it (c a card out of PROFILE.people, or null for yours) and
-// draw(x, y) stamps it PF_BADGE square. Yours ride your card (cardMine's bd)
+// profile shows it (c a card out of PROFILE.people, or null for yours),
+// draw(x, y, c) stamps it PF_BADGE square and name(c) is what its hover says. Yours ride your card (cardMine's bd)
 // so the people you play with see them; a card only names badges, so has()
 // for someone else reads c.bd or what the card already carries (c.rk).
-// { id: lowercase, has(c), draw(x, y) }, in the order they stand
+// { id: lowercase, has(c), draw(x, y, c), name(c) }, in the order they stand
 const PF_BADGES = [];
 function pfBadges(c) { return PF_BADGES.filter((b) => b.has(c)); }
 // the badges your own card sends
@@ -196,6 +196,7 @@ function profileHit() {
   if (!m.pfWho && overRect(L.field, 2, 2)) return { kind: 'name' };
   if (m.pfWho && overRect(pfBackRect(L), 2, 2)) return { kind: 'back' };
   for (const p of pfMateRects(L)) if (overRect(p)) return { kind: 'person', i: p.pid };
+  for (let i = 0; i < L.badges.n; i++) if (overRect({ x: L.badges.x + i * (PF_BADGE + PF_BADGE_GAP), y: L.badges.y, w: PF_BADGE, h: PF_BADGE })) return { kind: 'badge', i };
   return profileTabHit(L);
 }
 // a press: each hit does its one thing; a press anywhere else drops the
@@ -326,7 +327,17 @@ function drawProfileColumn(L, now) {
     drawPixelTextOutline(ctx, l, cx - (pixelTextWidth(l) >> 1), by + 9, SC_DIM, SC_INK, 1);
   });
   ctx.fillStyle = SC_EDGE; ctx.fillRect(col.x + 10, by + 22, col.w - 20, 1);
-  pfBadges(c).forEach((b, i) => b.draw(L.badges.x + i * (PF_BADGE + PF_BADGE_GAP), L.badges.y));
+  const hot = pfBadges(c).findIndex((b, i) => pfHot('badge', i));
+  pfBadges(c).forEach((b, i) => b.draw(L.badges.x + i * (PF_BADGE + PF_BADGE_GAP), L.badges.y, c));
+  if (hot >= 0) { // the hovered one's name, just under the badge row
+    const b = pfBadges(c)[hot], nm = b && b.name ? b.name(c) : '';
+    if (nm) {
+      const w = pixelTextWidth(nm) + 6, bx = L.badges.x + hot * (PF_BADGE + PF_BADGE_GAP) + (PF_BADGE >> 1);
+      const x = Math.max(col.x + 2, Math.min(col.x + col.w - w - 2, bx - (w >> 1))), y = L.badges.y + PF_BADGE + 2;
+      ctx.fillStyle = '#0a0b0e'; ctx.fillRect(x, y, w, 11);
+      drawPixelTextOutline(ctx, nm, x + 3, y + 1, SC_GOLD, SC_INK, 1);
+    }
+  }
   if (c) {
     const b = pfBackRect(L), hot = pfHot('back');
     pfFace(profilePic(), b.x, b.y, 14, 1, true);
