@@ -183,8 +183,7 @@ function marisUndertow(p) {
     if (!q.dead) slowUnit(q, UNDERTOW_T, onIce ? ice : slow);
     burst(q.x, q.y + 2, '#7cc4e8', 5, 35, 0.4, true);
   }
-  for (const s of structsNear(p, p.x, p.y, UNDERTOW_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, UNDERTOW_R, dmg);
+  hurtBuilt(p, p.x, p.y, UNDERTOW_R, dmg);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: UNDERTOW_R, t: 0, col: '#7cc4e8', fx: 'undertow', life: TOW_FX_LIFE });
   burst(p.x, p.y + 2, '#3a6080', 10, 60, 0.5, true);
   burst(p.x, p.y + 2, '#cfeeff', 10, 70, 0.5, true);
@@ -235,8 +234,7 @@ function breachUp(p) {
     hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 40, ab: 'breach' });
     if (!q.dead) knockUp(q, up, p);
   }
-  for (const s of structsNear(p, p.x, p.y, BREACH_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, BREACH_R, dmg);
+  hurtBuilt(p, p.x, p.y, BREACH_R, dmg);
   const broke = iceBreak(p.x, p.y + 4, 'breach', Math.atan2(p.rushNY, p.rushNX), { warn: 0.1, hold: BREACH_HOLD });
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: BREACH_R, t: 0, col: broke ? '#7cc4e8' : '#f4f7ff', fx: 'breach', life: BREACH_FX_LIFE });
   burst(p.x, p.y - 4, '#f4f7ff', 24, 85, 0.6, true);

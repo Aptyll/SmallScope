@@ -328,8 +328,7 @@ function stepEngine(b, dt) {
     stunUnit(q, b.stun, src);
     hurtUnit(q, b.dmg, (q.x - b.x) / d, (q.y - b.y) / d, src, { ab: 'engine', kb: 30 });
   }
-  for (const s of structsNear(src, b.x, b.y, ENGINE_SLAM_R)) hurtStruct(s, b.dmg, src);
-  if (PRACTICE) abHitDummies(b.x, b.y, ENGINE_SLAM_R, b.dmg);
+  hurtBuilt(src, b.x, b.y, ENGINE_SLAM_R, b.dmg);
   abFx.push({ kind: 'ring', x: b.x, y: b.y, r: ENGINE_SLAM_R, t: 0, col: '#f2cc6a', fx: 'slam', life: SLAM_FX_LIFE });
   burst(b.x, b.y, '#e6e1d6', 18, 70, 0.5, true);
   sfxAt('break_', b.x, b.y);

@@ -277,8 +277,7 @@ function rainLand(r, k) {
       hurtUnit(q, r.dmg, 0, 1, src, { kb: 0, ab: 'quiver' });
       slowUnit(q, RAIN_SLOW_T, RAIN_SLOW);
     }
-    for (const st of structsNear(src, at.x, at.y, RAIN_HIT)) hurtStruct(st, r.dmg, src);
-    if (PRACTICE) abHitDummies(at.x, at.y, RAIN_HIT, r.dmg);
+    hurtBuilt(src, at.x, at.y, RAIN_HIT, r.dmg);
   }
   arcusDrop(r.owner, r.team, at.x, at.y, Math.PI / 2 + ((k % 3) - 1) * 0.5);
   burst(at.x, at.y, '#eef4fb', 4, 30, 0.25, true);

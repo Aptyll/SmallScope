@@ -191,8 +191,7 @@ function armBash(p) {
     if (!q.dead) { if (primed) stunUnit(q, stun, p); q.kbx += nx * BASH_KB * 0.5; q.kby += ny * BASH_KB * 0.5; }
     burst(q.x, unitMidY(q), primed ? '#ffd95c' : '#cfd8e8', 8, 50, 0.45, true);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + nx * BASH_R * 0.5, p.y + ny * BASH_R * 0.5, BASH_R * 0.5, dmg);
+  hurtBuiltCone(p, a, BASH_R, BASH_HALF, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: BASH_R, half: BASH_HALF, t: 0, col: primed ? '#ffd95c' : '#c8d2e4', fx: 'bash', life: BASH_FX_LIFE });
   burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
   abShieldDown(p, true);

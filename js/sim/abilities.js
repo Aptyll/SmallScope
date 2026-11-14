@@ -277,6 +277,19 @@ function dashStop(p) {
   p.vx = p.rushNX * 60; p.vy = p.rushNY * 60;
 }
 
+// what an area blow does to everything BUILT inside it: each rival building
+// once (structsNear) and, at practice, the dummy. The one call a ring-shaped
+// key makes after its sweep of the bodies, so no kit forgets the dummy.
+function hurtBuilt(src, x, y, r, dmg) {
+  for (const s of structsNear(src, x, y, r)) hurtStruct(s, dmg, src);
+  if (PRACTICE) abHitDummies(x, y, r, dmg);
+}
+// the same for a wedge swept from p's feet along angle a (structsInCone): the
+// wedge's far half is where a dummy stands to be hit
+function hurtBuiltCone(p, a, r, half, dmg) {
+  for (const s of structsInCone(p, p.x, p.y, a, r, half)) hurtStruct(s, dmg, p);
+  if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
+}
 // the practice dummy takes area hits like everything else: any dummy tile
 // whose base is inside the circle rings the meter
 function abHitDummies(x, y, r, dmg) {

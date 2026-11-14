@@ -201,8 +201,7 @@ function hiemsSnap(p) {
     const d = Math.hypot(q.x - c.x, q.y - c.y) || 1;
     hurtUnit(q, dmg, (q.x - c.x) / d, (q.y - c.y) / d, p, { kb: 10 });
   }
-  for (const s of structsNear(p, c.x, c.y, SNAP_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(c.x, c.y, SNAP_R, dmg);
+  hurtBuilt(p, c.x, c.y, SNAP_R, dmg);
   abFx.push({ kind: 'ring', x: c.x, y: c.y, r: SNAP_R, t: 0, col: '#e6f8ff', fx: 'snap', life: SNAP_FX_LIFE });
   burst(c.x, c.y, '#e6f8ff', 20, 70, 0.5, true);
   burst(c.x, c.y, '#7cc4e8', 10, 50, 0.45, true);
@@ -238,8 +237,7 @@ function updateStorms(dt) {
       const d = Math.hypot(q.x - s.x, q.y - s.y) || 1;
       hurtUnit(q, s.dmg, (q.x - s.x) / d, (q.y - s.y) / d, src, { kb: 0, ab: 'whiteout' }); // chills through hiemsDeal
     }
-    if (sting) for (const st of structsNear(src, s.x, s.y, WHITE_R)) hurtStruct(st, s.dmg, src);
-    if (sting && PRACTICE) abHitDummies(s.x, s.y, WHITE_R, s.dmg);
+    if (sting) hurtBuilt(src, s.x, s.y, WHITE_R, s.dmg);
   }
 }
 
