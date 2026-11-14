@@ -242,7 +242,7 @@ const AURA_BODY = {
   },
 };
 // her hair, her mantle and her star over ARMATOS's iron
-const AURA_PAL = Object.assign({}, ARM_PAL, { a: '#a9b4cc', A: '#e8edf7', q: '#4a3a7a', Q: '#6b5aa8', s: '#fff3b0', u: '#8a92b8', j: '#c99c84' }); // u: the hair's shade beside her cheeks, j: the brow's shadow (AURA_FINE)
+const AURA_PAL = Object.assign({}, ARM_PAL, { a: '#a9b4cc', A: '#e8edf7', q: '#4a3a7a', Q: '#6b5aa8', s: '#fff3b0', u: '#8a92b8', j: '#c99c84' }); // u: the hair's shade beside her cheeks, j: the brow's shadow
 // Her one look (Noah, 10-21: one skin for now), free. `run: 'drawn'`: her mantle and hair
 // are not the doll's (app/bake-player: light), so her run is her drawn body in every
 // facing (heroRunFront, js/sprites/armatos.js); the doll rolls her.
