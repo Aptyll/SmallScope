@@ -926,7 +926,7 @@ function drawDrift(ex, ey) {
 const SUN_DX = 0.62, SUN_DY = 0.34;        // per row of height: 0.8 of (0.78, 0.42), mid-morning
 const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
 const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
-const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
+const CAST_REACH = [-1, 0, 4, 3];           // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks; a pine drawn down to the one below it reaches 3 rows, the stall and the boat 4 columns)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
 const STUMP_CODE = 100000; // where the stumps' caster codes begin (CASTERS.stump)
 const SHADE_ROW = TILE; // px a pine's shade is drawn down when another stands on the tile below
