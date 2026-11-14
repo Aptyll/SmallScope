@@ -93,7 +93,7 @@ function update(dt) {
   }
   // darkness curve
   const t = state.time;
-  let dark = 0;
+  let dark;
   if (t < DAY_LEN - 12) dark = 0;
   else if (t < DAY_LEN) dark = (t - (DAY_LEN - 12)) / 12;
   else if (t < CYCLE - 10) dark = 1;
@@ -553,7 +553,7 @@ function updatePlay(dt) {
     // kind (shotContacts, above). `base` is the px/s shove this KIND of body
     // takes from a shot; the shot's own KNOCKBACK (a.kb) scales it - and
     // scales a player's HIT_KB too, which is why it travels as a multiplier.
-    const blow = (t, base, hx, hy) => {
+    const blow = (t, base) => {
       hurtUnit(t, a.dmg, nx, ny, players[a.owner], {
         kb: base, kbMul: a.kb,
         basic: !!a.basic, // a press of the bow, not a key's shot: a basic attack (passiveDeal, js/sim/heroes.js)
@@ -598,7 +598,7 @@ function updatePlay(dt) {
         else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/sim/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
       } else {
-        blow(t, h.k === 'robot' ? ROBOT_KB : h.k === 'animal' ? 25 + 45 * a.pow : undefined, hx, hy);
+        blow(t, h.k === 'robot' ? ROBOT_KB : h.k === 'animal' ? 25 + 45 * a.pow : undefined);
         if (h.k === 'player') burst(hx, hy, '#cfd8e8', 6, 45, 0.4);
         if (a.pierce) a.pierceHit.push(t);
         else dead = true;
@@ -817,7 +817,6 @@ function playerIntents(p, dt) {
 // what owns the velocity this step, first come: the water, the roll, the
 // rush, the rope, the leap, the cable, else the feet (walkStep)
 function playerMove(p, dt, mx, my, len, onIce, kit) {
-  const inp = p.input;
   if (p.fallT > 0) {
     // floundering in an ice hole: no control until the climb-out
     p.fallT -= dt;

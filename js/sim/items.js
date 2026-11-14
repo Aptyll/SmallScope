@@ -201,7 +201,6 @@ function itemTier(id) {
 const ITEM_TIER_ORDER = ['potion', 'basic', 'boots', 'epic', 'legend'];
 const ITEM_ALL = Object.keys(BUILD_ITEMS).sort((a, b) =>
   ITEM_TIER_ORDER.indexOf(itemTier(a)) - ITEM_TIER_ORDER.indexOf(itemTier(b)) || BUILD_ITEMS[a].price - BUILD_ITEMS[b].price);
-const ITEM_PARTS = ITEM_ALL.filter((id) => !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack);
 const ITEM_DONE = ITEM_ALL.filter((id) => itemTier(id) === 'legend');
 // what an item goes INTO: every item that names it in its recipe (the shop's BUILDS INTO row)
 function itemInto(id) { return ITEM_ALL.filter((k) => (BUILD_ITEMS[k].from || []).includes(id)); }

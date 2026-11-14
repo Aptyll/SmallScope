@@ -309,9 +309,7 @@ round a world point and returns the break (null where no bare ice lies under it)
 
 - **The shape is a footprint** on the ice plane: an `ICE_BREAK_SHAPES` row of ellipses and
   polygons in world px (nose to +x, turned by `ang`, squashed by `sq` the way the 3/4 view lays
-  ground). `orca` is the orca's own; `breach` and `lunge` were its first sketches, kept for
-  staged scenes;
-  `iceBreakCovers(b, x, y)` is the same footprint as a hit test.
+  ground). `orca` is the orca's own, `breach` is MARIS's (js/sim/maris.js).
 - **Every pixel is hashed, never rolled**: the hole is the footprint one px proud
   (`ICE_BREAK_PROUD`) with a chipped edge, each pixel's freeze time `ft` runs from 0 at the rim
   to 1 in the middle, and the plates and cracks come off Voronoi cells seeded the same way. All

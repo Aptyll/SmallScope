@@ -55,8 +55,8 @@ function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null
 function roomsFeedOpen() {
   if (roomsFeed) return;
   const m = state.menu;
-  m.rooms = []; m.roomsOk = false;
-  roomsFeed = (netSteam() ? steamRooms : (cb) => wsRooms(netRelay(), cb))((rooms, ok) => { m.rooms = rooms; m.roomsOk = ok; });
+  m.rooms = [];
+  roomsFeed = (netSteam() ? steamRooms : (cb) => wsRooms(netRelay(), cb))((rooms) => { m.rooms = rooms; });
 }
 function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
 

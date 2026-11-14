@@ -6,7 +6,7 @@
 // sim's stream in exactly this order, so a rung moved changes the match.
 // ------------------------------------------------------------ the ladder
 function aiThink(p, dt) {
-  const inp = p.input, ai = p.ai;
+  const inp = p.input;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
   if (p.dead || p.fallT > 0) { inp.fire = false; aiNote(p, 'IDLE', p.dead ? 'DOWN' : 'IN THE ICE', null); return; }
   const k = aiRead(p, dt), prof = k.prof;
@@ -222,7 +222,7 @@ function aiWildFoes(k) {
 }
 
 function aiFight(k) {
-  const { p, dt, inp, ai, prof, role, steerTo, aimAt, defend, caller, foe, fq, mark, foeD, siege, charge, engage } = k;
+  const { p, dt, inp, ai, prof, steerTo, aimAt, defend, caller, fq, mark, foeD, siege, charge, engage } = k;
   // 3. a rival in sight (and reacted to): circle at bow range and shoot.
   //    The profile says how well: the aim point carries its scatter and its
   //    lead, abilities go on the ability roll, the draw is loosed at the
@@ -471,7 +471,7 @@ function aiPushRung(k) {
     // lane); on it, the class decides the approach
     // a rival ROAD TOWER its own wave stands under (aiLaneFort, ai.js): the
     // wave takes the bolts, so the push stops to bring the tower down with it
-    const tur = aiLaneFort(p, e);
+    const tur = aiLaneFort(p);
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
     // (a relentless side's grouping is the pack below, not the column's pace;

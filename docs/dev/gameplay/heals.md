@@ -10,7 +10,7 @@ pouch of food, no chew and no fishing.
 
 `BUILD_ITEMS.potion` (js/sim/items.js, the `potion` banner): `price` 50, `stack` 5, no stats. It is
 the one **stack item**: up to five sit in **one** of the six item slots, which holds `'potion'`
-while `p.potions` is how many. `isStack(id)` says so; `isPart` and `ITEM_PARTS` leave it out.
+while `p.potions` is how many. `isStack(id)` says so; `isPart` leaves it out.
 
 - **Buying** goes through `buyItem` like any item (`{ kind: 'shop', act: 'item', id: 'potion' }`),
   which hands it to `buyPotion`: the first one takes a free slot, the next ones add to the stack,
