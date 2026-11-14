@@ -411,7 +411,7 @@ function pongIn(pr, msg) {
 function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: draftHiding() ? DRAFT.cls0[p.id] : p.cls })); }
 // after the step: every SNAP_EVERY ticks this tick goes into the ring and
 // each peer gets the delta from ITS acked tick (peers on one ack share the
-// cut), with the cosmetics the step recorded; a peer whose ack has aged out
+// cut and its bytes: snapEncodeOnce), with the cosmetics the step recorded; a peer whose ack has aged out
 // of the ring gets the whole match again. The dictionary header starts where
 // that peer's acked message left the list (js/net/snapshot.js, `encode`)
 function netHostFlush() {
@@ -431,8 +431,8 @@ function netHostFlush() {
     if (!base || team !== pr.fogTeam) { netHostFull(peer, pr); continue; } // a side's sight changed under it (its bird gone): the whole match again
     const key = team + ':' + pr.ack;
     let d = cuts.get(key);
-    if (!d) { d = snapDeltaFrom(h, base, team); cuts.set(key, d); }
-    if (!evs.has(team)) evs.set(team, netEvSeen(ev, team));
+    if (!d) { d = snapEncodeOnce(snapDeltaFrom(h, base, team), NET.dictOut); cuts.set(key, d); } // written once, for every peer on this cut
+    if (!evs.has(team)) evs.set(team, snapEncodeOnce(netEvSeen(ev, team), NET.dictOut));
     const msg = { t: 'snap', tick: h.tick, d, ev: evs.get(team), ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
     if (check) { if (!fulls.has(team)) fulls.set(team, snapBuild(team)); msg.full = fulls.get(team); }
     const bytes = snapEncode(msg, NET.dictOut, pr.dictAt.get(pr.ack) || 0);
