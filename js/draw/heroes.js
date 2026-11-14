@@ -38,7 +38,7 @@ function heroStaffOf(p) { const c = CLASSES[p.cls]; return c && c.staff ? HERO_S
 // a held art mirrored left to right, or top to bottom, baked once (SPR's flips keep its pixels)
 const heldFlips = new Map(), heldDrops = new Map();
 function heldBaked(cache, img, flip) {
-  if (!cache.has(img)) { const f = flip(img); if (img.dens) f.dens = img.dens; cache.set(img, f); }
+  if (!cache.has(img)) cache.set(img, flip(img));
   return cache.get(img);
 }
 // true when an art, as drawn, leans left (its top left of its foot), read once off
@@ -84,12 +84,12 @@ function heroStaff(p, px, py) {
   let img = s.art()[Math.floor(state.elapsed * 5) % 2];
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
-  const gx = mirror ? heldW(img) - 1 - s.grip[0] : s.grip[0];
+  const gx = mirror ? img.width - 1 - s.grip[0] : s.grip[0];
   const beat = staffBeat(p), kept = beat === 2 && s.cast && s.cast.keep; // a row's `cast.keep` holds its gather through the loosing beat: BUCINA sounds the horn at her lips
   const use = beat === 1 || kept ? s.cast || STAFF_CAST : null, rc = heroReach(p) + (use ? use.out : 0), th = beat === 2 && !kept ? STAFF_THRUST[p.dir] : [0, 0];
   const hx = (back ? px + 2 - rc : px + 13 + rc) + th[0];
   const hy = py + 10 - (use ? use.up : p.charging ? 1 : 0) + th[1]; // a draw lifts it, a cast gathers it up, then looses it forward
-  ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]), heldW(img), heldH(img));
+  ctx.drawImage(img, Math.round(hx - gx), Math.round(hy - s.grip[1]), img.width, img.height);
   if (th[0]) heroSleeve(p, px, hy, back ? -1 : 1); // the arm reaches out behind the thrust
   if (p.dir !== 'up') heroFist(p, hx, hy, back ? -1 : 1);
   return true;
@@ -154,9 +154,6 @@ function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_B
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
 function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
-// an art's size in world px: a finer one's (`dens`) at 1/dens
-function heldW(img) { return img.width / (img.dens || 1); }
-function heldH(img) { return img.height / (img.dens || 1); }
 // A shot weapon with its own DRAWN aim frames (a bow's string and arrow, a knife cocked
 // back): HERO_AIMED[art] = fn(heading, step, p) -> { img, grip, hand }. `heading` is the aim
 // snapped to eight, 0..7 clockwise from +x (aimHeading); `step` is 0 the beat after the shot
@@ -195,7 +192,7 @@ function heroCarry(p, px, py, back) {
     const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
     // (ax, ay) the grip on the screen; `out` the blade runs right of it
-    const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : heldW(img) - 1 - b.grip[0])), Math.round(ay - gy), heldW(im), heldH(im));
+    const put = (im, out, ax, ay, gy) => ctx.drawImage(im, Math.round(ax - (out ? b.grip[0] : img.width - 1 - b.grip[0])), Math.round(ay - gy), im.width, im.height);
     if (hold.shoulder) {
       if (back === up) return true; // behind the head; over the back of a body facing away
       const sx = lead ? px + 13 + rc : px + 2 - rc;
@@ -207,7 +204,7 @@ function heroCarry(p, px, py, back) {
     } else if (hold.rest && (p.dir === 'down' || p.dir === 'up')) { // side-on it is carried slanted like any haft
       if (!pass) return true;
       const sx = lead ? px + 13 + rc : px + 2 - rc;
-      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, heldH(img) - 1 - b.grip[1]);
+      put(lead ? heldDrop(img) : heldFlip(heldDrop(img)), lead, sx, py + 9, img.height - 1 - b.grip[1]);
       heroFist(p, sx, py + 9, lead ? 1 : -1);
     } else {
       if (!pass) return true;
