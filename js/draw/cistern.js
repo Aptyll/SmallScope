@@ -37,11 +37,12 @@ function pushMiddleDraws(draws, ox, oy) {
   const o = cistOrigin();
   for (const s of SPRITES.cistern.segs) {
     const x = o + s.x, y = o + s.y;
-    if (x + s.c.width <= ox || y + s.c.height <= oy || x >= ox + WV_W || y >= oy + WV_H) continue;
-    draws.push({ y: o + s.k, fn: drawCisternSeg, s, bx: x, by: y, bw: s.c.width, bh: s.c.height }); // its box, for the night's body light (litPunch)
+    if (x + s.w <= ox || y + s.h <= oy || x >= ox + WV_W || y >= oy + WV_H) continue;
+    draws.push({ y: o + s.k, fn: drawCisternSeg, s, bx: x, by: y, bw: s.w, bh: s.h }); // its box, for the night's body light (litPunch)
   }
 }
-function drawCisternSeg(d, ex, ey) { const o = cistOrigin(); ctx.drawImage(d.s.c, o + d.s.x - ex, o + d.s.y - ey); }
+// a piece is its rect of the one atlas (js/baked/cistern.js): the whole ring draws from a single texture
+function drawCisternSeg(d, ex, ey) { const o = cistOrigin(), s = d.s; ctx.drawImage(SPRITES.cistern.atlas, s.ax, s.ay, s.w, s.h, o + s.x - ex, o + s.y - ey, s.w, s.h); }
 function drawOrcaUp(d, ex, ey) { drawOrcaBreach(ex, ey); }
 
 // the hitbox view: the footprint's edge px, and each body near it its feet's
