@@ -28,8 +28,15 @@
   let an = null;       // lazy analyser on sfxBus, for SFX.meter()
   let tapOut = null;   // lazy stream off master, for SFX.tap()
 
-  function ensure() {
+  // The context is made at the page's first gesture, never before: Chrome
+  // refuses to start one earlier and says so in the console, so until then
+  // ensure() answers null and the callers stay silent (the title track waits as
+  // `pending`). `force` makes it anyway - unlock() and tap(), which callers ask
+  // for on purpose (a click, or the media kit's autoplay-allowed browser).
+  function ensure(force) {
     if (!ctx) {
+      const u = navigator.userActivation;
+      if (!force && u && !u.hasBeenActive) return null;
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       master = ctx.createGain();
       master.gain.value = muted ? 0 : volume;
@@ -77,6 +84,7 @@
   function tone(freq, dur, type, vol, slide, delay) {
     if (muted) return;
     const c = ensure();
+    if (!c) return;
     const t = c.currentTime + (delay || 0);
     const o = c.createOscillator();
     const g = c.createGain();
@@ -93,6 +101,7 @@
   function noise(dur, vol, freq, delay) {
     if (muted) return;
     const c = ensure();
+    if (!c) return;
     const t = c.currentTime + (delay || 0);
     const len = Math.max(1, (c.sampleRate * dur) | 0);
     const buf = c.createBuffer(1, len, c.sampleRate);
@@ -579,7 +588,7 @@
   }
 
   window.SFX = {
-    unlock() { ensure(); gesture(); },
+    unlock() { ensure(true); gesture(); },
     toggleMute() {
       muted = !muted;
       if (master) master.gain.value = muted ? 0 : volume;
@@ -639,7 +648,7 @@
     // recorder (js/app/director.js): the sounds and the wind as heard, the music
     // not (it plays through its own elements, outside the graph).
     tap() {
-      ensure();
+      ensure(true);
       if (!tapOut) { tapOut = ctx.createMediaStreamDestination(); master.connect(tapOut); }
       return tapOut.stream;
     },
