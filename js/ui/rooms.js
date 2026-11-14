@@ -339,6 +339,8 @@ function roomCode() {
   const T = NET.transport, c = String((T && (T.code || T.room)) || '');
   return c.length === RM_CODE_N ? c : '';
 }
+// a seat's portrait, where drawRoomSeat stands it
+function seatFaceRect(s) { return { x: s.x + ((s.w - s.fs) >> 1), y: s.y + 20, w: s.fs, h: s.fs }; }
 function roomHit() {
   const m = state.menu, L = roomLayout();
   if (m.modeOpen) { for (const r of modeListRects(L)) if (overRect(r)) return { kind: 'modeItem', k: r.k }; }
@@ -356,6 +358,7 @@ function roomHit() {
   if (overRect(talkLayout(L.talk), 2)) return { kind: 'talk' };
   if (m.joining) return null;
   for (const s of L.seats) if (overRect(s)) {
+    if (isHuman(s.p) && overRect(seatFaceRect(s)) && seatPid(s.p.id)) return { kind: 'profile', id: s.p.id }; // the face: their profile (js/ui/profile.js)
     const act = seatAct(s);
     return act ? { kind: 'seat', id: s.p.id, act } : null;
   }
@@ -390,6 +393,7 @@ function roomDo(h) {
   if (h.kind === 'talk') { talkOpen(); return; }
   if (h.kind === 'friend') { if (h.f.head) friendHeadDo(); else friendDo(h.f); return; }
   if (h.kind === 'leave') { leaveRoom(); return; }
+  if (h.kind === 'profile') { openSeatProfile(h.id, 'room'); return; }
   if (h.kind === 'invite') { if (roomInviteOk()) seatInvite(); else SFX.deny(); return; }
   if (h.kind === 'go') { if (m.joining) SFX.deny(); else roomGo(roomLayout().go.label); return; }
   if (h.act === 'invite') seatInvite();
@@ -689,7 +693,7 @@ function drawCodeBox(r, m, now, hot) {
 // shows the X in its corner.
 function drawRoomSeat(s, act, flash) {
   const p = s.p, me = p === player, x = s.x, y = s.y, w = s.w, h = s.h;
-  const fs = s.fs, fx = x + ((w - fs) >> 1), fy = y + 20;
+  const fr = seatFaceRect(s), fs = fr.w, fx = fr.x, fy = fr.y;
   if (!isHuman(p)) { // an empty seat: no card, a dotted well where the portrait would be, the invite's + in it
     if (act || flash) { ctx.fillStyle = flash ? '#3a3e46' : SC_HOT; ctx.fillRect(fx, fy, fs, fs); }
     ctx.fillStyle = act ? SC_LBL : SC_EDGE;

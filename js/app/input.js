@@ -249,7 +249,7 @@ function keyPress(e) {
   if (state.rebind) { if (rebindLive()) { rebindKey(e); return; } state.rebind = null; }
   // the profile card owns the keyboard while it is up: its letters are the
   // name, not shortcuts, and F3 / '.' below would fire on keys the field ignores
-  if (state.mode === 'title' && state.menu.screen === 'profile') { profileKey(e); return; }
+  if (profileUp()) { profileKey(e); return; }
   // F3 flips the info stack in any mode, minecraft-style (the browser's own
   // F3 find bar is suppressed above)
   if (e.key === 'F3') { settings.info = !settings.info; saveSettings(); return; }
@@ -477,7 +477,7 @@ function pointerPress(button) {
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (state.mapOpen && mapCloseHit()) state.mapOpen = false; return; }
-  if (state.mode === 'dead') { SFX.unlock(); if (!voteClick()) deadClick(); return; }
+  if (state.mode === 'dead') { SFX.unlock(); if (profileUp()) profileClick(); else if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
@@ -776,6 +776,7 @@ pageListen(canvas, 'wheel', (e) => {
     if (state.menu.screen === 'notes' && state.menu.notesT >= 1) { e.preventDefault(); notesScrollBy(e.deltaY > 0 ? 16 : -16); }
     else if (state.menu.panel === 'settings') { e.preventDefault(); settingsScrollBy(e.deltaY > 0 ? 14 : -14); }
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) { e.preventDefault(); wikiScrollBy(e.deltaY > 0 ? 14 : -14); }
+    else if (state.menu.screen === 'profile' && state.menu.charT >= 1) { e.preventDefault(); profileScrollBy(e.deltaY > 0 ? 1 : -1); } // a profile tab's list (js/ui/profile.js)
     else if (state.menu.screen === 'skins' && state.menu.skinT >= 1 && skinsTabsOver()) { e.preventDefault(); skinsScrollBy(e.deltaY > 0 ? 1 : -1); } // the skins' tab row (js/ui/skins.js)
     else if (state.menu.screen === 'room' && friendsOver()) { e.preventDefault(); friendsScrollBy(e.deltaY > 0 ? 1 : -1); } // the friends' column (js/ui/friends.js)
     return;
@@ -785,6 +786,7 @@ pageListen(canvas, 'wheel', (e) => {
   // recap, the planks or either end screen - there is no camera to move
   if (state.mode === 'dead') {
     e.preventDefault();
+    if (profileUp()) { profileScrollBy(e.deltaY > 0 ? 1 : -1); return; } // a profile opened over the ending (js/ui/profile.js)
     if (state.deadView === 'scores') { scoresScrollBy(e.deltaY > 0 ? 20 : -20); return; } // the post-game stats (js/ui/lobby.js)
     if (state.deadView === 'spec' && !endScreen() && !replayFull() && !state.mapOpen) wheelZoom(e);
     return;

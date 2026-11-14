@@ -457,7 +457,7 @@ The same screens and the same protocol ride either transport; only the list and 
    past five, `KICKED` for a uid the leader showed out). A host with no mode (a harness's
    `?net=host`) deals the first AI slot on the side with fewer PEOPLE (`LATE` past `LATE_JOIN_T`
    into a live match). The body becomes `control: 'remote'` and takes the hello's name, hero and
-   rating; then `welcome`, a `full`, a `roster` to everyone and a fresh list entry. A newcomer is
+   rating, and its player card is kept (`NET.cards`, shown on profiles only); then `welcome`, a `full`, a `roster` to everyone and a fresh list entry. A newcomer is
    not ready until it says so.
 5. **The party**, two pages the leader turns for everyone (`NET.phase`, the `phase` message).
    The SEATS (`room`, js/ui/rooms.js): your side's five; the leader's hand on a guest's seat end

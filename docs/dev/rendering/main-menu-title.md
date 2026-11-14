@@ -54,7 +54,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   that first title has its logo at rest with no drop-in (`logoStood`) while the valley fades up
   under it over `LOGO_DAWN`. Nothing on the title burns and nothing is ruled: `drawGoldRule` lives
   here for the wiki's header. `PATCH_TXT` prints bottom-right and the
-  profile's name bottom-left (`drawProfileTag`, js/ui/profile-card.js); both are click targets, and both ride the footer's
+  profile's picture and name bottom-left (`drawProfileTag`, js/ui/profile.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
   and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
@@ -70,8 +70,8 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
   [patch notes screen](the-hud-corners/the-patch-notes-screen.md).
   The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,
-  js/ui/profile-card.js, the mirror of the patch tag: the profile's name and a quill, gold with an
-  underline on hover) opens the [profile card](#the-profile-card) below. The **coin tag**
+  js/ui/profile.js, the mirror of the patch tag: the picture's face, the profile's name and a
+  quill, gold under the hand) opens the [profile](#the-profile) below. The **coin tag**
   top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
   the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
@@ -193,30 +193,50 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   ride, below). No
   instructional text anywhere on the screen.
 
-## The profile card
+## The profile
 
-One surface over the dimmed title, in [js/ui/profile-card.js](../../../js/ui/profile-card.js) on
-`menu.charT` (`menu.screen = 'profile'`, `beginProfile`/`leaveProfile`, entered from the name
-tag). The store behind it is [profile.js](../architecture.md#profilejs): one name and one ledger.
-`profileLayout()` is the one rect source for the draw, the hit test (`profileHit`: `'name'`,
-`'card'` or off it) and the cursor.
+A full screen in [js/ui/profile.js](../../../js/ui/profile.js) and
+[js/ui/profile-tabs.js](../../../js/ui/profile-tabs.js) on `menu.charT` (`menu.screen =
+'profile'`, `beginProfile`/`leaveProfile`, entered from the name tag), laid out like League's
+client profile with op.gg's match list inside, drawn flat in the post-game's graphite (`SC_*`).
+`profileLayout()` and `pfListLayout()` are the one rect source for the draw, the hit test
+(`profileHit`) and the cursor. The records are [js/app/history.js](../../../js/app/history.js).
 
-- **The card** (`renderProfileCard`, `PC_W`×`PC_H`, a gold-rimmed well) has the **name field**
-  across its head and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
-  GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
-  `drawLedger`), `ESC BACK` under it. At rest the name stands in gold at 2× with its quill;
-  under the hand the field's well shows. A click on it selects the name on a gold band
-  (`menu.nameSel`: the next letter replaces it); typing (`menu.nameEdit`) shows the buffer in
-  white with a caret, the capacity ticks under it and the underline red while the store would
-  refuse it.
-- The card **owns the keyboard** (input.js routes to `profileKey` before its own shortcuts):
-  letters are the name, Backspace edits it, **Enter keeps it** (`profileCommit`: a refusal
-  rattles and floods the field red, `menu.nameShake`, and the card stays) and **Esc or a click
-  off the card closes**, keeping a name `PROFILE.setName` accepts and dropping one it refuses.
+- **The column** down the left: the picture (a hero's face, `PROFILE.pic`, the hero last picked
+  until one is chosen) in a gold rim, the name, its badges (`PF_BADGES`, hook entries; yours ride your card as `bd`), RANK / GAMES / WINS, and the people played with
+  most whose card this screen holds. A press on the picture opens the **picker** (every hero's
+  face, the worn one in gold, the hovered one named over the grid); a press on the name opens its
+  field: a click selects the name on a gold band (`menu.nameSel`: the next letter replaces it),
+  typing shows the buffer in white with a caret and the underline red while the store would
+  refuse it, **Enter keeps it** (`profileCommit`: a refusal rattles and floods the field red,
+  `menu.nameShake`), and a press elsewhere keeps a name `PROFILE.setName` accepts and drops one it
+  refuses.
+- **The bar** across the top: OVERVIEW, MATCH HISTORY, RANKED, STATS (white with a word-wide gold
+  line when open) and a search field that lists the people met whose name starts with what is
+  typed; a press or Enter opens one.
+- **OVERVIEW**: the most played hero standing large over a dark field, then RANKED (the rating),
+  RECORD (a blue-over-red bar), BEST HERO (the best win rate over three games) and, on your own,
+  PRACTICE's best lap.
+- **MATCH HISTORY**: a summary (the last twenty's record, K/D/A and KDA, the three most played
+  with their win rates) with the mode filter, then op.gg's row a match: a header line (VICTORY in
+  blue or DEFEAT in red, the length, the mode, how long ago, the fold mark) over the face with its
+  level, the loadout, K/D/A with the deaths red and the ratio under it, the kill share, CS a
+  minute, gold, the build in two rows of three, the damage against the match's best and both sides'
+  faces and names. A press opens the row into the whole scoreboard; a person's name there opens
+  their profile. The wheel scrolls.
+- **RANKED**: you and every person met, by rating, your row outlined. **STATS**: op.gg's most
+  played, ALL HEROES first, with the mode filter.
+- **Someone else's profile** (`menu.pfWho`, a pid): their card's picture, name and numbers, their
+  last matches as short rows (no builds or sides: a card is small) and the heroes in them; your own
+  name under their numbers leads back. Nothing of theirs can be changed. **Esc** steps back one
+  thing at a time: the picker, the search, an edit, their profile, then out to the title.
+- **Opened off a name**: a person's face in a party seat, their row on the end screen
+  (`endRowHit`) or their face in the post-game columns (`scoresHit`'s `who`) opens their profile
+  through `openSeatProfile` (`seatPid`: only a seat whose card this screen holds). From a party it
+  is the full screen and Esc returns to the party (`menu.pfBack`); over an ended match it eases in
+  on top (`beginProfileOver`, `menu.pfOver`) and Esc returns to the table.
 - A fresh install never sees a form: the profile arrives pre-named (a winter word), and the
-  first press on the title goes to play. Every plate here and on the hero grid shares one
-  grammar (`drawWell`): a dark drop shadow, a slate rim that lightens under the hand and goes
-  gold when picked, a navy floor.
+  first press on the title goes to play.
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns

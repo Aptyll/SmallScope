@@ -28,6 +28,7 @@ order, so the script tags still interleave them:
 | File | Lines | Exposes | Role |
 | --- | --- | --- | --- |
 | [js/app/builds.js](../../js/app/builds.js) | ~150 | shared scope, no `window.*` export | the meta: each match's human builds and results recorded at the whistle, swapped on every join, and read back as the shop's RECOMMENDED paths with pick and win rates |
+| [js/app/history.js](../../js/app/history.js) | ~180 | shared scope, no `window.*` export | match history: every finished match filed at the whistle with all ten seats, the numbers the profile reads off it, and the player cards a party swaps (the people this screen met) |
 | [js/app/profile.js](../../js/app/profile.js) | ~390 | `PROFILE` | the local player profile - one name, its lifetime stats, the hero last picked (by name), the coins and the cosmetics bought and worn, the settings - and the only file that touches storage |
 | [js/app/font.js](../../js/app/font.js) | ~150 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
 | [js/app/text.js](../../js/app/text.js) | ~100 | `TEXT`, `tr` | the text table: the words the game prints for its own screens, by key ([text table](rendering/the-text-table.md)) |
@@ -206,7 +207,8 @@ order, so the script tags still interleave them:
 | [js/ui/champ-select.js](../../js/ui/champ-select.js) | ~600 | shared scope, no `window.*` export | the champ select (the lobby): its layout, hits, clicks and keys, the stage, and the hero pop-up over it |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~580 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
-| [js/ui/profile-card.js](../../js/ui/profile-card.js) | ~190 | shared scope, no `window.*` export | the title's name tag and the profile card: the name, renaming it, the lifetime ledger; `drawWell`, the plate grammar other screens share |
+| [js/ui/profile.js](../../js/ui/profile.js) | ~370 | shared scope, no `window.*` export | the title's name tag and the profile screen: its tabs, the column (picture, name and renaming it, three numbers, the people played with), the search, the picture picker, whose profile is open |
+| [js/ui/profile-tabs.js](../../js/ui/profile-tabs.js) | ~330 | shared scope, no `window.*` export | the profile's four tabs: OVERVIEW, op.gg's MATCH HISTORY rows and the open scoreboard, the RANKED ladder, STATS' most played |
 | [js/ui/heroes.js](../../js/ui/heroes.js) | ~140 | shared scope, no `window.*` export | the champ select's hero grid: a head per hero, the coming heroes as silhouettes, banned and taken cells, the position filters and the search field |
 | [js/ui/draft.js](../../js/ui/draft.js) | ~380 | shared scope, no `window.*` export | the lobby's draft: the positions, bans, everyone's blind pick, the bots' choices, the host's copy per side |
 | [js/ui/titlescene.js](../../js/ui/titlescene.js) | ~60 | shared scope, no `window.*` export | the title's scene: its camera (`titleCamTarget`) and the clean spot it finds near the middle (`titleSceneAt`) and the ten heroes standing there (`titleCast`) |
@@ -288,7 +290,7 @@ file is a save file.
   `steamName(raw)`, which cuts it to `A-Z0-9` and `NAME_MAX` and takes it while `named` is false
   (`setName` sets it on a change; an older save counts as named unless its name is a pool word).
 - **Who you are**: `name()`, `setName(raw)` (validate()'s result; nothing written on a
-  refusal), `rollName()`, `hero()` (the name), `setHero(name)`.
+  refusal), `hero()` (the name), `setHero(name)`, `pid()` (eight hex digits dealt once: who this profile is to other screens), `pic()`/`setPic(name)` (the picture, a hero's face by name).
 - **`PROFILE.validate(raw)`** is the one name validator: trimmed, uppercased, `A-Z0-9` only, 16
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
   folded out. It returns `{ ok, name }` or `{ ok: false, why }`.
@@ -305,7 +307,9 @@ file is a save file.
   is live in the callers' tables (`SKIN_TABS`, js/ui/skins.js, built from each hero's `heroArt` looks); an id the game no longer has is kept but never worn, except the retired ones `refundRetired(retired, slots)` takes back for their coins at boot, forgetting a gone slot's pick (`SKIN_RETIRED`, js/ui/skins.js). A match's gold
   never becomes coins.
 
-The name tag and the profile card are js/ui/profile-card.js, the hero grid js/ui/heroes.js, the
+- **Match history and the people met** sit under keys of their own, like the builds: `history()`/`putHistory(list)` (js/app/history.js owns the record and checks each on the way in) and `people()`/`putPeople(list)` (the player cards heard in parties).
+
+The name tag and the profile are js/ui/profile.js and js/ui/profile-tabs.js, the hero grid js/ui/heroes.js, the
 skins screen and the coin tag js/ui/skins.js; the local player takes the profile's name and hero
 on through `applyProfile()` (js/sim/player.js).
 

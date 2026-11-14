@@ -124,7 +124,7 @@ game's key *name*, the face that key wears on a US board, lowercase for a letter
 `KeyW` → `'w'`, `Space` → `' '`, `ShiftLeft` → `'Shift'`, `Period` → `'.'`; a code the table
 does not know falls back to `e.key`, so an on-screen keyboard is not dead). `keys`, the binds and
 every comparison are written in those names, so an AZERTY board walks on its Z Q S D without
-knowing it. `e.char` is what the key *typed*, which only the name editor reads (`profileKey`, js/ui/profile-card.js). What
+knowing it. `e.char` is what the key *typed*, which only the name editor and the profile's search read (`profileKey`, js/ui/profile.js). What
 the player *sees* runs the other way: `keyLabel` prints the face the key has on the board in hand
 where the browser can say (Chrome's `navigator.keyboard.getLayoutMap()`, cached in `kbLayout` and
 refreshed on `layoutchange` — `KeyW` reads Z on AZERTY), else the US face; anything the pixel

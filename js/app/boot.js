@@ -166,9 +166,10 @@ window.DBG = {
   // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,
-  // the local profile: the store itself, the profile card (js/ui/profile-card.js)
+  // the local profile: the store itself, the profile screen (js/ui/profile.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
   PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
+  profileScrollBy, pfListLayout, pfSeatRects, historyNote, historyList, peopleNote, cardMine,
   applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use

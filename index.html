@@ -72,6 +72,7 @@ addEventListener('error', function (e) {
      localStorage: it has no dependencies, so it goes first. -->
 <script defer src="js/app/profile.js"></script>
 <script defer src="js/app/builds.js"></script>
+<script defer src="js/app/history.js"></script>
 <script defer src="js/app/font.js"></script>
 <!-- every word the game prints for its own screens, by key (TEXT, tr): no dependencies, so
      it loads before any file that draws a word. -->
@@ -291,7 +292,8 @@ addEventListener('error', function (e) {
 <script defer src="js/ui/matchmaking.js"></script>
 <script defer src="js/ui/roomtalk.js"></script>
 <script defer src="js/ui/friends.js"></script>
-<script defer src="js/ui/profile-card.js"></script>
+<script defer src="js/ui/profile.js"></script>
+<script defer src="js/ui/profile-tabs.js"></script>
 <script defer src="js/ui/heroes.js"></script>
 <script defer src="js/ui/draft.js"></script>
 <script defer src="js/ui/select.js"></script>
