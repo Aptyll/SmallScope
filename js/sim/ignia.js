@@ -243,8 +243,7 @@ function igniaWildfire(p) {
     hurtUnit(q, dmg, (q.x - c.x) / d, (q.y - c.y) / d, p, { kb: 20 });
     igniaLight(p, q, WILD_BURN_T, dps, abRk(p, 'wildfire', 't'));
   }
-  for (const s of structsNear(p, c.x, c.y, WILD_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(c.x, c.y, WILD_R, dmg);
+  hurtBuilt(p, c.x, c.y, WILD_R, dmg);
   abFx.push({ kind: 'ring', x: c.x, y: c.y, r: WILD_R, t: 0, col: '#ff9a3a', fx: 'wildfire', life: WILD_FX_LIFE });
   burst(c.x, c.y, '#ff9a3a', 24, 80, 0.6, true);
   burst(c.x, c.y, '#ffd95c', 12, 60, 0.5, true);

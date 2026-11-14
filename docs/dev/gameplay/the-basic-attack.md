@@ -65,7 +65,7 @@ worth (`slashReach`). What the edge reaches is the **wedge** —
 `inCone`/`unitsInCone`/`structsInCone` (js/sim/actions.js): a body counts by its centre plus its
 own radius, a building by any tile of its footprint — and nothing else: a body behind the
 attacker is never cut. In the practice field the wedge's far half also lands on the dummies
-(`abHitDummies`). Each cut is recorded (`slashes`, `SLASH_T` 0.28 s, ticked by `updateSlashes`
+(`hurtBuiltCone`, js/sim/abilities.js). Each cut is recorded (`slashes`, `SLASH_T` 0.28 s, ticked by `updateSlashes`
 from `updatePlay`, carrying the `blade` that made it), and what it leaves in the air is its
 weapon family's own (a blade row's `smear`, `HERO_BLADES`; `edge` when it names none): a sword a
 long thin swish, an axe or a pick a short heavy one and chips off its bite, a hammer a broad dull
