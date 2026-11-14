@@ -135,7 +135,7 @@ function drawOverview(L) {
     ctx.restore();
   }
   pfT(main, B.x + 10, B.y + 8, SC_LIT, 2);
-  if (hs.length) pfT(hs[0].n + ' GAMES', B.x + 10, B.y + 24, SC_DIM);
+  if (hs.length) pfT(hs[0].n + (hs[0].n === 1 ? ' GAME' : ' GAMES'), B.x + 10, B.y + 24, SC_DIM);
   // the four numbers: rating, record, best hero, and a fourth that is yours alone
   const st = c ? { r: c.rk, g: c.g, w: c.w } : { r: PROFILE.rank(), g: PROFILE.stats().matches, w: PROFILE.stats().wins };
   const best = hs.filter((h) => h.n >= 3).sort((a, b) => b.w / b.n - a.w / a.n)[0] || hs[0];
@@ -312,7 +312,7 @@ function drawStatsRow(row, i) {
   const wr = Math.round(100 * all.w / all.n), bx = x + w - 150;
   if (bx > mid + 50) { pfBox(bx, y + 15, 80, 3, pfRed()); pfBox(bx, y + 15, Math.round(80 * all.w / all.n), 3, pfBlue()); }
   pfTR(wr + '%', x + w - 10, y + 8, wr >= 60 ? SC_GOLD : SC_LIT);
-  pfTR(all.n + ' GAMES', x + w - 10, y + 19, SC_DIM);
+  pfTR(all.n + (all.n === 1 ? ' GAME' : ' GAMES'), x + w - 10, y + 19, SC_DIM);
 }
 
 // ---- the tab ---------------------------------------------------------------------------
