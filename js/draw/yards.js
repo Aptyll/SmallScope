@@ -98,11 +98,19 @@ function yardOf(C, Y) {
   c.wx = cx - (W >> 1); c.wy = cy - (H >> 1);
   const g = c.getContext('2d'), flip = walk ? walk.x < m.x : hash2(key, 81) > 0.5; // (a walk on the left sends the stores to the right end)
   // open snow only: the yard stops at a pine, at ice and at paving
+  // (a tile's answer is every one of its pixels', and onRoad walks the lanes: asked once a tile)
+  const openTile = new Map();
   const open = (x, y) => {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
-    if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0 || onRoad(tx, ty)) return false;
-    const ob = objects[idx(tx, ty)];
-    return !(ob && ob.type === 'tree');
+    if (!inWorld(tx, ty)) return false;
+    const i = idx(tx, ty);
+    let o = openTile.get(i);
+    if (o === undefined) {
+      const ob = objects[i];
+      o = ground[i] === 0 && !onRoad(tx, ty) && !(ob && ob.type === 'tree');
+      openTile.set(i, o);
+    }
+    return o;
   };
   // a board may lie on the verge and on the lane's first stones too: the walk's last board is whole
   const walkOn = (x, y) => {

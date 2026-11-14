@@ -105,20 +105,74 @@ window.SPR = (() => {
   // count: read and cleared by app/check-paint.js
   const unpainted = new Map();
   function takeUnpainted() { const out = [...unpainted]; unpainted.clear(); return out; }
+  // One sprite from its rows of palette letters. Its pixels are worked out first (each letter's
+  // colour looked up once a bake: inkOf, stamped with the bake that filled it), then painted in
+  // as few calls as give the same canvas: a sprite of solid colours is one putImageData of them
+  // (a solid pixel holds exactly what was put) and is noted in `solid`, one with a half-clear
+  // colour is filled a run of same-ink pixels at a time, which lands as the single fills would
+  // (a pixel is painted once, on clear canvas)
+  const inkOf = new Uint32Array(65536), inkBake = new Uint32Array(65536); // by the letter's char code
+  const inkWord = new Uint32Array(1), inkBytes = new Uint8Array(inkWord.buffer);
+  let bakeNo = 0;
+  const solid = new WeakSet();
+  // a sprite's pixels into `to32` (w px a row), its top left at (ox, oy), mirrored left to right
+  // if `flip`: true if every colour was solid, so the words written are the canvas's exactly
+  function inkInto(rows, pal, to32, w, ox, oy, flip) {
+    const h = rows.length, fw = rows[0].length, no = ++bakeNo;
+    let soft = false;
+    for (let y = 0; y < h; y++) {
+      const row = rows[y], at = (oy + y) * w + ox;
+      for (let x = 0; x < fw; x++) {
+        const k = row.charCodeAt(x);
+        if (inkBake[k] !== no) {
+          const col = pal[row[x]];
+          inkBake[k] = no; inkOf[k] = 0;
+          if (col) { inkBytes.set(rgba(col)); inkOf[k] = inkWord[0]; if (inkBytes[3] !== 255) soft = true; }
+        }
+        const v = inkOf[k];
+        if (v) to32[at + (flip ? fw - 1 - x : x)] = v;
+        else if (k !== 46 && pal[row[x]] === undefined) unpainted.set(row[x], (unpainted.get(row[x]) || 0) + 1);
+      }
+    }
+    return !soft;
+  }
   function bake(rows, pal) {
     const h = rows.length, w = rows[0].length;
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const g = c.getContext('2d'), px = new Uint8ClampedArray(w * h * 4);
-    for (let y = 0; y < h; y++) {
+    if (inkInto(rows, pal, new Uint32Array(px.buffer), w, 0, 0, false)) { g.putImageData(new ImageData(px, w, h), 0, 0); solid.add(c); }
+    else for (let y = 0; y < h; y++) {
       const row = rows[y];
-      for (let x = 0; x < w; x++) {
+      for (let x = 0; x < w;) {
         const col = pal[row[x]];
-        if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); px.set(rgba(col), (y * w + x) * 4); }
-        else if (col === undefined && row[x] !== '.') unpainted.set(row[x], (unpainted.get(row[x]) || 0) + 1);
+        let n = 1;
+        while (x + n < w && pal[row[x + n]] === col) n++;
+        if (col) { g.fillStyle = col; g.fillRect(x, y, n, 1); }
+        x += n;
       }
     }
     pixels.set(c, px);
+    return c;
+  }
+  // A sheet of same-sized sprites, `cells[r][i]` = { rows, pal, flip } at column i of row r, baked
+  // straight into one canvas: what drawing each one's bake (its flipH if `flip`) into its cell
+  // gives, without a canvas a cell (the pine atlas alone was 2,600 of them at every load)
+  function bakeSheet(cells, fw, fh) {
+    const cols = Math.max(...cells.map((r) => r.length)), w = fw * cols, h = fh * cells.length;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d'), px = new Uint8ClampedArray(w * h * 4), px32 = new Uint32Array(px.buffer);
+    const late = []; // a cell with a half-clear colour is drawn in from its own bake, after the put
+    cells.forEach((row, r) => row.forEach((cell, i) => {
+      if (inkInto(cell.rows, cell.pal, px32, w, i * fw, r * fh, cell.flip)) return;
+      for (let y = 0; y < fh; y++) px32.fill(0, (r * fh + y) * w + i * fw, (r * fh + y) * w + (i + 1) * fw);
+      late.push(cell, i * fw, r * fh);
+    }));
+    g.putImageData(new ImageData(px, w, h), 0, 0);
+    g.imageSmoothingEnabled = false;
+    for (let k = 0; k < late.length; k += 3) { const f = bake(late[k].rows, late[k].pal); g.drawImage(late[k].flip ? flipH(f) : f, late[k + 1], late[k + 2]); }
+    if (!late.length) pixels.set(c, px); // all solid: these are its pixels, so a reader (a pine's shade) never reads the sheet back
     return c;
   }
 
@@ -129,17 +183,22 @@ window.SPR = (() => {
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const g = c.getContext('2d');
-    if (horiz) { g.translate(w, 0); g.scale(-1, 1); } else { g.translate(0, h); g.scale(1, -1); }
-    g.drawImage(src, 0, 0);
     const from = pixels.get(src);
+    let px = null;
     if (from) {
-      const px = new Uint8ClampedArray(from.length);
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4, j = horiz ? (y * w + w - 1 - x) * 4 : ((h - 1 - y) * w + x) * 4;
-        px[i] = from[j]; px[i + 1] = from[j + 1]; px[i + 2] = from[j + 2]; px[i + 3] = from[j + 3];
+      px = new Uint8ClampedArray(from.length);
+      const to32 = new Uint32Array(px.buffer), from32 = new Uint32Array(from.buffer, from.byteOffset, w * h);
+      for (let y = 0; y < h; y++) {
+        const r = y * w, q = horiz ? r + w - 1 : (h - 1 - y) * w;
+        if (horiz) for (let x = 0; x < w; x++) to32[r + x] = from32[q - x];
+        else to32.set(from32.subarray(q, q + w), r);
       }
       pixels.set(c, px);
     }
+    // a solid sprite's mirror is its mirrored pixels put straight in; any other is drawn mirrored
+    if (px && solid.has(src)) { g.putImageData(new ImageData(px, w, h), 0, 0); solid.add(c); return c; }
+    if (horiz) { g.translate(w, 0); g.scale(-1, 1); } else { g.translate(0, h); g.scale(1, -1); }
+    g.drawImage(src, 0, 0);
     return c;
   }
   const flipH = (src) => flipped(src, true);
@@ -243,5 +302,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, takeUnpainted, fine2x, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, bakeSheet, takeUnpainted, fine2x, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();

@@ -14,6 +14,8 @@ other canvas is read back once on first ask (`SPR.readbacks()` counts them). A c
 CPU layer that is read every frame (the canopy's hero layer) goes through its `SPR.cpuTwin`: one GPU
 canvas drawn into a CPU one makes every later read of it wait on the GPU. So hand-built art bakes
 through `SPR.bake`, not a copy of it.
+A sheet of many same-sized sprites (the pine atlas) bakes through `SPR.bakeSheet`, straight into one
+canvas with its pixels kept: a canvas a cell, each drawn across, was most of the sprites' load time.
 Character sprites are 16×16 in the world, each hero drawn only in its own looks
 ([hero looks](#hero-looks)); its 48 px face is that same standing front at 3x. The run and the roll
 are wider frames holding that same cell, and the one set not typed by hand
