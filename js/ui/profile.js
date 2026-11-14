@@ -31,6 +31,20 @@ const PF_SUM_H = 44;          // the summary over the match list
 const PF_LIST_H = 34;         // a STATS or RANKED row
 const PF_SCROLL = 18;         // px one wheel notch moves a list
 const PF_PICK_N = 32, PF_PICK_GAP = 4, PF_PICK_COLS = 10; // the picker's faces
+const PF_BADGE = 16, PF_BADGE_GAP = 4; // a badge under the name, and the space between two
+
+// ---- badges -------------------------------------------------------------
+// A BADGE: a small mark under a profile's name (a founder's, a rank's). Each
+// is one entry here, never an if in the column: has(c) says whether the
+// profile shows it (c a card out of PROFILE.people, or null for yours) and
+// draw(x, y) stamps it PF_BADGE square. Yours ride your card (cardMine's bd)
+// so the people you play with see them; a card only names badges, so has()
+// for someone else reads c.bd or what the card already carries (c.rk).
+// { id: lowercase, has(c), draw(x, y) }, in the order they stand
+const PF_BADGES = [];
+function pfBadges(c) { return PF_BADGES.filter((b) => b.has(c)); }
+// the badges your own card sends
+function pfBadgeIds() { return pfBadges(null).map((b) => b.id); }
 const NAME_SHAKE_T = 0.3;     // the name field's refusal: it rattles and flushes red
 
 // whose profile is open: yours, or a card out of PROFILE.people
@@ -49,6 +63,9 @@ function profileLayout() {
   const col = { x: 8, y: PF_BAR_H + 8, w: PF_COL_W, h: VIEW_H - PF_BAR_H - 16 };
   const pic = { x: col.x + (col.w >> 1) - (PF_PIC >> 1), y: col.y + 16, w: PF_PIC, h: PF_PIC };
   const field = { x: col.x + 6, y: pic.y + PF_PIC + 8, w: col.w - 12, h: 20 };
+  const n = pfBadges(pfCard()).length, bw = n * PF_BADGE + Math.max(0, n - 1) * PF_BADGE_GAP;
+  const badges = { x: col.x + ((col.w - bw) >> 1), y: field.y + field.h + 6, w: bw, h: n ? PF_BADGE : 0, n };
+  const statsY = badges.y + (n ? PF_BADGE + 8 : 6); // the numbers, under the badges when there are any
   const tabs = [];
   let tx = PF_COL_W + 16;
   for (let i = 0; i < PF_TABS.length; i++) {
@@ -57,7 +74,7 @@ function profileLayout() {
     tx += w + 16;
   }
   const search = { x: VIEW_W - PF_SEARCH_W - 8, y: 5, w: PF_SEARCH_W, h: 13 };
-  return { col, pic, field, tabs, search, body: pfBody(), tab: m.pfTab };
+  return { col, pic, field, badges, statsY, tabs, search, body: pfBody(), tab: m.pfTab };
 }
 
 // ---- the name tag on the title --------------------------------------------
@@ -302,13 +319,14 @@ function drawProfileColumn(L, now) {
   if (c) drawPixelTextOutline(ctx, c.n, col.x + (col.w >> 1) - (pixelTextWidth(c.n, 2) >> 1), L.field.y + 5, SC_GOLD, SC_INK, 2);
   else drawNameField(L.field, now);
   const st = c ? { r: c.rk, g: c.g, w: c.w } : { r: PROFILE.rank(), g: PROFILE.stats().matches, w: PROFILE.stats().wins };
-  const by = L.field.y + L.field.h + 12, cells = [[st.r, 'RANK', SC_GOLD], [st.g, 'GAMES', SC_TXT], [st.g ? Math.round(100 * st.w / st.g) + '%' : '-', 'WINS', SC_TXT]];
+  const by = L.statsY, cells = [[st.r, 'RANK', SC_GOLD], [st.g, 'GAMES', SC_TXT], [st.g ? Math.round(100 * st.w / st.g) + '%' : '-', 'WINS', SC_TXT]];
   cells.forEach(([v, l, cl], i) => {
     const cx = col.x + 18 + Math.round(i * (col.w - 36) / 2);
     drawPixelTextOutline(ctx, String(v), cx - (pixelTextWidth(String(v)) >> 1), by, cl, SC_INK, 1);
     drawPixelTextOutline(ctx, l, cx - (pixelTextWidth(l) >> 1), by + 9, SC_DIM, SC_INK, 1);
   });
   ctx.fillStyle = SC_EDGE; ctx.fillRect(col.x + 10, by + 22, col.w - 20, 1);
+  pfBadges(c).forEach((b, i) => b.draw(L.badges.x + i * (PF_BADGE + PF_BADGE_GAP), L.badges.y));
   if (c) {
     const b = pfBackRect(L), hot = pfHot('back');
     pfFace(profilePic(), b.x, b.y, 14, 1, true);
@@ -323,12 +341,12 @@ function drawProfileColumn(L, now) {
   }
 }
 // the way back to your own profile, under someone else's numbers
-function pfBackRect(L) { return { x: L.col.x + 10, y: L.field.y + L.field.h + 42, w: L.col.w - 20, h: 14 }; }
+function pfBackRect(L) { return { x: L.col.x + 10, y: L.statsY + 30, w: L.col.w - 20, h: 14 }; }
 // the people you played with most, the ones whose card this screen holds
 function pfMateRects(L) {
   if (state.menu.pfWho) return [];
   const known = new Map(PROFILE.people().map((c) => [c.pid, c]));
-  const y0 = L.field.y + L.field.h + 52, rows = Math.max(0, Math.floor((L.col.y + L.col.h - y0 - 4) / 18));
+  const y0 = L.statsY + 40, rows = Math.max(0, Math.floor((L.col.y + L.col.h - y0 - 4) / 18));
   return historyMates(historyList(), 12).filter((e) => known.has(e.pid)).slice(0, Math.min(5, rows))
     .map((e, i) => { const c = known.get(e.pid); return { x: L.col.x + 10, y: y0 + i * 18, w: L.col.w - 20, h: 14, n: c.n, hero: c.pic, pid: c.pid }; });
 }

@@ -132,8 +132,10 @@ function historyKda(k, d, a) { return (k + a) / Math.max(1, d); }
 // RANKED tab's ladder and the search's names. Nothing checks a card - there is
 // no server - so it is only ever shown, never trusted by the match.
 // { pid, n: name, pic: hero name, rk: rating, g: matches, w: wins,
+//   bd: [badge ids, PF_BADGES in js/ui/profile.js],
 //   rec: [the newest MH_CARD_REC as { h, w, mode, k, d, a, t, at }], seen: ms }
 const MH_CARD_REC = 10;    // matches a card carries
+const MH_CARD_BADGES = 8;  // badge ids a card may name
 const MH_PEOPLE_KEEP = 300; // cards a screen keeps, the longest unseen out first
 function cardMine() {
   const st = PROFILE.stats();
@@ -141,7 +143,7 @@ function cardMine() {
     const y = historyYou(r);
     return { h: y.h, w: r.w, mode: r.mode, k: y.k, d: y.d, a: y.a, t: r.t, at: r.at };
   });
-  return { pid: PROFILE.pid(), n: PROFILE.name(), pic: profilePic(), rk: PROFILE.rank(), g: st.matches, w: st.wins, rec };
+  return { pid: PROFILE.pid(), n: PROFILE.name(), pic: profilePic(), rk: PROFILE.rank(), g: st.matches, w: st.wins, bd: pfBadgeIds(), rec };
 }
 // the picture a profile shows: the one chosen, else the hero last picked
 function profilePic() { return PROFILE.pic() || CLASSES[profileHero()].name; }
@@ -156,7 +158,8 @@ function peopleClean(c) {
     if (!['k', 'd', 'a', 't'].every((k) => num(r[k])) || !MH_AT(r.at)) return null;
     rec.push({ h: r.h, w: r.w, mode: r.mode, k: r.k | 0, d: r.d | 0, a: r.a | 0, t: r.t | 0, at: Math.floor(r.at) });
   }
-  return { pid: c.pid, n: c.n, pic: c.pic, rk: Math.floor(c.rk), g: c.g | 0, w: c.w | 0, rec, seen: MH_AT(c.seen) ? Math.floor(c.seen) : 0 };
+  const bd = Array.isArray(c.bd) ? c.bd.filter((id) => typeof id === 'string' && /^[a-z0-9_]{1,16}$/.test(id)).slice(0, MH_CARD_BADGES) : [];
+  return { pid: c.pid, n: c.n, pic: c.pic, rk: Math.floor(c.rk), g: c.g | 0, w: c.w | 0, bd, rec, seen: MH_AT(c.seen) ? Math.floor(c.seen) : 0 };
 }
 // cards heard (a party's, off the wire): each kept once by pid, the newest
 // word on it winning; your own is never a person you met
