@@ -141,7 +141,7 @@ function drawOverview(L) {
   const best = hs.filter((h) => h.n >= 3).sort((a, b) => b.w / b.n - a.w / a.n)[0] || hs[0];
   const cw = Math.floor(B.w / 4), y = B.y + sh + 14;
   const cells = [
-    ['RANKED', () => pfRatingMark(0, y + 12), String(st.r), 'RATING', SC_GOLD],
+    ['RANKED', () => pfRatingMark(0, y + 12), String(st.r), wearsRank(c) ? RANK_TIERS[rankTier(st.r)] : 'RATING', SC_GOLD],
     ['RECORD', (x) => { pfBox(x - 30, y + 22, 60, 6, pfRed()); pfBox(x - 30, y + 22, st.g ? Math.round(60 * st.w / st.g) : 0, 6, pfBlue()); }, st.w + 'W ' + (st.g - st.w) + 'L', st.g ? Math.round(100 * st.w / st.g) + '% WINS' : '', SC_LIT],
     ['BEST HERO', (x) => { if (best) pfFace(best.h, x - 14, y + 12, 28, 2, true); }, best ? best.h : '-', best ? Math.round(100 * best.w / best.n) + '% IN ' + best.n : '', SC_LIT],
   ];
@@ -152,9 +152,10 @@ function drawOverview(L) {
     if (mark) mark(cx);
     pfTC(v, cx, y + 48, col, 2); pfTC(sub, cx, y + 64, SC_DIM);
   });
-  function pfRatingMark() { // a flat snow crystal in a gold square
+  function pfRatingMark() { // the tier's badge in a gold square (js/ui/badges.js), or before any RANKED a flat snow crystal
     const cx = B.x + (cw >> 1), ey = y + 12;
     pfBox(cx - 14, ey, 28, 28, '#0a0b0e'); ctx.fillStyle = SC_GOLD; pfRim(cx - 14, ey, 28, 28);
+    if (wearsRank(c)) { drawRankBadge(cx - (BADGE_PX >> 1), ey + ((28 - BADGE_PX) >> 1), st.r); return; }
     for (let k = -8; k <= 8; k++) { ctx.fillRect(cx + k, ey + 14, 1, 1); ctx.fillRect(cx, ey + 14 + k, 1, 1); ctx.fillRect(cx + k, ey + 14 + k, 1, 1); ctx.fillRect(cx + k, ey + 14 - k, 1, 1); }
   }
 }

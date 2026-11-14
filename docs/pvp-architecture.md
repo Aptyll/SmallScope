@@ -132,6 +132,8 @@ reports `ready: false` and the page plays solo. The App ID is the environment's 
 panel (js/ui/friends.js): `friends`, `inviteFriend` (Steam's invite plus a `0xB2` packet the
 friend's pump turns into an `invite` event, from friends only), `overlayUser` (the add-friend
 page), `overlayFriends`, `presence` (rich presence: `status`, `connect`, `sf_*`) and `playedWith`.
+`desktop/steam-apps.js` reads when this account first bought the game (0 for a family-shared copy or a
+free weekend), sent as `info`'s `bought`: the page's FOUNDER badge (`PROFILE.steamBought`).
 If koffi or the DLL fails, `friends()` answers `ok: false` and the panel never draws.
 `desktop/steam-messages.js` reaches Steam's newer messages the same way (the Steam section below).
 
