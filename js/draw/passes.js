@@ -145,7 +145,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     if (bodyOffView(p, ox, oy)) { if (p.active) playerUnseen(p, ox, oy, now); continue; }
-    draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
+    draws.push({ y: p.y + 8 + heldSort(p), p, ghost: !p.active }); // empty slots stand as silhouettes; a carried body just behind its carrier (heldSort, js/draw/bodies.js)
   }
   titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
   for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });

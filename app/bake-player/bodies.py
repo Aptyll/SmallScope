@@ -1,6 +1,6 @@
 # Each hero's looks on the doll (doll.py), all built on HeroBase (fur hood with goggles,
 # a trailing scarf, skate blades)
-# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest; CLIVUS: guide; ARCUS: fletcher). Their sizes are measured off the
+# (ARMATOS: standard, oath; FORTIVA: unbroken, coif; BELLA: general, traitor; IGNIA: hearth, wanderer; AURA: light; SALVIA: hood, tent; LUCERNA: lamp, dusk; HIEMS: scholar, frost; RUPES: quarry, cellar; NIX: snowblind; VARRO: wolfkept, whitepack; FABER: clockmaker, foreman; MARIS: diver, orca; VELOX: canal, night; SAGITTA: siege, tower; LIGNUM: feller, forest; CLIVUS: guide; ARCUS: fletcher; FOSSOR: digger; PORTITOR: carrier). Their sizes are measured off the
 # hand-drawn 16 px frames in each hero's js/sprites/<hero>.js, so the doll's idle lands on those
 # frames pixel for pixel and the run and the roll it paints wear the same body.
 #
@@ -953,6 +953,49 @@ class Guide(Standard):
         cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', self.HOOD, p=self.HEAD_P)
 
 
+class Digger(Standard):
+    """FOSSOR as DIGGER (its one look): a brass lantern head with one lamp for an eye, brass arms
+    and hands, its side's apron over the body, a gold belt; Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'trim', 'hat'
+    MARKS = [(-0.5, 0.4, 'l'), (0.5, 0.4, 'l'), (-0.5, 1.2, 'L'), (0.5, 1.2, 'L')]
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, self.HEAD_R, 'head', 'hat', p=self.HEAD_P)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.2)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'gold', bias=-0.3)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hat', p=self.HEAD_P)
+
+
+class Carrier(Standard):
+    """PORTITOR as BAGGAGE ENGINE (its default look) and VERDIGRIS (its skin: the same doll in
+    other paint): a squared copper head with two lamp eyes and no face, copper arms and hips,
+    its side's coat as the belly plate, and its side's bedroll across the back of its shoulders;
+    Armatos's frame, boots"""
+    ARM_MAT, MITT_MAT = 'trim', 'helm'
+    MARKS = [(-1.5, 0.4, 'l'), (1.5, 0.4, 'l'), (-1.5, 1.4, 'L'), (1.5, 1.4, 'L')]
+
+    def head(self, cv, cam, hc, Rh, pose, snap):
+        cv.blob(cam, hc, Rh, (2.85, 3.0, 2.4), 'head', 'hat', p=3.6)
+        self.face_marks(cv, cam, hc, Rh)
+
+    def coat(self, cv, cam, U, R):
+        cv.blob(cam, U(v3(0, 0, Z(6.1))), R, (2.75, 3.05, Z(2.05)), 'coat', 'coat', p=2.6)
+        cv.blob(cam, U(v3(0, 0, Z(4.0))), R, (2.6, 3.1, Z(0.6)), 'hem', 'helm', bias=-0.3)
+        cv.blob(cam, U(v3(0.1, 0, Z(8.75))), R, (2.45, 2.85, Z(0.42)), 'scarf', 'trim', bias=0.2)
+
+    def extras(self, cv, cam, U, R, pose):
+        # the bedroll: rolled across the back of the shoulders, its ends just past them
+        cv.blob(cam, U(v3(-2.3, 0, Z(8.6))), R, (1.1, 3.5, Z(0.95)), 'roll', 'coat', bias=-0.4)
+
+    def ball_head(self, cv, cam, hc, Rh):
+        cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hat', p=4.0)
+
+
 BODIES = {'standard': Standard(), 'oath': Oath(),
           'unbroken': Unbroken(), 'coif': Coif(), 'general': General(), 'traitor': Traitor(),
           'hearth': Hearth(), 'wanderer': Wanderer(), 'light': Light(),
@@ -966,5 +1009,5 @@ BODIES = {'standard': Standard(), 'oath': Oath(),
           'canal': Canal(), 'night': Night(),
           'diver': Diver(), 'orca': Orca(),
           'feller': Feller(), 'forest': Forest(),
-          'guide': Guide(),
+          'guide': Guide(), 'digger': Digger(), 'carrier': Carrier(),
           'siege': Siege(), 'tower': Tower()}
