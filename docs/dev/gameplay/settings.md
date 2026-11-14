@@ -38,7 +38,7 @@ also shows after the mode's name on every member's screen. Two parties that find
 other, the one with the higher code reloading into the other's room as its rival side; with
 nobody found within 8 s, bots take the rival side. After the match each party goes back to its
 own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
-**hero select** (netPhase 'pick', the lobby, js/ui/menu.js), which every member sees as the
+**hero select** (netPhase 'pick', the lobby, js/ui/champ-select.js), which every member sees as the
 leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
 guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the
 leader's; the leader's ESC takes everyone back to the party. RANKED keeps a

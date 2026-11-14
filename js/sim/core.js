@@ -217,7 +217,7 @@ const state = {
     // tab (0 PATCH NOTES, 1 ROADMAP), notesSel the group the keys have picked
     // (js/ui/notes.js `patch notes`).
     screen: 'menu', screenT: 0, csel: 0, cswapT: 1, lockT: 0,
-    // the lock-in's ring (lockFx, s left, menu.js `lobby`)
+    // the lock-in's ring (lockFx, s left, champ-select.js `lobby`)
     lockFx: 0,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it

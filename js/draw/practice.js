@@ -73,7 +73,7 @@ const DUMMY_SPR = (() => {
 // snow on the wooden rim. Same bake-beside-the-draw rule as the pylon. One
 // bake, two sizes: every ring threshold scales with the face, so the small
 // face is its own crisp sprite instead of a runtime downscale of the big one.
-// bare leaves the snow off the rim (the lobby's copy, js/ui/menu.js, which
+// bare leaves the snow off the rim (the lobby's copy, js/ui/champ-select.js, which
 // stands on a night sky and not in the drifts).
 function bakeTargetFace(size, bare) {
   const c = document.createElement('canvas');

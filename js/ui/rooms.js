@@ -20,7 +20,7 @@
 // Chat sits bottom-left (js/ui/roomtalk.js). A guest's READY ticks its
 // name; the leader's FIND MATCH stays dim until every friend has, then fills
 // every empty seat on both sides with bots and takes the whole party to the
-// hero select (netPhase 'pick', the lobby in js/ui/menu.js) and from there
+// hero select (netPhase 'pick', the lobby in js/ui/champ-select.js) and from there
 // to the drop. The rival side is never shown here: it is another party met
 // by matchmaking (js/ui/matchmaking.js), or bots. After the match, LOBBY brings the party back to
 // this screen on a fresh valley (the rematch, below).
@@ -126,7 +126,7 @@ function botsSet(k) {
   const m = state.menu;
   m.botsOpen = false;
   if (!botsOk() || !AI_LEVELS[k]) { SFX.deny(); return; }
-  setAiLevel(k); // js/ui/menu.js
+  setAiLevel(k); // js/ui/champ-select.js
   netHostRoom();
   SFX.pickup();
 }

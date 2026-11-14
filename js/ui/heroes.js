@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ hero grid
-// The HERO GRID on the lobby (menu.js `lobby`): a cell per hero in the
+// The HERO GRID on the lobby (champ-select.js `lobby`): a cell per hero in the
 // middle column under the search field, League's champion grid at Softfall's size. A cell is the hero's
 // head off its own standing front at 2x (heroHead, js/ui/draft.js), in its free
 // look, so the face IS the hero.
