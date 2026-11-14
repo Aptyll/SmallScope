@@ -3,7 +3,7 @@
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | one baked speck (mote, star, flake) at a quantised brightness, and the atlas behind it | `bakeSpecks`, `drawSpeck`, `SPECK_*` | `light & weather` › `specks` |
-| drifting cloud shadows, and the tileable noise they are baked from | `cloudShade`, `cloudLayer`, `bakeCloud`, `pnoise`, `CLOUD_*` | `light & weather` › `cloud shadows` |
+| drifting cloud shadows, and the tileable noise they are baked from | `cloudShade`, `cloudLayer`, `bakeCloud`, `pnoise`, `pnoiseLattice`, `CLOUD_*` | `light & weather` › `cloud shadows` |
 | whether the sun shafts are up at all (the drop window, and noon), and the shafts themselves | `rayLight`, `godRays`, `RAY_*` | `light & weather` › `god rays` |
 | the ice's night mirror + the parallax stars in it, and the "is this pixel on unbroken ice" mask (the painted shore's, `iceAtPx`) | `drawIceStars`, `overIce`, `STAR_*` | `light & weather` › `the reflected sky` |
 | the hour's colour grade (rose dawn, crisp midday, gold dusk: a warm multiply over a cool screen off keyframes on `state.time`, and the noon self-multiply) | `todGrade`, `todMix`, `todNoon`, `TOD_KEYS`/`TOD_CRISP`/`TOD_NOON*` | `light & weather` › `the hour` |
