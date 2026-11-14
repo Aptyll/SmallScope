@@ -42,6 +42,9 @@ slog('appId ' + APP_ID + ' (env SteamAppId=' + (process.env.SteamAppId || '') + 
 // the friends list and the direct invite, which steamworks.js lacks (steam-friends.js)
 const friends = steam ? require('./steam-friends.js').steamFriends(APP_ID) : null;
 if (steam) slog('friends ' + (friends.ok ? 'OK' : 'FAILED: ' + friends.error));
+// when this account first bought the game, for the FOUNDER badge (steam-apps.js)
+const apps = steam ? require('./steam-apps.js').steamApps(APP_ID) : null;
+if (steam) slog('apps ' + (apps.ok ? 'OK bought ' + apps.bought() : 'FAILED: ' + apps.error));
 const myId = () => (steam ? str(steam.localplayer.getSteamId().steamId64) : null);
 
 const args = {};
@@ -123,6 +126,7 @@ ipcMain.handle('steam:info', () => ({
   ready: !!steam, error: steamErr, appId: APP_ID,
   id: steam ? str(steam.localplayer.getSteamId().steamId64) : null,
   name: steam ? steam.localplayer.getName() : null,
+  bought: apps ? apps.bought() : 0, // unix seconds of the first purchase, 0 none (PROFILE.steamBought)
 }));
 ipcMain.handle('steam:createLobby', async (e, kind, max) => {
   const t = steam.matchmaking.LobbyType;
