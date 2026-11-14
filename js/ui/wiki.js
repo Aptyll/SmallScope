@@ -230,9 +230,9 @@ function wikiHit(mx, my) {
   const L = wikiLayout();
   for (let i = 0; i < L.tabs.length; i++) {
     const t = L.tabs[i];
-    if (mx >= t.x && mx < t.x + t.w && my >= t.y - 3 && my < t.y + t.h + 3) return { kind: 'tab', i };
+    if (ptInRect(t, mx, my, 0, 3)) return { kind: 'tab', i };
   }
-  if (L.maxScroll > 0 && mx >= L.rail.x - 2 && mx < L.rail.x + L.rail.w + 2 && my >= L.rail.y && my < L.rail.y + L.rail.h) return { kind: 'rail', y: my };
+  if (L.maxScroll > 0 && ptInRect(L.rail, mx, my, 2, 0)) return { kind: 'rail', y: my };
   if (my < L.winY || my >= L.winY + L.winH || mx < L.left || mx >= L.right) return null;
   for (const r of L.rows) {
     if ((r.bl.kind !== 'row' && r.bl.kind !== 'ab') || r.bl.i < 0) continue; // (a passive's row has no card of its own)

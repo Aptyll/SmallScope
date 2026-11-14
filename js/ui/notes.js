@@ -26,7 +26,7 @@ function pageTabsLayout() {
 }
 // the tab under (mx, my), or -1
 function pageTabHit(mx, my) {
-  for (const r of pageTabsLayout()) if (mx >= r.x - 6 && mx < r.x + r.w + 6 && my >= r.y - 4 && my < r.y + r.h + 4) return r.i;
+  for (const r of pageTabsLayout()) if (ptInRect(r, mx, my, 6, 4)) return r.i;
   return -1;
 }
 // open tab i from whichever page is up: the wiki is its own screen with its

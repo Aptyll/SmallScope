@@ -23,7 +23,6 @@ function profileLayout() {
   const field = { x: card.x + 8, y: card.y + 8, w: card.w - 16, h: PC_FIELD_H };
   return { card, field, ledger: { x: card.x + 12, y: card.y + 44, w: card.w - 24 }, back: card.y + card.h + 12 };
 }
-const overRect = (r, px, py) => mouse.x >= r.x - (px || 0) && mouse.x < r.x + r.w + (px || 0) && mouse.y >= r.y - (py || 0) && mouse.y < r.y + r.h + (py || 0);
 
 // ---- the name tag -------------------------------------------------------
 function profileTagRect() {

@@ -183,16 +183,15 @@ function recapLayout(R) {
   }
   return L;
 }
-function rcIn(r, h) { return mouse.x >= r.x && mouse.x < r.x + r.w && mouse.y >= r.y && mouse.y < r.y + (h || r.h); }
 // what the pointer is on: a button, the ring, a face or an icon
 function recapHover(L) {
-  if (!rcIn(L)) return null;
-  if (rcIn(L.fold)) return { btn: 'fold' };
-  if (rcIn(L.open)) return { btn: 'open' };
-  if (rcIn(L.ring)) return { ring: true };
+  if (!overRect(L)) return null;
+  if (overRect(L.fold)) return { btn: 'fold' };
+  if (overRect(L.open)) return { btn: 'open' };
+  if (overRect(L.ring)) return { ring: true };
   for (const row of L.rows) {
-    if (rcIn(row.face)) return { face: row.f, y: row.y };
-    for (const ic of row.icons) if (rcIn(ic, ic.h2)) return { hit: ic.h, y: ic.y };
+    if (overRect(row.face)) return { face: row.f, y: row.y };
+    for (const ic of row.icons) if (overRect({ x: ic.x, y: ic.y, w: ic.w, h: ic.h2 })) return { hit: ic.h, y: ic.y };
   }
   return null;
 }

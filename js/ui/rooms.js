@@ -324,10 +324,6 @@ function roomLayout() {
   const box = { x: x + w - headW, y: RM_HEAD_Y, w: headW, h: RM_HEAD_H };
   return { x, w, headW, seats, leave, go, talk, invite, box };
 }
-function inRect(r, pad) {
-  pad = pad || 0;
-  return mouse.x >= r.x - pad && mouse.x < r.x + r.w + pad && mouse.y >= r.y - pad && mouse.y < r.y + r.h + pad;
-}
 // what a click on seat s does from this screen: 'invite' (an empty seat),
 // 'kick' (the leader shows a friend out) or null
 function seatAct(s) {
@@ -345,21 +341,21 @@ function roomCode() {
 }
 function roomHit() {
   const m = state.menu, L = roomLayout();
-  if (m.modeOpen) { for (const r of modeListRects(L)) if (inRect(r)) return { kind: 'modeItem', k: r.k }; }
-  if (m.botsOpen) { for (const r of botsListRects(L)) if (inRect(r)) return { kind: 'botsItem', k: r.k }; }
-  if (inRect(L.leave, 1)) return { kind: 'leave' };
-  if (inRect(L.go, 1)) return { kind: 'go' };
-  if (inRect(L.invite, 1)) return { kind: 'invite' };
-  if (modeSwapOk() && inRect(modeRect(L), 3)) return { kind: 'mode' };
-  if (botsShown() && botsOk() && inRect(botsRect(L), 3)) return { kind: 'bots' };
+  if (m.modeOpen) { for (const r of modeListRects(L)) if (overRect(r)) return { kind: 'modeItem', k: r.k }; }
+  if (m.botsOpen) { for (const r of botsListRects(L)) if (overRect(r)) return { kind: 'botsItem', k: r.k }; }
+  if (overRect(L.leave, 1)) return { kind: 'leave' };
+  if (overRect(L.go, 1)) return { kind: 'go' };
+  if (overRect(L.invite, 1)) return { kind: 'invite' };
+  if (modeSwapOk() && overRect(modeRect(L), 3)) return { kind: 'mode' };
+  if (botsShown() && botsOk() && overRect(botsRect(L), 3)) return { kind: 'bots' };
   const cr = socialCodeRect(); // the social column (js/ui/friends.js): your code at its head, the friends under it
-  if (cr && inRect(cr, 3)) return { kind: 'code' };
-  if (codeBoxShown() && inRect(L.box, 2)) return { kind: 'box' };
+  if (cr && overRect(cr, 3)) return { kind: 'code' };
+  if (codeBoxShown() && overRect(L.box, 2)) return { kind: 'box' };
   const fh = friendsHit(L);
   if (fh) return fh;
-  if (inRect(talkLayout(L.talk), 2)) return { kind: 'talk' };
+  if (overRect(talkLayout(L.talk), 2)) return { kind: 'talk' };
   if (m.joining) return null;
-  for (const s of L.seats) if (inRect(s)) {
+  for (const s of L.seats) if (overRect(s)) {
     const act = seatAct(s);
     return act ? { kind: 'seat', id: s.p.id, act } : null;
   }

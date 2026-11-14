@@ -392,19 +392,18 @@ function shopTreeOwned(tree) {
 function shopHit(mx, my) {
   if (!shopOpen()) return null;
   const L = shopLayout(), P = L.panel;
-  if (!hitR(P, mx, my)) return null;
-  if (hitR(L.xr, mx, my)) return 'x';
-  for (const r of L.tabs) if (hitR(r, mx, my)) return { kind: 'tab', id: r.id };
-  for (const r of L.cats) if (hitR(r, mx, my)) return { kind: 'cat', c: r.c };
-  for (const r of L.grid.concat(L.tree)) if (hitR(r, mx, my)) return { kind: 'pick', id: r.id };
+  if (!ptInRect(P, mx, my)) return null;
+  if (ptInRect(L.xr, mx, my)) return 'x';
+  for (const r of L.tabs) if (ptInRect(r, mx, my)) return { kind: 'tab', id: r.id };
+  for (const r of L.cats) if (ptInRect(r, mx, my)) return { kind: 'cat', c: r.c };
+  for (const r of L.grid.concat(L.tree)) if (ptInRect(r, mx, my)) return { kind: 'pick', id: r.id };
   const into = itemInto(shopPicked().id);
-  for (const r of L.into) if (into[r.i] && hitR(r, mx, my)) return { kind: 'pick', id: into[r.i] };
-  for (const r of L.slots) if (hitR(r, mx, my)) return { kind: 'slot', i: r.i };
-  if (hitR(L.buy, mx, my)) return { kind: 'buy' };
-  if (hitR(L.sell, mx, my)) return { kind: 'sell' };
+  for (const r of L.into) if (into[r.i] && ptInRect(r, mx, my)) return { kind: 'pick', id: into[r.i] };
+  for (const r of L.slots) if (ptInRect(r, mx, my)) return { kind: 'slot', i: r.i };
+  if (ptInRect(L.buy, mx, my)) return { kind: 'buy' };
+  if (ptInRect(L.sell, mx, my)) return { kind: 'sell' };
   return 'panel';
 }
-function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h; }
 
 // the two orders the slab sends, through the player's input like every other act
 function shopBuy(id) { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'item', id }; }

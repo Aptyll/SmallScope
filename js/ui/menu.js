@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.936';
+const PATCH_TXT = 'PATCH 0.937';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.937', 'UNDER THE HOOD: EVERY MENU AND HUD BUTTON NOW ASKS ONE SHARED TEST WHETHER THE POINTER IS ON IT, INSTEAD OF FORTY COPIES.'],
   ['0.936', 'FIGHTS AT THE MIDDLE DRAW FASTER: THE STONE RING IS ONE PICTURE FOR YOUR GRAPHICS CARD INSTEAD OF HUNDREDS. NOTHING YOU SEE CHANGES.'],
   ['0.935', 'FRAMES DRAW FASTER AWAY FROM A FIGHT: HEROES, SOLDIERS AND BEASTS FAR OFF YOUR SCREEN ARE NO LONGER DRAWN. NOTHING YOU SEE CHANGES.'],
   ['0.934', 'THE MATCH ITSELF STEPS ABOUT A THIRD FASTER: BODIES FAR APART NO LONGER MEASURE THE EXACT DISTANCE BETWEEN THEM TO LEARN THEY ARE FAR APART.'],
@@ -982,7 +983,7 @@ function patchTagRect() {
 }
 function overPatchTag() {
   const r = patchTagRect();
-  return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
+  return overRect(r, 3);
 }
 
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
@@ -1005,7 +1006,7 @@ function menuHit() {
   const { rects } = menuLayout();
   for (let i = 0; i < rects.length; i++) {
     const r = rects[i];
-    if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3) return i;
+    if (overRect(r, 2, 3)) return i;
   }
   return -1;
 }
@@ -1063,7 +1064,7 @@ function gearRect() {
   if (state.menu.screen === 'room') { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 9, y: 26, w: 9, h: 9 }; }
   const c = coinTagRect(); return { x: c.x - 17, y: 4, w: 9, h: 9 };
 }
-function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3, 3); }
+function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3); }
 function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
 // the slab stands centred on what it covers: the party screen's room left of
 // the social column, else the view (relayout's place, put back as it goes)
@@ -1083,7 +1084,7 @@ function menuPanelReady() {
   return !!m.panel && m.panelT >= 1 && !m.closing;
 }
 function overMenuPanel() {
-  return mouse.x >= SET_X && mouse.x < SET_X + SET_W && mouse.y >= SET_Y && mouse.y < SET_Y + SET_H;
+  return overRect({ x: SET_X, y: SET_Y, w: SET_W, h: SET_H });
 }
 
 function menuKey(e) {
@@ -1488,9 +1489,8 @@ function heroLayout() {
 // press, the ledger included), or null (outside: a click closes)
 function heroScreenHit() {
   const { abils, panel, xr } = heroLayout();
-  const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
-  if (over(xr, 3, 3)) return 'x';
-  for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
+  if (overRect(xr, 3)) return 'x';
+  for (const w of abils) if (overRect(w, 0, 1)) return { ab: w.i };
   return popFrameHit(panel, xr);
 }
 function beginHero() {
@@ -1524,25 +1524,24 @@ function heroClick() {
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
   const L = lobbyLayout();
-  const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   const lo = loadoutHit(L); // the pre-game picks' wells and picker, over everything under them (js/ui/loadout.js)
   if (lo) return lo;
   const mineR = L.cards[1].find((r) => r.p === player);
-  if (mineR && draftOpen() && over(selSwapRect(mineR), 1, 1)) return 'swap';
+  if (mineR && draftOpen() && overRect(selSwapRect(mineR), 1)) return 'swap';
   if (inTalk(L.chat)) return 'talk';
   if (lobbyShowcase()) {
-    if (CLASSES[player.cls].story && (over(selBookRect(L), 2, 2) || (selLoreOn() && over(L.show, 0, 0)))) return 'book'; // the story (js/ui/select.js)
+    if (CLASSES[player.cls].story && (overRect(selBookRect(L), 2) || (selLoreOn() && overRect(L.show)))) return 'book'; // the story (js/ui/select.js)
     const S = selSkinCells(L);
-    for (const c of S.cells) if (over(c, 1, 1)) return 'skin' + c.k;
-    if (S.more && over(S.prev, 2, 2)) return 'skinPrev';
-    if (S.more && over(S.next, 2, 2)) return 'skinNext';
+    for (const c of S.cells) if (overRect(c, 1)) return 'skin' + c.k;
+    if (S.more && overRect(S.prev, 2)) return 'skinPrev';
+    if (S.more && overRect(S.next, 2)) return 'skinNext';
   } else {
-    if (lobbyStageUp(L) && over(L.figure, 0, 0)) return 'hero';
+    if (lobbyStageUp(L) && overRect(L.figure)) return 'hero';
     const f = heroFilterAt(L);
     if (f) return f;
     const hi = heroCellAt(L.heroes);
     if (hi >= 0 && hi < CLASSES.length) return 'pick' + hi;
-    if (over(L.play, 1, 1) && draftWord()) return 'play';
+    if (overRect(L.play, 1) && draftWord()) return 'play';
   }
   return null;
 }
@@ -1879,8 +1878,8 @@ function drawPopX(xr, rise, hot) {
 // a pop-up's inert hit answers: 'x', 'panel' (the slab swallows the press)
 // or null (outside - a click there closes)
 function popFrameHit(panel, xr) {
-  if (mouse.x >= xr.x - 3 && mouse.x < xr.x + xr.w + 3 && mouse.y >= xr.y - 3 && mouse.y < xr.y + xr.h + 3) return 'x';
-  if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
+  if (overRect(xr, 3)) return 'x';
+  if (overRect(panel)) return 'panel';
   return null;
 }
 

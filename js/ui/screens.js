@@ -145,7 +145,7 @@ function rpCloseRect() {
 function rpCloseHit() {
   if (!rpFull() || !replayShowing()) return false;
   const c = rpCloseRect();
-  return mouse.x >= c.x - 2 && mouse.x < c.x + c.w + 2 && mouse.y >= c.y - 2 && mouse.y < c.y + c.h + 2;
+  return overRect(c, 2);
 }
 // the recap is up: what draws under it (the ally view's strip, the death dim
 // and its planks) waits, and a press puts it away
@@ -387,8 +387,7 @@ function specLayout() {
 function specHit() {
   if (state.deadView !== 'spec') return 0;
   const L = specLayout();
-  const inR = (r) => mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 2 && mouse.y < r.y + r.h + 2;
-  return inR(L.left) ? -1 : inR(L.right) ? 1 : 0;
+  return overRect(L.left, 2) ? -1 : overRect(L.right, 2) ? 1 : 0;
 }
 
 // which plank is under the pointer (-1 for none); the overlay must have faded
@@ -398,7 +397,7 @@ function deadHit() {
   const rs = deadLayout();
   for (let i = 0; i < rs.length; i++) {
     const r = rs[i];
-    if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3) return i;
+    if (overRect(r, 2, 3)) return i;
   }
   return -1;
 }
