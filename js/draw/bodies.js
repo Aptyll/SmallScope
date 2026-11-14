@@ -381,6 +381,10 @@ function drawFrame(spr, x, y) {
   if (spr.dens > 1) ctx.drawImage(spr, x, y, spr.width / spr.dens, spr.height / spr.dens);
   else ctx.drawImage(spr, x, y);
 }
+// upright, a body strides only while it covers ground on its own feet (see drawPlayer)
+function playerStrides(p) {
+  return p.moving && p.zip < 0 && !p.mount && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
+}
 function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
   const S = bodySet(p), set = S[p.dir];
@@ -388,7 +392,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
   // shift-slide and a push against a wall stand, and a zipline's rider hangs still
-  const striding = p.moving && p.zip < 0 && !p.mount && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
+  const striding = playerStrides(p);
   if (striding) frame = 1 + (Math.floor(p.animT) % 2);
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)

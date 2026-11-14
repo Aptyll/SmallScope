@@ -28,7 +28,11 @@
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
    its hole's waterline and cut at it - [the cistern](../code-map/sim/cistern.md)); a body under a big
-   hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back);
+   hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back); a hero, a
+   soldier or a beast more than `BODY_CULL` px outside the world view never joins the array
+   (`bodyOffView`, js/draw/passes.js: nothing it draws reaches that far from its feet), unless it wears a
+   running damage total, and `playerUnseen` keeps what `drawPlayer` keeps besides pixels (the idle's
+   record, the callout anchor);
 8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,

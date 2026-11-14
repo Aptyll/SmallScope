@@ -46,7 +46,8 @@ ray passes fill the view and no more, `drawIceStars` walks only the visible tile
 over them, and every mote and star is culled against `WV_W`/`WV_H` before it is drawn. The same
 goes for the two lists that hold the whole world's worth: `drawFootprints` skips a mark more than
 `FOOT_REACH` px off the frame and `drawParticles` a particle wholly off it, since a few hundred
-of each exist and only a handful are on screen. None of them
+of each exist and only a handful are on screen. The bodies are culled the same way before the
+y-sort (`bodyOffView`: most heroes and soldiers are in another lane). None of them
 feed anything back: they are safe to cheapen, skip or reorder without touching a match — which is
 exactly what the ESC panel's **VIDEO page** does: `settings.vidClouds`/`vidRays` gate their calls
 in `renderLighting`, `vidStars` gates `drawIceStars` in `render()`, `vidSnow` gates
