@@ -169,7 +169,9 @@ function sightAt(team, x, y, u) {
   const srcs = fogEyesOf(team);
   let seen = false;
   for (const s of srcs) {
-    const dx = x - s.x, dy = y - s.y, d = Math.hypot(dx, dy);
+    const dx = x - s.x, dy = y - s.y;
+    if (dx > s.r || dx < -s.r || dy > s.r || dy < -s.r) continue; // (past its reach on one axis alone: most eyes, for most bodies)
+    const d = Math.hypot(dx, dy);
     if (d > s.r) continue;
     if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.stone) >= d) { seen = true; break; }
   }

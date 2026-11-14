@@ -91,6 +91,7 @@ function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
 // else split by mass (the lighter moves more)
 function unitShare(a, b) { return a.pri !== b.pri ? (a.pri > b.pri ? 0 : 1) : b.m / (a.m + b.m); }
 function unitMass(e) { return MONSTER[e.kind] ? MONSTER[e.kind].mass : UNIT_MASS[e.kind]; }
+let sepX = new Float64Array(256), sepY = new Float64Array(256), sepS = new Float64Array(256), sepR = new Float64Array(256); // separateUnits' scratch
 function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
@@ -107,43 +108,52 @@ function separateUnits(dt) {
   // the rooms first, gently, then the hard passes, which get the last word
   // (a room's nudge never leaves two bodies overlapping)
   const roomStep = Math.min(1, UNIT_ROOM_RATE * dt);
-  for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
+  // every pair is asked three times a step and nearly all of them are far
+  // apart, so the far ones are turned away on plain numbers: where each body
+  // stands (X, Y, kept in step with every push below), its room and its radius
+  const n = us.length;
+  if (sepX.length < n) { sepX = new Float64Array(n * 2); sepY = new Float64Array(n * 2); sepS = new Float64Array(n * 2); sepR = new Float64Array(n * 2); }
+  const X = sepX, Y = sepY, S = sepS, R = sepR;
+  for (let i = 0; i < n; i++) { const u = us[i]; X[i] = u.e.x; Y[i] = u.e.y; S[i] = u.s; R[i] = u.r; }
+  const push = (i, dx, dy) => { const u = us[i]; moveEntity(u.e, dx, dy, u.r, true); X[i] = u.e.x; Y[i] = u.e.y; };
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const dx = X[j] - X[i], dy = (Y[j] - Y[i]) / UNIT_SPACE_TALL;
+    const room = S[i] + S[j];
+    if (Math.abs(dx) >= room || Math.abs(dy) >= room) continue;
     const a = us[i], b = us[j];
     if (a.roll || b.roll) continue; // a roll keeps its line
     if (!a.hunt !== !b.hunt) continue; // a hunter and its quarry: the bite's reach decides, not a room
-    const dx = b.e.x - a.e.x, dy = (b.e.y - a.e.y) / UNIT_SPACE_TALL;
-    const room = a.s + b.s;
-    if (Math.abs(dx) >= room || Math.abs(dy) >= room) continue;
     const d = Math.hypot(dx, dy);
     if (d >= room || d < 0.01) continue; // a dead-centre stack is the hard pass's to part
-    const push = (room - d) * roomStep, sa = unitShare(a, b);
+    const gap = (room - d) * roomStep, sa = unitShare(a, b);
     const nx = dx / d, ny = dy * UNIT_SPACE_TALL / d; // back to world space: the tall axis moves farther
-    moveEntity(a.e, -nx * push * sa, -ny * push * sa, a.r, true);
-    moveEntity(b.e, nx * push * (1 - sa), ny * push * (1 - sa), b.r, true);
+    push(i, -nx * gap * sa, -ny * gap * sa);
+    push(j, nx * gap * (1 - sa), ny * gap * (1 - sa));
   }
   for (let pass = 0; pass < 2; pass++) {
-    for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      let dx = X[j] - X[i], dy = Y[j] - Y[i];
+      const min = R[i] + R[j];
+      if (Math.abs(dx) >= min || Math.abs(dy) >= min) continue; // (a gap on one axis alone is a gap)
       const a = us[i], b = us[j];
       // a live roll is not there for anything small: it passes straight
       // through and rollSweep turns that contact into a hit instead. A deer
       // is the one unit heavy enough to still stop it, and that stop is a tackle.
       if ((a.roll && b.small) || (b.roll && a.small)) continue;
-      let dx = b.e.x - a.e.x, dy = b.e.y - a.e.y;
       let d = Math.hypot(dx, dy);
-      const min = a.r + b.r;
       if (d >= min) continue;
       if (d < 0.01) { dx = 1; dy = 0; d = 1; } // dead-centre stack: part along +x
       const nx = dx / d, ny = dy / d, overlap = min - d;
       const sa = unitShare(a, b), sb = 1 - sa; // a's share of the push
       // positions: a's share first, then b takes its own share plus what a's wall refused
-      const ax = a.e.x, ay = a.e.y;
-      moveEntity(a.e, -nx * overlap * sa, -ny * overlap * sa, a.r, true);
-      const left = overlap - Math.hypot(a.e.x - ax, a.e.y - ay);
-      const bx = b.e.x, by = b.e.y;
-      moveEntity(b.e, nx * left, ny * left, b.r, true);
+      const ax = X[i], ay = Y[i];
+      push(i, -nx * overlap * sa, -ny * overlap * sa);
+      const left = overlap - Math.hypot(X[i] - ax, Y[i] - ay);
+      const bx = X[j], by = Y[j];
+      push(j, nx * left, ny * left);
       // and if b's wall refused some, a tries once more with the remainder
-      const left2 = left - Math.hypot(b.e.x - bx, b.e.y - by);
-      if (left2 > 0.01) moveEntity(a.e, -nx * left2, -ny * left2, a.r, true);
+      const left2 = left - Math.hypot(X[j] - bx, Y[j] - by);
+      if (left2 > 0.01) push(i, -nx * left2, -ny * left2);
       if (pass) continue; // velocities settle on the first pass only
       // velocities along the contact normal (positive = closing)
       const va = vx(a) * nx + vy(a) * ny, vb = -(vx(b) * nx + vy(b) * ny);
