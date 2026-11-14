@@ -154,7 +154,7 @@ HERO_OVER.push({
 });
 
 // ---- the longbow at his side ---------------------------------------------------------
-// At rest he carries it in his leading hand, its top leaned out and away, clear of the body in
+// At rest he carries it in his leading hand, its top tilted out and away, off the body in
 // every facing (ARCUS_BOW_CARRY, js/sprites/arcus.js): the string toward him and a pixel off his coat,
 // the belly away, forward of him side-on (THE GRIP RULE). Never across the face.
 function arcusCarry(p, px, py) {

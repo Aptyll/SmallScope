@@ -6,4 +6,4 @@
 | FULL QUIVER's arrows falling (`HERO_AIR`) | `drawArcusAir` | `arcus` › `on the snow` |
 | his keys' wind-ups: VOLLEY's fanned arrows, GATHER UP's arrows stirring, FULL QUIVER loosed high (their rows' `tele`) | `drawVolleyTele`, `drawGatherTele`, `drawQuiverTele` | `arcus` › `the keys' wind-ups` |
 | WASTE NOTHING's stacks over him (`HERO_OVER`) | the `HERO_OVER` row | `arcus` › `on him` |
-| his longbow leaned out at his side (`HERO_CARRY`) | `arcusCarry` | `arcus` › `the longbow at his side` |
+| his longbow tilted out at his side (`HERO_CARRY`) | `arcusCarry` | `arcus` › `the longbow at his side` |
