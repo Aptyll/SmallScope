@@ -127,7 +127,7 @@ function packOut(p) { p.pack = 0; p.packIdle = 0; p.avaD = 0; p.shoulderHit = fa
 // The block rides the shots in flight (arrows, js/sim/sim.js) and lands its
 // blow there with its own slow (hurtUnit's `slow`), at the rank it was thrown with.
 function rupesHeave(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   arrows.push({
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HEAVE_SPD, vy: Math.sin(a) * HEAVE_SPD,
@@ -154,8 +154,7 @@ function rupesShed(p) {
     if (!q.dead) slowUnit(q, slowT, slow);
     burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
   }
-  for (const s of structsNear(p, p.x, p.y, SHED_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, SHED_R, dmg);
+  hurtBuilt(p, p.x, p.y, SHED_R, dmg);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: SHED_R, t: 0, col: '#f4f7ff', fx: 'shed', life: SHED_FX_LIFE, n });
   burst(p.x, p.y - 6, '#f4f7ff', 10 + 8 * n, 70 + 15 * n, 0.5, true);
   burst(p.x, p.y - 6, '#cfd8e8', 6 + 4 * n, 50, 0.5, true);
@@ -272,8 +271,7 @@ function avaBurst(p) {
     if (!q.dead) knockUp(q, up, p);
     burst(q.x, unitMidY(q), '#f4f7ff', 8, 55, 0.5, true);
   }
-  for (const s of structsNear(p, p.x, p.y, R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, R, dmg);
+  hurtBuilt(p, p.x, p.y, R, dmg);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: R, t: 0, col: '#f4f7ff', fx: 'powder', life: AVA_FX_LIFE });
   burst(p.x, p.y - 4, '#f4f7ff', 20 + Math.round(24 * g), 70 + 50 * g, 0.6, true);
   burst(p.x, p.y - 4, '#cfd8e8', 10 + Math.round(10 * g), 50, 0.6, true);

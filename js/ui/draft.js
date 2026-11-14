@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ draft rules
-// The hero select's DRAFT (the lobby, js/ui/menu.js), the way every party
+// The hero select's DRAFT (the lobby, js/ui/champ-select.js), the way every party
 // reaches the eagle: a BAN phase, then a BLIND PICK where all ten seats pick
 // at once, then the reveal count (COUNT_T) to the drop. The host keeps the
 // draft and every screen draws its copy (DRAFT); a guest points and confirms

@@ -9,7 +9,8 @@
 | a keypress becoming a cast, a key's second half (`recast`), and the per-player tick that lands it | `tryAbility`, `abRecast`, `startCast`/`castProg`, `updateAbilities` | `class abilities` › `casting` |
 | every movement cap an ability may touch, folded once | `abilityMoveMul` | `class abilities` › `casting` (read by `updatePlayer`, sim.js) |
 | the raised shield going down (its cooldown starts there), and a hero's dash stopped mid-way by its second half | `abShieldDown`, `dashStop` (the dash itself: `playerMove`, sim.js, off `HERO_DASH`, js/sim/heroes.js) | `class abilities` › `the shield and the dash` |
-| an area blow ringing the practice dummy | `abHitDummies` | `class abilities` › `the shield and the dash` |
+| the angle an aimed key or cut swings along, from the hand to the pointer | `handAim` | not here: js/sim/player.js, beside `aimHold` |
+| an area blow landing on what is built inside it: rival buildings and the practice dummy, in a ring or a wedge | `hurtBuilt`, `hurtBuiltCone` (the dummy alone, for a blow with its own building pass: `abHitDummies`) | `class abilities` › `the shield and the dash` |
 | the wedge every blade-shaped blow sweeps and draws, and the ring: units by centre plus radius, buildings by any footprint tile | `inCone`, `unitsInCone`, `structsInCone` | not here: js/sim/actions.js, `status effects` › `what a unit IS` (beside `unitsNear`/`structsNear`) |
 | every wind-up's shape on the snow for both sides and the flash where it landed: the fx list, and how far a line runs before the world stops it | `abFx`, `teleLen` | `class abilities` › `the kits` / `the world tick` (the shapes themselves: [js/draw/abilities.js](../draw/abilities.md)) |
 | what the abilities leave in the world, stepped per sim step: the flashes age and each hero's own ticks | `updateAbilityWorld` (each hero's: `heroTick`, `HERO_TICK`, js/sim/heroes.js) | `class abilities` › `the world tick` (called from `updatePlay`, sim.js) |

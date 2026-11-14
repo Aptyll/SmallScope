@@ -54,15 +54,14 @@ function loOptions(W) {
 function loadoutHit(L) {
   const W = loLayout(L);
   if (!W) return null;
-  const over = (r, p) => mouse.x >= r.x - p && mouse.x < r.x + r.w + p && mouse.y >= r.y - p && mouse.y < r.y + r.h + p;
   const opts = loOptions(W);
-  for (const o of opts) if (over(o, 1)) return 'loO:' + o.id;
+  for (const o of opts) if (overRect(o, 1)) return 'loO:' + o.id;
   if (opts.length) {
     const a = opts[0], b = opts[opts.length - 1];
-    if (over({ x: a.x, y: a.y, w: b.x + b.w - a.x, h: a.h }, LO_PAD)) return 'loP';
+    if (overRect({ x: a.x, y: a.y, w: b.x + b.w - a.x, h: a.h }, LO_PAD)) return 'loP';
   }
-  if (over(W.calling, 0)) return 'loC';
-  for (let i = 0; i < TRICK_N; i++) if (over(W.tricks[i], 0)) return 'loT' + i;
+  if (overRect(W.calling)) return 'loC';
+  for (let i = 0; i < TRICK_N; i++) if (overRect(W.tricks[i])) return 'loT' + i;
   return null;
 }
 // a press on the wells or the picker; true when it was theirs

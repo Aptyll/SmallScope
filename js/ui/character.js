@@ -55,10 +55,10 @@ function charHit(mx, my) {
   const L = charLayout();
   const p = L.panel;
   if (mx < p.x || mx >= p.x + p.w || my < p.y || my >= p.y + p.h) return null;
-  if (mx >= L.xr.x && mx < L.xr.x + L.xr.w && my >= L.xr.y && my < L.xr.y + L.xr.h) return 'x';
+  if (ptInRect(L.xr, mx, my)) return 'x';
   for (let i = 0; i < L.rows.length; i++) {
     const r = L.rows[i];
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { item: i };
+    if (ptInRect(r, mx, my)) return { item: i };
   }
   return 'panel';
 }

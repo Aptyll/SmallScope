@@ -6,6 +6,7 @@
 | the rebindable actions, their defaults per scheme, the two bind maps and the live one, how anything asks for a key | `KEY_ACTIONS`/`KEY_ACT` (`key` / `ck`), `SCHEMES`, `schemeKey`/`schemeActs`, `settings.binds`/`settings.bindsClick`/`binds()`, `mendBinds`, `keyIs`/`keyHeld`/`keyBound`, `moveDir`, `keyCap`/`keyCapShort`, `keyReserved` | `keys and binds` |
 | a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
 | the raw state | `keys`, `mouse` | `input` |
+| the one hit test every screen's hover and click use: a point on a rect grown by a pad, and the pointer on one | `ptInRect`, `overRect` | `input` |
 | what a key does, what a button does - the four entry points every press goes through, and the mouse's side buttons pressed as keys (`'Mouse4'`, `'Mouse5'`) | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease`, `sideButton` | `input` |
 | the ping wheel several presses open (`openPingWheel`: the spot under the pointer, or the map's or chart's) | `openPingWheel` | `input` |
 | the zoom wheel, the listeners | the `pageListen` block (attached at boot, js/sim/core.js), `wheelZoom` (in play, and dead while watching somebody) | `input` |

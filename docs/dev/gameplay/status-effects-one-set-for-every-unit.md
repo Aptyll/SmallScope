@@ -85,8 +85,8 @@ how long it leaves that body burning. `blunt` is everything that always existed 
 shoulder) and is the default when nothing names one.
 
 **`fire` is the one type that outlives its own blow.** It ignites what it lands on; an ignited unit
-then pays `burnDps` in bites `BURN_TICK` (0.4 s) apart until its clock runs out — `BURN_T` 3 s at
-`BURN_DPS` 6 for a plain fire hit. A fresh ignition **refreshes** the clock (capped at `BURN_MAX`,
+then pays `burnDps` in bites `BURN_TICK` (0.4 s) apart until its clock runs out, at `BURN_DPS` 6 unless
+the light names its own rate. A fresh ignition **refreshes** the clock (capped at `BURN_MAX`,
 8 s) and takes the hotter of the two rates rather than lighting a second fire, so a SPLITTER fan
 sets you properly alight instead of banking half a minute of it. Credit rides along in `burnBy`, so
 burning to death is a kill for whoever struck the light (`KILL_VERB.fire` — "BURNED"; with nobody to

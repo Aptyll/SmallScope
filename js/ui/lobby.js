@@ -278,22 +278,20 @@ function scoresBack() {
 function scoresHit() {
   if (scores.t < SCORE_IN) return null;
   const L = scoresLayout();
-  const inR = (r, pad) => mouse.x >= r.x - (pad || 0) && mouse.x < r.x + r.w + (pad || 0)
-    && mouse.y >= r.y - (pad || 0) && mouse.y < r.y + r.h + (pad || 0);
-  for (let i = 0; i < L.tabs.length; i++) if (inR(L.tabs[i], 3)) return { kind: 'page', i };
-  for (let i = 0; i < L.words.length; i++) if (inR(L.words[i], 2)) return { kind: 'word', i };
+  for (let i = 0; i < L.tabs.length; i++) if (overRect(L.tabs[i], 3)) return { kind: 'page', i };
+  for (let i = 0; i < L.words.length; i++) if (overRect(L.words[i], 2)) return { kind: 'word', i };
   for (let i = 0; i < L.cols.length; i++) { // a face across the top: that player's profile, when this screen holds it (seatPid, js/ui/profile.js)
-    if (inR({ x: L.colX[i], y: L.faceY, w: L.colW, h: L.face + SCORE_NAME * 2 }) && seatPid(L.cols[i].id)) return { kind: 'who', id: L.cols[i].id };
+    if (overRect({ x: L.colX[i], y: L.faceY, w: L.colW, h: L.face + SCORE_NAME * 2 }) && seatPid(L.cols[i].id)) return { kind: 'who', id: L.cols[i].id };
   }
   if (scores.page === 1) {
-    if (!inR(L.list)) return null;
+    if (!overRect(L.list)) return null;
     for (const e of L.list.rows) {
       const y = L.list.y + e.y - L.list.off;
       if (e.row && mouse.y >= y && mouse.y < y + SCORE_LIST_ROW) return { kind: 'stat', i: e.i };
     }
     return null;
   }
-  if (!inR(L.body)) return null;
+  if (!overRect(L.body)) return null;
   for (const ln of scoreLines(L)) {
     const h = ln.kind === 'group' ? SCORE_HEAD - 1 : SCORE_ROW;
     if (mouse.y >= ln.y && mouse.y < ln.y + h) return ln.kind === 'group' ? { kind: 'group', head: ln.g.head } : { kind: 'row', label: ln.row.label };

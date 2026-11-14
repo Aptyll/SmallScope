@@ -32,7 +32,6 @@ const PF_LIST_H = 34;         // a STATS or RANKED row
 const PF_SCROLL = 18;         // px one wheel notch moves a list
 const PF_PICK_N = 32, PF_PICK_GAP = 4, PF_PICK_COLS = 10; // the picker's faces
 const NAME_SHAKE_T = 0.3;     // the name field's refusal: it rattles and flushes red
-const overRect = (r, px, py) => mouse.x >= r.x - (px || 0) && mouse.x < r.x + r.w + (px || 0) && mouse.y >= r.y - (py || 0) && mouse.y < r.y + r.h + (py || 0);
 
 // whose profile is open: yours, or a card out of PROFILE.people
 function pfCard() {

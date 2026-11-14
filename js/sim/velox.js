@@ -154,8 +154,7 @@ function skipLand(s) {
   s.n++;
   if (src) {
     for (const q of unitsHit(src, s.x, s.y, SKIP_R)) hurtUnit(q, s.dmg, s.nx, s.ny, src, { kb: 12, ab: 'skip' });
-    for (const st of structsNear(src, s.x, s.y, SKIP_R)) hurtStruct(st, s.dmg, src);
-    if (PRACTICE) abHitDummies(s.x, s.y, SKIP_R, s.dmg);
+    hurtBuilt(src, s.x, s.y, SKIP_R, s.dmg);
   }
   const ice = veloxIceAt(s.x, s.y);
   burst(s.x, s.y, ice ? '#e6f8ff' : '#dfe8f4', 6, 35, 0.3, true);

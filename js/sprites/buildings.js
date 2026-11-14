@@ -5,7 +5,7 @@
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
 (() => {
-  const { bake, TEAM_SKINS, teamBuildPal } = SPR;
+  const { bake, TEAM_SKINS } = SPR;
 
   // ---------------------------------------------------------------- barracks bay
   // The barracks' art (STRUCTS.barracks, art: 'spawner'): a 48x38 bot garage on a 3x2 tile footprint

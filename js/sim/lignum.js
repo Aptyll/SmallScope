@@ -119,7 +119,7 @@ function lignumOut(p) {
 // ---- Q CHOP ------------------------------------------------------------------------
 function lignumChop(p, second) {
   p.castSlam = false;
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const nx = Math.cos(a), ny = Math.sin(a);
   const dmg = abDmg(p, 'chop', abRk(p, 'chop', second ? 'chop' : 'dmg')), slow = abRk(p, 'chop', 'slow');
   for (const q of unitsInCone(p, p.x, p.y, a, CHOP_R, CHOP_HALF)) {
@@ -127,8 +127,7 @@ function lignumChop(p, second) {
     if (second && !q.dead) slowUnit(q, CHOP_SLOW_T, slow);
     burst(q.x, unitMidY(q), second ? '#d9a648' : '#cfd8e8', 6, 45, 0.4, true);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, CHOP_R, CHOP_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + nx * CHOP_R * 0.5, p.y + ny * CHOP_R * 0.5, CHOP_R * 0.5, dmg);
+  hurtBuiltCone(p, a, CHOP_R, CHOP_HALF, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: CHOP_R, half: CHOP_HALF, t: 0, col: second ? '#d9a648' : '#e6ebf2', fx: 'chop', life: CHOP_FX_LIFE });
   p.chopT = second ? 0 : CHOP_WAIT;
   sfxAt(second ? 'chop' : 'swing', p.x, p.y);
@@ -255,7 +254,7 @@ function timberLine(p, a) {
   return { x0, y0, nx, ny, len: TIMBER_LEN, tree: o };
 }
 function lignumTimber(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const L = timberLine(p, a);
   if (L.tree) { // the pine comes down: a stump where it stood
     const o = L.tree;

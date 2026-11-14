@@ -56,7 +56,7 @@ function voteClick() {
   const r = voteRect(), mx = mouse.x, my = mouse.y;
   if (mx < r.x || mx >= r.x + r.w || my < r.y || my >= r.y + r.h) return false;
   if (voteOpenFor(player)) {
-    const w = voteWords().find((b) => mx >= b.x && mx < b.x + b.w && my >= b.y && my < b.y + b.h);
+    const w = voteWords().find((b) => ptInRect(b, mx, my));
     if (w) { SFX.unlock(); player.input.cmd = { kind: 'vote', yes: w.yes }; }
   }
   return true;

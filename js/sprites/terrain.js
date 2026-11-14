@@ -3,7 +3,7 @@
 // every pine on screen draws from), stumps, the camps' dead snags, the wolf
 // den and the hog hut.
 (() => {
-  const { bake, flipH } = SPR;
+  const { bake, bakeSheet, flipH } = SPR;
 
   // ---------------------------------------------------------------- trees
   const TPAL = {
@@ -1275,10 +1275,9 @@
     });
     return out; // row = variant * TREE_TONES.length + tone
   })();
-  // baked once, up here, because both the array and the atlas below need it:
-  // one run of 24 frames per palette row
+  // the atlas's rows, as what bakes them: one run of 24 frames per palette row
   // (row = size * treePals.length + palette row)
-  const treeRows = [].concat(...treeSizes.map((frames) => treePals.map((pal) => frames.map((f) => bake(f, pal)))));
+  const treeRows = [].concat(...treeSizes.map((frames) => treePals.map((pal) => ({ frames, pal }))));
   // THE HOUR ON THE CROWNS: the pine's snow and its lightest needles alone, in
   // a warm white, one run of frames per height. Laid over a pine at dawn and
   // dusk (treeArt, js/draw/ground.js) it lifts the crown's blue-grey snow
@@ -1286,7 +1285,7 @@
   // gold instead of leaving the forest cold beside warm drifts.
   const TREE_GLOW = { w: '#f6f2ee', S: '#f6f2ee', s: 'rgba(246,242,238,0.7)', m: 'rgba(246,242,238,0.45)', l: 'rgba(246,242,238,0.3)' };
   const treeGlowRows = treeSizes.map((frames) => frames.map((f) => bake(f, TREE_GLOW)));
-  const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
+  const treeSpr = treeRows[2].frames.map((f) => bake(f, treeRows[2].pal)); // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
   // ---------------------------------------------------------------- the hog hut
   // The HOG HUT camp's anchor (CAMPS.hut, js/sim/camps.js): a snow-roofed log
   // hut with a smoking chimney, 35x35 on a 2x2 footprint, drawn centred over
@@ -1642,11 +1641,7 @@
     treeAtlas: (() => {
       const cols = treeSpr.length * 2;
       const fw = treeSpr[0].width, fh = treeSpr[0].height;
-      const c = document.createElement('canvas');
-      c.width = fw * cols; c.height = fh * treeRows.length;
-      const g = c.getContext('2d');
-      g.imageSmoothingEnabled = false;
-      treeRows.forEach((row, r) => row.concat(row.map(flipH)).forEach((f, i) => g.drawImage(f, i * fw, r * fh)));
+      const c = bakeSheet(treeRows.map(({ frames, pal }) => [false, true].flatMap((flip) => frames.map((rows) => ({ rows, pal, flip })))), fw, fh);
       c.fw = fw; c.fh = fh; c.cols = cols; c.pals = treePals.length;
       return c;
     })(),

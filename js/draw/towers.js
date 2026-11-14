@@ -51,7 +51,7 @@ function drawTowerTop(o, sx, sy) {
 function drawTowerFx(ex, ey, now) {
   for (const o of structures) {
     if (o.type !== 'tower') continue;
-    const tm = TEAMS[skin(o.team)], gun = towerGunAt(o), foot = towerFoot(o);
+    const tm = TEAMS[skin(o.team)], gun = towerGunAt(o);
     const gx = Math.round(gun.x - ex), gy = Math.round(gun.y - ey);
     if (gx < -260 || gy < -260 || gx > WV_W + 260 || gy > WV_H + 260) continue;
     const tg = o.tgt;

@@ -1006,7 +1006,6 @@ function pkGenPath(spec) {
   // is standing to watch
   const ox = PR_OX, oy = PR_OY, home = [ox + 8, oy + 37];
   const path = [home, [ox + 6 + ((rng() * 4) | 0), oy + 28 + ((rng() * 4) | 0)]];
-  let cp = [ox + 69, oy + 37];
   const n = spec.pts;
   for (let i = 2; i <= n - 2; i++) {
     const th = Math.PI - 2 * Math.PI * i / n;
@@ -1054,7 +1053,7 @@ function pkGenPath(spec) {
   }
   // the checkpoint is this track's farthest-east waypoint - the honest "you
   // went round the far side" test, wherever the roll put the far side
-  cp = routed.reduce((a, b) => (b[0] > a[0] ? b : a));
+  const cp = routed.reduce((a, b) => (b[0] > a[0] ? b : a));
   return { path: routed, cp };
 }
 

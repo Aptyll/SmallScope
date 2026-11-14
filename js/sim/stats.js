@@ -96,7 +96,7 @@ function armorTaken(p, dmg, src) { return Math.max(1, Math.round(dmg * 100 / (10
 function armorRaw(p, n) { return Math.max(1, Math.ceil((n - 0.5) * (100 + Math.max(0, statOf(p, 'armor'))) / 100)); }
 // COOLDOWN SPEED on a cooldown: the share of it that is left to wait (abCdOf)
 function hasteMul(p) { return 100 / (100 + Math.max(0, statOf(p, 'haste'))); }
-// The ledgers' rows - the hero pop-up's (js/ui/menu.js), the character panel's
+// The ledgers' rows - the hero pop-up's (js/ui/champ-select.js), the character panel's
 // (js/ui/bag.js) and the stat plate's (js/ui/shop.js): [name, get(kit, player?),
 // format, dir]. The player is optional: the hero pop-up prices a pick before
 // the match, where every hero is level 1 and the kit says whose it is.

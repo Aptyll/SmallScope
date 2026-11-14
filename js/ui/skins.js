@@ -123,7 +123,7 @@ function coinTagRect() {
 }
 function overCoinTag() {
   const r = coinTagRect();
-  return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
+  return overRect(r, 3);
 }
 function drawCoinTag() {
   const hot = !state.menu.panel && overCoinTag();

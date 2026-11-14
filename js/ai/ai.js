@@ -159,7 +159,7 @@ function aiInLane(p, e) {
 // big building carries its own tx/ty), or null: a rival road tower
 // (towerNear, js/sim/towers.js) with the bot's own wave under it to take the
 // bolts (towerTanked) - a bot never walks in under a tower alone
-function aiLaneFort(p, e) {
+function aiLaneFort(p) {
   const t = towerNear(p.team, p.x, p.y, TOWER_RANGE + 24);
   return t && towerTanked(t, p.team) ? nearestObj(p.x, p.y, 9, (o) => structOf(o) === t) : null;
 }

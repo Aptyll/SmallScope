@@ -347,7 +347,8 @@ run against a live Steam** (Status, above).
 ## Message schema
 
 Every message is a plain object with a type `t`. The two that carry the match - `full` and
-`snap` - go through `snapEncode` as bytes; the rest are JSON text. On the relay everything is
+`snap` - go through `snapEncode` as bytes (a side's delta is written once, `snapEncodeOnce`, and
+its bytes go into the message of every peer on that side and ack); the rest are JSON text. On the relay everything is
 reliable and ordered; on Steam only a `snap` is sent unreliable. There is no schema version on the
 wire: the handshake is `PATCH_TXT` and the `world` in the `hello` (a snapshot carries
 `v: 2`, which nothing reads).

@@ -69,7 +69,16 @@ const snapMaps = { R: new Map(), A: new Map(), W: new Map() }; // kind -> nid ->
 let snapNidNext = 16;
 function snapNid(e) { let n = snapNids.get(e); if (n === undefined) { n = snapNidNext++; snapNids.set(e, n); } return n; }
 function snapNidSet(e, n) { snapNids.set(e, n); if (n >= snapNidNext) snapNidNext = n + 1; }
-function snapKindOf(v) { for (const k in SNAP_KINDS) if (SNAP_KINDS[k]().indexOf(v) >= 0) return k; return null; }
+function snapKindOf(v) { if (snapKinds) return snapKinds.get(v) || null; for (const k in SNAP_KINDS) if (SNAP_KINDS[k]().indexOf(v) >= 0) return k; return null; }
+// While a whole world is being packed (snapPacking) every moving entity's
+// kind is looked up once, not searched for in three arrays per nested object
+let snapKinds = null;
+function snapPacking(f) {
+  if (snapKinds) return f();
+  snapKinds = new Map();
+  for (const k of Object.keys(SNAP_KINDS).reverse()) for (const e of SNAP_KINDS[k]()) snapKinds.set(e, k);
+  try { return f(); } finally { snapKinds = null; }
+}
 // which entity this is, if it is one: a token, or null for a plain object
 function snapToken(v) {
   if (v.id !== undefined && players[v.id] === v) return { $: 'P', i: v.id };
@@ -198,7 +207,8 @@ function snapSingles() {
   return s;
 }
 // `team` (0 or 1): only what that side sees (the `fog` banner); left out, everything
-function snapBuild(team) {
+function snapBuild(team) { return snapPacking(() => snapBuildNow(team)); }
+function snapBuildNow(team) {
   const s = Object.assign({ v: 2, players: [], objects: {}, structs: [] }, snapSingles());
   const hid = team === 0 || team === 1 ? snapFogHid() : null, fog = hid ? hid[team] : null;
   for (const p of players) { const o = packEnt(p); s.players.push(fog && fog.P.has(p.id) ? snapFogStub(o) : o); }
@@ -398,7 +408,46 @@ snapShadowReset();
 function snapSame(va, vb) {
   if (va === vb) return true;
   if (va === null || vb === null || typeof va !== 'object' || typeof vb !== 'object') return false;
-  return JSON.stringify(va) === JSON.stringify(vb);
+  const eq = snapJsonEq(va, vb);
+  return eq < 0 ? JSON.stringify(va) === JSON.stringify(vb) : eq === 1;
+}
+// whether two packed values would write the same JSON, without writing it:
+// 1 the same, 0 not, -1 for a shape only JSON.stringify can judge (anything
+// that is not a plain object, an array, a string, a boolean, null or a finite number)
+function snapJsonEq(a, b) {
+  if (a === b) return snapJsonPlain(a);
+  if (a !== null && b !== null && typeof a === 'object' && typeof b === 'object') {
+    const arr = Array.isArray(a);
+    if (arr && Array.isArray(b) && a.length === b.length) {
+      let same = 1;
+      for (let i = 0; i < a.length; i++) { const r = snapJsonEq(a[i], b[i]); if (r < 0) return -1; if (!r) same = 0; }
+      return same;
+    }
+    if (!arr && !Array.isArray(b) && Object.getPrototypeOf(a) === Object.prototype && Object.getPrototypeOf(b) === Object.prototype) {
+      const ka = Object.keys(a), kb = Object.keys(b);
+      let same = 1, i = 0;
+      if (ka.length === kb.length) for (; i < ka.length; i++) {
+        const k = ka[i];
+        if (k !== kb[i]) break; // (JSON keeps the order: two orders are two strings)
+        const r = snapJsonEq(a[k], b[k]); if (r < 0) return -1; if (!r) same = 0;
+      }
+      if (i === ka.length && ka.length === kb.length) return same;
+    }
+  }
+  // two different shapes: different JSON, as long as both are plain all the way down
+  return snapJsonPlain(a) === 1 && snapJsonPlain(b) === 1 ? 0 : -1;
+}
+// 1 when v is made only of the shapes snapJsonEq can judge, else -1
+function snapJsonPlain(v) {
+  if (v === null) return 1;
+  const t = typeof v;
+  if (t === 'string' || t === 'boolean') return 1;
+  if (t === 'number') return Number.isFinite(v) ? 1 : -1;
+  if (t !== 'object') return -1;
+  if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) if (snapJsonPlain(v[i]) < 0) return -1; return 1; }
+  if (Object.getPrototypeOf(v) !== Object.prototype) return -1;
+  for (const k of Object.keys(v)) if (snapJsonPlain(v[k]) < 0) return -1;
+  return 1;
 }
 // the fields of `packed` that differ from `prev` (all of them for a first
 // send), plus the names that left as `$del`; null when nothing changed.
@@ -408,7 +457,11 @@ function snapSame(va, vb) {
 function snapFieldDiff(packed, prev) {
   if (!prev) return packed;
   let out = null, del = null;
-  for (const k of Object.keys(packed)) { if (!snapSame(snapQv(k, packed[k]), snapQv(k, prev[k]))) { (out = out || {})[k] = packed[k]; } }
+  for (const k of Object.keys(packed)) {
+    const a = packed[k], b = prev[k];
+    if (a === b) continue; // (the same value is the same quantum)
+    if (!snapSame(snapQv(k, a), snapQv(k, b))) (out = out || {})[k] = a;
+  }
   for (const k of Object.keys(prev)) if (!(k in packed)) (del = del || []).push(k);
   if (del) { (out = out || {}).$del = del; }
   return out;
@@ -425,9 +478,11 @@ function snapFieldDiff(packed, prev) {
 // within a tick. The tile shadow (the newest form of every tile) is updated
 // here, so the ring holds no world per tick, only what moved.
 function snapHistoryPush() {
+  const have = snapShadow.byTick.get(state.tick);
+  return have || snapPacking(snapHistoryMake);
+}
+function snapHistoryMake() {
   const sh = snapShadow, tick = state.tick;
-  const have = sh.byTick.get(tick);
-  if (have) return have;
   const p = sh.hist.length ? sh.hist[sh.hist.length - 1] : null; // the previous entry
   const h = { tick, ents: {}, order: {}, orderKey: {}, chg: {}, gone: {}, orderMoved: {}, eagles: [], eagleChg: [], singles: null, singlesJs: {}, singlesChg: {}, structs: '', structsMoved: false, tiles: null, groundCh: null, hid: null };
   const namesOf = (f) => { const n = new Set(Object.keys(f)); if (f.$del) { n.delete('$del'); for (const k of f.$del) n.add(k); } return n; };
@@ -788,48 +843,79 @@ function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } //
 const ENC_TAG = { NULL: 0, FALSE: 1, TRUE: 2, I8: 3, I16: 4, I32: 5, F32: 6, F64: 7, STR: 8, ARR: 9, OBJ: 10, Q16: 11 };
 function encDict() { return { names: [], index: new Map() }; }
 const encTextEnc = new TextEncoder(), encTextDec = new TextDecoder();
+// the bytes being written: one buffer kept between messages (a host writes
+// fifteen rounds a second, and a fresh one each time was garbage by the megabyte)
+let encBuf = new Uint8Array(1 << 16), encView = new DataView(encBuf.buffer), encPos = 0, encInto = null;
+function encNeed(n) {
+  if (encPos + n <= encBuf.length) return;
+  let len = encBuf.length * 2; while (len < encPos + n) len *= 2;
+  const nb = new Uint8Array(len); nb.set(encBuf); encBuf = nb; encView = new DataView(encBuf.buffer);
+}
+function encU8(v) { encNeed(1); encBuf[encPos++] = v; }
+function encU32(v) { encNeed(4); encView.setUint32(encPos, v); encPos += 4; }
+// a string as its length and its UTF-8: plain ASCII (nearly every one) byte by byte
+function encStr(s) {
+  const n = s.length;
+  encNeed(4 + n);
+  let i = 0;
+  for (; i < n; i++) { const c = s.charCodeAt(i); if (c > 127) break; encBuf[encPos + 4 + i] = c; }
+  if (i === n) { encView.setUint32(encPos, n); encPos += 4 + n; return; }
+  const b = encTextEnc.encode(s);
+  encNeed(4 + b.length); encView.setUint32(encPos, b.length); encPos += 4; encBuf.set(b, encPos); encPos += b.length;
+}
+// a key that is a number (a tile index) goes as one, not as a dictionary
+// name: the world has fifty thousand of them and a dictionary would carry every one
+function encKey(k) {
+  const dict = encInto;
+  let i = dict.index.get(k);
+  if (i === undefined) {
+    if (k.length && k.length < 10 && /^[0-9]+$/.test(k)) { encNeed(6); encView.setUint16(encPos, 0xFFFF); encView.setUint32(encPos + 2, +k); encPos += 6; return; }
+    i = dict.names.length; dict.names.push(k); dict.index.set(k, i);
+  }
+  encNeed(2); encView.setUint16(encPos, i); encPos += 2;
+}
+// `k` is the key this value sits under, when it sits under one: a
+// quantized field is known by its name (an array element has none)
+function encPut(v, k) {
+  if (v === null || v === undefined) { encU8(ENC_TAG.NULL); return; }
+  if (v === false) { encU8(ENC_TAG.FALSE); return; }
+  if (v === true) { encU8(ENC_TAG.TRUE); return; }
+  if (typeof v === 'number') {
+    encNeed(9);
+    if (k !== undefined && snapQable(k, v)) { encBuf[encPos] = ENC_TAG.Q16; encView.setInt16(encPos + 1, snapQi(k, v)); encPos += 3; return; }
+    if (Number.isInteger(v) && v >= -2147483648 && v <= 2147483647) {
+      if (v >= -128 && v <= 127) { encBuf[encPos] = ENC_TAG.I8; encView.setInt8(encPos + 1, v); encPos += 2; }
+      else if (v >= -32768 && v <= 32767) { encBuf[encPos] = ENC_TAG.I16; encView.setInt16(encPos + 1, v); encPos += 3; }
+      else { encBuf[encPos] = ENC_TAG.I32; encView.setInt32(encPos + 1, v); encPos += 5; }
+    } else if (Math.abs(v) < 1e6 && Math.fround(v) === v) { encBuf[encPos] = ENC_TAG.F32; encView.setFloat32(encPos + 1, v); encPos += 5; }
+    else { encBuf[encPos] = ENC_TAG.F64; encView.setFloat64(encPos + 1, v); encPos += 9; }
+    return;
+  }
+  if (typeof v === 'string') { encU8(ENC_TAG.STR); encStr(v); return; }
+  if (Array.isArray(v)) { encU8(ENC_TAG.ARR); encU32(v.length); for (let i = 0; i < v.length; i++) encPut(v[i]); return; }
+  if (v instanceof SnapBytes) { encNeed(v.bytes.length); encBuf.set(v.bytes, encPos); encPos += v.bytes.length; return; }
+  const keys = Object.keys(v);
+  encU8(ENC_TAG.OBJ); encU32(keys.length);
+  for (let i = 0; i < keys.length; i++) { const kk = keys[i]; encKey(kk); encPut(v[kk], kk); }
+}
+// A value already written: its bytes go into a message as they stand. A host
+// writes each side's cut once and hands it to every peer on that side
+// (netHostFlush) - what it sent each of them is the same to the byte
+function SnapBytes(bytes) { this.bytes = bytes; }
+function snapEncodeOnce(value, dict) {
+  encInto = dict; encPos = 0;
+  encPut(value);
+  return new SnapBytes(encBuf.slice(0, encPos));
+}
 function snapEncode(value, dict, from) {
-  let buf = new Uint8Array(1 << 16), view = new DataView(buf.buffer), pos = 0;
-  const need = (n) => { if (pos + n > buf.length) { let len = buf.length * 2; while (len < pos + n) len *= 2; const nb = new Uint8Array(len); nb.set(buf); buf = nb; view = new DataView(buf.buffer); } };
-  const u8 = (v) => { need(1); buf[pos++] = v; };
-  const u16 = (v) => { need(2); view.setUint16(pos, v); pos += 2; };
-  const u32 = (v) => { need(4); view.setUint32(pos, v); pos += 4; };
-  const str = (s) => { const b = encTextEnc.encode(s); need(4 + b.length); view.setUint32(pos, b.length); pos += 4; buf.set(b, pos); pos += b.length; };
-  // a key that is a number (a tile index) goes as one, not as a dictionary
-  // name: the world has fifty thousand of them and a dictionary would carry every one
-  const key = (k) => {
-    if (k.length && k.length < 10 && /^[0-9]+$/.test(k)) { u16(0xFFFF); u32(+k); return; }
-    let i = dict.index.get(k); if (i === undefined) { i = dict.names.length; dict.names.push(k); dict.index.set(k, i); } u16(i);
-  };
-  // `k` is the key this value sits under, when it sits under one: a
-  // quantized field is known by its name (an array element has none)
-  const put = (v, k) => {
-    if (v === null || v === undefined) { u8(ENC_TAG.NULL); return; }
-    if (v === false) { u8(ENC_TAG.FALSE); return; }
-    if (v === true) { u8(ENC_TAG.TRUE); return; }
-    if (k !== undefined && snapQable(k, v)) { u8(ENC_TAG.Q16); need(2); view.setInt16(pos, snapQi(k, v)); pos += 2; return; }
-    if (typeof v === 'number') {
-      if (Number.isInteger(v) && v >= -2147483648 && v <= 2147483647) {
-        if (v >= -128 && v <= 127) { u8(ENC_TAG.I8); need(1); view.setInt8(pos, v); pos += 1; }
-        else if (v >= -32768 && v <= 32767) { u8(ENC_TAG.I16); need(2); view.setInt16(pos, v); pos += 2; }
-        else { u8(ENC_TAG.I32); need(4); view.setInt32(pos, v); pos += 4; }
-      } else if (Math.abs(v) < 1e6 && Math.fround(v) === v) { u8(ENC_TAG.F32); need(4); view.setFloat32(pos, v); pos += 4; }
-      else { u8(ENC_TAG.F64); need(8); view.setFloat64(pos, v); pos += 8; }
-      return;
-    }
-    if (typeof v === 'string') { u8(ENC_TAG.STR); str(v); return; }
-    if (Array.isArray(v)) { u8(ENC_TAG.ARR); u32(v.length); for (const x of v) put(x); return; }
-    const keys = Object.keys(v);
-    u8(ENC_TAG.OBJ); u32(keys.length);
-    for (const k of keys) { key(k); put(v[k], k); }
-  };
-  put(value);
+  encInto = dict; encPos = 0;
+  encPut(value);
   // the header: every name from `from` (this message's own fresh ones included)
   from = from || 0;
   const hb = encTextEnc.encode(JSON.stringify([from, dict.names.slice(from)]));
-  const out = new Uint8Array(4 + hb.length + pos);
+  const out = new Uint8Array(4 + hb.length + encPos);
   new DataView(out.buffer).setUint32(0, hb.length);
-  out.set(hb, 4); out.set(buf.subarray(0, pos), 4 + hb.length);
+  out.set(hb, 4); out.set(encBuf.subarray(0, encPos), 4 + hb.length);
   return out;
 }
 function snapDecode(bytes, dict) {

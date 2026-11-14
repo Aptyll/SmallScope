@@ -132,7 +132,7 @@ function unitsInLine(p, a, len, half) {
   return out;
 }
 function armVerdict(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const nx = Math.cos(a), ny = Math.sin(a);
   const dmg = abDmg(p, 'verdict', abRk(p, 'verdict', 'dmg'));
   const slow = abRk(p, 'verdict', 'slow'), slowT = abRk(p, 'verdict', 'slowT'), up = abRk(p, 'verdict', 'up');
@@ -157,7 +157,7 @@ function armVerdict(p) {
 // ---- W HOLD THE LINE ----------------------------------------------------------
 function armBrace(p) {
   p.shieldT = abRk(p, 'hold', 't');
-  p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  p.shieldA = handAim(p);
   burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
   sfxAt('place', p.x, p.y);
   p.hold = true;
@@ -183,7 +183,7 @@ HERO_TAKEN.push(holdTaken);
 // hero struck the brace) it stuns; unprimed it is a shove and a knock.
 function armBash(p) {
   p.castSlam = false;
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const nx = Math.cos(a), ny = Math.sin(a), primed = p.holdHit;
   const dmg = abDmg(p, 'hold', abRk(p, 'hold', 'dmg')), stun = abRk(p, 'hold', 'stun');
   for (const q of unitsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) {
@@ -191,8 +191,7 @@ function armBash(p) {
     if (!q.dead) { if (primed) stunUnit(q, stun, p); q.kbx += nx * BASH_KB * 0.5; q.kby += ny * BASH_KB * 0.5; }
     burst(q.x, unitMidY(q), primed ? '#ffd95c' : '#cfd8e8', 8, 50, 0.45, true);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, BASH_R, BASH_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + nx * BASH_R * 0.5, p.y + ny * BASH_R * 0.5, BASH_R * 0.5, dmg);
+  hurtBuiltCone(p, a, BASH_R, BASH_HALF, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: BASH_R, half: BASH_HALF, t: 0, col: primed ? '#ffd95c' : '#c8d2e4', fx: 'bash', life: BASH_FX_LIFE });
   burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
   abShieldDown(p, true);

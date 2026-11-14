@@ -171,8 +171,8 @@ function friendsOver() { const F = state.menu.screen === 'room' ? friendsLayout(
 function friendsHit(L) {
   const F = friendsLayout(L);
   if (!F) return null;
-  if (inRect(F.add, 3)) return { kind: 'friend', f: { head: true } };
-  for (const r of F.rows) if (inRect(r)) return { kind: 'friend', f: r.f };
+  if (overRect(F.add, 3)) return { kind: 'friend', f: { head: true } };
+  for (const r of F.rows) if (overRect(r)) return { kind: 'friend', f: r.f };
   return null;
 }
 function friendHeadDo() { const b = friendsBridge(); if (b) { b.overlayFriends(); SFX.place(); } }
@@ -222,7 +222,7 @@ function drawFriendFace(x, y, f) {
   ctx.fillStyle = frColor(f); ctx.fillRect(x + s - 4, y + s - 4, 4, 4);
 }
 function drawSocial(L, now, hit) {
-  const m = state.menu, R = socialRect(), x = R.x + SOCIAL_PAD, w = R.w - 2 * SOCIAL_PAD;
+  const m = state.menu, R = socialRect(), x = R.x + SOCIAL_PAD;
   ctx.fillStyle = SC_ROW_B; ctx.fillRect(R.x, R.y, R.w, R.h);
   ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, R.y, 1, R.h);
   // the head: you, and the party's code behind the link's pip
@@ -281,8 +281,8 @@ function friendCardRect() {
 function friendCardHit() {
   const r = friendCardRect();
   if (!r) return null;
-  if (inRect(r.join, 3)) return 'join';
-  if (inRect(r.close, 3)) return 'close';
+  if (overRect(r.join, 3)) return 'join';
+  if (overRect(r.close, 3)) return 'close';
   return null;
 }
 // a click on the card's JOIN or cross; true when the card took it

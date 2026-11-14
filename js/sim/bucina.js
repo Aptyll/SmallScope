@@ -118,8 +118,7 @@ function bucinaBlast(p) {
     struck = true;
   }
   const mx = p.x + Math.cos(a) * BLAST_REACH / 2, my = p.y + Math.sin(a) * BLAST_REACH / 2;
-  for (const s of structsNear(p, mx, my, BLAST_REACH / 2)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(mx, my, BLAST_REACH / 2, dmg);
+  hurtBuilt(p, mx, my, BLAST_REACH / 2, dmg);
   if (struck) bucinaHeard(p);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y, a, r: BLAST_REACH, half: BLAST_HALF, t: 0, col: '#f2cc6a', fx: 'blast', life: BLAST_FX_LIFE });
   sfxAt('swing', p.x, p.y);

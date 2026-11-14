@@ -525,8 +525,7 @@ function destroyStructure(o, p) {
 // an axe, a shoulder - and is the default when nothing names one. What a type
 // DOES lives in this table, never in an `if` at a hit site: the sparks it
 // throws off a body, and how long it leaves that body burning.
-const BURN_T = 3;        // s a plain fire burns for...
-const BURN_DPS = 6;      // ...at this many hp a second, paid...
+const BURN_DPS = 6;      // hp a second a plain fire burns for, paid...
 const BURN_TICK = 0.4;   // ...in bites this far apart, so a burn reads as ticks rather than a drain
 const BURN_MAX = 8;      // s of burn one body can carry at once, however many shots land on it
 const DMG_TYPES = {

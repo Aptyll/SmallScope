@@ -182,7 +182,7 @@ function updateOrca(dt) {
     // a knock in the ice under them, once a second, the line's own clock
     const k = state.tick - orca.t0, sec = Math.round(1 / TICK_DT);
     if (k > 0 && k % sec === 0 && left > 0.5) sfxAt('iceKnock', p.x, p.y);
-    const [tx, ty] = orcaStalk(p, left, dt);
+    orcaStalk(p, left, dt);
     if (left <= 0) orcaStrike(p);
     return;
   }

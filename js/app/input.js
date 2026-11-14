@@ -216,6 +216,15 @@ function rebindLive() {
 const keys = {}; // key name (lowercase) -> held; written by the listeners
 // inside: pointer over the canvas
 const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false };
+// THE ONE HIT TEST. Is the point (x, y) on the rect r ({x, y, w, h}) grown by
+// px to each side and py above and below (py is px when left out)? ...and
+// overRect asks it of the pointer: every screen's hover and click go through
+// these two, so a rect's edges mean the same thing everywhere
+function ptInRect(r, x, y, px, py) {
+  px = px || 0; py = py === undefined ? px : py;
+  return x >= r.x - px && x < r.x + r.w + px && y >= r.y - py && y < r.y + r.h + py;
+}
+function overRect(r, px, py) { return ptInRect(r, mouse.x, mouse.y, px, py); }
 
 // THE LISTENERS ONLY TRANSLATE. What a key does lives in keyPress /
 // keyRelease and what a button does in pointerPress / pointerRelease, so a

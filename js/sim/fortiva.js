@@ -134,7 +134,7 @@ HERO_STAT.push({ name: 'NO KNEELING', add: (p, key) => (key === 'dmg' && isFort(
 
 // ---- Q SEVER THE CHAINS ---------------------------------------------------------
 function fortSever(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const dmg = abDmg(p, 'sever', abRk(p, 'sever', 'dmg'));
   let heroes = 0;
   for (const q of unitsInCone(p, p.x, p.y, a, SEVER_R, SEVER_HALF)) {
@@ -176,8 +176,7 @@ function defyRelease(p) {
     hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 90, ab: 'defy' });
     burst(q.x, unitMidY(q), '#f2cc6a', 6, 45, 0.4, true);
   }
-  for (const s of structsNear(p, p.x, p.y, DEFY_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, DEFY_R, dmg);
+  hurtBuilt(p, p.x, p.y, DEFY_R, dmg);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: DEFY_R, t: 0, col: took > 0 ? '#f2cc6a' : '#cfd8e8', fx: 'defy', life: DEFY_FX_LIFE });
   sfxAt('shieldBreak', p.x, p.y);
 }
@@ -213,8 +212,7 @@ function yokeStrike(p) {
     burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4, true);
     if (q instanceof Player && q.team !== p.team) hero = true;
   }
-  for (const s of structsNear(p, cx, cy, YOKE_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(cx, cy, YOKE_R, dmg);
+  hurtBuilt(p, cx, cy, YOKE_R, dmg);
   const i = abKeyOf(p, 'yoke');
   if (hero && i >= 0) { p.abCd[i] *= 1 - YOKE_REFUND; burst(p.x, p.y - 12, '#f2cc6a', 6, 35, 0.4, true); }
   abFx.push({ kind: 'ring', x: cx, y: cy, r: YOKE_R, t: 0, col: '#f4f7ff', fx: 'yoke', life: YOKE_FX_LIFE });
@@ -257,8 +255,7 @@ function noKneelLand(p) {
     if (!q.dead && d <= NOKNEEL_UP_R) knockUp(q, abRk(p, 'nokneel', 'up'), p);
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
   }
-  for (const s of structsNear(p, p.x, p.y, NOKNEEL_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, NOKNEEL_R, dmg);
+  hurtBuilt(p, p.x, p.y, NOKNEEL_R, dmg);
   p.nkT = NOKNEEL_T;
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: NOKNEEL_R, t: 0, col: '#f2cc6a', fx: 'nokneel', life: NOKNEEL_FX_LIFE });
   for (let i = 0; i < 18; i++) { // the snow thrown off the impact

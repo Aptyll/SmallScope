@@ -99,6 +99,25 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
 }
 
 // the y-sorted list: what stands up, sorted by its feet
+// A BODY FAR OFF THE VIEW IS NOT DRAWN. A hero, a soldier or a beast more than
+// BODY_CULL world px outside the world view puts no pixel in it - its sprite,
+// its shade, its frame and name, a held tool, a hero's marks and a machine all
+// stand well inside that of its feet - so it never joins the sorted pass: on a
+// full map most of the bodies are in another lane. One wearing a running damage
+// total stays in (tallyLive, js/draw/overhead.js): the total remembers where its
+// frame last hung it, for the moment the body drops.
+const BODY_CULL = 256;
+function bodyOffView(u, ox, oy) {
+  return (u.x < ox - BODY_CULL || u.x > ox + WV_W + BODY_CULL || u.y < oy - BODY_CULL || u.y > oy + WV_H + BODY_CULL) && !tallyLive(u);
+}
+// ...and what drawPlayer keeps for a hero besides pixels is still kept: the
+// idle's record of its last stride and turn (js/draw/idle.js), so its cloth does
+// not swing the moment it walks back in, and where a callout's plate hangs
+// (js/draw/callouts.js), off the view like the head it hangs over
+function playerUnseen(p, ox, oy, now) {
+  idleTick(p, playerStrides(p), now);
+  if (!endScreen()) callTag(p, Math.round(p.x - ox), Math.round(p.y - oy)); // an end screen hangs no frame (drawPlayer)
+}
 function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   // y-sorted entities. A building sorts by the bottom of its footprint; a
   // filler whose anchor is outside the scanned tiles stands in for it so a
@@ -125,11 +144,12 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const p of state.mode === 'title' ? [] : players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
+    if (bodyOffView(p, ox, oy)) { if (p.active) playerUnseen(p, ox, oy, now); continue; }
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
   }
   titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
-  for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
-  for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
+  for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });
+  for (const b of robots) if (fogShown(b, now) && !bodyOffView(b, ox, oy)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
   // the archery targets (the training grounds', or one a staged scene stood in
   // a match): entities, never tile objects (a slider crosses tiles every

@@ -204,8 +204,7 @@ function lucernaShoo(p) {
     if (Math.abs(da) > SHOO_HALF && d > 8) continue;
     hurtUnit(q, dmg, dx / d, dy / d, p, { kb: SHOO_KB, kbMul: q instanceof Player ? 2.2 : 1 });
   }
-  for (const s of structsNear(p, p.x + Math.cos(a) * SHOO_REACH / 2, p.y + Math.sin(a) * SHOO_REACH / 2, SHOO_REACH / 2)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + Math.cos(a) * SHOO_REACH / 2, p.y + Math.sin(a) * SHOO_REACH / 2, SHOO_REACH / 2, dmg);
+  hurtBuilt(p, p.x + Math.cos(a) * SHOO_REACH / 2, p.y + Math.sin(a) * SHOO_REACH / 2, SHOO_REACH / 2, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 4, a, r: SHOO_REACH, half: SHOO_HALF, t: 0, col: '#f2cc6a', fx: 'shoo', life: SHOO_FX_LIFE });
   sfxAt('swing', p.x, p.y);
 }

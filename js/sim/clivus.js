@@ -70,7 +70,7 @@ const CLIVUS_AB = [
     tip: 'HOP OVER PINES, ROCKS AND WATER',
     blurb: 'VAULT DOWN THE AIM OVER ANYTHING IN THE WAY BUT A BUILDING: PINES, ROCKS, A FELLED TRUNK, THE CREEK. RIVALS WHERE YOU LAND ARE STRUCK AND SLOWED.',
     use: (p) => clivusVault(p),
-    ok: (p) => !!vaultSpot(p, clivusAim(p)),
+    ok: (p) => !!vaultSpot(p, handAim(p)),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // crouched to spring
     icon: CLIVUS_ICON32.vault, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 36 && d < VAULT_LEN + 16,
@@ -89,7 +89,6 @@ const CLIVUS_AB = [
 ];
 
 function isClivus(p) { return CLASSES[p.cls] && CLASSES[p.cls].passive === 'foothold'; }
-function clivusAim(p) { return Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); }
 
 // ---- FOOTHOLD -----------------------------------------------------------------------
 function clivusCast(p) { p.clFootT = FOOT_T; }
@@ -118,15 +117,14 @@ function clivusHolds(p, q) {
   return false;
 }
 function clivusPick(p) {
-  const a = clivusAim(p), nx = Math.cos(a), ny = Math.sin(a);
+  const a = handAim(p), nx = Math.cos(a), ny = Math.sin(a);
   const dmg = abDmg(p, 'pick', abRk(p, 'pick', 'dmg'));
   for (const q of unitsInCone(p, p.x, p.y, a, PICK_R, PICK_HALF)) {
     const held = clivusHolds(p, q);
     hurtUnit(q, held ? dmg * PICK_HELD : dmg, nx, ny, p, { kb: 25 });
     burst(q.x, unitMidY(q), held ? '#f2cc6a' : '#cfe0f2', held ? 9 : 6, 45, 0.4, true);
   }
-  for (const s of structsInCone(p, p.x, p.y, a, PICK_R, PICK_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + nx * PICK_R * 0.5, p.y + ny * PICK_R * 0.5, PICK_R * 0.5, dmg);
+  hurtBuiltCone(p, a, PICK_R, PICK_HALF, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: PICK_R, half: PICK_HALF, t: 0, col: '#e6ebf2', fx: 'pick', life: PICK_FX_LIFE });
   sfxAt('swing', p.x, p.y);
 }
@@ -203,7 +201,7 @@ function vaultSpot(p, a) {
   return null;
 }
 function clivusVault(p) {
-  const a = clivusAim(p), s = vaultSpot(p, a);
+  const a = handAim(p), s = vaultSpot(p, a);
   if (!s) return;
   p.rushNX = Math.cos(a); p.rushNY = Math.sin(a);
   p.rushT = p.clVaultT = s.d / VAULT_SPD;
@@ -249,8 +247,7 @@ function vaultLand(p) {
     hurtUnit(q, p.clVaultDmg, (q.x - p.x) / d, (q.y - p.y) / d, p, { kb: 20, ab: 'vault' });
     if (!q.dead) slowUnit(q, VAULT_SLOW_T, p.clVaultSlow);
   }
-  for (const s of structsNear(p, p.x, p.y, VAULT_HIT_R)) hurtStruct(s, p.clVaultDmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, VAULT_HIT_R, p.clVaultDmg);
+  hurtBuilt(p, p.x, p.y, VAULT_HIT_R, p.clVaultDmg);
   burst(p.x, p.y + 4, '#f4f7ff', 10, 50, 0.45, true);
   abFx.push({ kind: 'ring', x: p.x, y: p.y, r: VAULT_HIT_R, t: 0, col: '#f4f7ff', fx: 'vault', life: VAULT_FX_LIFE });
   sfxAt('hit', p.x, p.y);
@@ -263,8 +260,7 @@ function clivusRing(p) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     hurtUnit(q, dmg, -(q.x - p.x) / d, -(q.y - p.y) / d, p, { kb: d > RING_R - 12 ? 40 : 0, ab: 'ring' });
   }
-  for (const s of structsNear(p, p.x, p.y, RING_CAST_R)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, RING_CAST_R, dmg);
+  hurtBuilt(p, p.x, p.y, RING_CAST_R, dmg);
   // the rope: every open tile on a circle half a tile past it is a wall to rivals while it
   // stands, so the tiles' inner edges, where a body stops, fall about on the rope as drawn
   const tiles = [], wr = RING_R + TILE / 2;

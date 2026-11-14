@@ -24,6 +24,10 @@ because the atlas is baked from it, but nothing draws through it.
 **Anything new that the world can hold hundreds of has to do the same**, or it will quietly cost
 more than everything else in the frame put together.
 
+The cistern's standing stone does: its 372 y-sorted pieces are rects of one `SPRITES.cistern.atlas`
+(packed by app/bake-cistern/paint.py), where each used to be a canvas of its own and the ring in view
+was over a hundred texture changes a frame.
+
 ## Specks
 
 The same rule, one level down: the sun's dust motes and the ice's reflected stars are hundreds of
@@ -46,7 +50,8 @@ ray passes fill the view and no more, `drawIceStars` walks only the visible tile
 over them, and every mote and star is culled against `WV_W`/`WV_H` before it is drawn. The same
 goes for the two lists that hold the whole world's worth: `drawFootprints` skips a mark more than
 `FOOT_REACH` px off the frame and `drawParticles` a particle wholly off it, since a few hundred
-of each exist and only a handful are on screen. None of them
+of each exist and only a handful are on screen. The bodies are culled the same way before the
+y-sort (`bodyOffView`: most heroes and soldiers are in another lane). None of them
 feed anything back: they are safe to cheapen, skip or reorder without touching a match — which is
 exactly what the ESC panel's **VIDEO page** does: `settings.vidClouds`/`vidRays` gate their calls
 in `renderLighting`, `vidStars` gates `drawIceStars` in `render()`, `vidSnow` gates

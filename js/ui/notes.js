@@ -26,7 +26,7 @@ function pageTabsLayout() {
 }
 // the tab under (mx, my), or -1
 function pageTabHit(mx, my) {
-  for (const r of pageTabsLayout()) if (mx >= r.x - 6 && mx < r.x + r.w + 6 && my >= r.y - 4 && my < r.y + r.h + 4) return r.i;
+  for (const r of pageTabsLayout()) if (ptInRect(r, mx, my, 6, 4)) return r.i;
   return -1;
 }
 // open tab i from whichever page is up: the wiki is its own screen with its
@@ -629,6 +629,8 @@ const PATCH_DIGEST = [
     ['THE END SCREENS HAVE EMOTES, AND A LOBBY SHOWS EVERY RECORD', '0.270'],
   ]],
   ['SOUND AND SPEED', [
+    ['THE GAME AND EVERY NEW MATCH LOAD ABOUT A QUARTER FASTER', '0.931'],
+    ['FRAMES DRAW ABOUT TWICE AS FAST WHERE FELLED STUMPS STAND', '0.928'],
     ['A FILE THAT FAILS TO DOWNLOAD RELOADS THE PAGE INSTEAD OF CRASHING THE FIRST WAVE', '0.923'],
     ['NO MORE LAG SPIKES IN FIGHTS AND UNDER TREES', '0.732'],
     ['THE WEB BUILD STOPS RETRYING A MISSING MULTIPLAYER SERVER', '0.715'],

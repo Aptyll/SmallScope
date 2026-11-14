@@ -119,7 +119,7 @@
     }
     add(rell(55, C, 17, 11), 'plume', { sh: 2, hl: true });
     saddle(add, dot);
-    head(add, dot, cfg);
+    head(add, dot);
     return { parts, dots };
   }
 
@@ -145,7 +145,7 @@
   const HEAD = [[-6, 0], [-3.5, 1.2], [-1, 2.2], [2.5, 4.8], [4, 4.4], [8, 3.9], [11, 3.7], [12.5, 0]]; // half widths, from the beak's tip back
   const BEAK_T = -1;  // where the beak meets the feathers
   const HK = 1.5, HX = 22; // the head's scale and where it sits on the grid
-  function head(add, dot, cfg) {
+  function head(add, dot) {
     const X = (t) => HX + t * HK, Y = (y) => C + y * HK;
     const D = (t, y, mat, tone) => dot(bround(X(t)), bround(Y(y)), mat, tone);
     const both = (P) => P.map(([t, y]) => [X(t), Y(-y)]).concat(P.slice().reverse().map(([t, y]) => [X(t), Y(y)]));

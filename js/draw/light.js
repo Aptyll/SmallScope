@@ -91,14 +91,21 @@ const CLOUD_TINT = [126, 143, 186];       // a cool shadow, never a grey one
 // Value noise on a WRAPPED lattice: hashing (x mod per) is the whole trick -
 // it makes the field seamless at the texture edge, which is what lets one
 // small canvas tile the entire 3712px world through a repeat pattern.
-function pnoise(x, y, perX, perY) {
+// (`lat` is the lattice's hashes, perX a row, read off pnoiseLattice: a layer asks each of its
+// few hundred points a thousand times over)
+function pnoise(x, y, perX, perY, lat) {
   const x0 = Math.floor(x), y0 = Math.floor(y);
   const fx = x - x0, fy = y - y0;
   const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
   const xa = ((x0 % perX) + perX) % perX, ya = ((y0 % perY) + perY) % perY;
   const xb = (xa + 1) % perX, yb = (ya + 1) % perY;
-  const a = hash2(xa, ya), b = hash2(xb, ya), c = hash2(xa, yb), d = hash2(xb, yb);
+  const a = lat[ya * perX + xa], b = lat[ya * perX + xb], c = lat[yb * perX + xa], d = lat[yb * perX + xb];
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+function pnoiseLattice(perX, perY) {
+  const lat = new Float64Array(perX * perY);
+  for (let y = 0; y < perY; y++) for (let x = 0; x < perX; x++) lat[y * perX + x] = hash2(x, y);
+  return lat;
 }
 
 // One cloud layer: four octaves on a lattice that wraps on both axes (so the
@@ -121,7 +128,9 @@ function bakeCloud(size, octX, octY, lo, hi) {
   const g = c.getContext('2d');
   const img = g.createImageData(size, size);
   const d = img.data;
-  const oc = (x, y, m) => pnoise(x / (size / (octX * m)), y / (size / (octY * m)), octX * m, octY * m);
+  const lats = {};
+  for (const m of [1, 2, 4, 8]) lats[m] = pnoiseLattice(octX * m, octY * m);
+  const oc = (x, y, m) => pnoise(x / (size / (octX * m)), y / (size / (octY * m)), octX * m, octY * m, lats[m]);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const n = oc(x, y, 1) * 0.50 + oc(x, y, 2) * 0.27 + oc(x, y, 4) * 0.15 + oc(x, y, 8) * 0.08;

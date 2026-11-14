@@ -118,9 +118,7 @@ function cutAttack(p, A) {
     });
     burst(q.x, unitMidY(q), '#eef4fb', 4, 40, 0.3, true);
   }
-  for (const w of structsInCone(p, p.x, p.y, a, r, cut.half)) hurtStruct(w, dmg, p);
-  // the practice dummy: the wedge's far half is where a dummy stands to be hit
-  if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
+  hurtBuiltCone(p, a, r, cut.half, dmg);
   slashes.push({ x: p.x, y: p.y - 2, a, r, half: cut.half, t: 0, hit: targets.length > 0, blade: CLASSES[p.cls].blade || '' }); // `blade`: whose weapon cut it, for its smear (HERO_BLADES' `smear`, drawSlashes)
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = cut.half; // the hand swings the blade through the same arc (drawHeldTool)
   faceToward(p, dx, dy, true);
