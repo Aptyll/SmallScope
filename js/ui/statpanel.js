@@ -57,7 +57,7 @@ function statCells() {
 function statPanelHit(mx, my) {
   const P = statPanelRect();
   if (mx < P.x || mx >= P.x + P.w || my < P.y || my >= P.y + P.h) return null;
-  for (const c of statCells()) if (mx >= c.x && mx < c.x + c.w && my >= c.y && my < c.y + c.h) return { kind: 'stat', key: c.key };
+  for (const c of statCells()) if (ptInRect(c, mx, my)) return { kind: 'stat', key: c.key };
   return { kind: 'frame' };
 }
 // the colour a buff paints the number it is raising, or null

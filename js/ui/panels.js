@@ -180,8 +180,7 @@ function mapTileAt(sx, sy) {
 // whether a press would close the chart: the pointer off the slab
 const MAP_HEAD_Y = 6; // the header row inside the slab: where the match clock sits
 function mapCloseHit() {
-  const mx = mouse.x, my = mouse.y;
-  return mouse.inside && !(mx >= PANEL_X && mx < PANEL_X + PANEL_W && my >= PANEL_Y && my < PANEL_Y + PANEL_H);
+  return mouse.inside && !overRect({ x: PANEL_X, y: PANEL_Y, w: PANEL_W, h: PANEL_H });
 }
 
 const mapCv = document.createElement('canvas');
@@ -814,21 +813,21 @@ function settingsHit() {
     return null;
   }
   for (const t of L.tabs)
-    if (t.id !== setTab && mx >= t.x && mx < t.x + t.w && my >= t.y - 3 && my < t.y + t.h + 3) return 'tab:' + t.id;
+    if (t.id !== setTab && ptInRect(t, mx, my, 0, 3)) return 'tab:' + t.id;
   if (setTab === 'controls') for (const t of L.ctabs)
-    if (t.id !== L.cell && mx >= t.x && mx < t.x + t.w && my >= t.y - 2 && my < t.y + t.h + 2) return 'ctab:' + t.id;
+    if (t.id !== L.cell && ptInRect(t, mx, my, 0, 2)) return 'ctab:' + t.id;
   const b = muteBtnRect();
-  if (b && mx >= b.x - 2 && mx < b.x + b.w + 2 && my >= b.y - 2 && my < b.y + b.h + 2) return 'mute';
+  if (b && ptInRect(b, mx, my, 2)) return 'mute';
   for (const l of footPlanks())
-    if (mx >= l.x - 2 && mx < l.x + l.w + 2 && my >= l.y - 3 && my < l.y + l.h + 3) return l.id;
+    if (ptInRect(l, mx, my, 2, 3)) return l.id;
   if (my < L.clipY0 || my >= L.clipY1) return null; // the content window scrolls; nothing outside it is live
   // the CONTROLS page: the listing's caps and its RESET are live
   if (setTab === 'controls') {
     if (my < L.clipY0 + CTRL_TAB_H) return null;
     const K = keyRowsLayout(), ox = SET_X, oy = L.clipY0 + CTRL_TAB_H - L.scroll;
-    for (const c of K.caps) if (mx >= ox + c.x - 1 && mx < ox + c.x + c.w + 1 && my >= oy + c.y - 1 && my < oy + c.y + c.h + 1) return 'key:' + c.act;
+    for (const c of K.caps) if (ptInRect({ x: ox + c.x, y: oy + c.y, w: c.w, h: c.h }, mx, my, 1)) return 'key:' + c.act;
     const r = K.reset;
-    if (!bindsDefault() && mx >= ox + r.x - 3 && mx < ox + r.x + r.w + 3 && my >= oy + r.y - 3 && my < oy + r.y + r.h + 3) return 'keyreset';
+    if (!bindsDefault() && ptInRect({ x: ox + r.x, y: oy + r.y, w: r.w, h: r.h }, mx, my, 3)) return 'keyreset';
     return null;
   }
   for (const r of L.rows) {

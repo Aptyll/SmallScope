@@ -280,7 +280,7 @@ function abBuyHit(mx, my) {
   for (let i = 0; i < AB_N; i++) {
     if (!abLvCanBuy(player, i)) continue;
     const r = abBuyRect(i);
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
+    if (ptInRect(r, mx, my)) return i;
   }
   return -1;
 }
@@ -300,14 +300,14 @@ function stripHit(mx, my) {
   }
   for (let i = 0; i < ITEM_SLOTS; i++) {
     const s = itemCellRect(i);
-    if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'item', i };
+    if (ptInRect(s, mx, my)) return { kind: 'item', i };
   }
   for (let i = 0; i < TRICK_N; i++) {
     const s = trickCellRect(i);
-    if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'trick', i };
+    if (ptInRect(s, mx, my)) return { kind: 'trick', i };
   }
   const pr = portraitRect();
-  if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'port' };
+  if (ptInRect(pr, mx, my)) return { kind: 'port' };
   return { kind: 'frame' };
 }
 
