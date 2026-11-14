@@ -330,7 +330,7 @@ table does. What a new hero needs written:
    `abReady`), so a key still locked at level 0 is never tried;
 5. a 12×12 hero **`emblem`** in its `heroArt` row (same palette), drawn by hand (never a
    shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the
-   tooltips wear (`classIcon12`, js/ui/menu.js);
+   tooltips wear (`classIcon12`, js/ui/champ-select.js);
 6. an `attack` row on its `CLASSES` entry ([the basic attack](gameplay/the-basic-attack.md)), a new
    `art` in js/sprites/weapons.js or its own sprite file;
 7. a **`BOT_BUILDS` row** in [js/sim/items.js](../../js/sim/items.js): its item build, which is also

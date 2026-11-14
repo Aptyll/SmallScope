@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ select look
-// The champ select's pixels (the lobby, js/ui/menu.js `lobby`; its rules are
+// The champ select's pixels (the lobby, js/ui/champ-select.js `lobby`; its rules are
 // the draft's, js/ui/draft.js), laid out the way League lays its own: the
 // HEADLINE over a draining TIMER BAR and the seconds top centre, each side's
 // BANS in its top corner, YOUR SIDE down the left as five SEAT ROWS (a
@@ -241,7 +241,7 @@ function drawSeats(L, a, hot) {
 // own in-game model, drawn by the world's drawPlayer (js/draw/bodies.js) as a
 // stage piece (the tool in hand, no overhead tells) at showScale px a pixel, in
 // the look worn on the strip, under the pick stage's light and ring
-// (drawStageLight, js/ui/menu.js). It turns through SHOW_BEATS, standing and
+// (drawStageLight, js/ui/champ-select.js). It turns through SHOW_BEATS, standing and
 // striding each way, from the lock or the last look worn (state.menu.showKey,
 // showT0);
 // its look's name sits under it. Every hero and look shows itself with no art
