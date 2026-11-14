@@ -164,9 +164,8 @@ js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand si
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
 **Heroes stay on the 16 px grid**: the 32 px hero bodies (`fine` looks, drawn rolls and weapons) were
-dropped on 11-14 and are gone from the code; their drafts are in /mnt/project-files/base32/ for history.
-A frame or held art may still carry `dens` (art px a world px; `drawFrame`, `heldW`, `heldH` draw it at
-1/dens), but no hero art does.
+dropped on 11-14 and are gone from the code, with the 2x world buffer that drew them; their drafts
+are in /mnt/project-files/base32/ for history.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the

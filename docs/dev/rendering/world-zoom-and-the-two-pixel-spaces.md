@@ -8,7 +8,7 @@ That falls out of rendering in **two pixel spaces**:
 
 | Space | Size | Written through | Holds |
 | --- | --- | --- | --- |
-| world | `WV_W`×`WV_H` world px, backed by `WD` buffer px each | `ctx` while it points at `wctx`, under a `WD` transform | ground → … → `renderLighting` |
+| world | `WV_W`×`WV_H` world px, one buffer px each | `ctx` while it points at `wctx`, under the identity | ground → … → `renderLighting` |
 | screen | `VIEW_W`×`VIEW_H` (backed by `VIEW * devScale` device px) | `ctx` while it points at `uictx`, under a `devScale` transform | weather, vignettes, all UI |
 
 `ctx` is therefore **not a fixed binding**: `render()` sets `ctx = wctx` before the ground blit,
@@ -19,17 +19,10 @@ nearest-neighbour resample of an already-composed frame** is what keeps it coher
 sprites, particles and floaters are drawn together at 1:1 first, so they share one pixel grid
 instead of each rounding its own edges and shimmering against its neighbours.
 
-**The world's density.** `worldCv` holds `WD` buffer px a world px a side: 1 today, 2 with `?fine=1`
-(a tool's switch; no art needs it since the 32 px hero bodies were dropped). Every world
-pass draws in world px under `worldBase` (a `WD` scale that `render()` puts on `wctx` and
-`renderAirLayer` on `actx`). Today's 16 px art lands `WD`×`WD` per pixel, so at an even `k` the
-screen is the same as a 1:1 buffer; what changes is that a sprite drawn `WD` times finer keeps
-every pixel: a frame with a `dens` is drawn at 1/`dens` by `drawFrame`. A layer that mirrors the buffer (the hero, body, lit, punch and canopy-window
-layers, `gradeCv`, `airMask`) is `WD` times its world size and is copied with `worldBlit`; a
-`setTransform` on a world context goes through `worldBase` or multiplies by `WD`, never the
-identity. Art turned at a free angle goes through `drawTurned`, which turns art coarser than the
-buffer on the art's own
-pixel grid first, so a turned 16 px blade does not come out in half pixels.
+**One buffer px a world px.** `worldCv` and every layer that mirrors it (the hero, body, lit, punch
+and canopy-window layers, `gradeCv`, `airMask`) are their world size; every world pass draws in
+world px under the identity, and the blit scales the whole buffer by `k`. Art turned at a free angle
+goes through `drawTurned`.
 
 Consequences a new pass has to respect:
 

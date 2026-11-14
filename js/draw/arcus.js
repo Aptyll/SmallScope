@@ -163,7 +163,7 @@ function arcusCarry(p, px, py) {
   const side = p.dir === 'left' || p.dir === 'right';
   const hx = lead ? px + (side ? 15 : 16) + rc : px + (side ? 0 : -1) - rc, hy = py + 10;
   const img = lead ? ARCUS_BOW_CARRY : heldFlip(ARCUS_BOW_CARRY);
-  ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : heldW(img) - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1], heldW(img), heldH(img));
+  ctx.drawImage(img, hx - (lead ? ARCUS_BOW_GRIP[0] : img.width - 1 - ARCUS_BOW_GRIP[0]), hy - ARCUS_BOW_GRIP[1], img.width, img.height);
   if (p.twinT > 0 && p.dir !== 'up') { // TWIN NOCK: two arrows pinched in the bow hand, heads up on the stave's far side (clear of his face), ready to go on the string together
     const o = lead ? 2 : -2;
     acArrow(hx + o, hy - 8, -Math.PI / 2, 10, p.team);

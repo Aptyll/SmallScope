@@ -107,7 +107,7 @@ function render() {
   // against WV_W/WV_H, never VIEW_W/VIEW_H - at zoom < 1 the world view is
   // WIDER than the canvas, and culling to the canvas would eat the edges.
   ctx = wctx;
-  worldBase(wctx);
+  wctx.setTransform(1, 0, 0, 1, 0, 0);
 
   drawGroundPass(ox, oy, ex, ey, now);
 

@@ -39,8 +39,8 @@ function drawFalcoPerch(p, ax, ay, now, front) {
   if (!falcoHasHawk(p)) return;
   const right = !lead, hawk = FALCO_HAWK; // which way the hawk looks
   const img = right ? hawk : heldFlip(hawk);
-  const fx = right ? FALCO_HAWK_FOOT[0] : heldW(img) - 1 - FALCO_HAWK_FOOT[0];
-  ctx.drawImage(img, gx + 1 + (lead ? -1 : 1) - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0), heldW(img), heldH(img)); // now and then it shifts its feet
+  const fx = right ? FALCO_HAWK_FOOT[0] : img.width - 1 - FALCO_HAWK_FOOT[0];
+  ctx.drawImage(img, gx + 1 + (lead ? -1 : 1) - fx, gy - 1 - FALCO_HAWK_FOOT[1] - (Math.floor(now * 1.2 + p.id) % 5 === 0 ? 1 : 0), img.width, img.height); // now and then it shifts its feet
 }
 HERO_BODY_FX.push(drawFalcoPerch);
 function drawFalcoAir(ex, ey, now) {
@@ -210,7 +210,7 @@ function falcoCarry(p, px, py) {
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
   const K = FALCO_KNIFE, k = side ? K.fwd : K.down, img = lead ? k.img : heldFlip(k.img);
   const hx = lead ? px + (side ? 12 : 13) + rc : px + (side ? 3 : 2) - rc, hy = py + 11;
-  ctx.drawImage(img, hx - (lead ? k.grip[0] : heldW(img) - 1 - k.grip[0]), hy - k.grip[1], heldW(img), heldH(img));
+  ctx.drawImage(img, hx - (lead ? k.grip[0] : img.width - 1 - k.grip[0]), hy - k.grip[1], img.width, img.height);
   if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }

@@ -54,28 +54,24 @@
   });
 
   // ---------------------------------------------------------------- heroes
-  // One look's pose set off `grids`, a square cell of d art px a world px: every frame
-  // carries `dens` = d, so a reader draws it at 1/d (drawFrame, js/draw/bodies.js). The
-  // roll stays the doll's 16 px frames at any d.
-  function lookSet(row, grids, d, sp, hand) {
-    const tag = (c) => { if (d > 1) c.dens = d; return c; };
-    const bk = (g) => tag(bake(g, sp)), fl = (c) => tag(flipH(c));
-    const w = heroWalk(grids, d);
+  // One look's pose set off `grids`, a square cell; the roll stays the doll's 16 px frames.
+  function lookSet(row, grids, sp, hand) {
+    const bk = (g) => bake(g, sp), fl = (c) => flipH(c);
+    const w = heroWalk(grids);
     const side = w.side.map((g) => bk(g));
     const set = Object.assign({
       down: w.down.map((g) => bk(g)), up: w.up.map((g) => bk(g)), right: side, left: side.map(fl),
     }, motionSet(row.motion, sp));
-    if (d > 1) set.dens = d;
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
     for (const kind of ['run', 'hold']) {
       const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
       let r = null;
-      const right = () => r || (r = heroRunSide(grids.side, bob, row, d).map((g) => bk(g)));
+      const right = () => r || (r = heroRunSide(grids.side, bob, row).map((g) => bk(g)));
       let l = null;
       // ...and head-on and from behind too, for a look that says its doll does not match it
       const drawn = row.run === 'drawn', fr = {};
-      const front = (f) => (drawn ? () => fr[f] || (fr[f] = heroRunFront(grids[f], bob, d).map((g) => bk(g))) : () => mo[f]);
+      const front = (f) => (drawn ? () => fr[f] || (fr[f] = heroRunFront(grids[f], bob).map((g) => bk(g))) : () => mo[f]);
       set[kind] = Object.defineProperties({}, {
         down: { get: front('down'), enumerable: true }, up: { get: front('up'), enumerable: true },
         right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(fl)), enumerable: true },
@@ -84,7 +80,7 @@
     // how far this look's body stands over and out past the 16 px cell's 15-row one
     // (a larger cell's): the overhead frame lifts by `rise`, a hand sits `reach` px
     // further out (heroRise, heroReach, js/draw/heroes.js)
-    const more = grids.down.length / d - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
+    const more = grids.down.length - 16; // a 20 px cell: 3 rows taller (one more is headroom), 1 px wider a side
     set.rise = (more * 3) >> 2; set.reach = more >> 2;
     // the hand that closes on the carried weapon (heroFist, js/draw/heroes.js): the look's
     // own `hand` letter (a glove), else its skin, ringed in its outline
@@ -100,17 +96,17 @@
     // and the loose cloth a pixel behind for the beat after a stop or a turn (heroCloth),
     // baked on first ask (drawPlayer's idle, js/draw/idle.js)
     const FACE = { down: 'down', up: 'up', right: 'side', left: 'side' }, breaths = {}, cloths = new Map();
-    const breathOf = (f) => breaths[f] || (breaths[f] = [grids[FACE[f]], heroBreath(grids[FACE[f]], d)]);
+    const breathOf = (f) => breaths[f] || (breaths[f] = [grids[FACE[f]], heroBreath(grids[FACE[f]])]);
     const facing = (f, g) => (f === 'left' ? fl(bk(g)) : bk(g));
     set.breath = Object.defineProperties({}, Object.fromEntries(Object.keys(FACE).map((f) => {
       let fr = null;
       return [f, { get: () => fr || (fr = f === 'left' ? set.breath.right.map(fl) : breathOf(f).map((g) => bk(g))), enumerable: true }];
     })));
-    // the cloth's step is a world px, d of this grid's (its boxes are the look's for this grid)
+    // the cloth steps a px (its boxes are the look's for this grid)
     set.cloth = (f, dx, dy, b) => {
       const k = f + dx + ',' + dy + b;
       if (!cloths.has(k)) {
-        const g = heroCloth(breathOf(f)[b], row, FACE[f], (f === 'left' ? -dx : dx) * d, dy * d, d);
+        const g = heroCloth(breathOf(f)[b], row, FACE[f], f === 'left' ? -dx : dx, dy);
         cloths.set(k, g && facing(f, g));
       }
       return cloths.get(k);
@@ -130,7 +126,7 @@
     let set = lookCache.get(key);
     if (set) return set;
     const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), art.pal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
-    set = lookSet(row, row.grids, 1, sp, art.hand);
+    set = lookSet(row, row.grids, sp, art.hand);
     lookCache.set(key, set);
     return set;
   }

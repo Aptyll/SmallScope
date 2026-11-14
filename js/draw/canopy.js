@@ -27,7 +27,7 @@ const CANOPY_CUT = [0.95, 0.7, 0.4]; // how much of the canopy a full window tak
 const HERO_LW = 96, HERO_LH = 96, HERO_FOOT = 72; // the hero layer, the feet at (HERO_LW / 2, HERO_FOOT)
 
 const heroCv = document.createElement('canvas');
-heroCv.width = HERO_LW * WD; heroCv.height = HERO_LH * WD; // WD dense, like the world buffer
+heroCv.width = HERO_LW; heroCv.height = HERO_LH;
 const hctx = heroCv.getContext('2d', { willReadFrequently: true }); // read back for the mask, one small layer a frame
 hctx.imageSmoothingEnabled = false;
 // a sprite drawn into this CPU layer is drawn from its CPU twin (SPR.cpuTwin):
@@ -38,7 +38,7 @@ const holeCv = document.createElement('canvas');
 holeCv.width = HERO_LW; holeCv.height = HERO_LH;
 const holeCtx = holeCv.getContext('2d');
 const winCv = document.createElement('canvas');
-winCv.width = 64 * WD; winCv.height = 64 * WD; // a pine (27x37) and its 1 px work-target rim, WD dense
+winCv.width = 64; winCv.height = 64; // a pine (27x37) and its 1 px work-target rim
 const winCtx = winCv.getContext('2d');
 winCtx.imageSmoothingEnabled = false;
 
@@ -56,11 +56,11 @@ function heroLayerOpen(p, px, py) {
   if (p !== canopyHero || ctx !== wctx) return false;
   const T = wctx.getTransform();
   const lx = px + 8 - (HERO_LW >> 1), ly = py + 16 - HERO_FOOT;
-  heroAt = { x: lx + T.e / WD, y: ly + T.f / WD };
-  worldBase(hctx);
+  heroAt = { x: lx + T.e, y: ly + T.f };
+  hctx.setTransform(1, 0, 0, 1, 0, 0);
   hctx.clearRect(0, 0, HERO_LW, HERO_LH);
   hctx.save();
-  hctx.setTransform(WD, 0, 0, WD, -lx * WD, -ly * WD);
+  hctx.setTransform(1, 0, 0, 1, -lx, -ly);
   ctx = hctx;
   return true;
 }
@@ -69,17 +69,17 @@ function heroLayerClose(open) {
   hctx.restore();
   ctx = wctx;
   wctx.save();
-  worldBase(wctx);
+  wctx.setTransform(1, 0, 0, 1, 0, 0);
   wctx.drawImage(heroCv, heroAt.x, heroAt.y, HERO_LW, HERO_LH);
   wctx.restore();
 }
 
 function heroMaskNow() {
   if (heroMask) return heroMask;
-  const W = HERO_LW * WD, d = hctx.getImageData(0, 0, W, HERO_LH * WD).data, a = new Uint8Array(HERO_LW * HERO_LH);
+  const W = HERO_LW, d = hctx.getImageData(0, 0, W, HERO_LH).data, a = new Uint8Array(HERO_LW * HERO_LH);
   let n = 0;
-  for (let y = 0; y < HERO_LH * WD; y++) for (let x = 0; x < W; x++) {
-    const i = ((y / WD) | 0) * HERO_LW + ((x / WD) | 0);
+  for (let y = 0; y < HERO_LH; y++) for (let x = 0; x < W; x++) {
+    const i = y * HERO_LW + x;
     if (d[(y * W + x) * 4 + 3] && !a[i]) { a[i] = 1; n++; }
   }
   return (heroMask = { a, n });
@@ -147,18 +147,18 @@ function holeNow() {
 function drawWindowed(open, x, y, w, h, draw) {
   holeNow();
   const P = 1; // the rim's px either side
-  worldBase(winCtx);
+  winCtx.setTransform(1, 0, 0, 1, 0, 0);
   winCtx.clearRect(0, 0, w + 2 * P, h + 2 * P);
-  winCtx.setTransform(WD, 0, 0, WD, (P - x) * WD, (P - y) * WD);
+  winCtx.setTransform(1, 0, 0, 1, P - x, P - y);
   const was = ctx;
   ctx = winCtx;
   draw();
   ctx = was;
-  worldBase(winCtx);
+  winCtx.setTransform(1, 0, 0, 1, 0, 0);
   winCtx.globalCompositeOperation = 'destination-out';
   winCtx.globalAlpha = open;
   winCtx.drawImage(holeCv, heroAt.x - x + P, heroAt.y - y + P);
   winCtx.globalAlpha = 1;
   winCtx.globalCompositeOperation = 'source-over';
-  worldBlit(ctx, winCv, 0, 0, w + 2 * P, h + 2 * P, x - P, y - P);
+  ctx.drawImage(winCv, 0, 0, w + 2 * P, h + 2 * P, x - P, y - P, w + 2 * P, h + 2 * P);
 }
