@@ -203,7 +203,7 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
 (`profileHit`) and the cursor. The records are [js/app/history.js](../../../js/app/history.js).
 
 - **The column** down the left: the picture (a hero's face, `PROFILE.pic`, the hero last picked
-  until one is chosen) in a gold rim, the name, RANK / GAMES / WINS, and the people played with
+  until one is chosen) in a gold rim, the name, its badges (`PF_BADGES`, hook entries; yours ride your card as `bd`), RANK / GAMES / WINS, and the people played with
   most whose card this screen holds. A press on the picture opens the **picker** (every hero's
   face, the worn one in gold, the hovered one named over the grid); a press on the name opens its
   field: a click selects the name on a gold band (`menu.nameSel`: the next letter replaces it),
