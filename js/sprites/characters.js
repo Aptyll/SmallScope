@@ -76,14 +76,19 @@
     }
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
+    // ...and where each frame's body sits, screen px down, per kind and view (set.bobY),
+    // for what rides it (carryAt, js/draw/bodies.js): the doll's bob is counted the other way
+    set.bobY = {};
     for (const kind of ['run', 'hold']) {
       const mo = set[kind], bob = kind === 'run' ? SPR.motion.RUN_BOB : SPR.motion.HOLD_BOB;
+      const fbob = kind === 'run' && row.run === 'drawn' ? HERO_FRONT_BOB : bob; // a drawn body bounds higher head-on and away
+      set.bobY[kind] = { side: bob, front: row.run === 'drawn' ? fbob : bob.map((v) => -v) };
       let r = null;
       const right = () => r || (r = heroRunSide(grids.side, bob, row, d).map((g) => bk(g)));
       let l = null;
       // ...and head-on and from behind too, for a look that says its doll does not match it
       const drawn = row.run === 'drawn', fr = {};
-      const front = (f) => (drawn ? () => fr[f] || (fr[f] = heroRunFront(grids[f], bob, d).map((g) => bk(g))) : () => mo[f]);
+      const front = (f) => (drawn ? () => fr[f] || (fr[f] = heroRunFront(grids[f], fbob, d, f === 'up').map((g) => bk(g))) : () => mo[f]);
       set[kind] = Object.defineProperties({}, {
         down: { get: front('down'), enumerable: true }, up: { get: front('up'), enumerable: true },
         right: { get: right, enumerable: true }, left: { get: () => l || (l = right().map(fl)), enumerable: true },

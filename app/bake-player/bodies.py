@@ -15,6 +15,11 @@ from doll import Canvas, Cam, Spun, v3, rot, Z, ik, decal, ink
 TURNED = -0.42          # side-on the head turns toward the viewer, so the near eye shows
 
 
+# THE MANTLE's edge on the ball's coat, in its unit coordinates: toward the tucked head (up and
+# forward) past MANTLE_AT is the look's own colour
+MANTLE_DIR = np.array([1.7, 0.0, 2.05]) / np.linalg.norm([1.7, 0.0, 2.05])
+MANTLE_AT = 0.15
+
 class Body:
     HIP_Y = 1.5
     LEG = (Z(1.3), Z(1.35))
@@ -132,8 +137,12 @@ class Body:
     def paint_ball(self, theta, cam):
         cv = Canvas()
         cam = Spun(cam, rot('y', theta), v3(0, 0, 0), v3(0, 0, self.BALL_LIFT))
-        # the back of the coat is most of the ball
-        cv.blob(cam, v3(-0.55, 0, -0.1), np.eye(3), (3.55, 3.85, 3.85), 'coat', 'coat', p=2.2)
+        # the back of the coat is most of the ball, and the shoulders round under the head
+        # wear the look's own colour (THE MANTLE): the material its tucked head is painted in,
+        # its hood, hair, helm or hat, so about a third of a ball is the hero's and not the team's
+        own = self.ball_own()
+        mantle = (lambda n, q: np.where(MANTLE_DIR @ q > MANTLE_AT, own, 'coat')) if own != 'coat' else None
+        cv.blob(cam, v3(-0.55, 0, -0.1), np.eye(3), (3.55, 3.85, 3.85), 'coat', 'coat', p=2.2, region=mantle)
         cv.blob(cam, v3(-0.9, 0, -2.75), np.eye(3), (2.3, 3.0, 1.1), 'hem', 'hem', bias=0.1)
         # legs folded up the front: thighs to the chest, shins down to the boots under the seat
         for s in (1, -1):
@@ -160,6 +169,17 @@ class Body:
 
     def ball_head(self, cv, cam, hc, Rh):
         cv.blob(cam, hc, Rh, (2.6, 2.85, 2.5), 'head', 'hat', p=self.HEAD_P, region=self.face_region)
+
+    def ball_own(self):
+        """the material this look's tucked head is painted in (its ball_head's 'head' part)"""
+        seen = []
+        class Note:
+            def blob(self, cam, c, Rp, radii, part, mat, *a, **k):
+                if part == 'head': seen.append(mat)
+            def tube(self, *a, **k): pass
+            def ball(self, *a, **k): pass
+        self.ball_head(Note(), None, v3(0, 0, 0), np.eye(3))
+        return seen[0] if seen else 'coat'
 
     # ---- to letters
     def far_side(self, heading):
