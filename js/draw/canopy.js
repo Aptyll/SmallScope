@@ -29,7 +29,6 @@ const HERO_LW = 96, HERO_LH = 96, HERO_FOOT = 72; // the hero layer, the feet at
 const heroCv = document.createElement('canvas');
 heroCv.width = HERO_LW * WD; heroCv.height = HERO_LH * WD; // WD dense, like the world buffer
 const hctx = heroCv.getContext('2d', { willReadFrequently: true }); // read back for the mask, one small layer a frame
-WD_CTX.add(hctx);
 hctx.imageSmoothingEnabled = false;
 // a sprite drawn into this CPU layer is drawn from its CPU twin (SPR.cpuTwin):
 // a GPU canvas drawn into a CPU one is read back off the GPU every frame
@@ -41,7 +40,6 @@ const holeCtx = holeCv.getContext('2d');
 const winCv = document.createElement('canvas');
 winCv.width = 64 * WD; winCv.height = 64 * WD; // a pine (27x37) and its 1 px work-target rim, WD dense
 const winCtx = winCv.getContext('2d');
-WD_CTX.add(winCtx);
 winCtx.imageSmoothingEnabled = false;
 
 let canopyHero = null; // whose model opens windows this frame: the viewed hero standing on the ground, or null

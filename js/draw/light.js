@@ -894,13 +894,11 @@ const BODY_LW = 128, BODY_LH = 128, BODY_FOOT = 104; // the layer, the feet at (
 const bodyCv = document.createElement('canvas');
 bodyCv.width = BODY_LW * WD; bodyCv.height = BODY_LH * WD;
 const bodyCtx = bodyCv.getContext('2d');
-WD_CTX.add(bodyCtx);
 bodyCtx.imageSmoothingEnabled = false;
 const litCv = document.createElement('canvas'), lctx = litCv.getContext('2d');     // where a body shows this frame
 const punchCv = document.createElement('canvas'), pctx = punchCv.getContext('2d'); // one piece of scenery, to cut out of it
 const punchBigCv = document.createElement('canvas'), pbctx = punchBigCv.getContext('2d'); // ...and a piece too big for that one
 const preCv = document.createElement('canvas'), prectx = preCv.getContext('2d');   // the frame before the night
-WD_CTX.add(pctx).add(pbctx);
 const LIT_STEP = 64;
 let litOn = false;      // the night is deep enough to hold anything back this frame
 const litBoxes = [];    // x, y, w, h of every body in litCv, world-buffer px

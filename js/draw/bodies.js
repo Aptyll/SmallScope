@@ -386,9 +386,6 @@ const BODY_REACH = 30, BODY_REACH_UP = 44;
 // stage: a model on show off the map (the champ select's showcase, drawShowcase,
 // js/ui/select.js) - the tool in hand, no sun shade (its stage lights it), none of
 // the overhead tells, on any mode.
-// the pose set a body is drawn from here: its look's finer one (`fine`, champLook) in a
-// world layer, which is WD dense; its 16 px one anywhere else (a menu's showcase)
-function bodySet(p) { const s = classSet(p); return WD > 1 && s.fine && worldDense() ? s.fine : s; }
 // a frame drawn at (x, y) at its world size: a finer look's (`dens`) at 1/dens, every pixel kept
 const STUN_SWAY = [0, 1, 2, 1, 0, -1, -2, -1]; // px a stunned hero's body sways off its place, one slow swing a second, slumped STUN_SLUMP px
 const STUN_SLUMP = 1;
@@ -404,7 +401,7 @@ function playerStrides(p) {
 }
 function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
-  const S = bodySet(p), set = S[p.dir];
+  const S = classSet(p), set = S[p.dir];
   let frame = 0;
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
@@ -776,12 +773,12 @@ function heroAimed(p) {
     const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2, p);
     return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
   }
-  const wa = shotArt(p, A.art), dg = drawing && wa.diag;
+  const dg = drawing && SPRITES.weaponDiag[A.art];
   if (!dg) return null;
   // the stock at the shoulder; aimed up the screen it stays at the shoulders, behind the head and under the health frame
   const x = Math.round(Math.cos(ha) * AIM_HAND), y = AIM_DROP + Math.round(Math.sin(ha) * (Math.sin(ha) < 0 ? AIM_HAND_UP : AIM_HAND));
   if (h & 1) return { img: dg, grip: WEAPON_GRIP.diag[A.art], rot: ha - Math.PI / 4, x, y, behind, fist: false };
-  const icon = wa.icon;
+  const icon = SPRITES.weaponArt[A.art];
   return { img: icon, grip: WEAPON_GRIP.icon[A.art] || [heldW(icon) >> 1, heldH(icon) >> 1], rot: ha - (WEAPON_FWD[A.art] || 0), x, y, behind, fist: false };
 }
 // is a key mid-wind-up holding the weapon on the aim (its CLASS_AB row's `aimHeld`: SAGITTA's bolts)
@@ -869,10 +866,7 @@ function drawSwish(p, px, cyp, hand, L, a0, e, back, S) {
   a0 += (e - a0) * S.from;
   const cx = px + 8, span = e - a0, dir = span < 0 ? -1 : 1, R = Math.ceil(L + 8);
   const rise = heroRise(p), reach = heroReach(p), headTop = cyp - 10 - rise, headBot = cyp - 4; // the head's rows, taller on a larger cell
-  // laid on the body's own px: a body drawn fine (bodySet's `dens`) gets its crescent on art px, its ink edge one of them
-  const k = bodySet(p).dens || 1, s = 1 / k;
-  for (let j = (Math.round(cyp) - R) * k; j <= (Math.round(cyp) + R) * k; j++) for (let i = (Math.round(cx) - R) * k; i <= (Math.round(cx) + R) * k; i++) {
-    const x = i * s, y = j * s;
+  for (let y = Math.round(cyp) - R; y <= Math.round(cyp) + R; y++) for (let x = Math.round(cx) - R; x <= Math.round(cx) + R; x++) {
     // the pixel's angle about the hands' middle, as a fraction of the way along the arc
     const a = Math.atan2(y - cyp, x - cx);
     let d = (a - a0) * dir; d -= Math.floor(d / (2 * Math.PI)) * 2 * Math.PI;
@@ -880,11 +874,11 @@ function drawSwish(p, px, cyp, hand, L, a0, e, back, S) {
     if (u > 1) continue;
     const h = hand(a), out = Math.hypot(h[0] - cx, h[1] - cyp) + L; // the blade's tip at that angle
     const rr = Math.hypot(x - cx, y - cyp), w = SWISH_W[0] + (SWISH_W[1] - SWISH_W[0]) * u;
-    if (rr > out + s || rr < out - w) continue;
+    if (rr > out + 1 || rr < out - w) continue;
     if (heldBehind(a) !== back) continue;
     if (!back && y >= headTop && y <= headBot && x >= px + 3 - reach && x <= px + 12 + reach) continue;
-    ctx.fillStyle = SWISH_COL[rr > out ? 2 : rr > out - 1.5 * s ? 0 : 1]; // ink only on the outer edge: the inner one is the motion
-    ctx.fillRect(x, y, s, s);
+    ctx.fillStyle = SWISH_COL[rr > out ? 2 : rr > out - 1.5 ? 0 : 1]; // ink only on the outer edge: the inner one is the motion
+    ctx.fillRect(x, y, 1, 1);
   }
 }
 function drawHeldTool(p, px, py, back) {
@@ -944,10 +938,8 @@ function drawHeldTool(p, px, py, back) {
       const a = p.slashA, j = SWING_JAB[Math.min(f, SWING_JAB.length - 1)];
       if (heldBehind(a) === back) {
         const h = hand(a), gx = h[0] + Math.round(Math.cos(a) * j), gy = h[1] + Math.round(Math.sin(a) * j);
-        const over = bodySet(p).dens > 1; // a fine body's sleeve is drawn, so it lies over the haft's butt instead of boxing it from under
-        if (j > 0 && !over) heroArm(p, h[0], h[1], gx, gy); // the arm goes out with the point, so the haft never leaves the hand
+        if (j > 0) heroArm(p, h[0], h[1], gx, gy); // the arm goes out with the point, so the haft never leaves the hand
         drawGripped(wHeld, hGrip, gx, gy, a - fwd);
-        if (j > 0 && over) heroArm(p, h[0], h[1], gx, gy);
         if (j > 0) heroKnuckles(p, gx, gy);
       }
       return;

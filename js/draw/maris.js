@@ -14,14 +14,7 @@ let marisHarpoonArt = null;
 function marisHarpoons() {
   return marisHarpoonArt || (marisHarpoonArt = { flat: bakeBladeArt(MARIS_HARPOON, MARIS_HARPOON_PAL), diag: bakeBladeArt(MARIS_HARPOON_DIAG, MARIS_HARPOON_PAL) });
 }
-// ...and at 32 px for her fine body (MARIS_HARPOON_FINE), the grips the same world px
-let marisHarpoonFine = null;
-function marisHarpoonsFine() {
-  if (marisHarpoonFine) return marisHarpoonFine;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (marisHarpoonFine = { flat: tag(bakeBladeArt(MARIS_HARPOON_FINE, MARIS_HARPOON_PAL)), diag: tag(bakeBladeArt(MARIS_HARPOON_DIAG_FINE, MARIS_HARPOON_PAL)) });
-}
-HERO_BLADES.harpoon = { smear: 'thrust', art: marisHarpoons, fine: marisHarpoonsFine, hilt: [14, 9], hip: { down: [13, 11], up: [11, 10] }, grip: MARIS_HARPOON_GRIP };
+HERO_BLADES.harpoon = { smear: 'thrust', art: marisHarpoons, hilt: [14, 9], hip: { down: [13, 11], up: [11, 10] }, grip: MARIS_HARPOON_GRIP };
 
 // ---- a line: one px, unbroken, from (x0, y0) to (x1, y1), ink under, sagging a little ----------
 function drawMarisLine(x0, y0, x1, y1) {

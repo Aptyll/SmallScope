@@ -66,14 +66,6 @@
       down: w.down.map((g) => bk(g)), up: w.up.map((g) => bk(g)), right: side, left: side.map(fl),
     }, motionSet(row.motion, sp));
     if (d > 1) set.dens = d;
-    // a finer look's own roll (`roll`: its frames in the doll's box at `d` px a world px)
-    // ...and a fine look with none of its own gets its doll's, doubled on first ask (SPR.fine2x)
-    const doll = d === 2 && SPR.motion.GRIDS[row.motion];
-    if (row.roll || doll) {
-      const R = (f) => (row.roll ? row.roll[f] : doll.roll[f].map(SPR.fine2x));
-      const once = {}, get = (f) => once[f] || (once[f] = f === 'left' ? get('right').map(fl) : R(f).map((g) => bk(g)));
-      set.roll = Object.defineProperties({}, Object.fromEntries(['down', 'up', 'right', 'left'].map((f) => [f, { get: () => get(f), enumerable: true }])));
-    }
     // side-on the run and the held run are the hero's own standing frame, legs stepping
     // (heroRunSide, js/sprites/armatos.js): the doll's are narrower than the hand-drawn body
     for (const kind of ['run', 'hold']) {
@@ -139,10 +131,6 @@
     if (set) return set;
     const sp = Object.assign({}, teamPlayerPal(TEAM_SKINS[team]), art.pal, row.pal); // a look may repaint the hero's letters (`pal`: NIX's MOONLESS)
     set = lookSet(row, row.grids, 1, sp, art.hand);
-    // a look drawn finer for the world (`fine`: grids at `dens` art px a world px, the
-    // WD-dense world buffer's, js/app/canvas.js): its own set, which drawPlayer asks for
-    // through bodySet; the menus, portraits and cards keep the 16 px one
-    if (row.fine && WD > 1) set.fine = lookSet(Object.assign({}, row, row.fine, { run: 'drawn' }), row.fine.grids, row.fine.dens, sp, art.hand);
     lookCache.set(key, set);
     return set;
   }

@@ -163,30 +163,10 @@ in `heroRunBox`), `drawPlayer` centres any frame on the 16 px cell with its floo
 js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand sits `reach` px further
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
-**A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
-STANDARD, `ARM_FINE`; SAGITTA's, NIX's, IGNIA's and LUCERNA's looks, `SAGITTA_FINE`, `NIX_FINE`, `IGNIA_FINE`, `LUCERNA_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
-px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
-builds it beside the 16 px set as `set.fine` through the same `lookSet`
-(walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
-`dens`), and only `drawPlayer` reads it, through `bodySet` and only while `ctx` is a `WD`-dense
-layer (`worldDense`: the world buffer, the air layer and the layers that mirror them, `WD_CTX`;
-[world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus, portraits, cards, the
-eagle's seats and a falling body keep the 16 px set. **The rest of the kit follows the body**: a
-`roll` on the row (`ARM_ROLL_FINE`: 14 frames a facing in the doll's box at `dens` px) replaces
-the doll's; a `HERO_BLADES` row's `fine()` (`armSwordsFine`: the art at 32 px, its `hilt` and
-`grip` the same world px) is what `bladeArt` hands the hands, and `drawGripped` and `heroCarry`
-draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`), and ARMATOS's
-standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. **A fine body brings the rest along**: a fine look with no `roll` gets its doll's roll
-doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
-gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
-rim). A staff (`HERO_STAVES`) follows the same way: its row's `fine()` frames, else its own
-doubled (`staffArt`; IGNIA's crook and LUCERNA's lantern are drawn, `IGNIA_CROOK_FINE`, `LUCERNA_LANTERN_FINE`). A shot weapon follows too: `WEAPON_FINE[art]` (js/sprites/weapons.js) is its
-drawn 32 px level art and slanted grid (SAGITTA's arbalest), else its own doubled (`shotArt`, read by
-the aim and by her carry). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's, FORTIVA's, NIX's dirk) replaces the
-doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
-**The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
-reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
-toward turning `?fine=1` on for players; every part gets drawn first.
+**Heroes stay on the 16 px grid**: the 32 px hero bodies (`fine` looks, drawn rolls and weapons) were
+dropped on 11-14 and are gone from the code; their drafts are in /mnt/project-files/base32/ for history.
+A frame or held art may still carry `dens` (art px a world px; `drawFrame`, `heldW`, `heldH` draw it at
+1/dens), but no hero art does.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
@@ -388,7 +368,7 @@ is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his d
 he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
-a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
+a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite.
 
 FOSSOR has one look (`FOSSOR_SKINS`, js/sprites/fossor.js): DIGGER (free: a brass machine in a
 miner's hat with a lamp, its coat in the side's colour with a gold hem, copper arms). It is drawn on
