@@ -113,7 +113,7 @@ async function open({ width = 1280, height = 720, dpr = 1, audio = false } = {})
 
 // the game, served by app/server.js, booted past character create on the one
 // map, `seed` starting its match stream (or the practice tool on it, `practice`);
-// `fine` opens it on the finer world buffer (?fine=1), where a look's 32 px body shows
+// `fine` opens it on the 2x world buffer (?fine=1)
 async function openGame({ seed = 6, practice = false, fine = false, port = +(process.env.PORT || 8471), width, height, dpr } = {}) {
   const pg = await open({ width, height, dpr });
   await pg.goto(`http://localhost:${port}/?${practice ? 'practice=1' : 'seed=' + seed}${fine ? '&fine=1' : ''}`);

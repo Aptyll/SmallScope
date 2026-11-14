@@ -5,8 +5,7 @@
 // draw file registers HERO_BLADES[name] = { art() -> { flat, diag } canvases,
 // hilt: [x, y] where the hands close on the flat art (the blade turns about it,
 // WEAPON_GRIP's rule), hip: { down, up } where the grip sits on the 16 px cell
-// by facing, grip: where the hands close on the slanted grid, and optionally fine() ->
-// the same pair at `dens` px a world px for a body drawn fine (bladeArt), and optionally
+// by facing, grip: where the hands close on the slanted grid, and optionally
 // away(p) -> true while the blade is drawn somewhere else, so it is not also carried }.
 const HERO_BLADES = {};
 // a grid of palette letters baked to a canvas, once
@@ -23,8 +22,7 @@ const HERO_SHOTS = {};
 // A hero whose CLASSES row names a `staff` carries it upright, its foot by the
 // hero's own, in every facing, drawn or not (a mage's staff is held, never swung
 // or aimed): HERO_STAVES[name] = { art() -> [frame, frame] canvases (the flame's
-// two beats), grip: [x, y] where the hand closes on the art, hold, lean, cast, and optionally
-// fine() -> the frames at `dens` px a world px for a body drawn fine (staffArt) }. `hold` is
+// two beats), grip: [x, y] where the hand closes on the art, hold, lean, cast }. `hold` is
 // which hand THIS hero carries it in at rest (STAFF_HOLDS; none is 'lead'), so two
 // staff heroes side by side are not one shape. A draw or a cast brings it into the
 // leading hand: the staff coming across is part of the tell.
@@ -74,13 +72,6 @@ function staffBeat(p) {
   return p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T ? 2 : 0;
 }
 function staffCasting(p) { return staffBeat(p) > 0; }
-// a staff row's frames for this body: its finer pair (`fine`, the art at `dens` px a world px,
-// its grip in world px) for a body drawn fine (bodySet), else its own doubled (fineArt, a
-// stopgap), else its own
-function staffArt(p, s) {
-  if (!(bodySet(p).dens > 1)) return s.art();
-  return s.fine ? s.fine() : s.art().map(fineArt);
-}
 function heroStaff(p, px, py) {
   const s = heroStaffOf(p);
   if (!s) return false;
@@ -90,7 +81,7 @@ function heroStaff(p, px, py) {
   // whichever hand holds it, it leans the way the face looks (THE GRIP RULE): the
   // art is drawn leaning right, mirrored for a body facing left or away; facing the
   // camera it leans out from the body, so its head never hides behind hers
-  let img = staffArt(p, s)[Math.floor(state.elapsed * 5) % 2];
+  let img = s.art()[Math.floor(state.elapsed * 5) % 2];
   const mirror = (p.dir === 'down' ? back : p.dir === 'left' || p.dir === 'up') !== (s.lean ? s.lean === 'left' : heldLeansLeft(img)); // `lean` says it when a thing hung low off the staff would fool the reading
   if (mirror) img = heldFlip(img);
   const gx = mirror ? heldW(img) - 1 - s.grip[0] : s.grip[0];
@@ -106,14 +97,8 @@ function heroStaff(p, px, py) {
 // THE ARM BEHIND A THRUST: a weapon pushed out past the hands' place (a spear's jab,
 // SWING_JAB, js/draw/bodies.js) takes the arm with it: a sleeve two px thick in the
 // side's coat from (x0, y0) to the grip (x1, y1), inked round, drawn under the haft;
-// heroKnuckles then closes the hand over the haft at the grip. A body drawn fine
-// (bodySet) has the arm on its own art px (heroArmFine), over the haft: a sleeve that tapers from
-// THRUST_ARM_FINE[0] art px at the shoulder to THRUST_ARM_FINE[1] at a cuff, its top lit, ink on its
-// underside alone.
-const THRUST_ARM_FINE = [6, 4], THRUST_ARM_CUFF = 2, THRUST_ARM_ROOT = 3; // art px thick at each end; art px of cuff before the fist; world px the sleeve runs back from the hands' place into the slimmer fine torso
+// heroKnuckles then closes the hand over the haft at the grip.
 function heroArm(p, x0, y0, x1, y1) {
-  const fine = bodySet(p);
-  if (fine.dens > 1) { heroArmFine(classSet(p), fine.dens, x0, y0, x1, y1); return; }
   const set = classSet(p), n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
   for (let pass = 0; pass < 2; pass++) {
     ctx.fillStyle = pass ? set.sleeve : set.ink;
@@ -123,36 +108,8 @@ function heroArm(p, x0, y0, x1, y1) {
     }
   }
 }
-function heroArmFine(set, dens, x0, y0, x1, y1) {
-  const u = 1 / dens, flat = Math.abs(x1 - x0) >= Math.abs(y1 - y0), len = Math.hypot(x1 - x0, y1 - y0) || 1;
-  x0 -= (x1 - x0) / len * THRUST_ARM_ROOT; y0 -= (y1 - y0) / len * THRUST_ARM_ROOT; // back to the shoulder, so torso, sleeve, fist and haft are one line
-  const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * dens));
-  const snap = (v) => Math.round(v * dens) / dens;
-  // one art px slice across the arm at a time: `a` along it, `b` its lit edge (top, or left when it runs up or down)
-  const slice = (a, b, w, col, alpha) => {
-    ctx.globalAlpha = alpha; ctx.fillStyle = col;
-    if (flat) ctx.fillRect(a, b, u, w); else ctx.fillRect(b, a, w, u);
-  };
-  for (let i = 0; i <= n; i++) {
-    const t = Math.round(THRUST_ARM_FINE[0] + (THRUST_ARM_FINE[1] - THRUST_ARM_FINE[0]) * i / n) * u;
-    const x = snap(x0 + (x1 - x0) * i / n), y = snap(y0 + (y1 - y0) * i / n);
-    const a = flat ? x : y, b = snap((flat ? y : x) - t / 2);
-    slice(a, b, t, set.sleeve, 1);
-    slice(a, b, u, '#ffffff', n - i < THRUST_ARM_CUFF ? 0.5 : 0.3); // the lit top
-    if (n - i < THRUST_ARM_CUFF) slice(a, b + u, t - u, '#ffffff', 0.25); // the cuff
-    slice(a, b + t, u, set.ink, 1); // ink under it only
-  }
-  ctx.globalAlpha = 1;
-}
 function heroKnuckles(p, x, y) {
-  const fine = bodySet(p), set = classSet(p);
-  if (fine.dens > 1) { // a closed fist on the art's own px: lit knuckles, ink under and behind
-    const u = 1 / fine.dens, f = FIST_FINE * u, gx = Math.round(x * fine.dens) / fine.dens - f / 2, gy = Math.round(y * fine.dens) / fine.dens - f / 2;
-    ctx.fillStyle = set.ink; ctx.fillRect(gx - u, gy, f + 2 * u, f + u);
-    ctx.fillStyle = set.hand; ctx.fillRect(gx, gy, f, f);
-    ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffffff'; ctx.fillRect(gx, gy, f, u); ctx.globalAlpha = 1;
-    return;
-  }
+  const set = classSet(p);
   const gx = Math.round(x), gy = Math.round(y);
   ctx.fillStyle = set.ink; ctx.fillRect(gx - 1, gy - 2, 3, 4);
   ctx.fillStyle = set.hand; ctx.fillRect(gx - 1, gy - 1, FIST, FIST);
@@ -165,8 +122,6 @@ function heroSleeve(p, px, y, out) {
   const set = classSet(p), x0 = Math.round(out > 0 ? px + 12 : px + 4 - SLEEVE), y0 = Math.round(y) - FIST + 1;
   ctx.fillStyle = set.ink; ctx.fillRect(x0, y0 - 1, SLEEVE, FIST + 2);
   ctx.fillStyle = set.sleeve; ctx.fillRect(x0, y0, SLEEVE, FIST);
-  // on a fine body the sleeve's top art px row is lit, so the reach reads as an arm, not a bar
-  if (bodySet(p).dens > 1) { const u = 1 / bodySet(p).dens; ctx.globalAlpha = 0.3; ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0, SLEEVE, u); ctx.globalAlpha = 1; }
 }
 // A look on a larger cell stands taller and wider than the 16 px one every offset
 // here was first set for: `heroRise` rows over it (the overhead frame lifts by
@@ -180,8 +135,6 @@ function heroReach(p) { return classSet(p).reach || 0; }
 // under it (`out` +1 when the grip is right of the body, -1 left of it).
 const FIST = 2;
 function heroFist(p, x, y, out) {
-  const fine = bodySet(p);
-  if (fine.dens > 1) { heroFistFine(fine, Math.round(x), Math.round(y), out); return; }
   const set = classSet(p), gx = Math.round(x), gy = Math.round(y);
   const x0 = out > 0 ? gx - FIST + 1 : gx, y0 = gy - FIST + 1;
   ctx.fillStyle = set.ink;
@@ -189,19 +142,6 @@ function heroFist(p, x, y, out) {
   ctx.fillRect(x0, y0 + FIST, FIST, 1);                         // under the knuckles
   ctx.fillStyle = set.hand;
   ctx.fillRect(x0, y0, FIST, FIST);
-}
-// ...and a body drawn fine's (bodySet, `dens` art px a world px): the same fist on the art's
-// own px, FIST_FINE of them square, its edge one art px, so the hand is the
-// body's pixel size; it closes on the same grip (its far corner where the coarse one's is)
-const FIST_FINE = 3;
-function heroFistFine(set, gx, gy, out) {
-  const u = 1 / set.dens, f = FIST_FINE * u;
-  const x0 = out > 0 ? gx + 1 - f : gx, y0 = gy + 1 - f;
-  ctx.fillStyle = set.ink;
-  ctx.fillRect(out > 0 ? x0 + f : x0 - u, y0, u, f + u); // the outer edge
-  ctx.fillRect(x0, y0 + f, f, u);                         // under the knuckles
-  ctx.fillStyle = set.hand;
-  ctx.fillRect(x0, y0, f, f);
 }
 function heroBodyFx(p, ax, ay, now, front) { for (const f of HERO_BODY_FX) f(p, ax, ay, now, front); }
 // A hero that is, for a while, not its body at all: fn(p, px, py, now) -> true
@@ -213,52 +153,7 @@ function heroBodyDraw(p, px, py, now) { for (const f of HERO_BODY_DRAW) if (f(p,
 function heroBladeOf(p) { const c = CLASSES[p.cls]; return c && c.blade ? HERO_BLADES[c.blade] : null; }
 // the blade a hero's hands hold in place of its sword's own art and where the
 // hands close on it ({ img, grip }), or null
-function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: bladeArt(p, b).flat, grip: b.hilt } : null; }
-// a blade row's art for this body: its finer pair (`fine`, the art at `dens` px a world px,
-// its grips still in world px) for a body drawn fine (bodySet), else its own
-function bladeArt(p, b) {
-  if (!(bodySet(p).dens > 1)) return b.art(); // a 16 px set carries no dens
-  if (b.fine) return b.fine();
-  const a = b.art();
-  return { flat: fineArt(a.flat), diag: a.diag && fineArt(a.diag) };
-}
-// a shot weapon's level art and slanted grid for this body: its drawn 32 px pair (WEAPON_FINE,
-// js/sprites/weapons.js) for a body drawn fine, else doubled (fineArt, a stopgap), else its own
-function shotArt(p, art) {
-  const icon = SPRITES.weaponArt[art], diag = SPRITES.weaponDiag[art];
-  if (!(bodySet(p).dens > 1)) return { icon, diag };
-  if (WEAPON_FINE[art]) return WEAPON_FINE[art]();
-  return { icon: icon && fineArt(icon), diag: diag && fineArt(diag) };
-}
-// any baked art on twice the px (SPR.fine2x over its own pixels: its colours as letters, its
-// ink the darkest colour on its rim), tagged `dens` 2 and kept: a hero's blade before it has a
-// drawn fine pair of its own
-const fineArts = new WeakMap();
-function fineArt(cv) {
-  if (fineArts.has(cv)) return fineArts.get(cv);
-  const px = SPR.pixelsOf(cv), W = cv.width, H = cv.height, key = (i) => (px[i * 4 + 3] ? px[i * 4] + ',' + px[i * 4 + 1] + ',' + px[i * 4 + 2] : '');
-  const pal = { '.': null }, letter = new Map(), LET = 'abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let ink = null, inkL = 1e9;
-  for (let i = 0; i < W * H; i++) {
-    const k = key(i);
-    if (!k || letter.has(k)) continue;
-    letter.set(k, LET[letter.size] || '#');
-    pal[letter.get(k)] = 'rgb(' + k + ')';
-  }
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { // the ink: the darkest colour beside the outside
-    const k = key(y * W + x);
-    if (!k) continue;
-    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => x + a < 0 || x + a >= W || y + b < 0 || y + b >= H || !px[((y + b) * W + x + a) * 4 + 3]);
-    const c = k.split(',').map(Number), l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
-    if (rim && l < inkL) { inkL = l; ink = k; }
-  }
-  if (ink) { pal.o = pal[letter.get(ink)]; letter.set(ink, 'o'); }
-  const rows = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => { const k = key(y * W + x); return k ? letter.get(k) : '.'; }).join(''));
-  const f = SPR.bake(SPR.fine2x(rows), pal);
-  f.dens = 2;
-  fineArts.set(cv, f);
-  return f;
-}
+function heroBlade(p) { const b = attackOf(p).cut ? heroBladeOf(p) : null; return b ? { img: b.art().flat, grip: b.hilt } : null; }
 // an art's size in world px: a finer one's (`dens`) at 1/dens
 function heldW(img) { return img.width / (img.dens || 1); }
 function heldH(img) { return img.height / (img.dens || 1); }
@@ -296,7 +191,7 @@ function heroCarry(p, px, py, back) {
   const b = heroBladeOf(p);
   if (b && b.hip.down && attackOf(p).cut) {
     if (b.away && b.away(p)) return true; // the blade is elsewhere and drawn there: BELLA's parry holds it crosswise (drawBellaMarks)
-    const hold = BLADE_HOLDS[b.hold || 'slant'], img = bladeArt(p, b).diag, up = p.dir === 'up';
+    const hold = BLADE_HOLDS[b.hold || 'slant'], img = b.art().diag, up = p.dir === 'up';
     const rc = heroReach(p);
     const lead = p.dir === 'down' || p.dir === 'right'; // the leading hand is on the right
     // (ax, ay) the grip on the screen; `out` the blade runs right of it

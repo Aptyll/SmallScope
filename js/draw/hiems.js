@@ -246,93 +246,6 @@ const HIEMS_FLAKE = [
   '..ogo....',
   '...o.....',
 ];
-// The snowflake staff at 32 px (dens 2) for her fine body (HERO_STAVES' `fine`): the flake laid from its shape on
-// twice the px, six barbed arms of white ice on the deep blue boss, the heart flaring between the two frames
-// (/mnt/project-files/visuals-loop/heroes-a/fine/hiems.py); the grip stays HIEMS_FLAKE_GRIP, in world px
-const HIEMS_FLAKE_FINE = [
-  '.....o......o.....',
-  '....oco....oco....',
-  '...occoooooocco...',
-  '....occDDDDcco....',
-  '...oDDccddccDDo...',
-  '...occccddcccco...',
-  '..ocdddcddcdddco..',
-  '.oDDcddcSScddcDDo.',
-  'occccccSSSScccccco',
-  'occccccSSSScccccco',
-  '.oddcddcSScddcddo.',
-  '..ocdddcddcdddco..',
-  '...occccddcccco...',
-  '...oddccddccddo...',
-  '....occddddcco....',
-  '...occGgoooocco...',
-  '....ocGGo..oco....',
-  '.....oGGo...o.....',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '......oo..........',
-];
-const HIEMS_FLAKE_GLINT_FINE = [
-  '.....o......o.....',
-  '....oco....oco....',
-  '...occoooooocco...',
-  '....occDDDDcco....',
-  '...oDDccddccDDo...',
-  '...occccddcccco...',
-  '..ocdddSddSdddco..',
-  '.oDDcddSSSSddcDDo.',
-  'occcccSSSSSSccccco',
-  'occcccSSSSSSccccco',
-  '.oddcddSSSSddcddo.',
-  '..ocdddSddSdddco..',
-  '...occccddcccco...',
-  '...oddccddccddo...',
-  '....occddddcco....',
-  '...occGgoooocco...',
-  '....ocGGo..oco....',
-  '.....oGGo...o.....',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGGo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '.....oGgo.........',
-  '......oo..........',
-];
 const HIEMS_FLAKE_GRIP = [3, 11];
 const HIEMS_FLAKE_PAL = { o: '#2e2440', c: '#e6f8ff', d: '#2f5f8f', D: '#5a9ad0', S: '#ffffff', g: '#8a95a8', G: '#c3ccd8' };
 let hiemsFlakeArt = null;
@@ -342,13 +255,7 @@ function hiemsFlake() {
   hiemsFlakeArt = [bakeBladeArt(HIEMS_FLAKE, HIEMS_FLAKE_PAL), bakeBladeArt(glint, HIEMS_FLAKE_PAL)];
   return hiemsFlakeArt;
 }
-let hiemsFlakeFineArt = null;
-function hiemsFlakeFine() {
-  if (hiemsFlakeFineArt) return hiemsFlakeFineArt;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (hiemsFlakeFineArt = [tag(bakeBladeArt(HIEMS_FLAKE_FINE, HIEMS_FLAKE_PAL)), tag(bakeBladeArt(HIEMS_FLAKE_GLINT_FINE, HIEMS_FLAKE_PAL))]);
-}
-HERO_STAVES.flake = { art: hiemsFlake, fine: hiemsFlakeFine, grip: HIEMS_FLAKE_GRIP, hold: 'far' };
+HERO_STAVES.flake = { art: hiemsFlake, grip: HIEMS_FLAKE_GRIP, hold: 'far' };
 
 // ---- the status plate -------------------------------------------------------------
 // her two controls on the frame's plate (statusIcon, js/draw/overhead.js): FROZEN, a
