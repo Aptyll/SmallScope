@@ -127,7 +127,7 @@ function packOut(p) { p.pack = 0; p.packIdle = 0; p.avaD = 0; p.shoulderHit = fa
 // The block rides the shots in flight (arrows, js/sim/sim.js) and lands its
 // blow there with its own slow (hurtUnit's `slow`), at the rank it was thrown with.
 function rupesHeave(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   arrows.push({
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HEAVE_SPD, vy: Math.sin(a) * HEAVE_SPD,

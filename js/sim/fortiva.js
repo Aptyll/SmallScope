@@ -134,7 +134,7 @@ HERO_STAT.push({ name: 'NO KNEELING', add: (p, key) => (key === 'dmg' && isFort(
 
 // ---- Q SEVER THE CHAINS ---------------------------------------------------------
 function fortSever(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const dmg = abDmg(p, 'sever', abRk(p, 'sever', 'dmg'));
   let heroes = 0;
   for (const q of unitsInCone(p, p.x, p.y, a, SEVER_R, SEVER_HALF)) {

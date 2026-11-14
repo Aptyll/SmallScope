@@ -119,7 +119,7 @@ function lignumOut(p) {
 // ---- Q CHOP ------------------------------------------------------------------------
 function lignumChop(p, second) {
   p.castSlam = false;
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const nx = Math.cos(a), ny = Math.sin(a);
   const dmg = abDmg(p, 'chop', abRk(p, 'chop', second ? 'chop' : 'dmg')), slow = abRk(p, 'chop', 'slow');
   for (const q of unitsInCone(p, p.x, p.y, a, CHOP_R, CHOP_HALF)) {
@@ -254,7 +254,7 @@ function timberLine(p, a) {
   return { x0, y0, nx, ny, len: TIMBER_LEN, tree: o };
 }
 function lignumTimber(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   const L = timberLine(p, a);
   if (L.tree) { // the pine comes down: a stump where it stood
     const o = L.tree;

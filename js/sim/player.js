@@ -959,7 +959,8 @@ function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (
 // another body's aim only from this, written by the step while a draw is
 // held; the local body draws off its own live pointer (aimAngle,
 // js/draw/bodies.js).
-function aimHold(p) { p.aimA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); }
+function handAim(p) { return Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); } // where the pointer is, from the hand: what every aimed key and cut swings along
+function aimHold(p) { p.aimA = handAim(p); }
 function inAir(p) { return p.aboard || p.dropT > 0; }
 
 // ---- facing --------------------------------------------------------------

@@ -682,7 +682,7 @@ function drawGhost(p, ex, ey) {
 // where a drawn weapon points: the local body off its own live pointer, any
 // other off the aim its step held (aimHold, js/sim/player.js) - a client is
 // never sent another body's input
-function aimAngle(p) { return p === player ? Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x) : p.aimA; }
+function aimAngle(p) { return p === player ? handAim(p) : p.aimA; }
 
 // the hero's weapon, drawn on a player: carried at the hand while idle or
 // walking, swept along the arc during a melee swing, aimed at that player's
