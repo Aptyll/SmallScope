@@ -29,8 +29,7 @@
 //
 // iceBreak(x, y, shape, ang, { warn, hold }) breaks the ice (null where
 // there is no bare ice under the footprint); the orca (orcaStrike, js/sim/orca.js)
-// is what calls it in a match. iceBreakCovers(b, x, y) is the same footprint
-// as a hit test.
+// is what calls it in a match.
 const ICE_BREAK_FREEZE = 20;  // s the hole takes to freeze back over, rim to middle
 const ICE_BREAK_SKIM = 6;     // s a pixel of new ice takes to thicken to the sheet's tone
 const ICE_BREAK_HOLD = 2.5;   // s the hole stays wide open before it freezes (the default `hold`)
@@ -38,16 +37,8 @@ const ICE_BREAK_BURST = 0.7;  // s the plates fly before they land
 const ICE_BREAK_PAD = 26;     // px of box round the footprint: the crack band and the radial cracks
 const ICE_BREAK_PROUD = 0.8;  // px the hole stands proud of the footprint before the chipping
 const ICE_BREAK_FRONT = 1.08; // the freeze front's overshoot, so the middle closes before the clock ends
-// what each footprint IS. `orca` is the orca's own (js/sim/orca.js); `breach`
-// and `lunge` were the first sketches of it, kept for staged scenes.
-const breakLens = (x0, x1, hw, n) => { // a body seen from above: a pointed lens from tail (x0) to nose (x1)
-  const top = [], bot = [];
-  for (let k = 0; k <= n; k++) {
-    const t = k / n, x = x0 + (x1 - x0) * t, w = hw * Math.sin(Math.PI * (0.15 + 0.85 * t)) + 0.5;
-    top.push(x, -w); bot.unshift(x, w);
-  }
-  return top.concat(bot);
-};
+// what each footprint IS. `orca` is the orca's own (js/sim/orca.js), `breach`
+// MARIS's (js/sim/maris.js).
 const ICE_BREAK_SHAPES = {
   // the orca lunging up at a slant, nose toward the spot it bites: its body
   // where it crosses the sheet (D BOLD's girth, R 8.5, drawn out by the slant),
@@ -60,11 +51,6 @@ const ICE_BREAK_SHAPES = {
   breach: { sq: 0.72, parts: [
     { e: [0, 0, 13, 9] },
     { p: [-9, 4, -19, 12, -6, 8] }, { p: [9, 4, 19, 12, 6, 8] }, { p: [-3, -8, 0, -17, 3, -8] },
-  ] },
-  // up through the sheet at a slant: the whole body, the flukes, a flipper and the fin
-  lunge: { sq: 0.72, parts: [
-    { p: breakLens(-24, 22, 7.5, 14) },
-    { p: [-22, 0, -32, -9, -27, 0, -32, 9] }, { p: [6, 5, 0, 14, -2, 5] }, { p: [4, -5, 0, -11, -4, -5] },
   ] },
 };
 const iceBreaks = []; // the live breaks: { x, y, shape, ang, seed, tick0, warn, hold, st, cov, open, next }
@@ -165,11 +151,6 @@ function breakGeom(b) {
   const geom = { x0, y0, w, h, D, hole, Dh, ft };
   breakCache.set(breakKey(b), Object.assign(breakCache.get(breakKey(b)) || {}, { geom }));
   return geom;
-}
-// the footprint as a hit test (world px), for whatever came up through it
-function iceBreakCovers(b, x, y) {
-  const f = breakFoot(b), i = Math.floor(x) - f.x0, j = Math.floor(y) - f.y0;
-  return i >= 0 && j >= 0 && i < f.w && j < f.h && f.F[j * f.w + i] === 1;
 }
 // how far the freeze has come at age `a`: a hole pixel is open while its ft is past this
 function breakFront(b, a) {

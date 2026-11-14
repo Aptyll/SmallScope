@@ -158,7 +158,7 @@ in-match slab folds the way ESC folds it, the title's slide-in through `closeMen
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on the
 map, or back to the party for a party's leader on the practice field; anyone else there takes
 `leavePractice()`, js/ui/menu.js, a whiteout onto a bare URL, landing on a fresh
-title page); `leavePlankRect()` is the LEAVE plank, `null` on the title.
+title page).
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -215,8 +215,7 @@ leaves it out); the rest is in
 [Debug overlays](../rendering/debug-overlays-hitboxes-and-routes.md).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There
-is no alive count: a match does not end on bodies (`aliveCount()`, js/sim/player.js, has no caller
-but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
+is no alive count: a match does not end on bodies. Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md).
 

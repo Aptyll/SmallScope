@@ -790,7 +790,6 @@ function footPlanks() {
   const word = { close: 'set.close', surrender: 'set.surrender', leave: 'set.leave' };
   return ids.map((id, i) => ({ id, label: tr(word[id]), x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
-function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)
 function settingsClose() {

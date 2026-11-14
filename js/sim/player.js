@@ -1290,9 +1290,6 @@ function respawnPlayer(p) {
   }
 }
 
-// players still in the match (riding the eagle counts: it is about to land)
-function aliveCount() { let n = 0; for (const p of players) if (p.active && !p.dead) n++; return n; }
-
 // a team is still "in the match" while its bird has not been driven off and
 // anyone on it is still in - note !eliminated, not !dead: a wiped team
 // is waiting on its bird, not out, so the objective is the only way to win

@@ -1,4 +1,4 @@
-// Softfall - a cozy winter survival game.
+// Softfall - a 5v5 MOBA in the snow.
 'use strict';
 // The last file to load: the boot order, window.DBG and the
 // requestAnimationFrame loop. The eagle drop it starts is js/sim/eagle.js.
@@ -137,7 +137,7 @@ window.DBG = {
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, footprints, flakes,
   // the ice breaking in its own shape (js/sim/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
-  iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
+  iceBreaks, iceBreak, iceBreakAge, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the orca and its lake (js/sim/orca.js, js/sim/world.js): its state, the line over a head, the disc
   orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
   // the camps: the live registry, the table behind it, where each site is,
@@ -150,7 +150,7 @@ window.DBG = {
   // the practice tool: whether this boot is one and whether it is the arena, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour
   // clock and the ESC slab's exit plank
-  PRACTICE, ARENA, practiceDummies, PR_SPAWN, hitDummy, leavePlankRect,
+  PRACTICE, ARENA, practiceDummies, PR_SPAWN, hitDummy,
   ptargets, ptFace, ptLive, ptHitR, hitPTarget, parkour,
   // the archery round: the live state, the difficulty tables, the bell's
   // resolver, ring a round in by hand at a difficulty (warp beside AG_BELL
@@ -214,7 +214,7 @@ window.DBG = {
   // The merchant's counter (js/ui/shop.js) and the items it sells
   // (js/sim/items.js): the catalogue, the panel's geometry, and every trade
   // without the pointer
-  BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopRecommended, itemCost: (id, p) => itemCost(p || player, id),
+  BUILD_ITEMS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopRecommended, itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
   botNextItem, botItemBuy,
   // the heals: the potion's slot and its drink
@@ -274,7 +274,7 @@ window.DBG = {
   netDeltaRun, netVerify: (on) => { NET.verify = !!on; return NET.verify; }, netLoss: (f) => { NET.lossOut = +f || 0; return NET.lossOut; }, snapHistoryPush, snapDeltaFrom, snapBuildDelta, snapEncode, snapDecode, encDict,
   // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
   lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
-  placeObj, idx, objAt, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
+  placeObj, idx, objAt, damagePlayer, die, endMatch, specNext, updateAI, contest,
   // the post-game lobby (js/ui/lobby.js): freeze the table by hand, open the
   // screen without walking a ceremony, drive it, and read back both the
   // frozen record and the live screen state
@@ -327,7 +327,7 @@ window.DBG = {
   // fire: light a body, put it out, and the numbers a burn runs on
   igniteUnit: (t, dps, e, src) => igniteUnit(e || player, t, dps, src === undefined ? player : src),
   douseUnit: (e) => douseUnit(e || player),
-  DMG_TYPES, BURN_T, BURN_DPS, BURN_TICK, BURN_MAX,
+  DMG_TYPES, BURN_DPS, BURN_TICK, BURN_MAX,
   // the roll as a hit: stun anything by hand, and read back what a roll at a
   // given speed would deal (`.` draws the sweep circle over a live dash)
   stunUnit: (t, e) => stunUnit(e || player, t),
