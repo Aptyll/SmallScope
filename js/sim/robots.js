@@ -801,8 +801,11 @@ function robotFoeUnit(b, range) {
     if (d < bd && d <= seenAt(q, range)) { bd = d; best = q; }
   }
   for (const r of robots) {
-    if (r === b || !unitAlive(r) || r.team === b.team) continue;
-    const d = Math.hypot(r.x - b.x, r.y - 1 - b.y);
+    if (r.team === b.team) continue;
+    const dx = r.x - b.x, dy = r.y - 1 - b.y;
+    if (dx >= bd || dx <= -bd || dy >= bd || dy <= -bd) continue; // (too far on one axis alone: most of the lane)
+    if (r === b || !unitAlive(r)) continue;
+    const d = Math.hypot(dx, dy);
     if (d < bd) { bd = d; best = r; }
   }
   return best;
