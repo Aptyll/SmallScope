@@ -70,7 +70,7 @@ const CLIVUS_AB = [
     tip: 'HOP OVER PINES, ROCKS AND WATER',
     blurb: 'VAULT DOWN THE AIM OVER ANYTHING IN THE WAY BUT A BUILDING: PINES, ROCKS, A FELLED TRUNK, THE CREEK. RIVALS WHERE YOU LAND ARE STRUCK AND SLOWED.',
     use: (p) => clivusVault(p),
-    ok: (p) => !!vaultSpot(p, clivusAim(p)),
+    ok: (p) => !!vaultSpot(p, handAim(p)),
     pose: () => ({ dx: 0, dy: 1, rot: 0 }), // crouched to spring
     icon: CLIVUS_ICON32.vault, mark: 'slow',
     bot: (p, foe, d) => foe instanceof Player && d > 36 && d < VAULT_LEN + 16,
@@ -89,7 +89,6 @@ const CLIVUS_AB = [
 ];
 
 function isClivus(p) { return CLASSES[p.cls] && CLASSES[p.cls].passive === 'foothold'; }
-function clivusAim(p) { return Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); }
 
 // ---- FOOTHOLD -----------------------------------------------------------------------
 function clivusCast(p) { p.clFootT = FOOT_T; }
@@ -118,7 +117,7 @@ function clivusHolds(p, q) {
   return false;
 }
 function clivusPick(p) {
-  const a = clivusAim(p), nx = Math.cos(a), ny = Math.sin(a);
+  const a = handAim(p), nx = Math.cos(a), ny = Math.sin(a);
   const dmg = abDmg(p, 'pick', abRk(p, 'pick', 'dmg'));
   for (const q of unitsInCone(p, p.x, p.y, a, PICK_R, PICK_HALF)) {
     const held = clivusHolds(p, q);
@@ -202,7 +201,7 @@ function vaultSpot(p, a) {
   return null;
 }
 function clivusVault(p) {
-  const a = clivusAim(p), s = vaultSpot(p, a);
+  const a = handAim(p), s = vaultSpot(p, a);
   if (!s) return;
   p.rushNX = Math.cos(a); p.rushNY = Math.sin(a);
   p.rushT = p.clVaultT = s.d / VAULT_SPD;

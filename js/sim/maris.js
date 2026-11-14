@@ -116,7 +116,7 @@ function coldOut(p) { p.coldT = 0; p.braceT = 0; p.underT = 0; }
 // The harpoon rides the shots in flight (arrows, js/sim/sim.js); the blow it
 // lands roots the body and starts her reel (coldDeal, above).
 function marisHarpoon(p) {
-  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const a = handAim(p);
   arrows.push({
     x: p.x, y: p.y - BOW_Y,
     vx: Math.cos(a) * HARPOON_SPD, vy: Math.sin(a) * HARPOON_SPD,

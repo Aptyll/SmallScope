@@ -203,7 +203,7 @@ function updateAbilities(p, dt) {
   // the shield tracks the aim while it is up, and lowers itself on the timer
   if (p.shieldT > 0) {
     p.shieldT -= dt;
-    p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+    p.shieldA = handAim(p);
     faceToward(p, Math.cos(p.shieldA), Math.sin(p.shieldA));
     if (p.charging) { p.charging = false; p.chargeT = 0; }
     p.fireArmed = false;
