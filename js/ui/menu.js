@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.942';
+const PATCH_TXT = 'PATCH 0.943';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.943', 'YOUR PROFILE: PICK A PICTURE, RENAME YOURSELF AND LOOK BACK OVER YOUR MATCHES, BOTH TEAMS AND BUILDS. CLICK ANY NAME IN A PARTY OR ON THE END SCREEN TO OPEN THEIR PROFILE.'],
   ['0.942', 'UNDER THE HOOD: THE UNUSED SWITCH THAT DREW THE WORLD AT TWICE THE PIXELS IS GONE.'],
   ['0.941', 'UNDER THE HOOD: THE UNUSED 32 PX HERO DRAFTS ARE OUT OF THE GAME. HEROES STAY THE SIZE THEY ARE.'],
   ['0.940', 'TWO NEW HEROES: FOSSOR THE DIGGER, A BRASS FIGHTER WHO GOES UNDER THE SNOW AND BREAKS THE GROUND, AND PORTITOR THE CARRIER, A COPPER SUPPORT WHO LIFTS AN ALLY ONTO ITS BACK AND CARRIES THEM OUT OF THE FIGHT.'],
@@ -1181,7 +1182,7 @@ function updateTitle(dt) {
     const h = menuHit();
     if (h >= 0 && h !== m.sel) m.sel = h;
   }
-  // the profile card (js/ui/profile-card.js): its ease and its hovers
+  // the profile (js/ui/profile.js): its ease and its hovers
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'profile' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'profile') updateProfile(dt);
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
@@ -1373,7 +1374,7 @@ function renderTitle(now) {
     const phot = !m.panel && overPatchTag();
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
-    drawProfileTag(); // your name and its quill, opposite corner: the way to the profile card
+    drawProfileTag(); // your picture, name and quill, opposite corner: the way to the profile (js/ui/profile.js)
     drawCoinTag();    // the purse, top-right: the way into the skins screen
     drawGear();       // ...and the settings beside it
     ctx.globalAlpha = 1;
@@ -1390,7 +1391,7 @@ function renderTitle(now) {
   if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (nc + tc > 0.005) drawPageTabs(Math.min(1, nc + tc) * (1 - out)); // one row over both, so a switch never fades it
-  if (kc > 0.005) renderProfileCard(now, kc * (1 - out));
+  if (kc > 0.005) renderProfile(now, kc * (1 - out));
   if (rc > 0.005) renderRoom(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
   drawFriendCard(); // a Steam friend's invite, over whichever screen (js/ui/friends.js)

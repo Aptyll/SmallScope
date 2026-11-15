@@ -545,6 +545,7 @@ function renderScreen(ox, oy, now) {
   // bottom-left corner on pause
   renderReplay();
   if (state.mode === 'dead') renderDead(now);
+  if (state.mode === 'dead' && state.menu.charT > 0.005) renderProfile(now, easeInOut(state.menu.charT)); // a profile over the ending (js/ui/profile.js)
   // the tooltip owns the bottom-left corner while it is up; it draws in every
   // mode, since the tech tree on the title screen is read through it too
   if (!window.DBG.hideUI) drawBotView(); // F4: the table and the hovered bot's card (js/ui/botview.js)

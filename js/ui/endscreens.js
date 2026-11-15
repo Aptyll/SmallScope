@@ -187,7 +187,7 @@ function drawEndTable(L, ws, t, T, ac) {
     const body = players.find((q) => q.id === m.id);
     if (body) drawFace(L.x, y, END_FACE, body, 2);
     const hero = CLASSES[m.cls].name, nx = L.x + END_FACE + 6;
-    drawPixelTextOutline(ctx, hero, nx, y + 3, you ? ac.txt : SC_LIT, SC_INK, 1);
+    drawPixelTextOutline(ctx, hero, nx, y + 3, you ? ac.txt : endRowHit() === m.id ? '#ffd95c' : SC_LIT, SC_INK, 1); // gold under the hand: a press opens their profile
     if (m.name !== hero) drawPixelTextOutline(ctx, m.name, nx, y + 12, SC_DIM, SC_INK, 1);
     const kda = endKda(m), ks = C.kda2 ? 2 : 1;
     drawPixelTextOutline(ctx, kda, C.kdaR - pixelTextWidth(kda, ks), y + (C.kda2 ? 6 : 8), SC_LIT, SC_INK, ks);
@@ -203,6 +203,20 @@ function drawEndTable(L, ws, t, T, ac) {
   ctx.globalAlpha = 1;
 }
 
+// the seat whose row is under the pointer once the table is all in, when this
+// screen holds their profile (yours, or a person's card: seatPid, js/ui/profile.js); -1 none
+function endRowHit() {
+  const ws = state.end;
+  if (!ws || !endScreen() || state.deadView === 'scores' || state.deadView === 'spec') return -1;
+  const T = state.over === 'won' ? WIN_T : DEF_T, t = state.over === 'won' ? state.deadTimer : state.defeatT;
+  if (t < T.stats + ws.roster.length * T.statStep) return -1;
+  const L = winLayout();
+  for (let i = 0; i < ws.roster.length; i++) {
+    const y = L.rowY + i * END_ROW;
+    if (mouse.x >= L.x - 4 && mouse.x < L.x + L.w + 4 && mouse.y >= y - 2 && mouse.y < y + END_ROW - 4) return seatPid(ws.roster[i].id) ? ws.roster[i].id : -1;
+  }
+  return -1;
+}
 // the rest both endings share: the 1V1 line, the table, the story under it,
 // and LOBBY sliding up to land exactly on T.menu
 function drawEndBody(L, ws, t, T, ac, now) {

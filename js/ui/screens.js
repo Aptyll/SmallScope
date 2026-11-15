@@ -473,6 +473,8 @@ function deadClick() {
     return;
   }
   if (endSkip()) return;
+  const who = endRowHit(); // a row of the ending's table: that player's profile, over the match (js/ui/profile.js)
+  if (who >= 0 && openSeatProfile(who)) return;
   const h = deadHit();
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }

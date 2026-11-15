@@ -109,6 +109,7 @@ function update(dt) {
   if (state.mode === 'dead') {
     const was = state.deadTimer;
     state.deadTimer += dt; // the overlay's fade-in, and the victory screen's clock
+    updateProfileOver(dt); // a profile opened off the ending's names (js/ui/profile.js)
     if (state.over === 'won') winCues(was, state.deadTimer);
     // the defeat summary runs on a clock of its own - it opens off a plank,
     // long after the death this overlay has been timing

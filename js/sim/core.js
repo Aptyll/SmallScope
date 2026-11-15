@@ -193,17 +193,22 @@ const state = {
   // silently deleted a row when a fifth plank arrived.
   menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false,
-    // the profile card (screen 'profile', js/ui/profile-card.js): charT its
-    // ease, nameBuf the name field's buffer, nameSel whether the next letter
-    // replaces it, nameEdit whether the field is being typed in, nameShake
-    // its refusal rattle, khover the hover eases keyed by hit id
+    // the profile (screen 'profile', js/ui/profile.js; pfOver: up over an
+    // ended match, pfBack the screen it returns to): charT its ease, pfTab
+    // the open tab, pfWho whose profile (a pid, null yours), pfScroll the
+    // list's scroll in px, pfOpen the open match's id, pfMode the filter (''
+    // all), pfPick the picture picker up, pfSearch the search being typed
+    // (null not), pfHot what the pointer is on; nameBuf the name field's
+    // buffer, nameSel whether the next letter replaces it, nameEdit whether
+    // the field is being typed in, nameShake its refusal rattle
     // the skins screen (js/ui/skins.js): skinT its ease, skTab the open
     // category (SKIN_TABS; it opens on the eagle), skSel the keyboard's card,
     // skNav the keyboard up on the navbar, skPick the card for sale picked for
     // a second press to buy, skHover the tabs' and cards' hover eases, skDeny
     // the short purse's shake, skFlash the buy's flash over card skFlashI
     skinT: 0, skTab: 0, skSel: 0, skNav: false, skKeyed: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
-    charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
+    charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0,
+    pfOver: false, pfBack: 'menu', pfTab: 0, pfWho: null, pfScroll: 0, pfOpen: '', pfMode: '', pfPick: false, pfSearch: null, pfHot: '',
     moved: false, keyNav: false, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // lobby: which screen the menu shows, its cross-fade, the chosen hero
     // (csel, the hero row - js/ui/heroes.js), the stage's swap pop, lock-in hold.
