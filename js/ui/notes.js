@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ROOST: the floor where the bird heals is lit in your side colour', '0.944'],
     ['Clearings in the woods keep a few felled stumps by the trees', '0.927'],
     ['REPLAY on the DEFEAT screen shows the last four seconds again', '0.925'],
     ['A kerbed stone round where the lanes cross outside each base', '0.924'],
