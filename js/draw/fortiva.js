@@ -100,14 +100,7 @@ function fortSwords() {
   if (fortSwordArt) return fortSwordArt;
   return (fortSwordArt = { flat: bakeBladeArt(FORT_SWORD, FORT_SWORD_PAL), diag: bakeBladeArt(FORT_SWORD_DIAG, FORT_SWORD_PAL) });
 }
-// ...and at 32 px for her fine body (FORT_SWORD_FINE), the grips the same world px
-let fortSwordFine = null;
-function fortSwordsFine() {
-  if (fortSwordFine) return fortSwordFine;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (fortSwordFine = { flat: tag(bakeBladeArt(FORT_SWORD_FINE, FORT_SWORD_PAL)), diag: tag(bakeBladeArt(FORT_SWORD_DIAG_FINE, FORT_SWORD_PAL)) });
-}
-HERO_BLADES.chain = { art: fortSwords, fine: fortSwordsFine, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: FORT_GRIP, hold: 'far' };
+HERO_BLADES.chain = { art: fortSwords, hilt: [19, 11], hip: { down: [13, 11], up: [11, 10] }, grip: FORT_GRIP, hold: 'far' };
 
 // ---- on her body ------------------------------------------------------------------
 // DEFIANT HEART's plate: a small gold heart, inked, lit on its left lobe, shaded on its right, narrow enough that

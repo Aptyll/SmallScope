@@ -8,18 +8,8 @@
 
 const BELLA_GOLD = '#f2cc6a', BELLA_GOLD_D = '#b98a2e', BELLA_INK = '#141a2c';
 
-// a 3 px diamond, its centre at (x, y); `fine` (her own stacks, beside her body) is a true diamond on half px where
-// the world is drawn fine (WD, js/app/canvas.js). The marks over a head stay this size: they sit with the health frame.
-function bellaPip(x, y, col, fine) {
-  if (fine && WD > 1 && worldDense()) {
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.fillStyle = pass ? col : BELLA_INK;
-      const n = pass ? 2 : 3;
-      for (let i = -n; i <= n; i++) { const k = n - Math.abs(i); ctx.fillRect(x - k / 2, y + i / 2, k + 0.5, 0.5); } // every edge on a half px
-    }
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 0.5, y - 0.5, 0.5, 0.5); // one light on its upper face
-    return;
-  }
+// a 3 px diamond, its centre at (x, y)
+function bellaPip(x, y, col) {
   ctx.fillStyle = BELLA_INK;
   ctx.fillRect(x - 1, y - 2, 3, 5); ctx.fillRect(x - 2, y - 1, 5, 3);
   ctx.fillStyle = col;
@@ -34,7 +24,7 @@ function bellaPip(x, y, col, fine) {
 function drawBellaMarks(e, px, py, w, h, now) {
   if (e instanceof Player && CLASSES[e.cls].passive === 'calculated') {
     const full = e.prec >= PREC_MAX;
-    for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD, true);
+    for (let k = 0; k < e.prec; k++) bellaPip(px + w + 1, py + h - 6 - k * 4, full && Math.floor(now * 6) % 2 ? '#ffffff' : BELLA_GOLD);
     if (e.parryT > 0) drawBellaGuard(e, px, py, now);
   }
 }
@@ -47,8 +37,8 @@ function drawBellaGuard(e, px, py, now) {
   if (Math.abs(ay) < 0.6) { nx += ax * 0.6; ny -= 0.1; } else { ny -= 0.6; } // slanted: out toward the aim facing sideways, up facing the screen or away
   const n = Math.hypot(nx, ny); nx /= n; ny /= n;
   const cx = px + 8 + Math.round(ax * 5), cy = py + 10 + Math.round(ay * 3); // her fist
-  const age = PARRY_T - e.parryT, fine = WD > 1 && worldDense(), h = fine ? 0.5 : 1;
-  const at = (v) => (fine ? Math.round(v * 2) / 2 : Math.round(v));
+  const age = PARRY_T - e.parryT, h = 1;
+  const at = (v) => Math.round(v);
   const pt = (s) => [at(cx + nx * s), at(cy + ny * s)];
   const TIP = 11, flash = age < 0.18 ? -2 + (TIP + 2) * (age / 0.18) : -99, run = -1 + (Math.floor(now * 14) % 18) * 0.75;
   ctx.fillStyle = BELLA_INK; // a px of ink round it all
@@ -132,14 +122,7 @@ function bellaSpathas() {
   if (bellaSpathaArt) return bellaSpathaArt;
   return (bellaSpathaArt = { flat: bakeBladeArt(BELLA_SPATHA, BELLA_SPATHA_PAL), diag: bakeBladeArt(BELLA_SPATHA_DIAG, BELLA_SPATHA_PAL) });
 }
-// ...and at 32 px for her fine body (BELLA_SPATHA_FINE), the grips the same world px
-let bellaSpathaFine = null;
-function bellaSpathasFine() {
-  if (bellaSpathaFine) return bellaSpathaFine;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (bellaSpathaFine = { flat: tag(bakeBladeArt(BELLA_SPATHA_FINE, BELLA_SPATHA_PAL)), diag: tag(bakeBladeArt(BELLA_SPATHA_DIAG_FINE, BELLA_SPATHA_PAL)) });
-}
-HERO_BLADES.spatha = { away: (p) => p.parryT > 0, art: bellaSpathas, fine: bellaSpathasFine, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
+HERO_BLADES.spatha = { away: (p) => p.parryT > 0, art: bellaSpathas, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: BELLA_SPATHA_GRIP };
 
 HERO_MARK.push(drawBellaMarks);
 HERO_GROUND.push(drawBellaDuels);

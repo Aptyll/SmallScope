@@ -189,53 +189,6 @@ const BUCINA_HORN = [
   '.oYyyo....',
   '..ooo.....',
 ];
-// The horn at 32 px (dens 2) for her fine body (HERO_STAVES' `fine`): the coil a true ring of tube with its hole, the
-// bell flaring past it, lit from the upper left, the rim glinting between the two frames
-// (/mnt/project-files/visuals-loop/heroes-a/fine/bucina.py); the grip stays BUCINA_HORN_GRIP, in world px
-const BUCINA_HORN_FINE = [
-  '......................',
-  '.........ooooooooooo..',
-  '........oFFFFFFFFFFFo.',
-  '........oyyYYYYYYYYyo.',
-  '.........oFyyyyyyYoo..',
-  '.oo......oFFyyyyYo....',
-  'oyFo.ooooooFyyyYo.....',
-  '.oyooFFFFyoFyyYo......',
-  '.oYFFFyyyyyFyYo.......',
-  '.oFFyyYYYyyyyYo.......',
-  '.oFFyYoooYyyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oyyyYo...oYYYYo.......',
-  '.oyyyYoooYYYYo........',
-  '.oyyyyYYYYYYYo........',
-  '..oyyyYYYYYYo.........',
-  '...ooyYYYYoo..........',
-  '.....ooooo............',
-];
-const BUCINA_HORN_GLINT_FINE = [
-  '......................',
-  '.........ooooooooooo..',
-  '........oFWWFFFFFFFFo.',
-  '........oyyYYYYYYYYyo.',
-  '.........oFyyyyyyYoo..',
-  '.oo......oFFyyyyYo....',
-  'oyFo.ooooooFyyyYo.....',
-  '.oyooFFFFyoFyyYo......',
-  '.oYFFFyyyyyFyYo.......',
-  '.oFFyyYYYyyyyYo.......',
-  '.oFFyYoooYyyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oFFyYo...oYyyYo.......',
-  'oyyyYo...oYYYYo.......',
-  '.oyyyYoooYYYYo........',
-  '.oyyyyYYYYYYYo........',
-  '..oyyyYYYYYYo.........',
-  '...ooyYYYYoo..........',
-  '.....ooooo............',
-];
 const BUCINA_HORN_GRIP = [1, 6];
 const BUCINA_HORN_PAL = { o: '#2e2440', y: '#f2cc6a', Y: '#b98a2e', F: '#fff1b8', W: '#ffffff' };
 let bucinaHornArt = null;
@@ -245,10 +198,4 @@ function bucinaHorn() {
   bucinaHornArt = [bakeBladeArt(BUCINA_HORN, BUCINA_HORN_PAL), bakeBladeArt(glint, BUCINA_HORN_PAL)];
   return bucinaHornArt;
 }
-let bucinaHornFineArt = null;
-function bucinaHornFine() {
-  if (bucinaHornFineArt) return bucinaHornFineArt;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (bucinaHornFineArt = [tag(bakeBladeArt(BUCINA_HORN_FINE, BUCINA_HORN_PAL)), tag(bakeBladeArt(BUCINA_HORN_GLINT_FINE, BUCINA_HORN_PAL))]);
-}
-HERO_STAVES.horn = { art: bucinaHorn, fine: bucinaHornFine, grip: BUCINA_HORN_GRIP, cast: { up: 4, out: 0, keep: true } }; // sounded, the mouthpiece comes up to her lips and stays there while she blows
+HERO_STAVES.horn = { art: bucinaHorn, grip: BUCINA_HORN_GRIP, cast: { up: 4, out: 0, keep: true } }; // sounded, the mouthpiece comes up to her lips and stays there while she blows

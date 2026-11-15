@@ -290,89 +290,6 @@ const FABER_CLOCK_TURN = [ // the same wheel a tooth on
   'oyoyoyoyo.',
   '.oAo.o.o..',
 ].concat(FABER_SHAFT);
-// The clock staff at 32 px (dens 2) for his fine body (HERO_STAVES' `fine`): the gear laid from its shape on twice
-// the px, eight teeth, a rim, four spokes and a dark hub, turning half a tooth between the two frames
-// (/mnt/project-files/visuals-loop/heroes-a/fine/faber.py); the grip stays FABER_CLOCK_GRIP, in world px
-const FABER_CLOCK_FINE = [
-  '.......oyyyo........',
-  '....o..oyyyo..o.....',
-  '...oyoooWWWoooyo....',
-  '..oyyyWWWWWyyyyyo...',
-  '..oyyWWyyyyyyyyyo...',
-  '...oWWyoyyyoyyyo....',
-  '..oWWyooyyyooyyyo...',
-  '.ooWWoooyyyoooYYoo..',
-  'oyyWyyyyyoYYyYYYYYo.',
-  'oyyWyyyyyoYYyYYYYYo.',
-  '.ooyyoooYYYoooYYoo..',
-  '..oyyyooyyyooYYYo...',
-  '...oyyyoYyYoYYYo....',
-  '..oyyyyyYYYYYYYYo...',
-  '..oyyyyYYYYYYYYYo...',
-  '...oyaooYYYoooYo....',
-  '...oAaooYYYo..o.....',
-  '...oAaooYYYo........',
-  '...oAao.ooo.........',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '....oo..............',
-];
-const FABER_CLOCK_TURN_FINE = [
-  '.....ooo...ooo......',
-  '....oyyyoooyyyo.....',
-  '....oyyyWWWyyyo.....',
-  '..o..oWWWWWyyo..o...',
-  '.oyooWWyyyyyyyooyo..',
-  '.oyyWWyoooyyyyyyyo..',
-  'oyyWWyoooyyyoyyyYYo.',
-  '.oyWWyyyyyyo.oYYYo..',
-  '..oWyoyyyoYYooYYo...',
-  '..oWyooyyoYYyoYYo...',
-  '.oyyyo.oYYYyyYYYYo..',
-  'oyyyyyoyyyoooYYYYYo.',
-  '.oyyyyyyYoooYYYYYo..',
-  '.oyoAyyyYYYYYYooYo..',
-  '..ooAayYYYYYYo..o...',
-  '...oAyyYYYYYYYo.....',
-  '...oAyYYoooYYYo.....',
-  '...oAaoo...ooo......',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oAao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '...oaao.............',
-  '....oo..............',
-];
 const FABER_CLOCK_GRIP = [2, 10];
 const FABER_CLOCK_PAL = { o: FA_INK, y: FA_BRASS, Y: FA_DEEP, W: FA_WHITE, A: '#8a5a34', a: '#5a3a24' };
 let faberClockArt = null;
@@ -381,13 +298,7 @@ function faberClock() {
   faberClockArt = [bakeBladeArt(FABER_CLOCK, FABER_CLOCK_PAL), bakeBladeArt(FABER_CLOCK_TURN, FABER_CLOCK_PAL)];
   return faberClockArt;
 }
-let faberClockFineArt = null;
-function faberClockFine() {
-  if (faberClockFineArt) return faberClockFineArt;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (faberClockFineArt = [tag(bakeBladeArt(FABER_CLOCK_FINE, FABER_CLOCK_PAL)), tag(bakeBladeArt(FABER_CLOCK_TURN_FINE, FABER_CLOCK_PAL))]);
-}
-HERO_STAVES.clock = { art: faberClock, fine: faberClockFine, grip: FABER_CLOCK_GRIP };
+HERO_STAVES.clock = { art: faberClock, grip: FABER_CLOCK_GRIP };
 
 // his staff's basic bolt: a small brass cog, turning (the CLASSES row's shot `look`)
 function drawCogBolt(a, sx, sy, now) {

@@ -63,44 +63,6 @@ window.SPR = (() => {
     return t;
   }
 
-  // FINE2X: a 16 px grid of palette letters on twice the px, for a look drawn fine (`dens` 2):
-  // Scale2x rounds its steps, then the outline comes back to one px (an ink px with fill on one
-  // side and, behind it, ink that touches the outside is a doubled line's inner half: it takes the
-  // fill), and an outer ink px with no fill round it at all (a doubled step) goes. The roll of a
-  // fine look with no roll of its own, and a hero's blade (bakeBladeFine), are made with it.
-  function fine2x(g) {
-    const H = g.length, W = g[0].length, N = 2 * H, M = 2 * W;
-    const at = (x, y) => g[Math.min(Math.max(y, 0), H - 1)][Math.min(Math.max(x, 0), W - 1)];
-    const o = Array.from({ length: N }, () => Array(M).fill('.'));
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const P = g[y][x], A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
-      o[2 * y][2 * x] = C === A && C !== D && A !== B ? A : P;
-      o[2 * y][2 * x + 1] = A === B && A !== C && B !== D ? B : P;
-      o[2 * y + 1][2 * x] = D === C && D !== B && C !== A ? C : P;
-      o[2 * y + 1][2 * x + 1] = B === D && B !== A && D !== C ? D : P;
-    }
-    const S = (q) => (x, y) => (x >= 0 && x < M && y >= 0 && y < N ? q[y][x] : '.');
-    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    const A0 = S(o), out = (x, y) => N4.some(([a, b]) => A0(x + a, y + b) === '.');
-    const t = o.map((r) => r.slice());
-    for (let y = 0; y < N; y++) for (let x = 0; x < M; x++) {
-      if (A0(x, y) !== 'o' || out(x, y)) continue;
-      for (const [a, b] of N4) {
-        const c = A0(x + a, y + b);
-        if (c !== '.' && c !== 'o' && A0(x - a, y - b) === 'o' && out(x - a, y - b)) { t[y][x] = c; break; }
-      }
-    }
-    const T = S(t), gone = [];
-    for (let y = 0; y < N; y++) for (let x = 0; x < M; x++) {
-      if (T(x, y) !== 'o' || !N4.some(([a, b]) => T(x + a, y + b) === '.')) continue;
-      let fill = false;
-      for (let b = -1; b <= 1 && !fill; b++) for (let a = -1; a <= 1; a++) { const c = T(x + a, y + b); if (c !== '.' && c !== 'o') { fill = true; break; } }
-      if (!fill) gone.push(x, y);
-    }
-    for (let i = 0; i < gone.length; i += 2) t[gone[i + 1]][gone[i]] = '.';
-    return t.map((r) => r.join(''));
-  }
-
   // every letter a bake met that its palette has no entry for (a hole in the sprite), with its
   // count: read and cleared by app/check-paint.js
   const unpainted = new Map();
@@ -302,5 +264,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, bakeSheet, takeUnpainted, fine2x, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, bakeSheet, takeUnpainted, flipH, flipV, pixelsOf, keepPixels, cpuTwin, readbacks: () => read.n, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();

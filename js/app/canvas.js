@@ -23,27 +23,8 @@ ctx.imageSmoothingEnabled = false;
 //     particles instead of each sprite rounding its own way.
 // It is allocated at the most zoomed-OUT size once per canvas size, never
 // per frame - resizing a canvas reallocates it and resets its context state.
-// THE WORLD'S DENSITY: buffer px per world px. Every world pass draws in world
-// px under a WD scale (render() sets it on wctx, renderAirLayer on actx), so
-// today's art lands WD x WD per pixel and the screen shows it exactly as before;
-// a sprite drawn WD times finer (a hero look's `dens`, js/draw/heroes.js) is
-// drawn at 1/WD and keeps every one of its pixels. A layer that holds what the
-// world buffer holds (the body, hero, lit and canopy layers) is WD times its
-// world size, and copies between them go through worldBlit.
-// It is 1 (today's buffer, today's cost) until a real-GPU frame time says the
-// finer buffer is affordable and a fine look's weapon, fist and roll are fine
-// too; `?fine=1` turns it to 2 for a tool or a look being drawn.
-const WD = /[?&]fine=1\b/.test(location.search) ? 2 : 1;
-function worldBase(c) { c.setTransform(WD, 0, 0, WD, 0, 0); }
-// a WD-dense layer's (sx, sy, sw, sh), all in world px, onto c at (dx, dy) in c's world px
-// the contexts that hold WD buffer px a world px (the world buffer, the air layer and every
-// layer that mirrors them): a finer look (bodySet) shows only while ctx is one of these
-const WD_CTX = new Set();
-function worldDense() { return WD_CTX.has(ctx); }
-function worldBlit(c, cv, sx, sy, sw, sh, dx, dy) { c.drawImage(cv, sx * WD, sy * WD, sw * WD, sh * WD, dx, dy, sw, sh); }
 const worldCv = document.createElement('canvas');
 const wctx = worldCv.getContext('2d');
-WD_CTX.add(wctx);
 // THE AIR LAYER: what flies above the valley (a bird in flight and anyone
 // falling from it), drawn at 1:1 like the world but off the EXACT camera and
 // blitted with no sub-pixel shift (render()). The camera rides a bird, so a
@@ -53,7 +34,6 @@ WD_CTX.add(wctx);
 // (lightAir, js/draw/light.js). Sized with worldCv.
 const airCv = document.createElement('canvas');
 const actx = airCv.getContext('2d');
-WD_CTX.add(actx);
 const airMask = document.createElement('canvas');
 const amctx = airMask.getContext('2d');
 // THE GRADE'S COPY: the midday crisp multiplies a frame by itself (todGrade,
@@ -211,9 +191,9 @@ function fitCanvas() {
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
   const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
-  worldCv.width = wMax * WD; worldCv.height = hMax * WD;
+  worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
-  airCv.width = airMask.width = gradeCv.width = wMax * WD; airCv.height = airMask.height = gradeCv.height = hMax * WD;
+  airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;
   actx.imageSmoothingEnabled = false;
   sizeWorldView();
   // The 9:16 canvas keeps its Short-sized backing store and is SHOWN fitted to

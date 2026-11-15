@@ -30,14 +30,7 @@ let varroSpearArt = null;
 function varroSpears() {
   return varroSpearArt || (varroSpearArt = { flat: bakeBladeArt(VARRO_SPEAR, VARRO_SPEAR_PAL), diag: bakeBladeArt(VARRO_SPEAR_DIAG, VARRO_SPEAR_PAL) });
 }
-// ...and at 32 px for his fine body (VARRO_SPEAR_FINE), the grips the same world px
-let varroSpearFine = null;
-function varroSpearsFine() {
-  if (varroSpearFine) return varroSpearFine;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (varroSpearFine = { flat: tag(bakeBladeArt(VARRO_SPEAR_FINE, VARRO_SPEAR_PAL)), diag: tag(bakeBladeArt(VARRO_SPEAR_DIAG_FINE, VARRO_SPEAR_PAL)) });
-}
-HERO_BLADES.spear = { smear: 'thrust', art: varroSpears, fine: varroSpearsFine, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: VARRO_GRIP };
+HERO_BLADES.spear = { smear: 'thrust', art: varroSpears, hilt: [18, 11], hip: { down: [13, 11], up: [11, 10] }, grip: VARRO_GRIP };
 
 // ---- HOWL -----------------------------------------------------------------------------
 // No ring and no warning on the snow: his head goes up (the row's pose), and

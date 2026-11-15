@@ -173,7 +173,7 @@ function drawHitPuff(h, fx, fy, t) {
 const LV_GOLD = '#ffe9a0', LV_MID = '#f2cc6a', LV_DARK = '#8a5f1c';
 const LV_STREAKS = 7, LV_SWEEP = 0.5; // how many leap, and the share of the time the band takes to climb
 function drawLevelUp(p, spr, sx, sy, cx, cy) {
-  const u = 1 - p.lvT / LEVEL_FX_T, w = frameW(spr), h = frameH(spr), d = spr.dens || 1;
+  const u = 1 - p.lvT / LEVEL_FX_T, w = spr.width, h = spr.height;
   if (u < LV_SWEEP && spr.width <= scratch.width && spr.height <= scratch.height) {
     sctx.clearRect(0, 0, spr.width, spr.height);
     sctx.globalCompositeOperation = 'source-over';
@@ -187,7 +187,7 @@ function drawLevelUp(p, spr, sx, sy, cx, cy) {
       const y = Math.max(0, y0), m = Math.min(h, y0 + n) - y;
       if (m <= 0) return;
       ctx.globalAlpha = a;
-      ctx.drawImage(scratch, 0, y * d, spr.width, m * d, sx, sy + y, w, m);
+      ctx.drawImage(scratch, 0, y, spr.width, m, sx, sy + y, w, m);
     };
     rows(top, 4, 0.6); rows(top + 4, 4, 0.38); rows(top + 8, 5, 0.18); // see-through: the eyes stay under it
     ctx.globalAlpha = 1;

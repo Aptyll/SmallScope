@@ -145,7 +145,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     if (bodyOffView(p, ox, oy)) { if (p.active) playerUnseen(p, ox, oy, now); continue; }
-    draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
+    draws.push({ y: p.y + 8 + heldSort(p), p, ghost: !p.active }); // empty slots stand as silhouettes; a carried body just behind its carrier (heldSort, js/draw/bodies.js)
   }
   titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
   for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });
@@ -480,7 +480,7 @@ function renderAirLayer(now) {
   airOn = airBox.x1 > airBox.x0 && airBox.y1 > airBox.y0;
   if (airOn) {
     ctx = actx;
-    worldBase(actx);
+    actx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, WV_W, WV_H);
     if (state.drop) drawDropAir(ax, ay, now, true);
     for (const p of airRiders) drawPlayer(p, ax, ay, now);
@@ -507,10 +507,10 @@ function renderScreen(ox, oy, now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const kPx = zoomCur * devScale;
   const subX = Math.round((camX - ox) * kPx), subY = Math.round((camY - oy) * kPx);
-  ctx.drawImage(worldCv, 0, 0, WV_W * WD, WV_H * WD, -subX, -subY, WV_W * kPx, WV_H * kPx);
+  ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
   if (airOn) {
     const b = airBox, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
-    ctx.drawImage(airCv, b.x0 * WD, b.y0 * WD, bw * WD, bh * WD, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
+    ctx.drawImage(airCv, b.x0, b.y0, bw, bh, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
   }
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom

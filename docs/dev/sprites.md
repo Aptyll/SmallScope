@@ -70,7 +70,7 @@ that).
 
 **The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
 [app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each hero look (ARMATOS's `standard` and `oath`, FORTIVA's `unbroken` and `coif`, BELLA's `general` and `traitor`,
-IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`; [hero looks](#hero-looks)) and
+IGNIA's `hearth` and `wanderer`, AURA's `light`, SALVIA's `hood` and `tent`, LUCERNA's `lamp` and `dusk`, HIEMS's `scholar` and `frost`, FABER's `clockmaker` and `foreman`, NIX's `snowblind`, FALCO's `falconer`, RUPES's `quarry` and `cellar`, VARRO's `wolfkept` and `whitepack`, VELOX's `canal` and `night`, BUCINA's `horn` and `column`, MARIS's `diver` and `orca`, SAGITTA's `siege` and `tower`, LIGNUM's `feller` and `forest`, CLIVUS's `guide`, ARCUS's `fletcher`, FOSSOR's `digger`; [hero looks](#hero-looks)) and
 writes them to js/baked/motion.js as char grids in characters.js's own letters, so `motionSet`
 bakes them through the same team and hero palettes as every hand-drawn pose: `run[dir]`,
 `hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
@@ -163,30 +163,9 @@ in `heroRunBox`), `drawPlayer` centres any frame on the 16 px cell with its floo
 js/draw/heroes.js): the overhead frame lifts by `rise`, a staff or blade hand sits `reach` px further
 out. No look uses a larger cell yet; the roll and the other doll poses are still 16 px, and the menus
 draw frames into 16 px boxes.
-**A look can carry a finer world body**: `fine: { dens, grids }` on its row (ARMATOS's LAST
-STANDARD, `ARM_FINE`; SAGITTA's, NIX's, IGNIA's and LUCERNA's looks, `SAGITTA_FINE`, `NIX_FINE`, `IGNIA_FINE`, `LUCERNA_FINE`) is a `down`/`up`/`side` set at `dens` art px a world px (32 px on the 16
-px cell). When `WD` is 2 (`?fine=1`; it is 1 by default, so no player sees one yet), `champLook`
-builds it beside the 16 px set as `set.fine` through the same `lookSet`
-(walk, side and front run, breath and cloth step `dens` px, a world px; every frame carries
-`dens`), and only `drawPlayer` reads it, through `bodySet` and only while `ctx` is a `WD`-dense
-layer (`worldDense`: the world buffer, the air layer and the layers that mirror them, `WD_CTX`;
-[world zoom](rendering/world-zoom-and-the-two-pixel-spaces.md)). The menus, portraits, cards, the
-eagle's seats and a falling body keep the 16 px set. **The rest of the kit follows the body**: a
-`roll` on the row (`ARM_ROLL_FINE`: 14 frames a facing in the doll's box at `dens` px) replaces
-the doll's; a `HERO_BLADES` row's `fine()` (`armSwordsFine`: the art at 32 px, its `hilt` and
-`grip` the same world px) is what `bladeArt` hands the hands, and `drawGripped` and `heroCarry`
-draw any art at `heldW`×`heldH`; the fist closes on its art px (`heroFistFine`), and ARMATOS's
-standard draws on half px (`drawStandardFine`); a swing's crescent (`drawSwish`) lays itself on the body's art px. **A fine body brings the rest along**: a fine look with no `roll` gets its doll's roll
-doubled (`SPR.fine2x`: Scale2x, the outline back to one px), and a blade row with no `fine()`
-gets its own art doubled the same way (`fineArt`, the ink read as the darkest colour on the art's
-rim). A staff (`HERO_STAVES`) follows the same way: its row's `fine()` frames, else its own
-doubled (`staffArt`; IGNIA's crook and LUCERNA's lantern are drawn, `IGNIA_CROOK_FINE`, `LUCERNA_LANTERN_FINE`). A shot weapon follows too: `WEAPON_FINE[art]` (js/sprites/weapons.js) is its
-drawn 32 px level art and slanted grid (SAGITTA's arbalest), else its own doubled (`shotArt`, read by
-the aim and by her carry). So `fine.grids` alone is a whole kit; a drawn `roll` or `fine()` (ARMATOS's, FORTIVA's, NIX's dirk) replaces the
-doubled one where the doubling reads badly (a 45 degree edge comes out in two px steps).
-**The doubling is a stopgap, not 32 px art**: it keeps a fine kit from mixing pixel sizes, and
-reads softer than a drawn part beside it. A hero whose roll or blade is still doubled does not count
-toward turning `?fine=1` on for players; every part gets drawn first.
+**Heroes stay on the 16 px grid**: the 32 px hero bodies (`fine` looks, drawn rolls and weapons) were
+dropped on 11-14 and are gone from the code, with the 2x world buffer that drew them; their drafts
+are in /mnt/project-files/base32/ for history.
 The run facing down and up is still the doll's, unless the look's row says `run: 'drawn'`: then
 `heroRunFront` lifts the drawn front and back the same way (IGNIA's two looks, AURA's, SALVIA's, LUCERNA's and BUCINA's two, whose shawl, mantle, coat, cape and hair
 the doll does not match). Which look a player wears is `heroSkinOf(p)` (player.js): the id in `p.skins` under the
@@ -388,7 +367,34 @@ is `Fletcher` in app/bake-player/bodies.py (motion `fletcher`); he runs on his d
 he carries its own carried art (`ARCUS_BOW_CARRY`, a shallow D) upright in his leading hand, beside
 the body in every facing (`HERO_CARRY`, js/draw/arcus.js). Drawn, it is one of eight set frames on
 the snapped aim with the string back and an arrow on it, half then full, and the string straight for
-a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite. His fine body (`ARCUS_FINE`, one set both paints repaint) holds the same bow at 32 px (`ARCUS_BOW_FINE`, `arcusBowsFine`: the carry and the same headings through `arcusBowAim`, grips and hands still world px).
+a beat after the shot (`ARCUS_BOW_AIM`; `HERO_AIMED`, js/draw/heroes.js): never a turned sprite.
+
+FOSSOR has one look (`FOSSOR_SKINS`, js/sprites/fossor.js): DIGGER (free: a brass machine in a
+miner's hat with a lamp, its coat in the side's colour with a gold hem, copper arms). It is drawn on
+ARMATOS's frame and runs as its drawn body (`run: 'drawn'`); its doll is `Digger` in
+app/bake-player/bodies.py (motion `digger`). `FOSSOR_PAL` is `ARM_PAL` with the brass `t`/`T`, the
+dark metal `n`/`m`/`M` and the lamp `l`/`L`. The cut is C off robot-heroes round 2 in the project
+files, drawn back down to the 16 px cell. His SPADE is a `HERO_BLADES` row (`blade: 'spade'`,
+js/draw/fossor.js), carried at rest his own way (`HERO_CARRY`, `fossorCarry`): his fist closes on
+the haft's end at his hand, blade up beside his head facing down or up, leaning the way he faces side-on; BANK UP's snow blocks and BREAK GROUND's crack are drawn on the snow
+(`HERO_GROUND`), and under the snow he fades under a running mound (`HERO_FADE`, `HERO_BODY_FX`).
+
+PORTITOR has two looks (`PORTITOR_SKINS`, js/sprites/portitor.js): BAGGAGE ENGINE (free: a copper
+box head with two lamp eyes and a mouth grille, its side's bedroll across its back, whose ends show
+beside the head and above the shoulders head-on so they never read as arms, its side's belly plate
+with a gold badge, the pack's straps from behind) and VERDIGRIS (rare, 200 coins: the same engine
+gone green, its `pal` repainting the copper and the lamps). The copper is `PORT_PAL` over the team
+letters `t T n m M`; only `r R` stay its side's. It is C off robot-heroes round 1 and 2 in the project
+files, on today's 16 px frame (round 2's 18 px grids wait for the larger hero size). Its doll is
+`Carrier` in app/bake-player/bodies.py (motion `carrier`); it runs on its drawn frames (`run:
+'drawn'`). Its WALKING POLE is a `HERO_BLADES` row with no slanted carry: at rest the pole stands
+upright on the snow beside its leading foot in every facing, its copper hand closed round the haft at
+the hip (`portitorCarry`, `HERO_CARRY`, js/draw/portitor.js); flat for the swing.
+
+An ally it carries is drawn up on its back by `drawPlayer` (`heldSeat`, js/draw/bodies.js): where the
+carrier stands, `HELD_LIFT` rows up, `HELD_BACK` behind it side-on, sorted just behind it (in front
+facing up: `heldSort`), with no shadow or ring of its own. The carrier's overhead stack stands
+`HELD_STACK` rows over the rider's, so neither frame covers the body on its back.
 
 FABER has two looks (`FABER_SKINS`, js/sprites/faber.js): CLOCKMAKER (free) and WORKS FOREMAN
 (rare, 200 coins), both on ARMATOS's frame. `FABER_PAL` is `ARM_PAL` with the leather cap and apron

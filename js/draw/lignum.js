@@ -12,14 +12,7 @@ let lignumAxeArt = null;
 function lignumAxeArtOf() {
   return lignumAxeArt || (lignumAxeArt = { flat: bakeBladeArt(LIGNUM_AXE, LIGNUM_AXE_PAL), diag: bakeBladeArt(LIGNUM_AXE_DIAG, LIGNUM_AXE_PAL) });
 }
-// ...and at 32 px for his fine body (LIGNUM_AXE_FINE), the grips the same world px
-let lignumAxeFine = null;
-function lignumAxeFineOf() {
-  if (lignumAxeFine) return lignumAxeFine;
-  const tag = (c) => { c.dens = 2; return c; };
-  return (lignumAxeFine = { flat: tag(bakeBladeArt(LIGNUM_AXE_FINE, LIGNUM_AXE_PAL)), diag: tag(bakeBladeArt(LIGNUM_AXE_DIAG_FINE, LIGNUM_AXE_PAL)) });
-}
-HERO_BLADES.felling = { smear: 'chop', art: lignumAxeArtOf, fine: lignumAxeFineOf, hilt: [14, 9], hip: { down: [13, 11], up: [11, 10] }, grip: LIGNUM_AXE_GRIP, hold: 'shoulder' };
+HERO_BLADES.felling = { smear: 'chop', art: lignumAxeArtOf, hilt: [14, 9], hip: { down: [13, 11], up: [11, 10] }, grip: LIGNUM_AXE_GRIP, hold: 'shoulder' };
 
 // ---- the hand axe: turning in flight, still in what it struck ------------------------------
 // the axe at (x, y) turned to bearing a: its haft, and the steel bit across its head

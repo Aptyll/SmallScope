@@ -179,47 +179,4 @@ function veloxSling() {
   veloxSlingArt = [bakeBladeArt(VELOX_SLING, VELOX_SLING_PAL), bakeBladeArt(glint, VELOX_SLING_PAL)];
   return veloxSlingArt;
 }
-// The staff sling at 32 px for her fine body (HERO_STAVES.sling's `fine`), drawn, not doubled: the iron
-// hook, a one px cord in the haft's dark brown and the stone sat in its leather cup; the grip the same world px
-const VELOX_SLING_FINE = [
-  '....oooo..............',
-  '...oGGGGo.............',
-  '...oGGoGGo............',
-  '...obBo.oGo...........',
-  '...obBo.oGo...........',
-  '...obBo..oBo..........',
-  '...obBo...B...........',
-  '...obBo...B...........',
-  '...obBo....B..........',
-  '...obBo....B..........',
-  '...obBo.....B.........',
-  '...obBo.....B.........',
-  '...obBo......B........',
-  '...obBo......B........',
-  '...obBo.....oBooo.....',
-  '...obBo....occccco....',
-  '...obBo...ocSSSScco...',
-  '...obBo...ocSSSScco...',
-  '...obBo....occccco....',
-  '...obBo.....ooooo.....',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...obBo...............',
-  '...oBBo...............',
-  '....oo................',
-];
-let veloxSlingFineArt = null;
-function veloxSlingFine() {
-  if (veloxSlingFineArt) return veloxSlingFineArt;
-  const tag = (c) => { c.dens = 2; return c; };
-  const glint = VELOX_SLING_FINE.map((r, y) => (y === 16 ? r.replace('ocSSSS', 'ocWSSS') : r));
-  return (veloxSlingFineArt = [tag(bakeBladeArt(VELOX_SLING_FINE, VELOX_SLING_PAL)), tag(bakeBladeArt(glint, VELOX_SLING_PAL))]);
-}
-HERO_STAVES.sling = { art: veloxSling, fine: veloxSlingFine, grip: VELOX_SLING_GRIP, lean: 'right' }; // the pouch hangs low and out, the hook still leans right
+HERO_STAVES.sling = { art: veloxSling, grip: VELOX_SLING_GRIP, lean: 'right' }; // the pouch hangs low and out, the hook still leans right
