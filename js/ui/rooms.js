@@ -685,7 +685,8 @@ function drawCodeBox(r, m, now, hot) {
   }
 }
 // One seat, a card in League's row: the side's paint along its top, the
-// portrait, the name and the hero under it, in RANKED the person's rating, a crown
+// portrait, the name and the hero under it, in RANKED the person's rating and
+// its tier's badge, a founder's feather in the corner (js/ui/badges.js), a crown
 // over the leader's portrait, a friend's READY tick and ping bars at its
 // foot. Yours wears the gold rim; a seat that just changed hands flashes
 // (cardFx, updateTitle). An empty seat is a dotted well with the gold + that
@@ -711,7 +712,13 @@ function drawRoomSeat(s, act, flash) {
   const ny = fy + fs + 9, hero = CLASSES[p.cls] ? CLASSES[p.cls].name : '';
   drawPixelText(ctx, nm, x + ((w - pixelTextWidth(nm)) >> 1), ny, me ? SC_GOLD : SC_LIT, 1);
   if (hero) drawPixelText(ctx, hero, x + ((w - pixelTextWidth(hero)) >> 1), ny + 10, SC_DIM, 1); // the hero they last locked in
-  if (NET.mode === 'ranked') { const r = String(seatRank(p)); drawPixelText(ctx, r, x + ((w - pixelTextWidth(r)) >> 1), ny + 20, SC_LBL, 1); }
+  const card = me ? null : NET.cards[p.id] || {}; // what they told the party of themselves (js/app/history.js)
+  if (wearsFounder(card)) drawFounderBadge(x + 3, y + 3); // js/ui/badges.js
+  if (NET.mode === 'ranked') { // the rating, after its tier's badge once they have played RANKED
+    const r = String(seatRank(p)), bw = wearsRank(card) ? BADGE_PX + 3 : 0, rx = x + ((w - bw - pixelTextWidth(r)) >> 1);
+    if (bw) drawRankBadge(rx, ny + 16, seatRank(p));
+    drawPixelText(ctx, r, rx + bw, ny + (bw ? 21 : 20), SC_LBL, 1);
+  }
   if (p !== roomHost()) { // a guest: READY's tick (the leader's word is FIND MATCH, so it wears none) and the link to the leader
     const ry = y + h - 14, ready = NET.ready.has(p.id), bx = x + ((w - (ready ? 18 : 8)) >> 1);
     if (ready) drawTick(bx, ry + 2, RM_OK);

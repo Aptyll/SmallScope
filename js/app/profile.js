@@ -36,6 +36,13 @@
   // RANKED's rating, one per profile: where it starts and its floor. What
   // moves it is the party lobby's (rankResult, js/ui/rooms.js)
   const RANK_START = 1000, RANK_MIN = 0;
+  // A FOUNDER bought Softfall before it went free to play (the price's promise:
+  // free at a copies-sold goal, a badge for those who paid). The switch's unix
+  // time goes here in the patch that makes the game free; until then every
+  // copy bought is a founder's. Never saved: Steam says when this account
+  // bought it (steamBought, at boot), so no hand edit makes a founder.
+  const FOUNDER_UNTIL = null;
+  let bought = 0;
   const ID_MAX = 24; // a cosmetic id is a short word; anything longer is junk from a hand edit
 
   // A fresh profile comes PRE-NAMED, never blank: one of these winter words,
@@ -261,6 +268,10 @@
       profile.name = r.name; saveNow();
       return true;
     },
+    // Steam's first purchase of the game, unix seconds (0 none: a browser, a
+    // borrowed copy), read at boot (js/app/boot.js); founder() is the badge's
+    steamBought(t) { bought = typeof t === 'number' && isFinite(t) && t > 0 ? Math.floor(t) : 0; },
+    founder() { return bought > 0 && (FOUNDER_UNTIL === null || bought < FOUNDER_UNTIL); },
     pid() { return profile.pid; },
     // the picture by hero name ('' none chosen: the screens show the hero last picked)
     pic() { return profile.pic; },
