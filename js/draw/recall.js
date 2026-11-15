@@ -3,10 +3,9 @@
 // at its far end, and the mending at the roost.
 //
 // THE ROOST'S REACH (BOOM_R, js/sim/eagle.js: where the bird heals, smaller than its kerbed
-// paving) is a line inlaid in the stones, drawn flat under everything that walks
-// (drawRecallGround, from drawFlatPass in js/draw/passes.js): one unbroken circle in a pale
-// tint of the side's colour, a fainter row inside it, set between two of the kerb's dark
-// joints (roostLineArt, baked once per side and size). The mending also shows on the
+// paving) is its floor lit faintly in the side's colour under one unbroken pale rim, drawn
+// flat under everything that walks (drawRecallGround, from drawFlatPass in js/draw/passes.js;
+// roostFloorArt, baked once per side and size). The mending also shows on the
 // mended body (drawMendFeathers below). The soft glowing rim (roostRingArt: four one-pixel
 // circles stepping in from the rim, bright to faint, one mirrored step pattern, circlePts,
 // baked once per colour and size) is what a pump wears (drawPumpRings, js/draw/structs.js).
@@ -86,23 +85,22 @@ function roostRingArt(col, r) {
   return cv;
 }
 
-// THE ROOST'S REACH: rows out from the middle, each an unbroken circle (circlePts):
-// the outer joint, the inlay, the inlay's fainter inner row, the inner joint
-const ROOST_LINE = [[1, 'joint', 0.9], [0, 'tint', 1], [-1, 'tint', 0.55], [-2, 'joint', 0.5]];
-const roostLineCv = new Map(); // 'mark|r' -> the baked line, (2r+5) px square
-function roostLineArt(T, r) {
+// THE ROOST'S REACH: the floor the bird heals lit in its side's colour (ROOST_FLOOR, a
+// faint wash by whole rows), under one unbroken pale rim (circlePts) where the heal ends
+const ROOST_FLOOR = 0.13, ROOST_RIM = 0.8;
+const roostFloorCv = new Map(); // 'mark|r' -> the baked floor, (2r+1) px square
+function roostFloorArt(T, r) {
   const key = T.mark + '|' + r;
-  let cv = roostLineCv.get(key);
+  let cv = roostFloorCv.get(key);
   if (cv) return cv;
   cv = document.createElement('canvas');
-  cv.width = cv.height = 2 * r + 5;
-  const g = cv.getContext('2d'), c = r + 2;
-  for (const [dr, kind, a] of ROOST_LINE) {
-    g.globalAlpha = a;
-    g.fillStyle = kind === 'joint' ? FOOT_KERB_COL.joint : featherTint(T.mark);
-    for (const [x, y] of circlePts(r + dr)) g.fillRect(c + x, c + y, 1, 1);
-  }
-  roostLineCv.set(key, cv);
+  cv.width = cv.height = 2 * r + 1;
+  const g = cv.getContext('2d');
+  g.fillStyle = T.mark; g.globalAlpha = ROOST_FLOOR;
+  for (let y = -r; y <= r; y++) { const w = Math.floor(Math.sqrt(r * r - y * y + r)); g.fillRect(r - w, r + y, 2 * w + 1, 1); }
+  g.fillStyle = featherTint(T.mark); g.globalAlpha = ROOST_RIM;
+  for (const [x, y] of circlePts(r)) g.fillRect(r + x, r + y, 1, 1);
+  roostFloorCv.set(key, cv);
   return cv;
 }
 function drawRecallGround(ex, ey) {
@@ -112,7 +110,7 @@ function drawRecallGround(ex, ey) {
     if (e.state !== 'down') continue;
     const x = Math.round(e.x - ex), y = Math.round(e.y - ey);
     if (x - r > WV_W || y - r > WV_H || x + r < 0 || y + r < 0) continue;
-    ctx.drawImage(roostLineArt(TEAMS[skin(e.team)], r), x - r - 2, y - r - 2);
+    ctx.drawImage(roostFloorArt(TEAMS[skin(e.team)], r), x - r, y - r);
   }
 }
 
