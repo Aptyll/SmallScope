@@ -13,7 +13,7 @@ to the world.
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
   `player` or tests `p === player`, never an id). `player` points at it (and only at
-  it) for the camera, HUD, cursor, audio gating and the aim line.
+  it) for the camera, HUD, cursor, audio gating and the attack marks.
 - `control: 'remote'` — a human on another screen, in a match this screen hosts: its `input` is
   written from the wire (`netHostStep`, js/net/net.js) and it steps through `updatePlayer` like
   the local human. `isHuman(p)` is true for both kinds, and is what every human-only branch
@@ -61,8 +61,10 @@ style — the class is the state container, not a god object.
 ```
 mx, my        movement axis, -1..1 (the sim normalises)
 aimX, aimY    world-space aim point — cursor for a human, target for a bot
-fire          bow held: rising edge draws, falling edge looses; any of it ends
-              a recall (recallIntents, js/sim/recall.js)
+atk           the attack's MARK: a rival body, a rival building or the rival
+              bird, or null. While it is good and in range and the feet are
+              still, the sim winds up and strikes it (attackStep,
+              js/sim/attack.js); a wind-up ends a recall
 work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
@@ -97,7 +99,8 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` into the local player's struct once per step (under the
 [CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
-the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
+the mark into the same struct from its orders; under WASD `wasdStep` writes the mark and the
+chase's walk), and zeroes it (the mark dropped, so the sim calls off any wind-up) while pause or the settings panel is up. The wheel and the
 [map](gameplay/the-m-map-does-not-pause.md) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
 the roll). The keydown
@@ -157,6 +160,18 @@ browser's F row to a bind. **The side buttons are keys**: `sideButton` names the
 on either scheme binds, rebinds (a listening cap takes a side press) and holds on one; the caps
 print MB4 and MB5, and the listeners swallow both buttons' browser back and forward.
 
+**The left button is League's attack order, in both schemes** (the `attack order` banner,
+input.js). A press on a rival body, building or roosting bird (`atkPick`: the body's box, then
+the nearest within `ATK_PICK_R`, then the bird's box, then a building by the shape it is drawn
+in) makes it the mark (`ck.lock`, `atkPress`): the feet walk into the weapon's range by route
+and the sim strikes it on its own ([the basic attack](gameplay/the-basic-attack.md#the-attack)).
+Nothing is aimed or held. Under WASD a walk key calls the chase off and keeps the mark, so
+letting go inside range strikes again (League's kite: step, stop, hit), and a press on open
+ground drops it (`wasdStep`). The lock breaks the way the CLICK scheme's does (`ckSees`). **What
+the eye gets** (`drawClickMarks`, js/draw/marks.js): a red ring under the mark and a faint one
+under a hovered rival, and the weapon's range drawn round the hero's feet while a rival is
+hovered or the mark is out of range: dotted until the mark is inside it, solid once it is.
+
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
 ([the panel](gameplay/settings.md); the listing is the live scheme's, and the CONTROLS navbar's
 WASD / CLICK cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
@@ -175,7 +190,7 @@ The keyboard's second scheme (`settings.scheme = 'click'`; the `click to move` b
 the League / StarCraft / Age of Empires grammar, built to stand alone: **the right button is the
 hand and no key walks the body** (WASD and the arrows are off the feet). Every
 gesture is an *order* on `ck.order` and the sim never learns which scheme is in hand — `ckStep`
-turns the order into the walk, the aim, the work and the fire edges of the same input struct a
+turns the order into the walk, the aim, the work and the mark of the same input struct a
 bot fills, once per step from `sampleHumanInput`.
 
 - **A right press on open ground walks there by route** (`navTo`, the bots' own walker, so the
@@ -193,15 +208,10 @@ bot fills, once per step from `sampleHumanInput`.
   (`ckUse`: the counter as a panel; the die and bell wheels as wheels left
   standing, which the next right press picks from, or the press that walked up to them, held
   and released on a wedge).
-- **On a rival body it is a CHASE with a LOCK** (`unitUnder`, the hunt reticle's own boxes):
-  the body walks into its tool's reach (`ckReach`: a blade's reach, a bow's flight at the
-  auto-draw) and stands at `ckHoldR` (`CK_HOLD_BOW` 90 px, or the blade's reach), and while the
-  hand is off the button the tool draws and looses at the target by itself — `CK_AUTO_DRAW` 0.7
-  of the full draw, a NORMAL bot's own loose — with a clear line (`aiLineClear`) and the target
-  inside reach. The hand's own draw aims at the lock too, the assist, so a full draw is still the
-  reward for holding. **Abilities never take the lock**: they cast at the pointer, the skillshot
-  grammar (for that step the aim is the pointer and an auto-draw holds a step). The dodge rolls
-  toward the pointer, one rule.
+- **On a rival body it is a CHASE with a LOCK** (`unitUnder`, the hunt reticle's own boxes),
+  the same as a left press: the body walks into the weapon's `range` by route, stands, and the
+  attack strikes the mark. **Abilities never take the lock**: they cast at the pointer, the
+  skillshot grammar. The dodge rolls toward the pointer, one rule.
 - **A (`amove`) arms the pointer** (the `amove` reticle) and the next left press is an
   **attack-move**: walk there, lock the first foe seen within `CK_ACQ_R` (160 px) on the way —
   a rival player through `seenAt`, a rival robot, a camp's monster, never a deer — chase it,
@@ -209,10 +219,8 @@ bot fills, once per step from `sampleHumanInput`.
   new order, a death and the scheme switch; Escape disarms A. **G (`ping`) pings**: a tap is GO
   HERE at the pointer, a hold opens the ping wheel there and its release pings
   ([Pings](gameplay/pings.md)).
-- **The balance of the assist:** a locked shot goes where the target *is*, never led, so a
-  strafing rival at range is missed where a hand would lead it; the lock holds only to
-  `CK_LOCK_R` (240 px) and through `seenAt`, so cover and GHOSTSTEP break it (`ckSees`); the
-  auto-draw is a bot's, under the hand's; and a tool with nothing to swing fires nothing.
+- **The leash:** the lock holds only to `CK_LOCK_R` (240 px) and through `seenAt`, so cover and
+  GHOSTSTEP break it (`ckSees`).
 - **What the eye gets** (`drawClickMarks`, js/draw/marks.js): a ring blooms and fades where the
   order landed — white for a walk, gold for a job, red for a fight (`CK_COL`) — and a breathing
   ring in the foe's ink sits under a locked target's feet. Nothing is written.
@@ -227,14 +235,10 @@ The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
 with the player's items folded in by `refreshKit(p)` ([the effective kit](gameplay/the-effective-kit.md); cached on `p.kit`, rebuilt
 on a class or item change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
-(snow-slide fatigue rate), `chargeMul` (speed while drawn), `bowCharge` (seconds to full draw),
-`nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
-`nock / BOW_NOCK`, so a class's hands still set the rhythm; see
-[the cycle](gameplay/the-swing-tools-e.md#the-cycle)),
-`spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
+(snow-slide fatigue rate), `spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
 `dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay/hero-stats.md)
 bonuses items write. Sites that read it: `updatePlayer`'s movement block, `attackDmg`,
-`tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
+`tryDodge`. The seven hero stats
 themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
 read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
 (full heal — it's a pre-match choice); `p.maxHp` is always `levelMaxHp(p)` = `statOf(p, 'hp')`.
@@ -576,9 +580,8 @@ worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMP
 banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
 stealth and the fog still hold), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
 the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `aim`, `fresh`,
-`drawVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
-target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
-weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
+`lag`, `lagVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
+target's read motion, for a skillshot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
 ready ability is spent), `work` (0.4 / 0.5 / 0.8 / 1 duty
 cycle of the E key while harvesting — its gold pace), the **choice** knobs the team brain reads
 (`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
@@ -616,19 +619,17 @@ on HARD), and a hit keeps it watching every side for `AI_ALERT_T` (2 s). `skillA
 constant of `perceive` s, `lead` is taken off that read, and the **wobble** is a smooth drift
 (mean-reverting over `AI_WOBBLE_T`) of `aim` px at bow range, wider the farther the target, the
 faster either body moves, and `fresh` × on a new target settling over `AI_SETTLE` — the first
-shot at a new rival is the worst. `skillDraw` rolls each draw's release off `draw` ± `drawVar`.
+skillshot at a new rival is the worst. `skillStrike` is the **attack's** hand: it names no mark
+the wind-up cannot use, plants the feet once the mark is in range and the attack is due, and
+holds the order back for a reaction of `lag` ± `lagVar` s (0.3 / 0.18 / 0.06 / 0) first, so an
+easy bot attacks late, never wide.
 `skillSlip` is the **lapse**: `slip` times a minute of fighting it freezes, looses early or walks
 straight in for a moment. `skillHands` runs after the whole think (`updateAI`): the crosshair moves to wherever the ladder
 aimed at `hand` px/s (250 / 400 / 700 / at once), as an **offset from the body** - a mouse on a
 screen that follows its player, so a rival circling at arm's length is as easy to track as one
-far off, and a flick from the tree it was chopping to a rival takes a beat - and in a fight a
-drawn shot is held until the crosshair is within `AI_AIM_ON` (8 px) of the wish: the shot comes
-late, not wide. A **blade** never swings at the air (`skillBlade`, every native bot, every rung): no
-draw starts while the wish is more than its full reach + `AI_BLADE_CLOSE` away, and a drawn one is held
-while the wish is out of reach at that draw (`slashReach`), for `AI_BLADE_HOLD` at most. (An angular limit was tried first and made every close fight unwinnable: a
-rusher circling at 15 px sweeps faster than any sane turn rate.) **Scripted seats** (the bot API) all play with one pair of
+far off, and a flick from the tree it was chopping to a rival takes a beat . **Scripted seats** (the bot API) all play with one pair of
 hands, `BOT_FILE_HANDS` (HARD's `hand` and `aim`), through the same `skillHands`, so the bot ladder
-ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.
+ranks decisions rather than aim; its `hands` flag adds the wobble to every aim.
 
 **The team brain** (js/ai/ai-team.js) is what turns ten ladders into two sides. The profile says
 how well a bot plays; the team brain says what the side is doing and who does which part of it.
@@ -745,15 +746,14 @@ The ladder:
    ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
    to see through, a player in the same sight preferred by a small margin —
    [the waves](gameplay/robots.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px (a bow closes
-   in past 85 px and backs off inside 50; a blade closes to `AI_MELEE_D` and circles there; each
+   in past 85 px and backs off inside 50; a blade closes to its weapon's range, `aiMeleeD`, and circles there; each
    range band holds `AI_BAND_HYS` px past its edge, `aiRangeBand`, so a body on an edge does not
-   swap moves every tick), draw and loose at the profile's `draw`, dodge at its rate, stand for the profile's share of
-   every strafe. The aim point carries the scatter and the lead. Only shoots
-   when `aiLineClear()` says the flight path is open — and with **no** line it never walks into
-   the corner blocking it: past 60 px it routes in through the open (`steerTo`, so in a lane it
+   swap moves every tick), attack the target as its mark, dodge at its rate, stand for the profile's share of
+   every strafe. The aim point carries the scatter and the lead for its
+   skillshots; the attack itself homes, so it strikes whatever the line. With **no** clear line
+   (`aiLineClear()`) it still never walks into the corner blocking it: past 60 px it routes in through the open (`steerTo`, so in a lane it
    comes down the axis rather than into the tree wall), inside it gives ground straight back and
-   lets them come round the corner into the line (bodies pushing into a lane's bend is a
-   fight nobody fires a shot in). **Class abilities are spent here, off
+   lets them come round the corner into the line. **Class abilities are spent here, off
    cooldown at the foe** — on the profile's ability roll (`ai.abilOk`), through the same edge
    field a human's key
    sets (`inp.ability`): `abBotKey` (js/sim/armatos.js) takes the first unlocked, ready key whose
@@ -846,8 +846,8 @@ The ladder:
    fighting once the wave is in sight. Off a guard's post
    only. No wave out, or a work stretch, and it goes on down the ladder.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
-   outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
-   and swings only inside `AI_MELEE_D` + 8 px.
+   outruns a walk; 8 s for a blade). A bow attacks from its range; a blade walks in to its range
+   first.
 11. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
    build ([`BOT_BUILDS`](gameplay/the-merchants-counter.md#buying-and-selling)) at whichever counter it is standing at, a component or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next

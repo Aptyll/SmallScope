@@ -15,7 +15,6 @@
 // it lands harder, shoves the body it hits, and a building takes extra from it
 const HEAVY_EVERY = 3;          // the third bolt
 const HEAVY_DMG = 1.4;          // its damage x this
-const HEAVY_KB = 2.6;           // its shove x this
 const HEAVY_SIEGE = 1.6;        // ...and a building takes x this on top
 // Q PIN: a bolt down the aim; the first body it meets is shoved back, and pinned
 // (stunned) when a tree, a rock or a wall stands close behind it
@@ -114,7 +113,6 @@ function sagittaShot(p, a) {
   p.boltN = ((p.boltN || 0) + 1) % HEAVY_EVERY;
   if (p.boltN !== 0) return;
   a.dmg = Math.round(a.dmg * HEAVY_DMG);
-  a.kb *= HEAVY_KB;
   a.siege = HEAVY_SIEGE;
   a.look = 'heavybolt';
 }
@@ -219,7 +217,7 @@ function longHit(a, t) {
 
 // ---- the hooks she registers (js/sim/heroes.js) ------------------------------------
 HERO_PASSIVE.heavybolts = { shot: sagittaShot, out: sagittaOut,
-  name: 'HEAVY BOLTS', blurb: 'EVERY THIRD BOLT YOU LOOSE IS A HEAVY ONE: IT HITS HARDER, SHOVES WHAT IT HITS BACK A STEP, AND TOWERS TAKE EXTRA FROM IT.',
+  name: 'HEAVY BOLTS', blurb: 'EVERY THIRD BOLT YOU LOOSE IS A HEAVY ONE: IT HITS HARDER, AND TOWERS TAKE EXTRA FROM IT.',
   icon: SAGITTA_ICON32.heavy };
 HERO_DASH.crank = { spd: CRANK_SPD, t: CRANK_D / CRANK_SPD, ramp: 0.02, step: crankStep };
 HERO_MACHINE.sagPavise = { step: stepPavise, draw: (b, ex, ey, now) => drawSagittaPavise(b, ex, ey, now), r: 7, hitR: 10, mass: 400, sight: 40, pay: { gold: 15, xp: 10 }, passes: pavPasses };

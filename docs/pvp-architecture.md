@@ -258,8 +258,7 @@ pins the wall clock, which animations would otherwise read, and catches the
 trampled snow's chunk repaints up whole, `trCatchUp`, which it would otherwise spread over frames). `netDeltaRun(ticks,
 every, loss)` applies a run of deltas back in the page and compares after each.
 `DBG.netVerify(on)` makes a host ride its full form along every `VERIFY_EVERY` (300) ticks so each
-client checks itself (`netStatus().verifyFail`; a client's own verdict, `state.over`/`end`, and the
-fire edge its own input writes on its own body, `firePrev`, are not counted), and `DBG.netLoss(f)`
+client checks itself (`netStatus().verifyFail`; a client's own verdict, `state.over`/`end`, is not counted), and `DBG.netLoss(f)`
 throws away that share of a host's snapshot sends before the transport. The echo hands the bodies
 it rebuilt their `SNAP_SKIP` fields back afterwards (`snapKeepSkipped`), so a run of echoes steps
 the same world. `node app/check-load.js` is the room-sized proof (nine players, [checklists](dev/checklists.md)).

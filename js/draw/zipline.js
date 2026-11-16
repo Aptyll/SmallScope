@@ -95,7 +95,7 @@ function drawPylon(o, px, py) {
 const ZIP_INK = '#1c2030', ZIP_LIT = '#6a7488';
 const ZIP_ROPE = ['#c2b08a', '#9c8a66'], ZIP_ROPE_INK = '#4a4034'; // the rope's two strands, twisted, and its underside
 const ZIP_HOV_A = '#f2cc6a', ZIP_HOV_B = '#c9a227';
-const ZIP_GUIDE = '#ffd95c'; // the guide's dots: the draw meter's gold (DRAW_COL, js/draw/overhead.js)
+const ZIP_GUIDE = '#ffd95c'; // the guide's dots: a job's gold (CK_COL.work, js/app/input.js)
 // The cable pass, between drawDropAir and renderLighting in render(): over
 // every body and canopy, under the night grade. A span is a ROPE two pixels
 // thick: its strands twisted along the top (ZIP_ROPE, three pixels of one then
@@ -200,8 +200,7 @@ function drawZipStakes(ex, ey) {
 // walking itself to it - and the body stands too far out to clip on (past
 // ZIP_GRAB of the track), a static dotted gold line from the feet to the
 // nearest point of the track and a short bar across it there - the walk that
-// puts the cap over your head, in the aim line's own dots (drawAimLine,
-// js/draw/render.js), drawn right after it. Inside ZIP_GRAB the cap is the
+// puts the cap over your head, in 2x2 drop-shadowed dots. Inside ZIP_GRAB the cap is the
 // whole answer and the line stays away.
 function drawZipGuide(ex, ey) {
   const z = zipLitLine();

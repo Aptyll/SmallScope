@@ -69,7 +69,7 @@ const STAFF_THRUST = { right: [2, 0], left: [-2, 0], down: [0, 2], up: [0, -1] }
 // 0 carried, 1 gathering, 2 loosing
 function staffBeat(p) {
   if (p.castT > 0) return castProg(p) < STAFF_GATHER ? 1 : 2;
-  return p.nockT > 0 && attackCycle(p) - p.nockT < STAFF_SHOT_T ? 2 : 0;
+  return p.nockT > 0 && atkSince(p) < STAFF_SHOT_T ? 2 : 0;
 }
 function staffCasting(p) { return staffBeat(p) > 0; }
 function heroStaff(p, px, py) {

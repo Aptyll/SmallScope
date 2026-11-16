@@ -2,9 +2,9 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what each hero's left button IS: its row, and the renock a press starts | `attackOf`, `attackCycle` (the rows: `CLASSES[c].attack`, js/sim/player.js; the attack speed they make: `classAs`, stats.js) | `basic attack` (its head) |
-| the draw curve: what a hold buys an attack, how long a full draw takes, the one flight envelope the sim fires and the aim line measures, and what it lands for | `DRAW_RANGE_MIN`/`DRAW_SPEED_MIN`/`DRAW_DMG_MIN`, `drawTime`, `drawPow`, `drawSpeedMul`/`drawRangeMul`/`drawDmgMul`, `shotFlight`, `attackDmg` | `basic attack` › `the draw` |
-| **what one press does**, for every player | `basicAttack` (called by `playerAttack`, sim.js) | `basic attack` › `the press` |
-| a shot's press: the one arrow it puts in the air | `shootAttack` | `basic attack` › `the shot` |
-| a blade's press: the wedge it sweeps at this draw, and the sweep left on the snow | `cutAttack`, `slashReach`, `SLASH_T`, `SLASH_REACH_MIN`, `slashes`, `updateSlashes` (the hand's own swing: `p.slashT`/`slashA`/`slashHalf`, player.js, drawn by `drawHeldTool`, js/draw/bodies.js) | `basic attack` › `the cut` |
-| how hard an attack shoves what it hits (a beast or a soldier: never a player, `damagePlayer`) | `kb` on each `attack` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `basic attack` |
+| what each hero's left button IS: its row, one whole attack, the wind-up's share and the rest after the blow, and what it lands for | `attackOf`, `attackCycle`, `atkWind`, `atkRest`/`atkSince`, `drawTime`/`drawPow` (the wind-up read as a draw, for the poses), `attackDmg` (the rows: `CLASSES[c].attack`, js/sim/player.js; the attack speed they make: `classAs`, stats.js) | `basic attack` (its head) |
+| **what a hero can attack**: a rival body it sees, a rival building still standing, the rival bird on its roost; how far to its edge; where on it a blow is aimed | `atkGood`, `atkIsStruct`/`atkStands`, `atkIsEagle`/`atkEagleUp`, `atkGap`, `atkIn`, `ATK_LEASH`, `atkPt` | `basic attack` › `the mark` |
+| **the wind-up**: when it starts, what cancels it, the blow at its end, the turn to the mark | `attackStep` (called by `playerAttack`, sim.js), `atkCancel`, `atkFace` | `basic attack` › `the step` |
+| the blow, for every player | `basicAttack` | `basic attack` › `the blow` |
+| a shot: the one homing missile, its step onto the mark, what it does on arrival | `shootAttack`, `homingStep`, `homingLand` (stepped by the arrow loop, sim.js) | `basic attack` › `the shot` |
+| a blade: the blow on the mark and the sweep left in the air | `cutAttack`, `SLASH_T`, `slashes`, `updateSlashes` (the hand's own swing: `p.slashT`/`slashA`/`slashHalf`, player.js, drawn by `drawHeldTool`, js/draw/bodies.js) | `basic attack` › `the cut` |

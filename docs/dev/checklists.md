@@ -265,18 +265,17 @@ stands through `healPlayer`, like the roost ring. Gold is **not** an item and
 must not become one: it is a wallet number with no ceiling.
 
 **Adding or changing a hero's basic attack** — one `attack` row on its `CLASSES` entry
-(js/sim/player.js; [the basic attack](gameplay/the-basic-attack.md)): a `name`, an `art`, a
-`cycle` (the renock, in seconds, before `kit.nock` and ATTACK SPEED scale it), a `kb`
-([knockback](gameplay/the-basic-attack.md#knockback): a multiplier, 1 the ordinary shove), and either a `shot`
-(`speed`, `life`, `col`) or a `cut` (`reach`, `half`). The press, the draw, the aim line, the held
-weapon, the tooltip, the bots (`aiMelee` reads `cut`) and the ATTACK SPEED stat (`classAs`) all
-read the row, so nothing else is edited. A new `art` is a 12×12 grid in `SPRITES.weaponArt`
+(js/sim/player.js; [the basic attack](gameplay/the-basic-attack.md)): a `name`, an `art`, an `as`
+(base attacks a second), a `range` (px to the target's edge), a `wind` (the share of each attack
+spent winding up), and either a `shot` (`speed`, `col`, `look`) or a `cut` (`half`). The wind-up,
+the blow, the range ring, the held weapon, the tooltip, the bots (`aiMelee` reads `cut`,
+`aiMeleeD` the range) and the ATTACK SPEED stat (`classAs`) all read the row, so nothing else is
+edited. A new `art` is a 12×12 grid in `SPRITES.weaponArt`
 (js/sprites/weapons.js), a blade's real-length grid in `SPRITES.weaponHeld`, its heading in
 `WEAPON_FWD` and where the hand closes on each grid in `WEAPON_GRIP` (a blade at its hilt, a bow at its middle); draw a bow the way it is held (string toward the archer, arrowhead at +x). A hero
 with a blade of its own sets `blade` on its `CLASSES` row and draws it through `heroBlade`
-(js/draw/heroes.js), its `HERO_BLADES` row naming the `hilt` on the flat art. **Run the feel numbers after any change** (a shot's speed and life and a
-cut's reach and damage at a tap, half and full draw, and the cycle): nothing else says when an
-edit has changed how an attack plays.
+(js/draw/heroes.js), its `HERO_BLADES` row naming the `hilt` on the flat art. **Stage the attack after any change** (walk in, wind-up, blow, and a
+kite against a moving rival): nothing else says when an edit has changed how an attack plays.
 
 **Adding an item to the merchant's counter**: one `BUILD_ITEMS` entry in
 [js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
@@ -496,7 +495,7 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js) |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed hero is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed hero is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`), which reshapes the map |
 | js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS` and their clearing `BAY_CLEAR`), which reshape both roost corners |
 | js/sim/jungle.js | the jungle's pine walls (planted solid inside the lanes, with `JUNGLE_PATHS` and `JUNGLE_CLEARINGS` cut out for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`, the corner slant `JUNGLE_ROUND_CUTS`/`JUNGLE_ROUND_THICK`, each corner's slant rolled once for it and its mirrors, `jungleRoundHome`; the shelf's stumps `JUNGLE_SHELF`, `JUNGLE_SHELF_SPREAD`, `JUNGLE_SHELF_KNOTS`/`JUNGLE_SHELF_KNOT`; the glades' `JUNGLE_GLADE_DEEP`/`JUNGLE_GLADE_REACH`/`JUNGLE_GLADE_HUG`, `JUNGLE_GLADE_KNOTS`, `JUNGLE_GLADE_CAMP`; a glade's knot shapes `JUNGLE_KNOT_SHAPES`, `JUNGLE_KNOT_LIE`, `JUNGLE_KNOT_GAP`) |
@@ -509,7 +508,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
 | js/sim/items.js | `BUILD_ITEMS` (every item's price, recipe, stats and passive), `ITEM_PASSIVES`, `ITEM_SELL`, `ITEM_LEGEND_PRICE`, `ITEM_FIGHT_T`, every passive's numbers (`KINDLE_*`, `CHILL_*`, `LEECH_SHARE`, `THORN_SHARE`, `CULL_*`, `STEADY_MUL`, `SURGE_*`, `BRACE_*`, `SMOLDER_*`, `SCORCH_BURN`, `AMPLIFY_MUL`), the bots' `BOT_BUILDS` |
 | js/ui/shop.js | `SHOP_REACH` |
-| js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the bot files' hands (`BOT_FILE_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
+| js/ai/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the bot files' hands (`BOT_FILE_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`) |
 | js/ai/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`); how far a bot walks to its counter to buy (`AI_SHOP_DETOUR`) |
 | js/sim/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
 | js/sim/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |

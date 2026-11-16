@@ -178,8 +178,7 @@ function abRecast(p, ab) { return !!(ab.recast && ab.recast(p)); }
 // the wind-up itself: the draw dropped, the body turned to the aim and the
 // clock set. `t` is the cast's length - the row's, or the second half's
 function startCast(p, i, t) {
-  if (p.charging) { p.charging = false; p.chargeT = 0; }
-  p.fireArmed = false;
+  atkCancel(p);
   p.castAb = i;
   p.castT = t;
   p.castMax = t;
@@ -207,8 +206,7 @@ function updateAbilities(p, dt) {
     p.shieldT -= dt;
     p.shieldA = handAim(p);
     faceToward(p, Math.cos(p.shieldA), Math.sin(p.shieldA));
-    if (p.charging) { p.charging = false; p.chargeT = 0; }
-    p.fireArmed = false;
+    atkCancel(p);
     if (p.shieldT <= 0) abShieldDown(p, false);
   }
   // the cast: a short performance, then the effect fires at the aim the

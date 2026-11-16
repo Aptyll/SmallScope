@@ -212,7 +212,7 @@ why the dev server ([app/server.js](../../../app/server.js)) answers Range reque
 seek in it.
 
 The bow's rhythm has one of its own: `SFX.nock()` (a dry wooden tick when the renock clears —
-deliberately near-silent, since it fires after every shot). See [the cycle](the-swing-tools-e.md#the-cycle).
+deliberately near-silent, since it fires after every shot). See [the cycle](the-swing-tools-e.md#the-attacks-clock).
 
 A body catching fire has `SFX.kindle()` (`igniteUnit`, js/sim/actions.js): a soft breath and a thin
 high note, barely there on purpose, since the flames on the body say the rest.

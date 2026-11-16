@@ -61,7 +61,7 @@ function botGuess(p) {
   // a shot at game is the hunt it belongs to, not a fight: the same goal
   // and why as between shots, so a hunt reads as one steady HUNT
   const shot = (q) => q.kind === 'ANIMAL' ? g('HUNT', 'FOOD', q.e.x, q.e.y, q.e, 'ANIMAL') : g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind);
-  if (inp.fire || p.charging) {
+  if (inp.atk || p.charging) {
     const q = botAimed(p);
     if (q) return shot(q);
   }

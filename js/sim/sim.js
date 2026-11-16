@@ -542,11 +542,19 @@ function updatePlay(dt) {
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
   updateCallouts(dt); // the bots' calls to their side (js/ai/ai-callouts.js)
 
-  // Shots in flight. A bow's basic attack and the pierce ride this one
-  // array: every shot flies straight.
+  // Shots in flight. A basic attack's missile and every key's shot ride this
+  // one array: a key's shot flies straight, a basic attack's at its mark.
   for (let i = arrows.length - 1; i >= 0; i--) {
     const a = arrows[i];
     a.t += dt;
+    // a basic attack's missile flies at its mark and meets nothing else
+    // (homingStep, js/sim/attack.js): League's auto, never blocked, never missed
+    if (a.homing) {
+      const h = homingStep(a, dt);
+      if (h === 'hit') homingLand(a);
+      if (h) { heroShotEnd(a, h === 'hit' ? 'unit' : 'life'); arrows.splice(i, 1); }
+      continue;
+    }
     const vd = Math.hypot(a.vx, a.vy) || 1;
     const nx = a.vx / vd, ny = a.vy / vd;
     // the step is a SEGMENT, and what it crossed is what it meets (the
@@ -719,14 +727,13 @@ function walkSlide(p, slide, dt, onIce, kit) {
 // mx/my/len: walkHeading's
 function walkStep(p, dt, mx, my, len, onIce, kit) {
   let sp = Math.hypot(p.vx, p.vy);
-  const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
   // every cap an ability may drag on (root, slow, cast, shield),
   // folded once - js/sim/abilities.js
   const abMul = abilityMoveMul(p);
   // a rider goes at the deer's gallop (RIDE, js/sim/wildlife.js): not the
-  // hero's stride, and a drawn bow does not slow the deer under it
+  // hero's stride
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
-    : statOf(p, 'ms') * chargeMul) * abMul; // MOVE SPEED (js/sim/stats.js)
+    : statOf(p, 'ms')) * abMul; // MOVE SPEED (js/sim/stats.js)
 
   if (p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
@@ -746,7 +753,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
       steer = 1.7; target = 0;
       decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT);
     } else if (onIce) {
-      const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
+      const cap = ICE_MAX * kit.iceMax * abMul;
       if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
       else { steer = 0; target = 0; decay = 0.18; } // idle glide
     } else {
@@ -800,7 +807,7 @@ function playerIntents(p, dt) {
     p.stunT = Math.max(0, p.stunT - dt);
     inp.dodge = false;
     inp.useItem = -1;
-    inp.work = inp.fire = inp.slide = false;
+    inp.work = inp.slide = false; // (the mark stays named: a stun only holds the wind-up, attackStep)
     inp.ability = -1;
     inp.cmd = null;
     inp.mx = inp.my = 0;
@@ -914,8 +921,7 @@ function playerPlunge(p) {
       if (p.rushT > 0) { p.rushT = 0; p.dash = ''; } // the charge ends in the water
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakRecall(p);                                      // the recall goes in the water with you
-      if (p.charging) { p.charging = false; p.chargeT = 0; }
-      p.fireArmed = false;
+      atkCancel(p);
       sfxAt('splash', p.x, p.y);
       burst(p.x, p.y + 4, '#3a6080', 10, 55, 0.5, true);
       burst(p.x, p.y + 2, '#ddf1f8', 8, 60, 0.5, true);
@@ -1013,7 +1019,6 @@ function playerSwing(p, dt) {
 }
 
 function playerAttack(p, dt) {
-  const inp = p.input;
   // the cycle: the cooldown an attack starts (attackCycle, js/sim/attack.js) counts
   // down, and its end is the ONE gate between presses. It runs for every
   // player - dead or alive is already filtered above - so a bot recovers on
@@ -1027,35 +1032,13 @@ function playerAttack(p, dt) {
   p.backT = Math.max(0, p.backT - dt);
   p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (cutAttack, js/sim/attack.js)
 
-  // The basic attack: pressing arms it, releasing lands it. The press does
-  // not have to land on a ready weapon - it stays armed, so holding through
-  // the cycle draws the moment it runs out. Without that, a controller that
-  // holds fire down - every bot does - would attack once and then wait
-  // forever for an edge it already spent.
-  if (inp.fire && !p.firePrev) p.fireArmed = true; // (the press already ended a recall: recallIntents)
-  if (!inp.fire) p.fireArmed = false;
-  if (p.fireArmed && !p.charging && p.nockT <= 0 && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
-    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw ; an auto swing is never in the way
-    p.charging = true;
-    p.chargeT = 0;
-    sfxAt('bowDraw', p.x, p.y);
-  }
-  if (!inp.fire && p.charging) {
-    p.charging = false;
-    basicAttack(p);
-    p.chargeT = 0;
-  }
-  p.firePrev = inp.fire;
-
-  // bow draw: charge up and keep facing the aim point. chargeT is the raw
-  // seconds held, never clamped - every reader takes drawPow() (0..1) off it,
-  // and the meter's white blink at the peak (DRAW_FULL_FLASH) needs to see
-  // the hold run PAST the full draw
-  if (p.charging) {
-    p.chargeT += dt;
-    faceToward(p, inp.aimX - p.x, inp.aimY - p.y);
-    aimHold(p);
-  }
+  // The basic attack, League's: the mark the input names (input.atk) is
+  // wound up on and struck while it is in range and the feet are still
+  // (attackStep, js/sim/attack.js). A body mid-ability, mid-roll, falling
+  // or on a cable has no hand free for it.
+  const free = p.fallT <= 0 && p.stunT <= 0 && (p.swingT <= 0 || p.autoSwing) && p.castT <= 0 && p.shieldT <= 0 &&
+    p.rushT <= 0 && p.zip < 0 && p.dodgeT <= 0;
+  attackStep(p, dt, free);
 }
 
 function updatePlayer(p, dt) {

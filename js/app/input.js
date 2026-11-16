@@ -297,7 +297,7 @@ function keyPress(e) {
   const tk = e.repeat ? -1 : TRICK_KEYS.findIndex((a) => keyIs(e, a));
   if (tk >= 0) player.input.trick = tk;
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
-  if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
+  if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; ckClear(); }
   // The work key at a practice prop (the parkour die, the range bell): the
   // press opens its wheel over it, the pointer picks, and RELEASING it takes
   // - the right-click wheel's own hold-and-release grammar, moved onto the
@@ -495,7 +495,7 @@ function pointerPress(button) {
   if (state.charOpen && charClick(charHit(mouse.x, mouse.y))) return;
   if (hudPress(mouse.x, mouse.y)) { SFX.unlock(); return; }
   mouse.down = true;
-  clickAction(player);
+  atkPress();
 }
 pageListen(window, 'mouseup', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); pointerRelease(e.button); });
 // a side button as the key it is named for: held in `keys` like the
@@ -514,7 +514,6 @@ function pointerRelease(button) {
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   // releasing the button just drops the held intent; updatePlayer fires the
   // tool on that falling edge, the same way an AI's shot is timed
-  if (button === 0) player.input.fire = false;
   // letting go of a dial: the two sound tracks answer with a real sampled cue
   // at the level just set, so the slider demonstrates itself instead of
   // labelling itself - and a dead sample layer is audible the moment you drag
@@ -541,6 +540,79 @@ function openPingWheel() {
   return true;
 }
 
+// ------------------------------------------------------------ attack order
+// LEFT CLICK is League's attack order, in both schemes: a press on a rival
+// body or a rival building makes it the MARK (ck.lock), the feet walk into
+// the weapon's range by route, and the sim winds up and strikes on its own
+// for as long as the mark is good, in range and the feet are still
+// (attackStep, js/sim/attack.js). Nothing is aimed and nothing is held: the
+// press is the whole order, and it follows the mark until another replaces
+// it. Under WASD a walk key takes the feet back - the chase is called off,
+// the mark kept, so letting go of the keys inside range strikes again
+// (League's kite: step, stop, hit) - and a press on open ground drops the mark. The lock breaks the way the CLICK scheme's does
+// (ckSees: dead, gone, fogged, or past CK_LOCK_R).
+const ATK_PICK_R = 10; // px of slack round the pointer a press still finds a body in
+// the mark under a world point: a rival body by its box (unitUnder), else
+// the nearest within ATK_PICK_R of the point, else the rival bird, else a rival building whose
+// drawn shape covers it (structShotBox: a tower's crossbow is clicked
+// where it is drawn, not at its footing)
+function atkPick(p, wx, wy) {
+  const u = unitUnder(p, wx, wy);
+  if (u && atkGood(p, u)) return u;
+  let best = null, bd = ATK_PICK_R;
+  const near = (e) => { if (!atkGood(p, e)) return; const d = Math.hypot(e.x - wx, unitMidY(e) - wy); if (d < bd) { bd = d; best = e; } };
+  for (const q of players) near(q);
+  for (const b of robots) near(b);
+  for (const a of animals) near(a);
+  if (best) return best;
+  // the rival bird on its roost, by the box it sits in
+  if (state.drop) for (const e of state.drop.eagles) if (e && atkGood(p, e) && Math.abs(wx - e.x) <= 16 && wy >= e.y - 22 && wy <= e.y + 6) return e;
+  const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
+  for (let dy = -1; dy <= 3; dy++) for (let dx = -2; dx <= 2; dx++) {
+    if (!inWorld(tx + dx, ty + dy)) continue;
+    const s = structOf(objAt(tx + dx, ty + dy));
+    if (!s || !atkGood(p, s)) continue;
+    const b = structShotBox(s) || { x0: s.tx * TILE, y0: s.ty * TILE, x1: (s.tx + structW(s)) * TILE, y1: (s.ty + structH(s)) * TILE };
+    if (wx >= b.x0 && wx <= b.x1 && wy >= b.y0 && wy <= b.y1) return s;
+  }
+  return null;
+}
+// the left press in the world
+function atkPress() {
+  SFX.unlock();
+  const p = player;
+  if (!p || p.dead || p.aboard) return;
+  const wx = mouseWX(), wy = mouseWY();
+  const t = atkPick(p, wx, wy);
+  if (!t) { if (!ckOn()) { ck.lock = null; ck.order = null; } return; }
+  const q = atkPt(t);
+  ckOrder({ kind: 'chase', t }, q.x, q.y + 6, 'foe');
+  ck.lock = t;
+}
+// walk p toward mark t by route (`walk`, the scheme's own navTo leg)
+function atkWalkTo(p, t, walk) {
+  if (atkIsStruct(t)) { const c = structCenter(t); walk(c.x, c.y, Math.ceil(attackOf(p).range / TILE)); }
+  else walk(t.x, t.y, 0);
+}
+// one step of the WASD scheme: the keys walk, the mark is struck, and a
+// chase the left press began walks the feet while no key does
+function wasdStep(p, dt, mx, my) {
+  const r = { mx, my, aimX: mouseWX(), aimY: mouseWY(), atk: null, work: false };
+  if (p.aboard || p.dropT > 0) return r;
+  if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
+  if (ck.lock && !ckSees(p, ck.lock)) ck.lock = null;
+  const t = ck.lock;
+  if (!t || mx || my) ck.order = null; // a walk key calls the chase off; the mark stays
+  // the chase holds until a key walks: in range the feet stand and strike,
+  // and a mark that steps out of range is followed in again
+  if (t && ck.order && ck.order.kind === 'chase' && !atkIn(p, t)) {
+    const walk = (x, y, reach) => { const n = navTo(p, x, y, PLAYER_R, reach || 0, dt, NAV_BUDGET * 4); if (!n.ok) { ck.order = null; return -1; } r.mx = n.dx; r.my = n.dy; return n.d; };
+    atkWalkTo(p, t, walk);
+  }
+  r.atk = t;
+  return r;
+}
+
 // ------------------------------------------------------------ click to move
 // THE SECOND KEYBOARD SCHEME (settings.scheme 'click'; 'wasd' is the first,
 // and the KEYBOARD listing's top row switches): the right button is the hand
@@ -551,28 +623,21 @@ function openPingWheel() {
 // reach and the swing; on a merchant or the practice furniture a walk into
 // reach and the thing opening; on the chart
 // or the minimap a walk across the map; seated on the roost, the hop. On a
-// rival body it is a CHASE with a LOCK: the body walks into its tool's reach
-// by route, stands, and the tool draws and looses at the target by itself
-// (CK_AUTO_DRAW, a NORMAL bot's own loose) while the hand is off the button;
-// the hand's own draw aims at the lock too - the assist - and a full draw is
-// still the reward for holding. Abilities never take the lock: they cast at
-// the pointer, the skillshot grammar. A arms the pointer and the next left
+// rival body it is a CHASE with a LOCK: the body walks into its weapon's
+// range by route, stands, and the attack strikes it (the `attack order`
+// banner above: a left press lays the same lock). Abilities never take the
+// lock: they cast at the pointer, the skillshot grammar. A arms the pointer and the next left
 // press is an ATTACK-MOVE: walk there, lock the first foe seen within
 // CK_ACQ_R on the way, chase it, and walk on when it is down. S drops the
 // lot.
 //
-// What balances the assist: a locked shot goes where the target IS, never
-// led, so a strafing rival at range is missed where a hand would lead it;
-// the lock holds only to CK_LOCK_R and through seenAt, so cover and a
-// stealth item break it; the auto-draw is a bot's, under the hand's; and
-// nothing here reaches the sim but the same input struct a bot fills
-// (ckStep -> sampleHumanInput), so the sim never learns which scheme is in
-// hand. The rings on the snow are drawClickMarks (draw-world.js); the armed
+// The lock holds only to CK_LOCK_R and through seenAt, so cover and a
+// stealth item break it, and nothing here reaches the sim but the same input
+// struct a bot fills (ckStep -> sampleHumanInput), so the sim never learns
+// which scheme is in hand. The rings on the snow are drawClickMarks (draw-world.js); the armed
 // pointer is the 'amove' reticle (cursorInfo, render.js).
 const CK_ACQ_R = 160;     // px an attack-move takes a foe from
 const CK_LOCK_R = 240;    // px a lock holds to (the leash); a rival's cover shortens it through seenAt
-const CK_HOLD_BOW = 90;   // px a bow chases to before it stands (a blade: its own reach)
-const CK_AUTO_DRAW = 0.7; // the auto-attack looses at this fraction of the full draw (AI_LEVELS' NORMAL)
 const CK_ARRIVE = 5;      // px from a goal that counts as arrived
 const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
@@ -657,9 +722,10 @@ function ckArmedPress() {
 // can p still hold this lock: alive, a foe, and inside the leash - a rival
 // player through seenAt, so its cover and its stealth shorten the leash
 function ckSees(p, t) {
-  if (!unitAlive(t) || !unitFoe(p, t)) return false;
+  if (!atkGood(p, t)) return false;
+  if (atkIsStruct(t)) return atkGap(p, t) <= CK_LOCK_R;
   const d = Math.hypot(t.x - p.x, t.y - p.y);
-  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R, p.team) : inSight(p.team, t) ? CK_LOCK_R : 0);
+  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R, p.team) : CK_LOCK_R);
 }
 // the nearest foe an attack-move takes: a rival player it can see, a rival
 // robot, or a camp's monster - never a deer, which is a hunt and not a fight
@@ -670,19 +736,6 @@ function ckAcquire(p) {
   for (const b of robots) if (unitAlive(b) && b.team !== p.team) take(b, CK_ACQ_R);
   for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
   return best;
-}
-// how far the hero's basic attack lands a blow at the auto-draw: a blade's
-// reach, a bow's flight at CK_AUTO_DRAW (shotFlight, the loose's own envelope)
-function ckReach(p) {
-  const A = attackOf(p);
-  if (A.cut) return A.cut.reach + 6;
-  const fl = shotFlight(A.shot, CK_AUTO_DRAW);
-  return fl.spd * fl.life;
-}
-function ckHoldR(p, reach) {
-  const A = attackOf(p);
-  if (A.cut) return A.cut.reach * 0.8;
-  return reach > 0 ? Math.min(CK_HOLD_BOW, reach * 0.85) : CK_HOLD_BOW;
 }
 // a 'use' order: walk into the thing's reach, then open it - the counter as
 // a panel, the rest as the wheel the work key would hold (keyPress), left
@@ -708,7 +761,7 @@ function ckUse(p, o, walk, r) {
 // null leaves the button's own edges alone.
 function ckStep(p, dt) {
   const inp = p.input;
-  const r = { mx: 0, my: 0, aimX: mouseWX(), aimY: mouseWY(), fire: null, work: false };
+  const r = { mx: 0, my: 0, aimX: mouseWX(), aimY: mouseWY(), atk: null, work: false };
   // seated on the bird there is nothing to order: the crew leaps on its own
   if (p.aboard) return r;
   if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
@@ -748,21 +801,16 @@ function ckStep(p, dt) {
     } else if (o.kind === 'use') ckUse(p, o, walk, r);
   }
   if (t) {
-    // the chase: into the tool's reach by route, then stand and let it work.
-    const ty = t.y - (t instanceof Player ? 6 : (t.alt || 0) + 4);
-    const d = Math.hypot(t.x - p.x, t.y - p.y);
-    const reach = ckReach(p), hold = ckHoldR(p, reach);
-    r.aimX = t.x; r.aimY = ty;
-    if (d > hold) walk(t.x, t.y, 0);
-    // the auto-attack: the hand off the button, a clear flight, the target
-    // inside the tool's reach - draw to the auto-draw and loose (the same
-    // held-then-dropped intent a bot fires by)
-    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < drawTime(p) * CK_AUTO_DRAW;
-  } else if (!mouse.down) r.fire = false;
+    // the chase: into the weapon's range by route, then stand - the sim
+    // winds up and strikes the mark on its own (attackStep, js/sim/attack.js)
+    const q = atkPt(t);
+    r.aimX = q.x; r.aimY = q.y;
+    if (!atkIn(p, t)) atkWalkTo(p, t, walk);
+    r.atk = t;
+  }
   // an ability casts at the POINTER, never at the lock (the skillshot's
-  // grammar): for that one step the aim is the pointer, and an auto-draw
-  // holds a step rather than loose at it
-  if (inp.ability >= 0 && t) { r.aimX = mouseWX(); r.aimY = mouseWY(); if (r.fire !== null) r.fire = p.charging; }
+  // grammar): for that one step the aim is the pointer
+  if (inp.ability >= 0 && t) { r.aimX = mouseWX(); r.aimY = mouseWY(); }
   // the roll goes where the pointer is - one rule, with no walk keys to read
   if (inp.dodge) { const dx = mouseWX() - p.x, dy = mouseWY() - p.y, l = Math.hypot(dx, dy); if (l > 1) { r.mx = dx / l; r.my = dy / l; } }
   return r;
@@ -838,7 +886,7 @@ function sampleHumanInput(p, dt) {
     if (keyHeld('right') || (ar && keys['arrowright'])) mx += 1;
   }
   const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine;
-  const c = ckOn() && live ? ckStep(p, dt) : null;
+  const c = !live ? null : ckOn() ? ckStep(p, dt) : wasdStep(p, dt, mx, my);
   if (c) { mx = c.mx; my = c.my; inp.aimX = c.aimX; inp.aimY = c.aimY; }
   // The chart does not stop the world, so it does not stop the player: you
   // keep walking, sliding, rolling and burrowing with it up, and watch your
@@ -848,29 +896,25 @@ function sampleHumanInput(p, dt) {
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
     inp.slide = keyHeld('slide');
-    inp.fire = inp.work = false;
+    inp.work = false;
+    inp.atk = null;
     inp.useItem = -1;
     inp.ability = -1;
     inp.trick = -1;
     inp.cmd = null;
-    if (p.charging) { p.charging = false; p.chargeT = 0; }
-    p.firePrev = false;
-    p.fireArmed = false;
     return;
   }
   // state.eagleCine: the ceremony has the camera - hands off
   // the controls until it hands back, exactly as pause zeroes them
   if (!live) {
     inp.mx = inp.my = 0;
-    inp.fire = inp.work = inp.slide = false;
+    inp.work = inp.slide = false;
+    inp.atk = null;
     inp.dodge = false;
     inp.useItem = -1;
     inp.ability = -1;
     inp.trick = -1;
     inp.cmd = null;
-    if (p.charging) { p.charging = false; p.chargeT = 0; }
-    p.firePrev = false;
-    p.fireArmed = false;
     // the one thing that works mid-air: WASD drifts the fall (updateDrop
     // reads it) - under CLICK, a landing spot ordered mid-air is what the
     // fall drifts toward
@@ -884,7 +928,7 @@ function sampleHumanInput(p, dt) {
   inp.mx = mx; inp.my = my;
   inp.slide = keyHeld('slide');
   inp.work = (keyHeld('work') || !!(c && c.work)) && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
-  if (c && c.fire !== null) inp.fire = c.fire; // the auto-attack's own edges, with the hand off the button
-  if (state.wheel) { inp.fire = false; inp.dodge = false; inp.ability = -1; } // the wheel swallows the shot
+  inp.atk = c ? c.atk : null; // the mark the left button laid (the `attack order` banner)
+  if (state.wheel) { inp.atk = null; inp.dodge = false; inp.ability = -1; } // the wheel swallows the attack
 }
 

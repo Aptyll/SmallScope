@@ -681,7 +681,6 @@
     // the heroes rather than over them, and never takes a hero's voice away.
     waveSwing() { smp('whoosh', { vol: 0.28, rate: 1.8, jitter: 0.14, hp: 600, dur: 0.3, ch: 'waveSwing', max: 2, gap: 0.08 }); },
     waveHit() { smp('impact', { vol: 0.32, rate: 1.25, jitter: 0.12, lp: 2600, dur: 0.3, ch: 'waveHit', max: 2, gap: 0.08 }); },
-    bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6, ch: 'dodge' })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
     // A BODY MOVED WITHOUT WALKING IT (the recall home, js/sim/recall.js). It borrowed
     // the dodge whoosh, which is the sound of air being crossed - the one

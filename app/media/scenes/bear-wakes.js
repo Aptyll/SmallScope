@@ -42,12 +42,12 @@ window.SCENE = {
     if (a.clip === 'fish' && M.data.fishAt == null) { M.data.fishAt = M.frame; M.mark('fish'); }
     // hold the bear on its spot until the arrow lands
     if (!a.target) { a.goal = null; a.idleT = 99; }
-    // draw 1 s into the catch, loose at full draw (a still target: it lands)
+    // 1 s into the catch, attack it once: the wind-up, then the shot that homes in
     const go = M.data.fishAt != null && M.frame - M.data.fishAt > 60;
     if (M.data.shot == null) {
-      if (go && !p.charging) i.fire = true;
-      else if (p.charging && drawPow(p) >= 1) { i.fire = false; M.data.shot = M.frame; M.mark('loose'); }
-    } else i.fire = false;
+      i.atk = go ? a : null;
+      if (go && p.nockT > 0) { i.atk = null; M.data.shot = M.frame; M.mark('loose'); }
+    } else i.atk = null;
     if (a.clip === 'roar' && !M.data.roar) { M.data.roar = M.frame; M.mark('roar'); }
     if (M.data.roar && a.clip !== 'roar' && !M.data.charge) { M.data.charge = M.frame; M.mark('charge'); }
   },

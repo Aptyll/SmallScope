@@ -287,7 +287,7 @@ carries opens one, and no hole outlives its break. Constants live in the `open w
 - **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
   js/sim/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
   `p.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
-  slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
+  slide (`attackStep`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
   `nearestDryTile()` with brief i-frames. An **active dodge roll crosses open water safely**
   (the fall check skips while `dodgeT > 0`). Every player falls in; `die(p)` and `Player.reset()`

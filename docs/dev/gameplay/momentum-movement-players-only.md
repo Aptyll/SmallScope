@@ -81,7 +81,7 @@ comes back clipped on; `die` lets go too.
 side's cable under the pointer as drawn (`zipUnder`, js/sim/zipline.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
-its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
+its beat, and `drawZipGuide` (js/draw/zipline.js) runs a static dotted
 gold line from the feet to the nearest point of the track and a bar across it there — the walk
 that puts the cap over your head — only while the body stands past `ZIP_GRAB` (32 px, two
 tiles); inside it the cap is the whole answer. The click scheme's press asks the same

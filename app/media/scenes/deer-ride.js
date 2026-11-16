@@ -4,6 +4,9 @@
 // leaps the felled log on the climb out. Nothing is cleared or stood by hand:
 // the trail, the posts, the log and the deer are the practice field's own.
 //   node app/media/rec.js app/media/scenes/deer-ride.js <take> [--dry]
+// NOTE: since the League-style attack (a wind-up needs still feet, and the
+// practice posts are not marks) the rider no longer shoots on the gallop: the
+// takes already cut stand, and a new take films the ride and the leap alone.
 window.SCENE = {
   o: { practice: true, w: 540, h: 960, dpr: 2, k: 4, weather: 'blizzard', max: 1500, earR: 300, mute: ['overheadPlate'] },
 
@@ -48,15 +51,7 @@ window.SCENE = {
     const s = A[k];
     let j = k; while (j < C.length - 1 && A[j] < s + 22) j++;
     if (!D.end) M.drive(p, C[j][0], C[j][1], 0); else { i.mx = i.my = 0; }
-    // the shots: draw as a post comes up, loose at full draw
     i.dodge = false;
-    const next = M.posts.find((t) => !D.shots.includes(t));
-    if (next) {
-      const f = ptFace(next), d = Math.hypot(f.x - p.x, f.y - p.y);
-      i.aimX = f.x; i.aimY = f.y;
-      if (d < 150 && !p.charging) i.fire = true;
-      if (p.charging && drawPow(p) >= 1 && d < 120) { i.fire = false; D.shots.push(next); M.mark('loose'); }
-    }
     // the leap over the log
     if (!D.leapt && s > D.logS - 30) { i.dodge = true; D.leapt = M.frame; M.mark('leap'); }
     M.posts.forEach((t, n) => { if (t.broken > 0 && !D['hit' + (n + 1)]) { D['hit' + (n + 1)] = M.frame; M.mark('hit' + (n + 1)); } });

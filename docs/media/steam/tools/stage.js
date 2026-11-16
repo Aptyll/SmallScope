@@ -25,7 +25,7 @@ module.exports = `
   if (!window.__saAI) {
     var _ai = window.updateAI;
     window.updateAI = function(p, dt){
-      if (window.SA && SA.still[p.id]) { var q = p.input; q.mx = q.my = 0; q.fire = false; q.work = false; q.slide = false; q.dodge = false; q.ability = -1; q.cmd = null; return; }
+      if (window.SA && SA.still[p.id]) { var q = p.input; q.mx = q.my = 0; q.atk = null; q.work = false; q.slide = false; q.dodge = false; q.ability = -1; q.cmd = null; return; }
       return _ai.apply(null, arguments);
     };
     window.__saAI = true;
@@ -135,7 +135,8 @@ module.exports = `
     // ---- driving the local body ------------------------------------------
     // the aim is the POINTER: put it on a world point through the one bridge
     look: function(wx, wy){ mouse.inside = true; mouse.x = wToSX(wx); mouse.y = wToSY(wy); },
-    fire: function(v){ if (v) clickAction(player); else player.input.fire = false; },
+    // the attack order: lock the body on mark t (null lets go), as a left press does
+    fire: function(t){ ck.lock = t || null; ck.order = null; },
     hour: function(t){ state.time = t; },
 
     // wipe what the last shot left lying about the world
@@ -150,8 +151,8 @@ module.exports = `
       state.wheel = null; state.build = null; state.mapOpen = false; state.shop = null;
       state.settingsOpen = false; state.paused = false; state.charOpen = false;
       state.bagOpen = false; state.drag = null; state.dragPend = null;
-      player.input.fire = false; player.input.dodge = false; player.input.ability = -1;
-      player.firePrev = false; player.fireArmed = false;
+      ck.lock = null; ck.order = null;
+      player.input.atk = null; player.input.dodge = false; player.input.ability = -1;
     },
   };
   return 'ok';

@@ -159,14 +159,13 @@ function makeAnimal(kind, x, y, fix) {
   return a;
 }
 
-// the body an arrow (and the aim line) tests against. The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
-// shot's whole step against it (sweepDisc, js/sim/sim.js); the aim line asks animalHit.
+// the body an arrow tests against. The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
+// shot's whole step against it (sweepDisc, js/sim/sim.js); a homing shot just lands.
 // The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
 // and a bear is wider still (its 112x76 frame, js/baked/bears.js), so their
 // discs are wider and sit up on the flank.
 function animalHitR(a) { return isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
 function animalHitY(a) { return a.y - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
-function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
 // come through here so a swipe reacts exactly like a shot does - the den
@@ -422,7 +421,7 @@ function preyWander(a) {
 
 // the shot a rabbit jinks from: the nearest arrow in flight inside
 // RABBIT_DODGE_SIGHT that is still flying toward it, on a line that passes
-// within RABBIT_DODGE_MISS of its body (the disc animalHit tests, 3 px above
+// within RABBIT_DODGE_MISS of its body (the animalHitR disc, 3 px above
 // the feet). A shot already past, or flying wide, is nothing to it.
 function arrowAtRabbit(a) {
   let best = null, bd = RABBIT_DODGE_SIGHT;

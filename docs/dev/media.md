@@ -32,7 +32,7 @@ The kit stages headless takes; director mode films a match you are playing, for 
 own recorder (code: js/app/director.js). **F7** turns it on and shows a strip at the left edge with the
 keys. While it is on: the **arrows** fly a free camera (they stop walking the body), **HOME** hands
 the camera back to a steady follow with no aim lean, **PAGE UP / PAGE DOWN** and the wheel zoom on
-a slow glide, **F8** hides the HUD (`DBG.hideUI`, the kit's own switch: also the aim line, the
+a slow glide, **F8** hides the HUD (`DBG.hideUI`, the kit's own switch: also the attack marks (unless `DBG.showMarks`), the
 pointer's gold rims and E caps), **F9** swaps the window's 16:9 for a **9:16** frame whose canvas is
 always 1080x1920 device px (360x640 game px) shown fitted to the window, and **F2** starts and stops
 a take of the canvas itself, saved as a download: H.264 mp4 where the browser has it, else VP9

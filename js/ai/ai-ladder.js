@@ -8,7 +8,7 @@
 function aiThink(p, dt) {
   const inp = p.input;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
-  if (p.dead || p.fallT > 0) { inp.fire = false; aiNote(p, 'IDLE', p.dead ? 'DOWN' : 'IN THE ICE', null); return; }
+  if (p.dead || p.fallT > 0) { inp.atk = null; aiNote(p, 'IDLE', p.dead ? 'DOWN' : 'IN THE ICE', null); return; }
   const k = aiRead(p, dt), prof = k.prof;
   aiOrders(k);
 
@@ -19,7 +19,7 @@ function aiThink(p, dt) {
   //     the line runs out, everything else after. A bot reads the line a
   //     beat late, as it reads a rival (the profile's react).
   const shore = orcaShore(p, prof.react);
-  if (shore) { inp.fire = false; k.walkTo(shore.x, shore.y, 0); aiNote(p, 'FLEE', 'ORCA', shore); return; }
+  if (shore) { inp.atk = null; k.walkTo(shore.x, shore.y, 0); aiNote(p, 'FLEE', 'ORCA', shore); return; }
 
   // 1. the rival in sight read first; a potion is drunk over everything
   //    below, since it never stops the hands (js/sim/items.js)
@@ -254,7 +254,7 @@ function aiFight(k) {
       const to = aiFallBackTo(p, foe);
       aiNote(p, 'FLEE', odds.them > odds.us ? odds.them + 'V' + odds.us : 'LOW HP', to);
       if (steerTo(to.x, to.y, 3) < 0) { inp.mx = -Math.cos(Math.atan2(foe.y - p.y, foe.x - p.x)); inp.my = -Math.sin(Math.atan2(foe.y - p.y, foe.x - p.x)); }
-      inp.fire = clear && !aiMelee(p) && p.chargeT < drawTime(p) * prof.draw;
+      inp.atk = aiMelee(p) ? null : foe; // a bow shoots over its shoulder (skillStrike plants it only for the wind-up)
       if (d < 60 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
       ai.tgt = null;
       return true;
@@ -281,7 +281,7 @@ function aiFight(k) {
       // (a relentless side never gives ground: it routes in at any range)
       if (d > 60 || prof.relentless) { if (steerTo(foe.x, foe.y, 3) < 0) { inp.mx = 0; inp.my = 0; } }
       else { inp.mx = -Math.cos(a); inp.my = -Math.sin(a); }
-      inp.fire = false;
+      inp.atk = foe; // a missile flies over the corner: in range, it is struck where it stands
       ai.tgt = null;
       return true;
     }
@@ -291,18 +291,18 @@ function aiFight(k) {
     // (the range bands hold AI_BAND_HYS px past their edge: on an edge it
     // swapped close-in for circle every other tick, and the walk - and the
     // facing that follows it - flickered between the two)
-    ai.band = aiRangeBand(ai.band, d, melee ? [AI_MELEE_D] : [50, 85]);
+    ai.band = aiRangeBand(ai.band, d, melee ? [aiMeleeD(p)] : aiShootBand(p));
     const turn = melee ? (ai.band > 0 ? 0.15 * side : Math.PI / 2 * side * prof.strafe)
       : ai.band > 1 ? 0.3 * side : ai.band < 1 && !prof.relentless ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
     inp.mx = Math.cos(a + turn); inp.my = Math.sin(a + turn);
-    // a slow side plants its feet to shoot: the standing part of each 2 s is
-    // the only part it draws and looses in (a draw cut off by the walk goes
-    // as the weak tap it is), so stopping IS the tell
+    // a slow side stands still for part of every 2 s - the strafe it skips
+    // is the moment a new player hits it
     const planted = prof.strafe >= 1 || (state.tick % 120) >= 120 * prof.strafe;
     if (planted && prof.strafe < 1) { inp.mx = 0; inp.my = 0; }
-    // draw, then loose at the profile's draw - a blade only once they are under it
-    // (on a soldier its own wave is wearing down, the draw is held for the last hit: aiFarmFire, js/ai/ai-farm.js)
-    inp.fire = aiFarmFire(p, foe, planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * skillDraw(p, prof));
+    // the mark: struck whenever it is in range and the attack is due, the
+    // feet planted for each wind-up and walking between them (skillStrike)
+    // (on a soldier its own wave is wearing down, the blow waits for the last hit: aiFarmStrike, js/ai/ai-farm.js)
+    inp.atk = aiFarmStrike(p, foe, true) ? foe : null;
     if (p.hp < p.maxHp * 0.45 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
     skillSlip(p, prof, foe, dt); // the odd lapse, at the profile's rate
     ai.tgt = null;
@@ -327,24 +327,24 @@ function aiCampFight(k) {
     // bot, and is read to its middle as it always was
     const M = MONSTER[wolf.kind] || {}, hide = M.still ? Math.max(0, unitRadius(wolf) - PLAYER_R) : 0;
     const d = Math.hypot(wolf.x - p.x, wolf.y - p.y) - hide;
-    const clear = aiLineClear(p, wolf.x, wolf.y - 4);
     aimAt(wolf.x, wolf.y - 4);
     const away = Math.atan2(p.y - wolf.y, p.x - wolf.x);
     const melee = aiMelee(p);
     // a bow stands off past the beast's reach; a beast that never walks (the
     // orca in its hole) is gone in on even by the one it is after, since
     // giving ground never takes that one out of its fight
-    const bowD = M.still ? Math.max(90, M.reach + 12) : 90, keep = M.still ? Math.max(64, M.reach + 4) : 64;
+    const rng0 = attackOf(p).range * 0.9;
+    const bowD = M.still ? Math.max(rng0, M.reach + 12) : rng0, keep = M.still ? Math.max(rng0 * 0.7, M.reach + 4) : rng0 * 0.7;
     // (the orca's far bank can be a long way round its pool: its walk may
     // search as far as a roost's, AI_ROOST_BUDGET; a bear's keeps the usual search)
     // a route ends on the beast's own tile, or, where that is no ground (the
     // orca's hole), on ground inside the reach it fights from (findPath, in
     // tiles). Only there: a reach would also end a route on the near side of
     // a wall of pines with the bear behind it
-    const reach = walkable(Math.floor(wolf.x / TILE), Math.floor(wolf.y / TILE), p) ? 0 : Math.ceil((hide + (melee ? AI_MELEE_D : bowD)) / TILE);
-    if ((wolf.target !== p || M.still) && (melee ? d > AI_MELEE_D : d > bowD || !clear)) { if (steerTo(wolf.x, wolf.y, reach, M.still ? AI_ROOST_BUDGET : undefined) < 0) { inp.mx = 0; inp.my = 0; } }
+    const reach = walkable(Math.floor(wolf.x / TILE), Math.floor(wolf.y / TILE), p) ? 0 : Math.ceil((hide + (melee ? aiMeleeD(p) : bowD)) / TILE);
+    if ((wolf.target !== p || M.still) && (melee ? d > aiMeleeD(p) : d > bowD)) { if (steerTo(wolf.x, wolf.y, reach, M.still ? AI_ROOST_BUDGET : undefined) < 0) { inp.mx = 0; inp.my = 0; } }
     else if (d < keep && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
-    inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * 0.7;
+    inp.atk = wolf;
     if (d + hide < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true; // (a roll is measured to the middle, as it always was)
     ai.tgt = null;
     return true;
@@ -365,7 +365,7 @@ function aiBackOffRung(k) {
   const d = Math.hypot(p.x - b.x, p.y - b.y);
   if (d >= PING_DANGER_R * 1.6) return false;
   aiNote(p, 'FLEE', 'DANGER PING', b);
-  inp.fire = false; ai.tgt = null;
+  inp.atk = null; ai.tgt = null;
   if (own && Math.hypot(own.x - b.x, own.y - b.y) > PING_DANGER_R && steerTo(own.x, own.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(b.x, b.y); return true; }
   const a = Math.atan2(p.y - b.y, p.x - b.x) || 0; // home is in it, or no way home: straight out
   if (steerTo(b.x + Math.cos(a) * PING_DANGER_R * 1.7, b.y + Math.sin(a) * PING_DANGER_R * 1.7, 3) < 0) { inp.mx = Math.cos(a); inp.my = Math.sin(a); }
@@ -385,7 +385,7 @@ function aiPingRung(k) {
   aiNote(p, 'ORDER', PING_CALLS[order.k].word() + ' PING', order);
   const d = Math.hypot(order.x - p.x, order.y - p.y);
   if (!order.at && d > PING_IN) {
-    if (steerTo(order.x, order.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(order.x, order.y); inp.fire = false; ai.tgt = null; return true; }
+    if (steerTo(order.x, order.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(order.x, order.y); inp.atk = null; ai.tgt = null; return true; }
     ai.ping = null; // no way there
     return false;
   }
@@ -397,13 +397,13 @@ function aiPingRung(k) {
       const tx = t.tx * TILE + 8, ty = t.ty * TILE + 8;
       aimAt(tx, ty);
       const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-      if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return true; }
-      if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.fire = false; ai.tgt = null; return true; }
+      if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) { inp.work = true; inp.atk = null; ai.tgt = null; return true; }
+      if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.atk = null; ai.tgt = null; return true; }
     }
   }
   // hold the spot: back onto it if pushed off, else stand
-  if (d > PING_IN * 2 && steerTo(order.x, order.y, 2) >= 0) { inp.fire = false; ai.tgt = null; return true; }
-  inp.fire = false; ai.tgt = null;
+  if (d > PING_IN * 2 && steerTo(order.x, order.y, 2) >= 0) { inp.atk = null; ai.tgt = null; return true; }
+  inp.atk = null; ai.tgt = null;
   return true;
 }
 
@@ -415,12 +415,12 @@ function aiDefendRung(k) {
     aiNote(p, 'DEFEND', alarm ? 'BIRD HURT' : 'BIRD HIT', defend);
     const d = Math.hypot(defend.x - p.x, defend.y - p.y);
     if (d > 80) { // home through its own lane, like a push
-      if (aiToRoost(p, defend, steerTo, 3) >= 0) { aimAt(defend.x, defend.y); inp.fire = false; ai.tgt = null; return true; }
+      if (aiToRoost(p, defend, steerTo, 3) >= 0) { aimAt(defend.x, defend.y); inp.atk = null; ai.tgt = null; return true; }
     } else { // on station: sweep round the bird looking out, never stand and wait
       const a = state.elapsed * 1.3 + p.id;
       steerTo(defend.x + Math.cos(a) * 70, defend.y + Math.sin(a) * 70, 1);
       aimAt(defend.x + Math.cos(a) * 140, defend.y + Math.sin(a) * 140);
-      inp.fire = false; ai.tgt = null; return true;
+      inp.atk = null; ai.tgt = null; return true;
     }
   }
   return false;
@@ -437,7 +437,7 @@ function aiHomeRung(k) {
     const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
     const pt = roadPoint(u);
     aiNote(p, 'GUARD', 'PATROL', pt);
-    if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.fire = false; ai.tgt = null; return true; }
+    if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.atk = null; ai.tgt = null; return true; }
   }
   return false;
 }
@@ -450,7 +450,7 @@ function aiGuardRung(k) {
   //      they show.
   if (guardE && Math.hypot(guardE.x - p.x, guardE.y - p.y) > AI_GUARD_R) {
     aiNote(p, 'GUARD', 'BACK TO POST', guardE);
-    if (aiToRoost(p, guardE, steerTo, 4) >= 0) { aimAt(guardE.x, guardE.y); inp.fire = false; ai.tgt = null; return true; }
+    if (aiToRoost(p, guardE, steerTo, 4) >= 0) { aimAt(guardE.x, guardE.y); inp.atk = null; ai.tgt = null; return true; }
   }
   return false;
 }
@@ -481,7 +481,7 @@ function aiPushRung(k) {
     const head = aiInLane(p, e) || prof.relentless || rush ? null : aiWaveHead(p, e);
     if (head && Math.hypot(head.x - p.x, head.y - p.y) > AI_WAVE_R) {
       aiNote(p, 'PUSH', 'WITH THE WAVE', head);
-      if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return true; }
+      if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; }
     }
     // a relentless side hits as a PACK, never a trickle: off the rival's
     // lane, its pushers rally at their own cable's end - the last fast
@@ -514,20 +514,20 @@ function aiPushRung(k) {
         if (here >= need || (!prof.relentless && ai.packT > AI_REGROUP_T)) ai.packGo = true;
         else {
           aiNote(p, 'REGROUP', 'PACK ' + here + '/' + need, end);
-          if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return true; } }
-          else { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return true; } // at the rally: wait for the side
+          if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } }
+          else { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } // at the rally: wait for the side
         }
       }
     }
     if (!aiInLane(p, e) && !tur) {
-      if (aiToRoost(p, e, steerTo, 5) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return true; }
+      if (aiToRoost(p, e, steerTo, 5) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; }
       ai.pushCd = 10;
     } else if (tur) {
       const tx = tur.tx * TILE + 8, ty = tur.ty * TILE + 8; // the building's tile nearest the bot (a tower's is one of six)
       aimAt(tx, ty);
       const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-      if (Math.max(Math.abs(tur.tx - ptx), Math.abs(tur.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return true; }
-      if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.fire = false; ai.tgt = null; return true; }
+      if (Math.max(Math.abs(tur.tx - ptx), Math.abs(tur.ty - pty)) <= WORK_REACH) { inp.work = true; inp.atk = null; ai.tgt = null; return true; }
+      if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.atk = null; ai.tgt = null; return true; }
       ai.pushCd = 10;
     } else if (aiMelee(p)) { // a blade works the roost's tiles; a bow keeps its station
       const t = aiEagleTile(e, p);
@@ -540,21 +540,20 @@ function aiPushRung(k) {
       }
       ai.pushCd = 10;
     } else {
-      // the archer's station: AI_HOLD out from the bird ON THE LANE'S AXIS,
-      // where the road keeps the line to the roost open (off the axis a
-      // wall the defenders raised may eat the shot), outside the gust
-      const sx = e.x + e.laneDir.x * AI_HOLD, sy = e.y + e.laneDir.y * AI_HOLD;
+      // the archer's station: out from the bird ON THE LANE'S AXIS, inside
+      // its own weapon's reach of the roost and outside the gust, never
+      // farther than AI_HOLD
+      const hold = Math.max(GUST_BLAST_R + 6, Math.min(AI_HOLD, attackOf(p).range + EAGLE_TILE_R * TILE - 4));
+      const sx = e.x + e.laneDir.x * hold, sy = e.y + e.laneDir.y * hold;
       const ux = (e.x - p.x) / (d || 1), uy = (e.y - p.y) / (d || 1);
       aimAt(e.x, e.y - 8);
-      // the roost tiles are solid, so the line is read to just short of them
-      const clear = aiLineClear(p, e.x - ux * 40, e.y - uy * 40);
       const ds = Math.hypot(sx - p.x, sy - p.y);
       if (ds > 14) {
         if (steerTo(sx, sy, 0, AI_ROOST_BUDGET) < 0) { ai.pushCd = 10; }
-        else { inp.fire = d < 170 && clear && p.chargeT < drawTime(p) * skillDraw(p, prof); ai.tgt = null; return true; }
+        else { inp.atk = e; ai.tgt = null; return true; }
       } else {
-        if (d < GUST_BLAST_R + 16) { inp.mx = -ux; inp.my = -uy; } // out of the gust's reach
-        inp.fire = clear && p.chargeT < drawTime(p) * skillDraw(p, prof);
+        if (d < GUST_BLAST_R + 4) { inp.mx = -ux; inp.my = -uy; } // out of the gust's reach
+        inp.atk = e;
         ai.tgt = null;
         return true;
       }
@@ -571,8 +570,8 @@ function aiHelpRung(k) {
     aiNote(p, 'HELP', caller.name.slice(0, 13) + ' CALLED', caller);
     // (by the caller with the call still open: stay by them - stepping off to
     // the next job flipped it between the two every few ticks)
-    if (Math.hypot(caller.x - p.x, caller.y - p.y) <= 48) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return true; }
-    if (steerTo(caller.x, caller.y, 3) >= 0) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return true; }
+    if (Math.hypot(caller.x - p.x, caller.y - p.y) <= 48) { aimAt(caller.x, caller.y); inp.atk = null; ai.tgt = null; return true; }
+    if (steerTo(caller.x, caller.y, 3) >= 0) { aimAt(caller.x, caller.y); inp.atk = null; ai.tgt = null; return true; }
   }
   return false;
 }
@@ -609,7 +608,7 @@ function aiPumpRung(k) {
   ai.pump = idx(best.tx, best.ty);
   const c = structCenter(best), R = pumpRingPx();
   aiNote(p, 'PUMP', best.hold === p.team ? 'HOLD IT' : 'TAKE IT', c);
-  inp.fire = false; ai.tgt = null;
+  inp.atk = null; ai.tgt = null;
   if (bd <= R * 0.85) { aimAt(p.x * 2 - c.x, p.y * 2 - c.y); return true; } // in: stand and look out
   const ux = (p.x - c.x) / (bd || 1), uy = (p.y - c.y) / (bd || 1);
   const sx = c.x + ux * R * AI_PUMP_IN, sy = c.y + uy * R * AI_PUMP_IN;
@@ -628,7 +627,7 @@ function aiRoamJobs(k) {
   //     position (aiFarmWalk, js/ai/ai-farm.js).
   if (bj && bj.meet) { // the bear party forming, off the bear's reach
     aiNote(p, 'REGROUP', (bj.beast.kind === 'orca' ? 'ORCA' : 'BEAR') + ' PARTY ' + bj.here + '/' + aiTeams[p.team].bearN, bj.meet);
-    if (steerTo(bj.meet.x, bj.meet.y, 2) >= 0) { aimAt(bj.meet.x, bj.meet.y); inp.fire = false; ai.tgt = null; return true; }
+    if (steerTo(bj.meet.x, bj.meet.y, 2) >= 0) { aimAt(bj.meet.x, bj.meet.y); inp.atk = null; ai.tgt = null; return true; }
   }
   if (!order && !pushE && !defend && !guardE) {
     if (role === 'stalker') {
@@ -637,7 +636,7 @@ function aiRoamJobs(k) {
         const q = players[s.id];
         aiNote(p, 'STALK', aiGrudge(p) ? 'GRUDGE' : (q ? q.name.slice(0, 12) : 'RIVAL') + ' ALONE', s);
         const d = steerTo(s.x, s.y, 2);
-        if (d >= 0 && d > 28) { aimAt(s.x, s.y); inp.fire = false; ai.tgt = null; return true; }
+        if (d >= 0 && d > 28) { aimAt(s.x, s.y); inp.atk = null; ai.tgt = null; return true; }
         s.t = -1e9; // there and nobody: the side forgets the spot
       }
     } else if (aiFarmWalk(p, role, steerTo, aimAt)) return true; // a laner's wave, a jungler's den (js/ai/ai-farm.js)
@@ -650,7 +649,7 @@ function aiRoadRung(k) {
   // 5g. the road (aiRoad): a road stretch walks to the nearest rival wave,
   //     where the XP falls - free of a post
   const road = !guardE ? aiRoad(p, dt) : null;
-  if (road) { aiNote(p, 'ROAD', 'THE WAVE', road); if (steerTo(road.x, road.y, 2) >= 0) { aimAt(road.x, road.y); inp.fire = false; ai.tgt = null; return true; } }
+  if (road) { aiNote(p, 'ROAD', 'THE WAVE', road); if (steerTo(road.x, road.y, 2) >= 0) { aimAt(road.x, road.y); inp.atk = null; ai.tgt = null; return true; } }
   return false;
 }
 
@@ -664,23 +663,22 @@ function aiHuntRung(k) {
     aiNote(p, 'HUNT', 'MEAT IS GOLD', prey);
     if (prey !== ai.huntTgt) { ai.huntTgt = prey; ai.huntT = 0; }
     ai.huntT += dt;
-    const clear = aiLineClear(p, prey.x, prey.y - 3);
     const d = Math.hypot(prey.x - p.x, prey.y - p.y);
     // (a blade walks into reach before it swings, and gets a little longer
     // to catch its prey for it; a bow stands off at 55 px)
     const blade = aiMelee(p);
-    const lost = ai.huntT > (blade ? 8 : 6) || ((blade ? d > AI_MELEE_D : d > 55 || !clear) && steerTo(prey.x, prey.y) < 0);
+    const lost = ai.huntT > (blade ? 8 : 6) || ((blade ? d > aiMeleeD(p) : d > attackOf(p).range * 0.8) && steerTo(prey.x, prey.y) < 0);
     if (lost) {
       ai.huntAvoid = prey; ai.huntAvoidT = 15;
       ai.huntTgt = null; ai.huntT = 0;
     } else {
       aimAt(prey.x, prey.y - 3);
-      inp.fire = clear && (!blade || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * 0.8;
+      inp.atk = prey;
       ai.tgt = null;
       return true;
     }
   }
-  inp.fire = false;
+  inp.atk = null;
   return false;
 }
 

@@ -232,8 +232,7 @@ function zipWalkStep(p, dt) {
 function zipStart(p, near) {
   if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || inAir(p)) return;
   breakRecall(p);                   // the recall is over: both hands are on the handle
-  if (p.charging) { p.charging = false; p.chargeT = 0; }
-  p.fireArmed = false;
+  atkCancel(p);
   p.sliding = false; p.slideT = 0;
   // the way you were LAST walking (p.lastMx/lastMy: the stick's last held
   // direction, kept across the stop - a body that walked home and stood

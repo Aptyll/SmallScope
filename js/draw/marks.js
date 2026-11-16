@@ -132,42 +132,70 @@ function drawCampLeashes(ex, ey, now) {
 }
 
 // ---- the click marks -------------------------------------------------------
-// The CLICK scheme's two rings (the `click to move` banner, input.js), flat
-// on the snow under everything that walks: where the last order landed - a
-// ring that blooms out and fades over CK_MARK_T, white for a walk, gold for
-// a job, red for a fight (CK_COL) - and, while a lock holds, a ring under
-// the target's feet in its side's ink (a camp's monster: the hunt's amber),
-// breathing, so who the tool is on reads on the body itself. Both are
-// places, so they scale with the tile.
+// Flat on the snow under everything that walks, in both schemes: where the
+// last order landed - a ring that blooms out and fades over CK_MARK_T, white
+// for a walk, gold for a job, red for a fight (CK_COL) - and, while the
+// basic attack has a MARK (the `attack order` banner, input.js), the two
+// things League shows of it: a red ring under the mark's feet (a building's:
+// round its footing) and this hero's weapon range round its own, a dotted
+// circle that goes solid while the mark stands inside it. Both are places,
+// so they scale with the tile.
+const ATK_MARK_COL = '#ff6a5c'; // the mark's ring: CK_COL's fight red
+const ATK_RANGE_COL = '#eef4fb'; // the range circle: snow-white on a dark step
+const ATK_RANGE_ALPHA = 0.8;
+const atkRingCache = new Map(); // 'rx,ry' -> [[dx, dy], ...] the rim's pixels, once each
+// the whole-pixel rim of an ellipse, each pixel once (heroRingShape's way)
+function atkRingPts(rx, ry) {
+  const k = rx + ',' + ry;
+  let pts = atkRingCache.get(k);
+  if (pts) return pts;
+  pts = []; const seen = new Set();
+  const half = (v, r, q) => Math.round(r * Math.sqrt(Math.max(0, 1 - ((v + 0.5) / q) ** 2)) - 0.5);
+  const add = (x, y) => { const s = x + ',' + y; if (!seen.has(s)) { seen.add(s); pts.push([x, y]); } };
+  for (let x = -rx; x < rx; x++) { const y = half(x, ry, rx); add(x, y); add(x, -y - 1); }
+  for (let y = -ry; y < ry; y++) { const x = half(y, rx, ry); add(x, y); add(-x - 1, y); }
+  pts.sort((p, q) => Math.atan2(p[1], p[0]) - Math.atan2(q[1], q[0])); // round the rim, so a dotted ring dots evenly
+  atkRingCache.set(k, pts);
+  return pts;
+}
+function drawAtkRing(cx, cy, rx, ry, col, alpha, dot) {
+  const pts = atkRingPts(rx, ry);
+  ctx.globalAlpha = alpha * 0.7; ctx.fillStyle = '#0a0e23';
+  for (let i = 0; i < pts.length; i++) if (!dot || i % dot === 0) ctx.fillRect(cx + pts[i][0], cy + pts[i][1] + 1, 1, 1);
+  ctx.globalAlpha = alpha; ctx.fillStyle = col;
+  for (let i = 0; i < pts.length; i++) if (!dot || i % dot === 0) ctx.fillRect(cx + pts[i][0], cy + pts[i][1], 1, 1);
+  ctx.globalAlpha = 1;
+}
 function drawClickMarks(ex, ey, now) {
-  if (!ckOn()) return;
   const m = ck.mark;
   if (m && m.t > 0) {
-    const f = m.t / CK_MARK_T, r = 3 + (1 - f) * 6;
-    const x = Math.round(m.x - ex), y = Math.round(m.y - ey);
-    ctx.save();
-    ctx.globalAlpha = f;
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#0f1632';
-    ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = m.col;
-    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
+    const f = m.t / CK_MARK_T, r = Math.round(3 + (1 - f) * 6);
+    drawAtkRing(Math.round(m.x - ex), Math.round(m.y - ey), r, Math.max(1, Math.round(r * 0.6)), m.col, f, 0);
   }
-  const t = ck.lock;
-  if (t && unitAlive(t)) {
-    const col = t.team !== undefined && TEAMS[skin(t.team)] ? TEAMS[skin(t.team)].mark : '#f2cc6a';
-    const r = 7 + Math.sin(now * 7) * 0.8;
-    const x = Math.round(t.x - ex), y = Math.round(t.y - ey) + 4;
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#0f1632';
-    ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = col;
-    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
+  if (!player || player.dead || state.mode !== 'play' || window.DBG.hideUI && !window.DBG.showMarks) return;
+  const t = ck.lock && atkGood(player, ck.lock) ? ck.lock : null;
+  if (t) drawAtkMark(t, ex, ey, 0.9);
+  // the range, while it is the question: the mark is out of it (the feet are
+  // walking in), or the pointer is on a rival a press would make the mark
+  const hov = !overHud(mouse.x, mouse.y) && !state.mapOpen ? atkPick(player, mouseWX(), mouseWY()) : null;
+  if (hov && hov !== t) drawAtkMark(hov, ex, ey, 0.45);
+  const q = hov || t;
+  if (!q || (q === t && atkIn(player, t))) return;
+  // a true circle (the sim measures plain distance), dotted while what it is
+  // asked about stands out of reach, whole once it is in
+  const R = Math.round(attackOf(player).range);
+  drawAtkRing(Math.round(player.x - ex), Math.round(player.y - ey), R, R, ATK_RANGE_COL, ATK_RANGE_ALPHA, atkIn(player, q) ? 0 : 2);
+}
+// the ring under a mark's feet, a step wider than the hero ring (a building's: round its footing)
+function drawAtkMark(t, ex, ey, alpha) {
+  if (atkIsStruct(t)) {
+    const w = structW(t) * TILE, h = structH(t) * TILE;
+    drawAtkRing(Math.round(t.tx * TILE + w / 2 - ex), Math.round(t.ty * TILE + h / 2 - ey), Math.round(w / 2) + 3, Math.round(h / 2) + 2, ATK_MARK_COL, alpha, 0);
+    return;
   }
+  if (atkIsEagle(t)) { drawAtkRing(Math.round(t.x - ex), Math.round(t.y - ey) + 2, 22, 9, ATK_MARK_COL, alpha, 0); return; }
+  const r = Math.max(HERO_RING_RX + 2, Math.round(unitRadius(t) + 5));
+  drawAtkRing(Math.round(t.x - ex), Math.round(t.y - ey) + 4, r, Math.max(3, Math.round(r * 0.45)), ATK_MARK_COL, alpha, 0);
 }
 // ---- what a body looks like on a map ------------------------------------
 // ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)

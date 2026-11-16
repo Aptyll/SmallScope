@@ -201,16 +201,17 @@ window.DBG = {
   // `itemCellRect(i)` is item slot i's well, and `stripHit` names any well.
   hudStripRect, stripHit, itemCellRect, abCellRect, portraitRect,
   // the hero's basic attack (CLASSES[c].attack, js/sim/attack.js): its row,
-  // the renock it waits, the press itself, and its damage at a draw - so a
-  // driver can land one without holding the button.
+  // one attack's length, a blow landed on a mark by hand, its damage, the
+  // range test, and the mark a press at a world point would pick
   attackOf: (p) => attackOf(p || player), attackCycle: (p) => attackCycle(p || player),
-  basicAttack: (p) => basicAttack(p || player), attackDmg: (pw, p) => attackDmg(p || player, pw == null ? 1 : pw),
-  drawTime,
+  basicAttack: (t, p) => basicAttack(p || player, t), attackDmg: (p) => attackDmg(p || player),
+  atkWind: (p) => atkWind(p || player), atkIn: (t, p) => atkIn(p || player, t), atkGood: (t, p) => atkGood(p || player, t),
+  atkPick: (wx, wy, p) => atkPick(p || player, wx, wy), atkPress, drawTime,
   // a drop on the snow, so a driver can stage a pickup
   // death keeps everything (die): the one number a kill is worth
   get KILL_BOUNTY() { return killBounty(); },
-  // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a shot
-  drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
+  // the wind-up: 0..1 off a player's chargeT
+  drawPow,
   cellPlate, chopTree,
   // the heroes' abilities: the table and a keypress by hand
   CLASS_AB,
@@ -330,7 +331,6 @@ window.DBG = {
     W: RP_W, H: RP_H, fps: RP_FPS, rate: RP_RATE, ov: rpOv,
   },
   // action entry points default to the local player, or take any player
-  clickAction: (p) => clickAction(p || player),
   tryWork: (p) => tryWork(p || player),
   workTarget: (p) => workTarget(p || player),
   tryDodge: (p) => tryDodge(p || player),
@@ -393,7 +393,7 @@ window.DBG = {
   KEY_ACTIONS, setBind, resetBinds, rebindStart, keyName, keyLabel, keyCap, mendBinds,
   get binds() { return binds(); }, // the live scheme's map
   // the CLICK scheme (input.js): its state, the two presses and the pickers
-  ck, ckOn, ckClear, ckRightPress, ckRightRelease, ckArmedPress, ckReach: (p) => ckReach(p || player),
+  ck, ckOn, ckClear, ckRightPress, ckRightRelease, ckArmedPress,
   pointerPress, pointerRelease,
   ckAcquire: (p) => ckAcquire(p || player), ckSees: (t, p) => ckSees(p || player, t), unitUnder, mmWorldAt,
   // the key entry points a driver presses through
@@ -408,6 +408,7 @@ window.DBG = {
   },
   layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
   hideUI: false,
+  showMarks: false, // ...but the basic attack's rings on the snow stay (drawClickMarks), for a staged still
   // director mode (js/app/director.js): its state, and its keys as pressed
   director, directorKey: (key) => keyPress({ key, repeat: false, char: key }),
   // the replay proof (js/sim/save.js): the record, its hash, and the record put back on a fresh page

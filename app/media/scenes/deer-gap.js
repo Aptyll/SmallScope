@@ -4,6 +4,9 @@
 // (WISHLIST, ON, STEAM). The leap slows to a freeze (snow still falling), holds, then
 // runs on: the cut opens on that frozen frame and rewinds to the start.
 //   node app/media/rec.js app/media/scenes/deer-gap.js <take> [--dry]
+// NOTE: since the League-style attack (a wind-up needs still feet, and the
+// practice posts are not marks) the rider no longer shoots on the gallop: the
+// takes already cut stand, and a new take films the ride and the leap alone.
 // Staged: the cut through the pines is cleared by hand and the targets are the
 // practice range's, stood in the valley. Never call it real gameplay.
 window.SCENE = {
@@ -76,19 +79,7 @@ window.SCENE = {
     const gx = lx + u[0] * (s + 60) + u[1] * side * -1, gy = ly + u[1] * (s + 60) + u[0] * side;
     if (!D.end) M.drive(p, gx, gy, 0);
     else { i.mx = i.my = 0; }
-    // the three shots: draw as the target comes up, loose at full draw
-    const next = [M.t1, M.t2, M.t3].find((t) => !t.gone && !D.shots.includes(t));
     i.dodge = false;
-    if (next) {
-      const f = ptFace(next);
-      i.aimX = f.x; i.aimY = f.y;
-      const d = Math.hypot(f.x - p.x, f.y - p.y);
-      const ready = next === M.t3 ? s > -120 : d < 120;
-      if (ready && !p.charging && !D.loosed) i.fire = true;
-      if (p.charging && drawPow(p) >= 1 && (next !== M.t3 || (p.leapT > 0 && s > 4))) {
-        i.fire = false; D.shots.push(next); M.mark('loose'); if (next === M.t3) { D.loose3 = M.frame; }
-      }
-    }
     // the leap over the log
     if (!D.leapt && s > -26) { i.dodge = true; D.leapt = M.frame; M.mark('leap'); }
     // hits: each word lands the frame its face breaks

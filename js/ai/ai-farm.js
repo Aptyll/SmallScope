@@ -30,8 +30,6 @@
 const AI_FARM_NEAR = 40; // px an own soldier with no mark yet must be from a rival one for the rival to count as being worn down
 const AI_FARM_HIT = 8;   // damage a bot reckons on before its own first blow on a soldier tells it better
 const AI_FARM_FORGET = 0.95; // share of its hardest remembered blow a bot keeps at each new one (a new weapon is learned in a few)
-const AI_FARM_ARROW = 300; // px/s a bot reckons its shot flies (the plain arrow's 320, a little under)
-const AI_FARM_SWING = 0.2; // s from a blade's release to the cut landing, as a bot reckons it
 const AI_FARM_STAND = [40, 90]; // px a blade and a bow wait off a soldier they are holding for
 const AI_FARM_BACK = 40; // px a laner stands behind its own column, toward its own bird
 const AI_BRUSH_R = 480; // px from a laner's hold point a brush patch's middle may be for it to wait in that instead...
@@ -47,7 +45,8 @@ const AI_SUP_NEAR = 260; // px from its carry inside which a support leaves the 
 // it (b.hitFoe, updateSoldier) will land before an arrow gets there, each at its
 // kind's damage and pace (SOLDIER_TYPES, js/sim/robots.js) - half of them,
 // since a blow that does not come leaves the soldier a sliver over, and the
-// wave takes it
+// wave takes it. The blow's travel is its own: the wind-up, and a missile's
+// flight at its speed
 function aiFarmHold(p, foe) {
   if (!foe || foe.kind !== 'soldier' || foe.team === p.team) return false;
   let dps = 0;
@@ -56,22 +55,21 @@ function aiFarmHold(p, foe) {
     if (b.hitFoe === foe || (!b.hitFoe && Math.hypot(b.x - foe.x, b.y - foe.y) < AI_FARM_NEAR)) { const T = soldierType(b); dps += T.dmg / T.cd; }
   }
   if (!dps) return false;
-  const travel = aiMelee(p) ? AI_FARM_SWING : Math.hypot(foe.x - p.x, foe.y - p.y) / AI_FARM_ARROW;
+  const A = attackOf(p), travel = atkWind(p) + (A.shot ? Math.hypot(foe.x - p.x, foe.y - p.y) / A.shot.speed : 0);
   return foe.hp - dps * travel * 0.5 > (p.ai.farmHit || AI_FARM_HIT);
 }
-// rung 3's trigger on a soldier: while it is not yet one blow from down,
-// the draw is held (a held press never looses); once it is, the ordinary
-// trigger lets the draw go
+// rung 3's strike on a soldier: while it is not yet one blow from down, no
+// mark is named (the blow waits); once it is, the ordinary strike goes
 // - and while it waits it stands off at AI_FARM_STAND, its own soldiers
 // nearer the rival than it is, so the wave it is farming is not hitting it
-function aiFarmFire(p, foe, fire) {
-  if (!aiFarmHold(p, foe)) return fire;
+function aiFarmStrike(p, foe, want) {
+  if (!aiFarmHold(p, foe)) return want;
   const dx = foe.x - p.x, dy = foe.y - p.y, d = Math.hypot(dx, dy) || 1;
-  const stand = aiMelee(p) ? AI_FARM_STAND[0] : AI_FARM_STAND[1];
+  const stand = aiMelee(p) ? AI_FARM_STAND[0] : Math.min(AI_FARM_STAND[1], attackOf(p).range * 0.85); // a bow inside its own range
   if (d < stand) { p.input.mx = -dx / d; p.input.my = -dy / d; }
   else if (d > stand + 16) { p.input.mx = dx / d; p.input.my = dy / d; }
   else { p.input.mx = 0; p.input.my = 0; }
-  return true;
+  return false;
 }
 // what p's blow did to a soldier, remembered for the next last hit
 // - the hardest of its recent blows, so one weak tap does not have it
@@ -201,7 +199,7 @@ function aiFarmWalk(p, role, steerTo, aimAt) {
   if (d <= 12) { p.input.mx = 0; p.input.my = 0; }
   // beside its carry it looks where the carry looks: down the lane
   if (s.carry) aimAt(s.carry.x + (s.carry.x - s.x), s.carry.y + (s.carry.y - s.y)); else aimAt(s.x, s.y);
-  p.input.fire = false;
+  p.input.atk = null;
   p.ai.tgt = null;
   return true;
 }

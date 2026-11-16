@@ -126,8 +126,7 @@ before the beat is.
 `updateUnitStatus` (the shared clock — root, slow, mark, fire), dispatches to
 `updatePrey` / `updateCampMonster`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
-for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it, the aim line asks
-`animalHit`), gets the amber
+for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it), gets the amber
 hunt reticle, and joins the y-sorted draws.
 
 **An animal is a unit like any other.** `makeAnimal` hands every kind the full status set through
@@ -185,7 +184,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   within `RABBIT_DODGE_MISS` (14 px) of its body, is a shot coming at it, and `rabbitDodge` spends
   the charge on a hand-steered dash straight off that line — sideways, to the side the body already
   leans to (the other if that one is a wall, `navLineClear`), at `RABBIT_DODGE_SPD` (260 px/s) for
-  `RABBIT_DODGE_T` (0.11 s, ~29 px, clear of the 8 px disc `animalHit` tests) — and then an ordinary
+  `RABBIT_DODGE_T` (0.11 s, ~29 px, clear of the 8 px `animalHitR` disc) — and then an ordinary
   bolt (`fleeT`) away from the shooter: the zig, then the zag. The charge comes back over
   `RABBIT_DODGE_CD` (6 s) whatever the rabbit is doing, so an empty bar is the read that the
   next arrow lands; a rooted rabbit never spends it. A shot already past or flying

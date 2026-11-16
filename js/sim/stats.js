@@ -10,8 +10,8 @@
 //
 // How each one counts:
 //   hp     the most health                       base + grow a level + bonus
-//   dmg    every basic attack at full draw       base + grow a level + bonus
-//   as     full-draw attacks a second            the class weapon's own cycle x (1 + grow a level + bonus)
+//   dmg    every basic attack                    base + grow a level + bonus
+//   as     basic attacks a second                the weapon's own `as` x (1 + grow a level + bonus)
 //   armor  a hit is cut to 100 / (100 + armor)   base + grow a level + bonus
 //   ap     each ability adds its `ap` ratio of it (CLASS_AB, js/sim/abilities.js)
 //   haste  a cooldown runs 100 / (100 + haste) as long
@@ -32,14 +32,11 @@ const STATS = [
 ];
 // an empty bonus bag, every key at nothing: what baseKit starts a kit with
 function statBag() { const b = {}; for (const s of STATS) b[s.key] = 0; return b; }
-// the basic attack's own full cycle, as attacks a second: the full draw plus
-// the renock after it (attackCycle, js/sim/attack.js)
-function classAs(cls) {
-  const c = CLASSES[cls], k = c.kit;
-  return 1 / (k.bowCharge + c.attack.cycle * (k.nock / BOW_NOCK));
-}
-// the multiplier attack speed puts on the cycle: every draw and renock is
-// divided by it (drawTime, attackCycle)
+// the basic attack's own level-1 speed, attacks a second (the `attack` row's
+// `as`; one attack lasts attackCycle, js/sim/attack.js)
+function classAs(cls) { return CLASSES[cls].attack.as; }
+// the multiplier attack speed puts on the weapon's own speed (attackCycle
+// divides one attack by the product)
 function asMulFrom(cls, level, add, more) {
   return Math.max(0.25, 1 + (CLASSES[cls].grow.as || 0) * Math.max(0, level - 1) + (add ? add.as : 0) + (more || 0));
 }
