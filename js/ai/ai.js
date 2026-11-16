@@ -421,6 +421,7 @@ function aiSpend(p, inp, steerTo) {
   if (!inp.cmd && p.items) {
     // a potion first when it carries none, and topped up when nothing on its list is buyable yet
     if (merchNear(p) && botWantsPotion(p, true)) { inp.cmd = { kind: 'shop', act: 'item', id: 'potion' }; return false; }
+    if (merchNear(p) && botWantsStarter(p)) { inp.cmd = { kind: 'shop', act: 'item', id: botStarter(p) }; return false; }
     const buy = botItemBuy(p);
     if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
     const stray = !p.items.includes(null) && merchNear(p) ? botStrayPart(p) : -1;

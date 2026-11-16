@@ -281,7 +281,7 @@ edit has changed how an attack plays.
 [js/sim/items.js](../../js/sim/items.js). A part has a `price`, one stat and an `icon`; a finished
 item adds `from` (its parts, a part named twice is needed twice) and a `passive`. The grid, the
 build tree, BUILDS INTO, the price that drops by the components held, the tooltip and the save all
-pick it up. It needs an icon: a 16×16 grid `I.<id>` in js/sprites/item-icons.js; its glow colour follows from its stats (`itemKind`), or a `kind` when it has none. The ALL ITEMS
+pick it up. A **starter** is a part with `starter` (the kinds of build it opens) and no `from`. It needs an icon: a 16×16 grid `I.<id>` in js/sprites/item-icons.js; its glow colour follows from its stats (`itemKind`), or a `kind` when it has none. The ALL ITEMS
 grid is `SHOP_COLS` (13) a row a kind (fewer on a narrow view: `shopFit`), so a fourteenth item of one kind runs on into a new row; rows past the grid scroll on the wheel (`shopScrollBy`). A new **stat** is one `ITEM_STATS` row (its label, its
 short label, its format and what it writes into the kit) plus its place in `ITEM_STAT_ORDER` and a
 `STAT_ICON` (js/ui/statpanel.js), an `ITEM_GLOW` row (js/sprites/item-icons.js) and a basic that carries it alone (what `itemKind` prices it by). A new **passive** is one `ITEM_PASSIVES` row: a kit field the sim

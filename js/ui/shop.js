@@ -200,12 +200,13 @@ function shopFiltered(id) {
 // its pick and win rate; then the boots and the other items people finish.
 // While the hero has too few games for numbers the curated list stands in
 // (BOT_BUILDS, the one a bot of it buys), as CORE with no numbers. Above it
-// all, START: the potion and the first item's basics.
+// all, START: the starter that opens the build (itemStarter), the potion and
+// the first item's basics.
 function shopHero() { return CLASSES[player.cls].name; }
 function shopRecommended() {
   const R = buildsRec(shopHero(), botBuild(player));
   const first = R.core[0].ids[0];
-  const start = ['potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price).slice(0, 4));
+  const start = [itemStarter(first), 'potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price).slice(0, 3));
   return { R, start };
 }
 // every item the tab names, for the gold pip the other tabs wear on them
@@ -248,11 +249,11 @@ function shopOpenPick() {
   for (const id of shopMissing(next)) { const b = shopBuyState(id); if (b.ok && b.n > n) { best = id; n = b.n; } }
   return best || next;
 }
-// THE ALL ITEMS GRID: a row a kind - the potion and the basics, every pair of
+// THE ALL ITEMS GRID: a row a kind - the potion and the starters, the basics, every pair of
 // boots, the epics, the legendaries - cheapest first, a kind too long for one
 // row running on into the next
-const SHOP_ROW_KINDS = ['basic', 'boots', 'epic', 'legend'];
-function shopRowKind(id) { return isBoots(id) ? 'boots' : itemTier(id) === 'potion' ? 'basic' : itemTier(id); }
+const SHOP_ROW_KINDS = ['starter', 'basic', 'boots', 'epic', 'legend'];
+function shopRowKind(id) { return isBoots(id) ? 'boots' : itemTier(id) === 'potion' ? 'starter' : itemTier(id); }
 // (a style tab: the same rows, holding only what suits the style)
 function shopAllRows(style) {
   const rows = [];
@@ -689,7 +690,7 @@ function tipShop(h) {
   return null;
 }
 // one item: its stats, its passive, and what it costs you now
-const SHOP_TIER_WORD = { potion: 'shop.potion', basic: 'shop.basic', epic: 'shop.epic', boots: 'shop.boots', legend: 'shop.legend' };
+const SHOP_TIER_WORD = { potion: 'shop.potion', starter: 'shop.starter', basic: 'shop.basic', epic: 'shop.epic', boots: 'shop.boots', legend: 'shop.legend' };
 function tipItem(id, cost) {
   const it = BUILD_ITEMS[id];
   const d = { title: it.name, tcol: itemMetal(id).ink, kind: tr(SHOP_TIER_WORD[itemTier(id)]),

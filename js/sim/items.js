@@ -102,7 +102,14 @@ const ITEM_PASSIVES = {
 // SPRITES key: SPRITES['item_' + id] (js/sprites/item-icons.js) unless named.
 // `styles` (ITEM_STYLES) names the shop's style tabs an item is listed on.
 // `kind` names the stat it is about when its stats cannot say (itemKind).
+// `starter` marks a STARTER (League's Doran's) and lists the kinds of build
+// it opens (itemStarter): a first buy that is part of nothing, sold on later.
 const BUILD_ITEMS = {
+  // starters: the opening gold's one item, a touch more stat than its price
+  // buys in basics, and nothing to build it into
+  kit:    { name: "TRAPPER'S KIT", price: 450, stats: { dmg: 2, hp: 15 }, starter: ['dmg', 'as', 'ms'] },
+  candle: { name: 'TALLOW CANDLE', price: 450, stats: { ap: 6, hp: 10 }, starter: ['ap', 'haste'] },
+  shield: { name: 'HIDE SHIELD', price: 450, stats: { hp: 22, armor: 4 }, starter: ['hp', 'armor'] },
   // basic
   flint:  { name: 'FLINT HEAD', price: 400, stats: { dmg: 3 } },
   string: { name: 'GUT STRING', price: 300, stats: { as: 0.12 } },
@@ -186,19 +193,20 @@ const ITEM_STYLES = [
   { id: 'tank', label: 'TANK' }, { id: 'bruiser', label: 'BRUISER' }, { id: 'marksman', label: 'MARKSMAN' },
   { id: 'assassin', label: 'ASSASSIN' }, { id: 'mage', label: 'MAGE' }, { id: 'support', label: 'SUPPORT' },
 ];
-// an item's tier, off its record: 'potion', 'basic' (built from nothing),
+// an item's tier, off its record: 'potion', 'starter', 'basic' (built from nothing),
 // 'boots' (an upgraded pair), 'legend' (built from at least one epic, or
 // dear) and 'epic' (built from basics)
 const ITEM_LEGEND_PRICE = 2000; // a built item this dear or dearer is legendary
 function itemTier(id) {
   const it = BUILD_ITEMS[id];
   if (it.stack) return 'potion';
+  if (it.starter) return 'starter';
   if (!it.from) return 'basic';
   if (it.boots) return 'boots';
   return it.price >= ITEM_LEGEND_PRICE ? 'legend' : 'epic';
 }
 // the whole catalogue in the order the grid shows it: tier, then price
-const ITEM_TIER_ORDER = ['potion', 'basic', 'boots', 'epic', 'legend'];
+const ITEM_TIER_ORDER = ['potion', 'starter', 'basic', 'boots', 'epic', 'legend'];
 const ITEM_ALL = Object.keys(BUILD_ITEMS).sort((a, b) =>
   ITEM_TIER_ORDER.indexOf(itemTier(a)) - ITEM_TIER_ORDER.indexOf(itemTier(b)) || BUILD_ITEMS[a].price - BUILD_ITEMS[b].price);
 const ITEM_DONE = ITEM_ALL.filter((id) => itemTier(id) === 'legend');
@@ -226,7 +234,14 @@ function itemKind(id) {
   }
   return best;
 }
-function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack; }
+function isPart(id) { return !BUILD_ITEMS[id].from && !BUILD_ITEMS[id].stack && !BUILD_ITEMS[id].starter; }
+function isStarter(id) { return !!BUILD_ITEMS[id].starter; }
+// the starter that opens a build whose first item is `first`: the one that
+// names that item's kind (itemKind), else the first starter
+function itemStarter(first) {
+  const ids = ITEM_ALL.filter(isStarter);
+  return ids.find((id) => BUILD_ITEMS[id].starter.includes(itemKind(first))) || ids[0];
+}
 function isStack(id) { return !!BUILD_ITEMS[id].stack; }
 function isBoots(id) { return !!BUILD_ITEMS[id].boots; }
 // an item a build is made OF: a legendary, or a pair of boots past FUR BOOTS
@@ -536,6 +551,14 @@ function botWantsPotion(p, first) {
   const n = potionSlot(p) >= 0 ? p.potions : 0;
   if (n >= (first ? 1 : BOT_POTIONS) || p.gold < BUILD_ITEMS.potion.price || !potionRoom(p)) return false;
   return n > 0 || p.items.filter((x) => x === null).length > 1 || !botNextItem(p);
+}
+// A bot opens the way a League bot does: the starter its build's first item
+// calls for (itemStarter), bought once on an empty bag. It is part of nothing,
+// so it is the first stray sold when the build wants its slot (botStrayPart).
+function botStarter(p) { return itemStarter(botBuild(p)[0]); }
+function botWantsStarter(p) {
+  const id = botStarter(p), c = itemCost(p, id);
+  return !p.items.some((x) => x && !isStack(x)) && p.gold >= c.gold && itemRoom(p, c.used) >= 1;
 }
 // what a bot would buy RIGHT NOW with its purse: the next item whole, or the
 // first component of it (depth first, the recipe's own order) it can buy -

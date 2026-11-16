@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Starter items: a first buy for every hero', '0.953'],
     ['Bolder ability icons for eight heroes', '0.949'],
     ['NIGHT: buildings burn no lamps; moonlight on the pines stays', '0.948'],
     ['Bolder item icons: rods, knives, staffs, the bow and the axe', '0.947'],

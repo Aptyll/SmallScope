@@ -78,7 +78,8 @@ hero's level and the six item slots. The **bottom bar** shows those six slots be
 abilities at all times. [The basic attack](gameplay/the-basic-attack.md).
 
 **Gold buys items, League's way.** Either team's **merchant's counter** sells over fifty items in
-four tiers (basic, epic, boots, legendary) built out of each other into six item slots, every one
+four tiers (basic, epic, boots, legendary) built out of each other, three cheap starters for the
+opening purse, into six item slots, every one
 always on sale at one fixed price, so you can save for the one you want. An item costs less by
 every component of it you already hold, carries the hero stats, and a legendary adds one passive
 (a third hit that burns, a heal out of a fight, a slow on every hit). One pair of boots at a time.
