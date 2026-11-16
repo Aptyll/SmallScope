@@ -1,6 +1,6 @@
 'use strict';
 // Every combatant in the match: the numbers a player is made of, the Player
-// class and the ten of them, the two playable classes and their kits,
+// class and the six of them, the two playable classes and their kits,
 // the input struct, contested orders, the entity arrays - and the damage &
 // death lifecycle those players live and die by.
 // ------------------------------------------------------------ players
@@ -31,7 +31,7 @@ function foeCue(team) { return settings.teamPal !== 'def' && team != null && !!p
 // and (later) network peers - is a Player in `players`, so anything written
 // for "the player" is automatically something every player can do. Only the
 // camera, HUD and cursor address one specific player (`player`, the local one).
-const MAX_PLAYERS = 10; // five a side
+const MAX_PLAYERS = 6; // three a side (3v3 ranked)
 const TEAM_COUNT = 2;      // RED vs BLUE; players alternate (id % TEAM_COUNT)
 const PVP = true;          // arrows hit players on another team (friendly fire is off)
 const PLAYER_SPEED = 72;
@@ -71,7 +71,7 @@ const DODGE_CHARGES = 2;
 const DODGE_CD = 3.5;     // seconds to refill one charge
 
 // ---- classes ------------------------------------------------------------
-// League's five POSITIONS. Each seat on a side plays one, handed out in the
+// The three POSITIONS of a 3v3 side. Each seat on a side plays one, handed out in the
 // draft (draftSeatRoles, js/ui/draft.js) and kept on the player as
 // `p.position` for the match (-1: none, a match that skipped the draft). A
 // bot plays its own (aiPosJob, js/ai/ai-farm.js): `lane` is the lane it
@@ -80,9 +80,7 @@ const DODGE_CD = 3.5;     // seconds to refill one charge
 const POSITIONS = [
   { id: 'top', name: 'TOP', lane: 0, job: 'laner' },
   { id: 'jungle', name: 'JUNGLE', lane: -1, job: 'jungler' },
-  { id: 'mid', name: 'MID', lane: 1, job: 'laner' },
   { id: 'bot', name: 'BOT', lane: 2, job: 'laner' },
-  { id: 'support', name: 'SUPPORT', lane: 2, job: 'support' },
 ];
 
 // Every player plays one of these HEROES, the way a League champion is the
@@ -644,7 +642,7 @@ function applyProfile() {
   setClass(player, profileHero());
   player.skins = profileHeroSkins(); // the looks worn on each hero (js/ui/skins.js)
 }
-// Five players share each team colour, so text that names one player (the
+// Three players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
 // palette - the team colour stays the background, this is the ink.
 function playerTint(p) {

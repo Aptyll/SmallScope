@@ -245,11 +245,11 @@ function promptW(verb, action) {
 // resolver keyPress clips on with), and beside it the lane the cable runs
 // down, as the pick's position emblem (posIcon, js/ui/select.js): every
 // cable looks alike from under it, and the emblem says top, mid or bot.
-const ZIP_LANE_POS = [0, 2, 3]; // a cable's lane -> its POSITIONS emblem (TOP, MID, BOT)
+const ZIP_LANE_POS = ['top', 'mid', 'bot']; // a cable's lane -> its emblem (POS11, js/ui/select.js)
 function drawZipHint(ox, oy) {
   const near = zipNear(player);
   if (!near) return false;
-  const icon = posIcon(ZIP_LANE_POS[near.z.lane], '#f4f7ff');
+  const icon = pos11Icon(ZIP_LANE_POS[near.z.lane], '#f4f7ff');
   const w = promptW('', 'work') + 2 + icon.width + 2;
   const x = Math.round(player.x - ox - w / 2);
   const y = Math.max(1, Math.min(WV_H - 11, Math.round(player.y + 4 - zipLift(near.z, near.d) - oy - 19))); // clear of the cable, and of the name tag stamped over the world (drawWorldText)

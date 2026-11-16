@@ -12,7 +12,7 @@
 // never the live world - running the DRAFT (js/ui/draft.js: the positions,
 // the bans, then everyone's blind pick, then the reveal); its pixels are
 // js/ui/select.js. The HEADLINE, the timer bar and the seconds top centre,
-// each side's bans in its top corner. YOUR SIDE's five seat rows down the
+// each side's bans in its top corner. YOUR SIDE's three seat rows down the
 // left in position order, THE RIVALS' down the right, face-down until the
 // count turns them. In the middle the FILTER ROW (the positions, the search)
 // over the HERO GRID (js/ui/heroes.js), the STAGE under it - the hero you

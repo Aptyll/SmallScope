@@ -3,7 +3,7 @@
 // The champ select's pixels (the lobby, js/ui/champ-select.js `lobby`; its rules are
 // the draft's, js/ui/draft.js), laid out the way League lays its own: the
 // HEADLINE over a draining TIMER BAR and the seconds top centre, each side's
-// BANS in its top corner, YOUR SIDE down the left as five SEAT ROWS (a
+// BANS in its top corner, YOUR SIDE down the left as three SEAT ROWS (a
 // portrait disc, the position, the hero, the name) and THE RIVALS down the
 // right, the HERO GRID in the middle (js/ui/heroes.js), the CHAT bottom left
 // (js/ui/roomtalk.js) and the MODE bottom right. Once your pick is locked the grid gives way to the
@@ -18,9 +18,10 @@ const SKIN_THUMB_W = 48, SKIN_THUMB_H = 28, SKIN_THUMB_G = 6, SKIN_SHOW = 5; // 
 const SHOW_W = 288, SHOW_H = 160; // the showcase's room, before a small view cuts it
 
 // ------------------------------------------------------------ positions
-// A position's 11 px emblem: the map's square with its own lane lit (top,
-// mid, bot), a pine for the jungle, a shield for support. 'W' takes the
-// colour asked for, 'd' a dim of it.
+// A position's 11 px emblem, by its id (POSITIONS, js/sim/player.js): the
+// map's square with its own lane lit (top, bot; mid is a cable's lane only,
+// drawZipHint), a pine for the jungle. 'W' takes the colour asked for, 'd' a
+// dim of it.
 const POS11 = (() => {
   const frame = () => Array.from({ length: 11 }, (_, y) => Array.from({ length: 11 }, (_, x) => (x === 0 || y === 0 || x === 10 || y === 10 ? 'd' : '.')));
   const top = frame();
@@ -30,7 +31,7 @@ const POS11 = (() => {
   const mid = frame();
   for (let y = 1; y < 10; y++) { mid[y][10 - y] = 'W'; if (10 - y - 1 > 0) mid[y][10 - y - 1] = 'W'; }
   const rows = (g) => g.map((r) => r.join(''));
-  return [rows(top), [
+  return { top: rows(top), jungle: [
     '.....W.....',
     '....WWW....',
     '...WWWWW...',
@@ -42,29 +43,20 @@ const POS11 = (() => {
     'WWWWWWWWWWW',
     '.....d.....',
     '.....d.....',
-  ], rows(mid), rows(bot), [
-    'WWWWWWWWWWW',
-    'WdddddddddW',
-    'WddddWddddW',
-    'WddWWWWWddW',
-    'WddddWddddW',
-    'WddddWddddW',
-    '.WddddddddW',
-    '.WdddddddW.',
-    '..WdddddW..',
-    '...WdddW...',
-    '....WWW....',
-  ]];
+  ], mid: rows(mid), bot: rows(bot) };
 })();
 const pos11Cache = new Map();
-function posIcon(r, col) {
-  const key = r + col;
+// position r's emblem (a POSITIONS index)
+function posIcon(r, col) { return pos11Icon(POSITIONS[r].id, col); }
+// the emblem named k (a POS11 key)
+function pos11Icon(k, col) {
+  const key = k + col;
   let cv = pos11Cache.get(key);
   if (!cv) {
     cv = document.createElement('canvas');
     cv.width = cv.height = 11;
     const g = cv.getContext('2d');
-    POS11[r].forEach((row, y) => {
+    POS11[k].forEach((row, y) => {
       for (let x = 0; x < 11; x++) {
         if (row[x] === '.') continue;
         g.fillStyle = col; g.globalAlpha = row[x] === 'W' ? 1 : 0.35;

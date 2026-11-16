@@ -1,21 +1,21 @@
 'use strict';
 // The title's scene: what the landing page shows behind the logo and the
-// words. Ten heroes stand near the middle of the map, five a side, facing
+// words. Six heroes stand near the middle of the map, three a side, facing
 // each other at the match's own zoom - the game in one picture before a word is
 // read. They are this screen's own bodies (never in `players`, never stepped
 // by the sim, never sent): drawPlayer paints them in the sorted pass like
 // any body, so they wear the real sprites, weapons, shade and team rings.
-// Your own hero (the profile's last pick) leads the blue side; the other nine
+// Your own hero (the profile's last pick) leads the blue side; the other five
 // are dealt fresh each time the title opens.
 //
 // WHERE it stands is found, not written (titleSceneAt): the spot nearest the
-// map's centre where the logo, the word column and all ten heroes each sit on
+// map's centre where the logo, the word column and all six heroes each sit on
 // one clean ground - open snow or plain paving, nothing standing on it, no
 // brush, no ice. So the picture stays clean whatever the map's middle becomes.
 const TITLE_DRIFT = [3, 2];    // world px the camera breathes round it, each axis
-// where each side's five stand, world px off the scene's centre, the leader first
+// where each side's three stand, world px off the scene's centre, the leader first
 // (your side as written, left of the centre; the rivals mirrored across it)
-const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24], [-104, -4], [-102, -52]];
+const TITLE_SPOTS = [[-72, -2], [-92, -30], [-90, 24]];
 const TITLE_LOGO = [232, 64];  // view px: the logo's room under LOGO_Y (the picture's size, a little air)
 const TITLE_WORDS = [72, 6];   // view px half-width of the word column (its widest word and the diamond), and the rows it may hold
 const TITLE_BODY = [18, 12, 44]; // world px a hero needs clean: each side of it, over its feet's row, and under it (a pine to its south stands that tall over it)
@@ -98,7 +98,7 @@ function titleCamTarget() {
     y: s.y + Math.sin(t * 0.083 + 0.7) * TITLE_DRIFT[1] - WV_H / 2,
   };
 }
-// ten different heroes: yours first, the rest shuffled off this boot's clock
+// six different heroes: yours first, the rest shuffled off this boot's clock
 function titleDeal() {
   const pool = CLASSES.map((c, i) => i).filter((i) => i !== player.cls);
   let s = (Date.now() >>> 0) || 1;

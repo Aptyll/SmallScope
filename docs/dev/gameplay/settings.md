@@ -226,7 +226,7 @@ eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-
 
 ## The FIRST MATCH
 
-**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js);
+**The FIRST MATCH** (`PARTY_MODES.guide`) is a real 3v3 against EASY bots with the coach on (js/ui/guide.js);
 the title's FIRST MATCH goes straight to the hero pick, its draft has no ban phase (`draftBansPerTeam`) and its pick has no clock at all (`draftPickT`): it waits for LOCK IN.
 The game's very first launch (`PROFILE.firstRun`: no profile was saved before this boot) skips the title and opens that pick
 at once (js/app/boot.js), unless the boot came for something else (a join, a party back, the field, a tool's `?seed=N` or `?local=N`).

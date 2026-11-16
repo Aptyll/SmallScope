@@ -11,7 +11,7 @@
 // walk out of a match is ceremony, then record, then the title.
 //
 // It is an INSTRUMENT in the sense CLAUDE.md's show-don't-label rule carves
-// out: its whole job is comparing numbers between ten people, so it gets
+// out: its whole job is comparing numbers between six people, so it gets
 // row names and printed values the way the
 // merchant's price graphs do. Everything that is NOT a number still reads as
 // a shape - the side is a colour, a player is their face, your column is a
@@ -30,12 +30,12 @@
 // gold (js/ui/botview.js), and the series stay for a timeline to come. They
 // live ON the player (hGold/hDmg, the Player constructor) because a player
 // field crosses the wire with everything else. Every player is sampled on the
-// same tick, active or not, so index i means the same moment in all ten arrays.
+// same tick, active or not, so index i means the same moment in all six arrays.
 //
 // A match has no length limit, so the series cannot either: past STAT_MAX
 // samples each one HALVES - every other sample dropped, newest kept - and the
 // pitch doubles with it. The spacing stays uniform, which is all a timeline
-// needs, and ten players' history stays a few hundred numbers however long
+// needs, and six players' history stays a few hundred numbers however long
 // the match runs.
 const STAT_STEP = 10;  // s between samples
 const STAT_MAX = 72;   // samples kept per series before it halves and the pitch doubles

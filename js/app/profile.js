@@ -22,7 +22,11 @@
   const OLD_SAVES = 'softfall.saves', OLD_SAVE = 'softfall.save.';
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
-  const POS_N = 5;                 // POSITIONS.length (js/sim/player.js)
+  const POS_N = 3;                 // POSITIONS.length (js/sim/player.js)
+  // the position a v4 save asked for, from the five-a-side order it saved an
+  // index into (TOP JUNGLE MID BOT SUPPORT, frozen: never edit it) to today's;
+  // -1 for one 3v3 has not (MID, SUPPORT), so the draft deals any
+  const V4_POS = [0, 1, -1, 2, -1];
   // the hero order v3 and older saved an index into (CLASSES as it stood then,
   // frozen: never edit it). The first two were not heroes and are gone, so a
   // pick of either opens on the default hero ('').
@@ -96,7 +100,7 @@
   // against, so every field below is guaranteed present to every reader
   function blank() {
     return {
-      v: 4,
+      v: 5,
       // who this profile is to other screens: 8 hex digits dealt once, so a
       // player met twice is the same entry in their list of people (PROFILE.people)
       // whatever they are called now. Nothing checks it: there is no server.
@@ -207,7 +211,8 @@
         if (typeof s.pic === 'string' && HERO_NAME.test(s.pic)) profile.pic = s.pic;
         if (typeof hero === 'string' && HERO_NAME.test(hero)) profile.hero = hero; // a name the game no longer has opens on the default (profileHero, js/sim/player.js)
         else if (typeof hero === 'number' && isFinite(hero)) profile.hero = V3_HEROES[Math.floor(hero)] || '';
-        if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
+        const pos = typeof s.pos === 'number' && s.pos >= 0 ? Math.floor(s.pos) : -1;
+        if (pos >= 0 && pos < (s.v === 5 ? POS_N : V4_POS.length)) profile.pos = s.v === 5 ? pos : V4_POS[pos];
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         if (typeof s.setAt === 'number' && isFinite(s.setAt) && s.setAt > 0) profile.setAt = Math.floor(s.setAt);
         if (typeof s.setSum === 'string' && s.setSum.length <= 16) profile.setSum = s.setSum;
@@ -235,7 +240,7 @@
         } catch (e) { }
         saveNow();
       }
-      if (s && (s.v !== 4 || s.pid !== profile.pid)) saveNow(); // a migrated save is written back in its new shape at once
+      if (s && (s.v !== 5 || s.pid !== profile.pid)) saveNow(); // a migrated save is written back in its new shape at once
       clearOldSaves();
       return profile;
     },

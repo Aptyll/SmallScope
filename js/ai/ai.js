@@ -38,7 +38,7 @@ function aiOwnEagle(p) { const e = state.drop && state.drop.eagles[p.team]; retu
 // each roosts, how its nerve stands, when it was last hit, and who is AT it:
 // the rivals standing off it (each through seenAt, so a hidden rival is
 // hidden from the whole side) and the friends already there. Read once per
-// sim step and shared by all ten players, so a hit on a roost is news on the
+// sim step and shared by all six players, so a hit on a roost is news on the
 // far side of the map the same tick - a bird under attack is answered from
 // anywhere, and a bird that is winning the race is not abandoned for one
 // that is losing it. `threat` is the one word the ladder asks.
@@ -228,9 +228,7 @@ function aiNearestEnemy(p, prof, anchors) {
   // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js),
   // and so is a hero's machine (HERO_MACHINE, js/sim/heroes.js):
   // the same sight and the same anchors, with no cover to see through
-  const leave = aiLeavesWave(p); // a support beside its carry leaves the last hits to it (js/ai/ai-farm.js)
   for (const b of robots) {
-    if (leave) break;
     if ((b.kind !== 'soldier' && !heroMachine(b)) || !unitAlive(b) || b.team === p.team || !inSight(p.team, b)) continue;
     const d = Math.hypot(b.x - p.x, b.y - p.y);
     let range = prof.sight;

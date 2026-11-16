@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ draft rules
 // The hero select's DRAFT (the lobby, js/ui/champ-select.js), the way every party
-// reaches the eagle: a BAN phase, then a BLIND PICK where all ten seats pick
+// reaches the eagle: a BAN phase, then a BLIND PICK where all six seats pick
 // at once, then the reveal count (COUNT_T) to the drop. The host keeps the
 // draft and every screen draws its copy (DRAFT); a guest points and confirms
 // through the host (`draft` messages, js/net/net.js) like any other press.
@@ -81,7 +81,7 @@ function draftTeamBans(team) {
 }
 
 // ------------------------------------------------------------ draft roles
-// League's five POSITIONS (js/sim/player.js), one per seat on each side,
+// The three POSITIONS (js/sim/player.js), one per seat on each side,
 // handed out as the draft opens (draftSeatRoles): the people first, each on
 // the one their profile asks for (PROFILE.pos; a guest's rides its hello,
 // NET.pos) when nobody earlier on the side took it, then any free one, the

@@ -1,4 +1,4 @@
-// Softfall - a 5v5 MOBA in the snow.
+// Softfall - a 3v3 MOBA in the snow.
 'use strict';
 // The last file to load: the boot order, window.DBG and the
 // requestAnimationFrame loop. The eagle drop it starts is js/sim/eagle.js.
@@ -203,7 +203,7 @@ window.DBG = {
   // which is how the TOOLTIP row's two modes are read without eyeballing px
   tipRect: () => { if (!tipNow) return null; const s = tipSize(tipNow); return Object.assign(tipPos(s.w, s.h), s); },
   setNock: (t, p) => { (p || player).nockT = t; }, // a huge t parks a player's bow for a capture
-  // the players: all ten, the local one, and the teams table
+  // the players: all six, the local one, and the teams table
   players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
   // the eagle drop: the live flight records, or fly the birds in from scratch
   get drop() { return state.drop; }, beginDrop, landPlayer, hopOff, makeEagles, inAir,

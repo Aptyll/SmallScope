@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ history
 // MATCH HISTORY, op.gg's list: every match this screen played to its end,
-// kept with all ten seats so a row can show both sides and open into the
+// kept with all its seats so a row can show both sides and open into the
 // whole scoreboard (the profile's MATCH HISTORY tab, js/ui/profile.js).
 //
 // There is no stats server. Each screen files its own matches at the whistle
@@ -64,11 +64,11 @@ function historyClean(r) {
   const num = (n) => typeof n === 'number' && isFinite(n) && n >= 0 && n <= MH_NUM_MAX;
   if (!r || typeof r !== 'object' || typeof r.m !== 'string' || !/^[0-9a-f]{8}$/.test(r.m)) return null;
   if (typeof r.v !== 'string' || !/^\d\.\d{3}$/.test(r.v) || !MH_AT(r.at) || !num(r.t)) return null;
-  if (MH_MODES.indexOf(r.mode) < 0 || (r.w !== 0 && r.w !== 1) || !(r.you >= 0 && r.you < MAX_PLAYERS)) return null;
-  if (!Array.isArray(r.seats) || !r.seats.length || r.seats.length > MAX_PLAYERS) return null;
+  if (MH_MODES.indexOf(r.mode) < 0 || (r.w !== 0 && r.w !== 1) || !(r.you >= 0 && r.you < SEATS_EVER)) return null;
+  if (!Array.isArray(r.seats) || !r.seats.length || r.seats.length > SEATS_EVER) return null;
   const seats = [];
   for (const q of r.seats) {
-    if (!q || typeof q !== 'object' || !(q.s >= 0 && q.s < MAX_PLAYERS) || (q.tm !== 0 && q.tm !== 1)) return null;
+    if (!q || typeof q !== 'object' || !(q.s >= 0 && q.s < SEATS_EVER) || (q.tm !== 0 && q.tm !== 1)) return null;
     if (typeof q.n !== 'string' || !MH_NAME.test(q.n) || typeof q.h !== 'string' || !/^[A-Z]{1,16}$/.test(q.h)) return null;
     if (!['lv', 'k', 'd', 'a', 'cs', 'g', 'dmg'].every((k) => num(q[k]))) return null;
     if (!Array.isArray(q.it) || q.it.length > ITEM_SLOTS || !q.it.every((id) => id === '' || (typeof id === 'string' && /^[a-z_0-9]{1,24}$/.test(id)))) return null;

@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ the coach
-// The FIRST MATCH (PARTY_MODES.guide, js/ui/rooms.js) is a real 5v5 against
+// The FIRST MATCH (PARTY_MODES.guide, js/ui/rooms.js) is a real 3v3 against
 // EASY bots with one small card above the hud strip teaching the next thing
 // to do: move, shop, abilities, last hits, recall, a tower, their eagle. The
 // card is the key caps and one word, readable in a second; the DETAILS key (or ABILITY

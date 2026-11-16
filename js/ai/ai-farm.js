@@ -5,7 +5,7 @@
 // or with no draft one dealt by seat (aiPosDeal). The side's plan
 // (aiPlan, js/ai/ai-team.js) hands a bot its position's job whenever no
 // bigger one (a push, a guard, the bear) has it.
-//   LANER    TOP, MID and BOT hold their lane, walk to where its side's wave
+//   LANER    TOP and BOT hold their lane, walk to where its side's wave
 //            on that lane meets the rival one and stand just behind its own
 //            column - or, with no column of its own on the lane, wait at
 //            the lane's hold point (laneHold, js/sim/lanes.js) - in ambush in
@@ -20,11 +20,6 @@
 //            (CAMP_HOLD) so it is there as the clock ends, and while the
 //            next den is further off in time than in walking, the jungler
 //            works what is near instead.
-//   SUPPORT  walks with its side's BOT (bot, human or not: aiCarry), a step
-//            behind it toward home, and leaves the wave's soldiers to it
-//            (aiLeavesWave: rung 3 looks only at rival heroes while the
-//            carry is near), so the fights it takes are the lane's. With no
-//            carry on its feet it holds the bot lane as a laner would.
 // Neither job reads anything a hand could not: the soldiers' health bars,
 // the den clocks every screen wears, and the damage its own last blow did.
 const AI_FARM_NEAR = 40; // px an own soldier with no mark yet must be from a rival one for the rival to count as being worn down
@@ -35,10 +30,7 @@ const AI_FARM_BACK = 40; // px a laner stands behind its own column, toward its 
 const AI_BRUSH_R = 480; // px from a laner's hold point a brush patch's middle may be for it to wait in that instead...
 const AI_BRUSH_FWD = 96; // ...and px further from its own base than the hold point it may lie
 const AI_DEN_EARLY = 15; // s ahead of a den's clock a jungler sets off (time to walk in on top of the walk)
-const AI_POS_FILL = [2, 0, 3, 1, 4]; // POSITIONS a side's undrafted bots are dealt, in order: mid, top, bot, jungle, support
-const AI_SUP_BACK = 28;  // px a support stands behind its carry, toward its own bird...
-const AI_SUP_SIDE = 18;  // ...and px to the side of it, so the two do not stack
-const AI_SUP_NEAR = 260; // px from its carry inside which a support leaves the wave's soldiers to it
+const AI_POS_FILL = [0, 2, 1]; // POSITIONS a side's undrafted bots are dealt, in order: top, bot, jungle
 
 // is foe a rival soldier p should leave alone until one blow finishes it?
 // It reads ahead by the blow's travel: the blows its own soldiers aimed at
@@ -97,28 +89,6 @@ function aiPos(p) { const r = aiPlan(p.team).pos[p.id]; return r === undefined ?
 function aiPosJob(T, p) { const r = T.pos[p.id]; return r === undefined ? null : POSITIONS[r].job; }
 // the lane p holds: its position's, else mid
 function aiLane(p) { const r = aiPos(p); return r >= 0 && POSITIONS[r].lane >= 0 ? POSITIONS[r].lane : 1; }
-// a support's carry: the living seat of its side playing BOT, on its feet
-function aiCarry(p) {
-  const T = aiPlan(p.team), bot = POSITIONS.findIndex((r) => r.id === 'bot');
-  for (const q of players) if (q !== p && q.team === p.team && T.pos[q.id] === bot && !q.dead && q.active && !inAir(q)) return q;
-  return null;
-}
-// a support with its carry near leaves the soldiers to it (aiNearestEnemy, js/ai/ai.js)
-function aiLeavesWave(p) {
-  if (aiRole(p) !== 'support') return false;
-  const c = aiCarry(p);
-  return !!c && Math.hypot(c.x - p.x, c.y - p.y) < AI_SUP_NEAR;
-}
-// where a support stands: a step behind its carry toward its own bird, and
-// to one side; with no carry, where a laner of its lane would
-function aiSupportSpot(p) {
-  const c = aiCarry(p);
-  if (!c) return aiLaneSpot(p);
-  const own = aiOwnEagle(p);
-  if (!own) return { x: c.x, y: c.y };
-  const ux = own.x - c.x, uy = own.y - c.y, ud = Math.hypot(ux, uy) || 1;
-  return { x: c.x + ux / ud * AI_SUP_BACK - uy / ud * AI_SUP_SIDE, y: c.y + uy / ud * AI_SUP_BACK + ux / ud * AI_SUP_SIDE, carry: c };
-}
 
 // where a laner stands: behind its own soldier on its lane nearest a rival
 // one (the clash), or behind its own column's head with no clash yet; with
@@ -183,22 +153,19 @@ function aiDenSpot(p) {
 }
 
 // the position jobs' walk (rung 5f of aiThink): true when p is on its way,
-// or waiting on a den or beside its carry, and the ladder below is not for
-// it this think
+// or waiting on a den, and the ladder below is not for it this think
 function aiFarmWalk(p, role, steerTo, aimAt) {
-  if (role !== 'laner' && role !== 'jungler' && role !== 'support') return false;
-  const s = role === 'laner' ? aiLaneSpot(p) : role === 'support' ? aiSupportSpot(p) : aiDenSpot(p);
+  if (role !== 'laner' && role !== 'jungler') return false;
+  const s = role === 'laner' ? aiLaneSpot(p) : aiDenSpot(p);
   if (!s) return false;
   const d = Math.hypot(s.x - p.x, s.y - p.y);
   // a den with its pack up is hunted from AI_HUNT in (rung 6), so the walk stops short of it
   if (role === 'jungler' && !s.wait && d < AI_HUNT * 0.8) return false;
   if (role === 'laner') aiNote(p, 'FARM', 'LAST HITS', s);
-  else if (role === 'support') aiNote(p, 'SUPPORT', s.carry ? 'WITH ' + s.carry.name.slice(0, 12) : 'HOLD LANE', s);
   else aiNote(p, 'JUNGLE', s.wait ? 'DEN SOON' : 'DEN UP', s);
   if (d > 12 && steerTo(s.x, s.y, 2) < 0) return false;
   if (d <= 12) { p.input.mx = 0; p.input.my = 0; }
-  // beside its carry it looks where the carry looks: down the lane
-  if (s.carry) aimAt(s.carry.x + (s.carry.x - s.x), s.carry.y + (s.carry.y - s.y)); else aimAt(s.x, s.y);
+  aimAt(s.x, s.y);
   p.input.atk = null;
   p.ai.tgt = null;
   return true;

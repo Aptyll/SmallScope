@@ -112,7 +112,7 @@ function netRelay() {
 }
 // The three doors the party lobby opens (js/ui/rooms.js): host a room on
 // the relay (every party is one), join one by its code, or leave whichever
-// this is and be solo again with today's ten. The Steam transport takes the
+// this is and be solo again with today's six. The Steam transport takes the
 // same three when the wrapper is asked for it (?transport=steam).
 // is this screen riding Steam: the wrapper's bridge is there and the page
 // was asked for it (?transport=steam, the wrapper's --transport=steam). A
@@ -142,7 +142,7 @@ function netHostRoom() {
     hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
 }
 // the roster to every peer, on every change of it: a client's waiting room
-// draws the same ten this one does
+// draws the same six this one does
 function netHostRoster() { if (NET.role === 'host' && NET.peers.size) NET.transport.send('*', Object.assign({ t: 'roster', roster: netRoster() }, roomInfo())); }
 
 // ------------------------------------------------------------ host
@@ -516,7 +516,7 @@ function netClientStep(dt) {
     if (msg.t === 'follow') { followHeard(msg); continue; }  // the leader taking the party into a friend's (js/ui/roomtalk.js)    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     if (msg.t === 'meta') { if (!NET.metaIn) { NET.metaIn = true; buildsMerge(msg.recs, BUILDS_TAKE); } continue; } // the host's builds, in answer to ours (js/app/builds.js)
-    // the waiting room: the host's ten and its count, drawn here as there
+    // the waiting room: the host's six and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
     if (msg.t === 'ping') { T.send('host', { t: 'pong', at: msg.at }); continue; } // straight back: the host times the trip
     if (msg.t === 'pings') { NET.pings = msg.ms || []; continue; }

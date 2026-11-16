@@ -5,7 +5,7 @@
 // list (the relay's rooms, or Steam's lobbies) for another party looking in
 // the same mode. Of every party looking, the one whose leader's machine is
 // fastest hosts the match (`hs`, seekPower: the host runs the whole match for
-// ten), the lowest code among equals: it waits, and the others cross over to
+// six), the lowest code among equals: it waits, and the others cross over to
 // it (seekCross). A
 // crossing party's leader tells its guests (`cross`) and every page of it
 // reloads and joins the host's room with the party's code

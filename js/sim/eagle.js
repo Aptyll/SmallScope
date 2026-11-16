@@ -103,7 +103,7 @@ const RUFFLE_T = 0.45;      // s of the resting idle's wing shuffle (frame 1 onl
 const BOOM_R = 3.6;         // tiles of trees the impact clears outright - and paves: the roost stands on packed earth, one ground with the road it ends (the pad, addPad)
 const BOOM_STUMP_R2 = 6.0;  // ...and every tree beyond that, out to here, snapped to a stump
 const BOOM_LIFE = 0.9;      // seconds the impact shockwave rings run
-// where the five riders sit, in the bird's own frame (x along the heading,
+// where the riders sit (three a side; the seats past that stay for a bigger roster), in the bird's own frame (x along the heading,
 // y across the wings, unscaled sprite px): one on its back, two on the inner
 // wings, two out on the primaries - where Perch's spread wing is
 // (SPRITES.perch.seat), so a rider who hops off leaves from where it was drawn.
