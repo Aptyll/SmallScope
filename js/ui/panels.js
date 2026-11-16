@@ -265,6 +265,8 @@ const SET_TABS = [
     { id: 'hud', label: 'set.hud', kind: 'slider' },
     { id: 'info', label: 'set.info', kind: 'toggle' },
     { id: 'cursor', label: 'set.cursor', kind: 'toggle', on: 'set.pixel', off: 'set.browser' },
+    // LOCKED rides your hero; FREE pans at the screen's edge (the `camera modes` banner, js/app/canvas.js)
+    { id: 'camFree', label: 'set.camera', kind: 'toggle', on: 'set.camFree', off: 'set.camLocked' },
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
     // pointer, or parked in the bottom-left corner
     { id: 'tipFollow', label: 'set.tooltip', kind: 'toggle', on: 'set.followsPointer', off: 'set.bottomLeft' },

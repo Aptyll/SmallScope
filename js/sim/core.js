@@ -126,7 +126,6 @@ const state = {
   // id; sel + hover: the planks' keyboard pick and per-plank hover eases
   over: null, deadView: 'menu', spec: -1, deadSel: 0, deadHover: [0, 0],
   // the replay window over a respawn wait has been closed (endMatch reopens it)
-  rpClosed: false,
   // REPLAY on the defeat screen has the frame (deadActivate, js/ui/screens.js)
   rpAgain: false,
   // a win or an elimination freezes the numbers its end screen prints
@@ -232,6 +231,9 @@ const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, hudSc
   // hold), Shift held opens every rank's; true = every rank's always
   // (tipClassAb, js/ui/tooltip.js)
   tipFull: false,
+  // the camera: false = LOCKED on your hero, true = FREE, panned at the
+  // screen's edge (the `camera modes` banner, js/app/canvas.js)
+  camFree: false,
   relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
   // the keyboard scheme: 'wasd' (the keys walk, the mouse aims), 'click'
   // (the right button walks and orders - the `click to move` banner,

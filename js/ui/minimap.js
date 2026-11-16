@@ -312,12 +312,37 @@ function renderMinimap(now) {
   drawChartBodies(v, now, 1);
   drawChartClocks(v);
   ctx.restore();
+  if (camLive()) drawMmLock(); // the camera's lock, on the frame's top-left corner
   // over the square, the elapsed play-time alone, on its right edge - but
   // only with no team rail up: a match's clock sits between the two kill
   // totals there (drawRailScore, rail.js), and one clock is enough
   if (!mmClockShown()) return;
   const clock = clockTxt(state.elapsed);
   drawPixelTextOutline(ctx, clock, r.x + r.w - pixelTextWidth(clock) - 1, r.y - 8, '#f4f7ff', HUD_INK);
+}
+// THE CAMERA'S LOCK: a padlock on its own small plate against the minimap's
+// top-left corner, shut while the camera is LOCKED on your hero and open
+// while it is FREE (the `camera modes` banner, js/app/canvas.js). A press
+// flips it, as the camLock key does.
+const MM_LOCK = 11;  // the plate's square
+const MM_LOCK_ART = { shut: ['.###.', '#...#', '#...#', '#####', '##.##', '#####', '#####'],
+  open: ['.###.', '....#', '....#', '#####', '##.##', '#####', '#####'] };
+function mmLockRect() { const r = mmFrameRect(); return { x: r.x - MM_LOCK - 2, y: r.y, w: MM_LOCK, h: MM_LOCK }; }
+function mmLockHit() { return camLive() && mouse.inside && overRect(mmLockRect(), 1); }
+function drawMmLock() {
+  const r = mmLockRect(), hot = mmLockHit();
+  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = hot ? '#2a2d33' : AB_BG; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = hot ? '#ffd95c' : '#d4d7dc';
+  MM_LOCK_ART[settings.camFree ? 'open' : 'shut'].forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) if (row[x] === '#') ctx.fillRect(r.x + 3 + x, r.y + 2 + y, 1, 1);
+  });
+}
+// the world point a press on the minimap points the camera at: the pointer
+// clamped onto the square, so a drag that runs off its edge keeps the edge
+function mmCamAt(sx, sy) {
+  const v = mmView();
+  return chartWorldAt(v, Math.max(v.x, Math.min(v.x + v.w - 1, sx)), Math.max(v.y, Math.min(v.y + v.w - 1, sy)));
 }
 // whether the clock stands over the square: only where the rail is not up
 function mmClockShown() { return !railLayout(); }

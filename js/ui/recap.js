@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ death recap
-// Why you went down, in the top-left corner of the replay of it (the `replay`
-// banner, js/ui/screens.js), read the way League's is:
+// Why you went down, in the top-left corner through the whole respawn wait
+// (the `death & spectate` banner, js/ui/screens.js), read the way League's is:
 //
 //   [-]  ( ring )  [>]     the ring: all the damage, split by kind, the total in it
 //   [face] 51 ====   o o   one line per hitter, biggest first: its total over a
@@ -196,8 +196,11 @@ function recapHover(L) {
   }
   return null;
 }
-// a death's recap only: the defeat screen's REPLAY is the bird leaving, not a death to explain
-function recapLive() { return replayFull() && !state.rpAgain && player.deathLog && player.deathLog.length > 0; }
+// up through a respawn wait, over the live match (renderDead, js/ui/screens.js)
+function recapLive() {
+  return state.mode === 'dead' && state.over === 'respawning' && state.deadView === 'spec' && !state.eagleCine &&
+    !window.DBG.hideUI && player.deathLog && player.deathLog.length > 0;
+}
 // the pointer over a button: the cursor's hand (render.js)
 function recapHot() {
   if (!recapLive()) return false;
@@ -281,23 +284,25 @@ function drawRecap() {
 }
 
 // ---- downed by -------------------------------------------------------------------
-// The death's headline, under the respawn count for the whole wait, over the
-// replay and the ally view alike (drawRespawnLine, js/ui/screens.js): DOWNED BY,
+// The death's plate, bottom centre where the hud strip sits in play, for the
+// whole wait, over your fall and the ally view alike (drawRespawnLine,
+// js/ui/screens.js) - never over the watched body or its bar: DOWNED BY,
 // the face of the blow that put you down (the gold rim its line wears on the
-// plate), its name in its side's colour, and what it hit with. The replay can
-// be put away; this stays, so no death goes unexplained.
+// plate), its name in its side's colour, and what it hit with, so no death
+// goes unexplained.
 const DB_FACE = 26;  // the face's square, rim included
 const DB_PAD = 5;    // px inside the plate
+const DB_FOOT = 10;  // px from the plate to the screen's foot
 // the killing blow: the record's last entry (recapNote, js/sim/player.js)
 function recapKill(log) { return log && log.length ? log[log.length - 1] : null; }
-function drawDownedBy(y) {
+function drawDownedBy() {
   if (state.over !== 'respawning') return;
   const e = recapKill(player.deathLog);
   if (!e) return;
   const head = tr('recap.downedBy'), who = rcWho(e), icon = rcIcon(e);
   const tw = Math.max(pixelTextWidth(head, 1), pixelTextWidth(who, 2));
   const w = DB_PAD + DB_FACE + 6 + tw + (icon ? 8 + RC_ICON : 0) + DB_PAD, h = DB_FACE + DB_PAD * 2;
-  const x = (VIEW_W - w) >> 1;
+  const x = (VIEW_W - w) >> 1, y = VIEW_H - h - DB_FOOT;
   ctx.fillStyle = SC_INK; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
   ctx.fillStyle = SC_BG; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, w, 1);
