@@ -94,7 +94,7 @@ let orcaBeat = 0, orcaBeatAt = 0; // the tail's phase (rad) and the draw it was 
 // the ice the shadow may show through: every ice pixel of the disc and a
 // tile round it (iceAtPx: the sheet as the ground drew it)
 function orcaMaskBuild() {
-  const R = Math.ceil((ORCA_LAKE_R + ORCA_LAKE_RAG + 3) * TILE), P = orcaPool();
+  const R = Math.ceil((ORCA_LAKE_R + 3) * TILE), P = orcaPool();
   const x0 = Math.round((P.tx + 0.5) * TILE) - R, y0 = Math.round((P.ty + 0.5) * TILE) - R, w = 2 * R, cv = document.createElement('canvas');
   cv.width = cv.height = w;
   const g = cv.getContext('2d'), im = g.createImageData(w, w);

@@ -169,7 +169,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   (the figure still opens it, which shuts itself at zero); the count runs to the end (Esc waits
   it out). At rest, Esc goes back: a leader's to the party's seats (`draftStop`), a
   guest's out of the party. <a id="lobby-lock-in"></a>At
-  zero, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
+  zero, `lockIn()` — `menu.lockT`, then straight to `beginMatch()` (the eagle
   ride, below). No
   instructional text anywhere on the screen.
 
@@ -237,13 +237,11 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
 - **Menu exit**: `state.intro` counting down from `INTRO_T` (1.6 s) with `state.introLen = INTRO_T`
   is what dissolves the menu — `renderTitle` keeps drawing while it runs: the tint dissolves over
-  the first 45 % and the chrome sinks away in the first 22 %. `beginDrop` starts it into the eagle
-  ride as the **opening shot**: the camera held dead on your seat while `applyZoom` pulls the view
-  out from `DROP_OPEN_ZOOM` (180 rows, tight on you) to `DROP_ZOOM` on `easeInOut(1 - intro / introLen)`; `beginIntro` (debug only, `DBG.beginIntro`) starts it straight
-  into `play` with the player already standing in the world, the camera easing from
-  `state.introFrom` on the same curve instead of the play lerp.
-- **Landing intro**: the human's `landPlayer` sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
-  with `introFrom` at the touchdown framing, so `renderUI` (js/ui/compose.js) slides the HUD in
+  the first 45 % and the chrome sinks away in the first 22 %. `beginIntro` (debug only,
+  `DBG.beginIntro`) starts it straight into `play` with the player already standing in the world,
+  the camera easing from `state.introFrom` on the same curve instead of the play lerp.
+- **Match intro**: `matchHandOver` (js/sim/eagle.js) sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
+  with `introFrom` at the opening framing, so `renderUI` (js/ui/compose.js) slides the HUD in
   (the minimap and the team rail down from the top, and the hud strip up from the bottom by `HUD_SLIDE`)
   while the camera settles onto the play framing.
 

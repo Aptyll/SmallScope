@@ -24,13 +24,13 @@ function drawHawk(x, y, beat, left) {
   ctx.fillStyle = FC_GOLD; ctx.fillRect(x + s, y - 3, 1, 1);
 }
 function hawkShadow(x, y) { ctx.globalAlpha = 0.3; ctx.fillStyle = FC_INK; ctx.fillRect(x - 6, y, 13, 1); ctx.fillRect(x - 3, y - 1, 7, 1); ctx.fillRect(x - 1, y - 2, 3, 5); ctx.globalAlpha = 1; }
-function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !(p.falcoDownT > 0) && !falcoHawkOf(p) && !inAir(p); }
+function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive(p) && !(p.falcoSkyT > 0) && !(p.falcoDownT > 0) && !falcoHawkOf(p); }
 // At home the hawk sits on his glove (THE GRIP RULE's other hand): a tan gauntlet raised on
 // the side away from the knife, in every facing, and the hawk on it, outside the body's
 // box, looking outward in every facing, so its pale breast always shows. The glove stays up,
 // empty, while the hawk is out on TALONS or cut down. HERO_BODY_FX, over the body.
 function drawFalcoPerch(p, ax, ay, now, front) {
-  if (!front || CLASSES[p.cls].passive !== 'hawk' || p.zip >= 0 || p.falcoSkyT > 0 || p.dodgeT > 0 || inAir(p)) return;
+  if (!front || CLASSES[p.cls].passive !== 'hawk' || p.falcoSkyT > 0 || p.dodgeT > 0) return;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
   const bob = !p.moving ? 0 : -runBob(p);
   // the glove: 3 px of tan on the off side, its outline outside and under it; the hawk stands on its outer px, so its head clears his hat

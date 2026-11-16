@@ -1,5 +1,5 @@
 // ---- footings ---------------------------------------------------------------
-// What is built stands ON something: a road tower, a bay and the merchant's
+// What is built stands ON something: a road tower and the merchant's
 // stall each stand on a round of the lane's own flagstones - the same stones
 // on the same grid (roadStoneAt, js/draw/ground.js), so where a round meets
 // the lane or the base's paving it is one piece - laid whole under a lip of
@@ -9,12 +9,9 @@
 // width and half height in px, and where its foot is. A `kerb` round is
 // built, not laid: its flagstones are cut on one clean ellipse and ringed by
 // a kerb of dressed blocks (FOOT_KERB px wide), lit up-left and shaded
-// down-right, under a pixel of snow lip, opening where it meets the lane.
+// down-right, under a pixel of snow lip, the lane's paving meeting it.
 const FOOTINGS = {
   tower: { rx: 50, ry: 25, at: (o) => towerFoot(o), kerb: true },
-  barracks: { rx: 42, ry: 23, at: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 8 }), kerb: true },
-  roost: { rx: 88, ry: 76, kerb: true, over: true, kerbW: 6, block: 15 }, // round a roost's pad, wide of its stones, drawn over the paving (roostFootingOf)
-  fork: { rx: 124, ry: 100, kerb: true, over: true, kerbW: 6, block: 15 }, // where the lanes cross outside a base (forkFootingOf)
   stall: { rx: 56, ry: 24, at: (o) => ({ x: (o.tx + OBJECTS.stall.w / 2) * TILE, y: (o.ty + 1) * TILE - 8 }) }, // its anchor is the front-left tile
 };
 const FOOT_PAD = 4; // px round the round for its lip
@@ -55,10 +52,10 @@ function footingOf(o) {
   return c;
 }
 // a kerbed round (FOOTINGS .kerb): the ellipse's own px, not its stones'
-// middles. `rounds` is one ellipse or several joined into one place (a
-// roost and the stall at its edge): each {cx, cy} its middle in world px,
-// {ax, ay} its kerb's outer half axes. A pixel answers to the round it lies
-// deepest in, so where two meet the kerb turns the corner between them
+// middles. `rounds` is one ellipse or several joined into one place: each
+// {cx, cy} its middle in world px, {ax, ay} its kerb's outer half axes. A
+// pixel answers to the round it lies deepest in, so where two meet the kerb
+// turns the corner between them
 function paintKerbRound(g, F, c, W, H, rounds) {
   const KW = F.kerbW || FOOT_KERB, KB = F.block || FOOT_KERB_BLOCK; // the ring's width and a block's length, px
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -71,36 +68,22 @@ function paintKerbRound(g, F, c, W, H, rounds) {
       if (o < out) { out = o; r = q; dx = qx; dy = qy; }
     }
     const ax = r.ax, ay = r.ay;
-    // the lane's own paving runs on into it: the ground's. An `over` round
-    // paves its whole inside and rings it, the lanes leaving through mouths
-    if (roadPavedAt(wx, wy) && !(F.over && out < 0)) continue;
+    // the lane's own paving runs on into it: the ground's
+    if (roadPavedAt(wx, wy)) continue;
     let col = null;
     const along = Math.atan2(dy / ay, dx / ax) * (ax + ay) / 2;
-    const mouth = F.over && out < 2 && kerbMouth(r, along, KW, KB);
-    // an END block, the last before a mouth, stands a pixel proud and dressed
-    // light, so the kerb finishes there instead of just stopping
-    const end = F.over && !mouth && out < 2 && (kerbMouth(r, along - KB, KW, KB) || kerbMouth(r, along + KB, KW, KB));
-    if (out < -KW || (out < 0 && mouth)) col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
-    else if (end && out < 1) {
-      const a0 = ((along % KB) + KB) % KB, face = kerbMouth(r, along + KB, KW, KB) ? a0 > KB - 2 : a0 < 1; // its face toward the mouth
-      col = face || out >= 0 ? FOOT_KERB_COL.shd : out < -KW + 1 ? FOOT_KERB_COL.mid : FOOT_KERB_COL.lit;
-    } else if (out < 0) {
+    if (out < -KW) col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP);
+    else if (out < 0) {
       // the kerb: blocks along the ring, a joint between each, the light from the up-left
       const lit = -(dx / ax + dy / ay); // > 0 on the side facing the light
       if (Math.abs(((along % KB) + KB) % KB) < 1) col = FOOT_KERB_COL.joint;
       else if (out < -KW + 1) col = lit < 0 ? FOOT_KERB_COL.lit : FOOT_KERB_COL.mid; // its inner face: raised, never a pit's rim
       else col = lit > 0.35 ? FOOT_KERB_COL.lit : lit < -0.35 ? FOOT_KERB_COL.shd : FOOT_KERB_COL.mid;
-    } else if (!F.over && out < FOOT_JOIN && kerbMeetsLane(wx, wy, dx / (ax * ax), dy / (ay * ay), FOOT_JOIN - out)) {
+    } else if (out < FOOT_JOIN && kerbMeetsLane(wx, wy, dx / (ax * ax), dy / (ay * ay), FOOT_JOIN - out)) {
       col = roadStonePx(roadStoneAt(wx, wy, ROAD_FLAG, 0.8), ROAD_COL_DEEP); // a sliver of snow to the lane: paved over
     } else if (out < 1.5) col = (dx + dy) < 0 ? ROAD_COL_LIP : ROAD_COL_LIP_SHD; // the snow's lip over it
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   }
-}
-// is round r's kerb block at `along` (px round the ring) a MOUTH: a lane's paving
-// crosses its middle, so the whole block is left out and the kerb ends on whole blocks
-function kerbMouth(r, along, KW, KB) {
-  const a = (Math.floor(along / KB) + 0.5) * KB / ((r.ax + r.ay) / 2), e = 1 - KW / 2 / Math.min(r.ax, r.ay);
-  return roadPavedAt(Math.round(r.cx - 0.5 + Math.cos(a) * r.ax * e), Math.round(r.cy - 0.5 + Math.sin(a) * r.ay * e));
 }
 // does the lane's paving start within `reach` px straight out from the kerb (nx, ny: the way out)
 function kerbMeetsLane(wx, wy, nx, ny, reach) {
@@ -108,67 +91,11 @@ function kerbMeetsLane(wx, wy, nx, ny, reach) {
   for (let k = 1; k <= reach + 1; k++) if (roadPavedAt(Math.round(wx + nx / n * k), Math.round(wy + ny / n * k))) return true;
   return false;
 }
-// A ROOST's round: the pad's, joined with the round of a stall pitched at its
-// edge (the stall's own is then not drawn), one canvas a pad, made again when
-// the stall it holds comes or goes
-function roostStalls(sp) {
-  const R = FOOTINGS.roost, S = FOOTINGS.stall, cx = (sp.tx + 0.5) * TILE, cy = (sp.ty + 0.5) * TILE, o = [];
-  for (const b of robots) if (b.merchant && stallUp(b.stall)) {
-    const f = S.at(b.stall);
-    if (Math.abs(f.x - cx) < R.rx + S.rx && Math.abs(f.y - cy) < R.ry + S.ry) o.push(b.stall);
-  }
-  return o;
-}
-function roostFootingOf(sp, stalls) {
-  const key = 'roost' + sp.team, kind = sp.tx + ',' + sp.ty + stalls.map((s) => ';' + s.tx + ',' + s.ty).join('');
-  let c = footingCvs.get(key);
-  if (c && c.kind === kind) return c;
-  const R = FOOTINGS.roost, S = FOOTINGS.stall, M = FOOT_PAD + FOOT_JOIN;
-  const rounds = [{ cx: (sp.tx + 0.5) * TILE, cy: (sp.ty + 0.5) * TILE, ax: R.rx - FOOT_PAD, ay: R.ry - FOOT_PAD }];
-  for (const s of stalls) { const f = S.at(s); rounds.push({ cx: f.x, cy: f.y, ax: S.rx - FOOT_PAD, ay: S.ry - FOOT_PAD }); }
-  const x0 = Math.floor(Math.min(...rounds.map((q) => q.cx - q.ax)) - M), y0 = Math.floor(Math.min(...rounds.map((q) => q.cy - q.ay)) - M);
-  const x1 = Math.ceil(Math.max(...rounds.map((q) => q.cx + q.ax)) + M), y1 = Math.ceil(Math.max(...rounds.map((q) => q.cy + q.ay)) + M);
-  c = document.createElement('canvas'); c.width = x1 - x0; c.height = y1 - y0; c.kind = kind; c.wx = x0; c.wy = y0;
-  paintKerbRound(c.getContext('2d'), R, c, c.width, c.height, rounds);
-  footingCvs.set(key, c);
-  return c;
-}
-function drawRoostFooting(sp, stalls, ex, ey) {
-  const R = FOOTINGS.roost, cx = (sp.tx + 0.5) * TILE, cy = (sp.ty + 0.5) * TILE, m = R.rx + FOOTINGS.stall.rx * 2;
-  if (cx - ex < -m || cx - ex > WV_W + m || cy - ey < -m || cy - ey > WV_H + m) return;
-  const c = roostFootingOf(sp, stalls);
-  ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
-}
-// Round a roost (a pad, within BOOM_STUMP_R2 of it) the blast's stumps were
-// felled on the forest's own grid, so drawn as cut they stand in rows. There
-// each draws by its tile's own roll and how far out it lies: cut at the
-// round's edge, thinning to a stump drifted under (cut 3) further
-// out, and here and there a broken trunk lying (cuts 4 and 5); one under the
-// round's own paving is paved over (cut 6, nothing). Draw only:
-// every stump is still the sim's, on its tile.
-const STUMP_LAIN = 0.12;   // the share of a roost's stumps drawn as a trunk lying
-const STUMP_BURIED = 0.7;  // the share drifted under at the blast's outer edge (none at the round's)...
-const STUMP_THIN = 0.3;    // ...which lies this far out past the round, as a share of its size
-const STUMP_GONE = 0.3;    // the share of the blast's stumps past a roost's round not drawn at all: blown off or snowed under
+// A stump draws by its tile's own roll: one of the three cuts, stood off its
+// tile's middle. Draw only: every stump is still the sim's, on its tile.
 const STUMP_SCATTER = [6, 6]; // px every stump stands off its tile's middle, across and up, so a felled stand loses the forest's grid
-function stumpLook(tx, ty, o) {
-  let v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
-  for (const sp of pads) {
-    const d = Math.hypot(tx - sp.tx, ty - sp.ty);
-    if (d > BOOM_STUMP_R2 + 0.5) continue;
-    // how far out from the roost's kerbed round (FOOTINGS.roost): a stump on its paving stands cut
-    const R = FOOTINGS.roost, e = Math.hypot((tx - sp.tx) * TILE / (R.rx - FOOT_PAD), (ty - sp.ty) * TILE / (R.ry - FOOT_PAD));
-    if (e < 1) { v = 6; break; }
-    const f = Math.min(1, (e - 1) / STUMP_THIN), h = hash2(tx * 13 + 5, ty * 17 + 9);
-    if (hash2(tx * 41 + 3, ty * 37 + 8) < STUMP_GONE) { v = 6; break; }
-    if (h < STUMP_LAIN) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
-    else if (hash2(tx * 31 + 4, ty * 11 + 6) < STUMP_BURIED * f) v = 3;
-    break;
-  }
-  // the one trunk a knot of felled pines left lying (`cut` 2, jungleKnot, js/sim/jungle.js)
-  if (v < 3 && o && o.cut === 2) v = 4 + (hash2(tx * 7 + 1, ty * 5 + 2) < 0.5 ? 1 : 0);
-  // a felled stand (the blast's ring, a merchant's or a hero's clearing) was
-  // cut on the forest's grid, one stump a tile: each stands off its middle
+function stumpLook(tx, ty) {
+  const v = Math.floor(hash2(tx * 23 + 7, ty * 29 + 3) * 3);
   const dx = Math.round((hash2(tx * 19 + 6, ty * 23 + 1) * 2 - 1) * STUMP_SCATTER[0]);
   const dy = -Math.floor(hash2(tx * 29 + 2, ty * 31 + 5) * (STUMP_SCATTER[1] + 1));
   return { v, dx, dy };
@@ -179,40 +106,7 @@ function drawFooting(o, ex, ey) {
   const c = footingOf(o);
   ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
 }
-// A FORK's round: outside each base the side lanes leave the mid road, and
-// three roads crossing was a ragged blob of paving. It is a built place like
-// the roost: one kerbed round over the crossing, the lanes leaving through
-// its mouths. Paint only: the ground under it walks as it did. Its middle is
-// the side lanes' first and last point (laneLine, js/sim/lanes.js).
-const FORK_OUT = 1.4; // tiles toward the field from the lanes' first point the roads' crossing lies
-function forkFootingOf(i) {
-  const key = 'fork' + i;
-  let c = footingCvs.get(key);
-  if (c) return c;
-  const L = laneLine(0).pts, p = i ? L[L.length - 1] : L[0], F = FOOTINGS.fork, M = FOOT_PAD + FOOT_JOIN, o = (i ? -FORK_OUT : FORK_OUT) / Math.SQRT2;
-  const q = { cx: (p.x + o + 0.5) * TILE, cy: (p.y - o + 0.5) * TILE, ax: F.rx - FOOT_PAD, ay: F.ry - FOOT_PAD };
-  c = document.createElement('canvas'); c.width = (F.rx + M) * 2; c.height = (F.ry + M) * 2; c.kind = key;
-  c.wx = Math.floor(q.cx) - F.rx - M; c.wy = Math.floor(q.cy) - F.ry - M;
-  paintKerbRound(c.getContext('2d'), F, c, c.width, c.height, [q]);
-  footingCvs.set(key, c);
-  return c;
-}
-function drawForkFootings(ex, ey) {
-  for (let i = 0; i < 2; i++) {
-    const c = forkFootingOf(i);
-    if (c.wx - ex > WV_W || c.wy - ey > WV_H || c.wx + c.width < ex || c.wy + c.height < ey) continue;
-    ctx.drawImage(c, Math.round(c.wx - ex), Math.round(c.wy - ey));
-  }
-}
-// the roosts' rounds go down before the flat pass, so the flat objects lie on the
-// paving, not under it
-function drawRoostFootings(ex, ey) {
-  drawForkFootings(ex, ey);
-  for (const sp of pads) drawRoostFooting(sp, roostStalls(sp), ex, ey);
-}
 function drawFootings(ex, ey) {
-  const held = new Set(); // a stall a roost's round holds is drawn with it (drawRoostFootings)
-  for (const sp of pads) for (const q of roostStalls(sp)) held.add(q);
   for (const o of structures) if (FOOTINGS[o.type] && !o.dead) drawFooting(o, ex, ey);
-  for (const b of robots) if (b.merchant && stallUp(b.stall) && !held.has(b.stall)) drawFooting(b.stall, ex, ey);
+  for (const b of robots) if (b.merchant && stallUp(b.stall)) drawFooting(b.stall, ex, ey);
 }

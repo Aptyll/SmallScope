@@ -44,9 +44,9 @@ const amctx = airMask.getContext('2d');
 const gradeCv = document.createElement('canvas');
 const grctx = gradeCv.getContext('2d');
 let airOn = false; // the air layer holds something this frame (the replay banks it too)
-const airRiders = []; // this frame's players on a zipline's handle or in the air on a hero's dash over the scenery (CLIVUS's vault), held out of the y-sorted pass for the air layer (render())
+const airRiders = []; // this frame's players in the air on a hero's dash over the scenery (CLIVUS's vault), held out of the y-sorted pass for the air layer (render())
 const airBox = { x0: 0, y0: 0, x1: 0, y1: 0 }; // the air layer's used box this frame, in its own px: all that is graded and blitted
-const AIR_PAD = 56; // px round a rider or faller the box keeps: the name tag's half-width and the frame
+const AIR_PAD = 56; // px round a body in the air the box keeps: the name tag's half-width and the frame
 const AIR_TOP = 72; // px above a rider's feet the box reaches: the body, the frame and the name over it
 function airGrow(x0, y0, x1, y1) {
   if (x0 < airBox.x0) airBox.x0 = x0; if (y0 < airBox.y0) airBox.y0 = y0;
@@ -102,9 +102,7 @@ const ZOOM_IN_ROWS = 75;    // close enough to read a face
 const ZOOM_MIN = TARGET_ROWS / ZOOM_OUT_ROWS; // 0.67 at 360 rows
 const ZOOM_MAX = TARGET_ROWS / ZOOM_IN_ROWS;  // 4.8 at 360 rows
 const ZOOM_EASE = 16;     // per second, frame-rate independent
-const DROP_ZOOM = ZOOM_MIN; // the eagle ride's fixed framing: the max-out view (see the eagle drop banner)
-const DROP_OPEN_ZOOM = TARGET_ROWS / 180; // the ride's first frame: tight on your seat, pulled out to DROP_ZOOM over the opening (applyZoom, js/sim/sim.js)
-const ZOOM_FLOOR = Math.min(ZOOM_MIN, DROP_ZOOM); // widest world buffer we ever need
+const ZOOM_FLOOR = ZOOM_MIN; // widest world buffer we ever need
 // The view a match opens at: every world pixel two canvas pixels, so the
 // 16px art reads twice its old size and the screen holds 180 rows of world.
 // Whole, so it is a rung on every display; the wheel still zooms out from it.

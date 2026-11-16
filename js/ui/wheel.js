@@ -149,15 +149,10 @@ function drawSelection(ox, oy, now) {
 // the "you're close enough" signal.
 function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || window.DBG.hideUI) return;
-  if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
-  if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
+  if (player.charging || player.fallT > 0 || player.dodgeT > 0) return;
   // a MERCHANT in reach: its counter's own key (the SHOP action, keyPress, js/app/input.js),
   // shown beside whatever the work key would take
   drawShopHint(ox, oy);
-  // a zipline overhead, the work key's first claim (keyPress again)
-  if (drawZipHint(ox, oy)) return;
-  // ...then a deer in reach (keyPress again)
-  if (drawRideHint(ox, oy)) return;
   let t = workTarget(player);
   // what the hands take on their own (autoWorks: a tree, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
@@ -239,38 +234,6 @@ function promptW(verb, action) {
   action = action || 'work';
   return pixelTextWidth(keyCap(action)) + 6 + 3 + pixelTextWidth(verb);
 }
-
-// The zipline's prompt: a cap over the cable at the body's own column while
-// it stands under either side's line (zipNear, js/sim/zipline.js - the
-// resolver keyPress clips on with), and beside it the lane the cable runs
-// down, as the pick's position emblem (posIcon, js/ui/select.js): every
-// cable looks alike from under it, and the emblem says top, mid or bot.
-const ZIP_LANE_POS = ['top', 'mid', 'bot']; // a cable's lane -> its emblem (POS11, js/ui/select.js)
-function drawZipHint(ox, oy) {
-  const near = zipNear(player);
-  if (!near) return false;
-  const icon = pos11Icon(ZIP_LANE_POS[near.z.lane], '#f4f7ff');
-  const w = promptW('', 'work') + 2 + icon.width + 2;
-  const x = Math.round(player.x - ox - w / 2);
-  const y = Math.max(1, Math.min(WV_H - 11, Math.round(player.y + 4 - zipLift(near.z, near.d) - oy - 19))); // clear of the cable, and of the name tag stamped over the world (drawWorldText)
-  drawKeyPrompt(x, y, '', keyHeld('work'));
-  const ix = x + promptW('', 'work') - 1;
-  ctx.fillStyle = '#121418'; ctx.fillRect(ix, y - 1, icon.width + 2, icon.height + 1);
-  ctx.drawImage(icon, ix + 1, y - 1);
-  return true;
-}
-
-// The deer's prompt, the zipline's grammar: a bare cap over the back of the
-// wild deer in reach (rideNear, js/sim/wildlife.js - the resolver keyPress hops
-// on with). The deer is the affordance; the cap only says which key takes it.
-function drawRideHint(ox, oy) {
-  const a = rideNear(player);
-  if (!a) return false;
-  const w = promptW('', 'work');
-  drawKeyPrompt(Math.round(a.x - ox - w / 2), Math.round(a.y - oy - RIDE_HINT_Y), '', keyHeld('work'));
-  return true;
-}
-const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
 // 9x11 pixel mouse, the "click" key-cap. Only the LEFT button carries colour
 // (gold = the game's "active" accent, hot orange while pressed); the right

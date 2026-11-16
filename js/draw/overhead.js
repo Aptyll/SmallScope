@@ -83,7 +83,7 @@ const BAR_NEUTRAL = '#f2cc6a';
 // bar takes the freed row (HP_ROWS_ALONE), and its name wears a softer rim
 // (NAME_RIM_SOFT) than your own, which keeps the full ink
 const HP_ROWS_ALONE = 3, NAME_RIM_SOFT = '#39446b';
-function staminaShown(p) { return p === player || p.dodgeCharges < DODGE_CHARGES || !!p.mount; } // a rider keeps it: the deer's bar hangs off its frame row
+function staminaShown(p) { return p === player || p.dodgeCharges < DODGE_CHARGES; }
 const STAM_COL = '#f4f7ff', STAM_GHOST = '#9aa4c0'; // the fill, and the dimmer chunk just spent draining into place
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
@@ -362,8 +362,8 @@ function drawLevelBadge(rx, topY, level, s, lit) {
 // prey's alarm in stamina white, a wolf's in its threat red - rising out of
 // the head over its first tenth of a second and gone the frame the sight is.
 // It turns where the stun stars turn, and the stars win: a stunned body is
-// seeing nothing. So a deer running wears the reason over its head, and one
-// grazing on wears the absence of it.
+// seeing nothing. So a rabbit running wears the reason over its head, and one
+// nibbling on wears the absence of it.
 function drawSenseMark(cx, topY, e, col, s) {
   const k = s || 1, lift = e.senseT < 0.05 ? 2 : e.senseT < 0.1 ? 1 : 0;
   drawWorldText('!', cx - k, topY + lift * k, col, k);
@@ -458,40 +458,6 @@ function bigBuildReveal(o) {
   return { rows, h, edgeY: (o.ty + structH(o)) * TILE - rows };
 }
 
-// The barracks (STRUCTS.barracks, structures.js) wears the bay's sprite, so
-// its overlay is the bay's geometry: the shutter over the doorway while no
-// wave is rolling, the next soldier sliding down it as one does, the wave
-// clock on the flank's plate filling toward the next roll-out in the side's
-// paint, the beacon amber while a column is leaving, and the hp bar once hurt.
-function drawBarracksOverlay(o, px, sy, now) {
-  const t = STRUCTS.barracks;
-  if (o.queue > 0 && o.rollT <= 0.4) {
-    const set = SPRITES.robotTeam[skin(o.team === undefined ? 0 : o.team)] || SPRITES.robot;
-    const spr = set[Math.floor(now * 8) % 2];
-    const k = 1 - o.rollT / 0.4;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(px + 14, sy + 13, 20, 24); ctx.clip();
-    ctx.drawImage(spr, px + 18, sy + 26 - Math.round(12 * (1 - k)));
-    ctx.restore();
-  }
-  const shut = Math.round(23 * (1 - o.door));
-  for (let i = 0; i < shut; i++) {
-    ctx.fillStyle = i === shut - 1 ? '#1c2130' : (i % 3 === 2 ? '#5b6473' : '#98a1b0');
-    ctx.fillRect(px + 14, sy + 13 + i, 20, 1);
-  }
-  ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 35, sy + 23, 10, 9);
-  ctx.fillStyle = '#3b4150'; ctx.fillRect(px + 36, sy + 24, 8, 2); ctx.fillRect(px + 36, sy + 28, 8, 2);
-  ctx.fillStyle = TEAMS[skin(o.team === undefined ? 0 : o.team)].mark;
-  ctx.fillRect(px + 36, sy + 24, Math.max(1, Math.round(8 * (1 - Math.min(1, o.waveT / t.waveT)))), 2);
-  if (o.queue > 0) ctx.fillRect(px + 36, sy + 28, Math.min(8, o.queue), 2);
-  const slat = sy + 17 + (Math.floor(now * 5) % 3) * 2;
-  ctx.fillStyle = '#6c7486';
-  ctx.fillRect(px + 5, slat, 6, 1); ctx.fillRect(px + 37, slat, 6, 1);
-  ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 44, sy - 4, 2, 5); ctx.fillRect(px + 42, sy - 7, 6, 4);
-  ctx.fillStyle = o.queue > 0 ? (Math.floor(now * 4) % 2 ? '#ff9a3c' : '#7a3a1c') : '#6c7486';
-  ctx.fillRect(px + 43, sy - 6, 4, 2);
-  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team, undefined, o);
-}
 
 // Everything the bay animates or reports, drawn over the baked sprite. Bay
 // geometry is the sprite's: doorway cols 14-33, rows 13-35, floor row 36;

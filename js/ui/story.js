@@ -40,7 +40,7 @@ function storyBirdHit(e) {
   if (low && Math.round(e.hp * 100 / e.maxHp) >= low.hp) return;
   let by = -1, bd = STORY_ROOST_R;
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team !== e.team) continue;
+    if (!q.active || q.dead || q.team !== e.team) continue;
     const d = Math.hypot(q.x - e.x, q.y - e.y);
     if (d < bd) { bd = d; by = q.id; }
   }

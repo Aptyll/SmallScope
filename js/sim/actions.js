@@ -52,7 +52,7 @@ const STRUCT_HIT_DMG = 25; // RAW axe damage per E swing against an ENEMY buildi
 
 // The roll as a weapon. A dash goes *through* anything small - rabbits,
 // wolves, robots, other players - swiping each of them once per roll and
-// leaving them seeing stars; anything too big to go through (a deer, a tree,
+// leaving them seeing stars; anything too big to go through (a bear, a tree,
 // a building) is a tackle instead, which hurts and stuns both sides
 // and ends the roll where it hit. Everything scales off the speed the roll is
 // actually carrying, so a dash launched out of an ice slide lands far harder
@@ -105,21 +105,11 @@ function workTargetAt(p, tx, ty) {
   return { o, tx, ty, near };
 }
 
-// the cable under the local player's pointer (zipUnder, js/sim/zipline.js), while
-// it is on the ground with the world under the pointer and nothing open over
-// it - or null. The cable pass lights the strand on it and the guide line
-// walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
-function hoverZip() {
-  if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return null;
-  if (player.dead || player.zip >= 0 || inAir(player)) return null;
-  return zipUnder(mouseWX(), mouseWY());
-}
-
 // E: swing the axe at the cursor's tile. Held E repeats every swing
 // cooldown; the weapon comes back on its own once the cooldown runs out.
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0) return; // both hands are on the ability
   const t = workTarget(p);
   if (!t || !t.near) return;
   atkCancel(p); // work drops the draw
@@ -184,7 +174,7 @@ function autoTarget(p) {
 // with a fall, a roll, a stun or an ability, waits.
 function autoWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || inAir(p) || p.zip >= 0) return;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0) return;
   const t = autoTarget(p);
   if (!t) return;
   p.autoSwing = true;
@@ -194,11 +184,9 @@ function autoWork(p) {
 // dodge roll: dash with i-frames in the held movement direction (8-way),
 // falling back to the facing direction when no key is down
 function tryDodge(p) {
-  if (p.mount) { rideLeap(p); return; } // on deer-back the key is the leap (js/sim/wildlife.js)
   if (p.dodgeT > 0 || p.dodgeCharges <= 0 || p.fallT > 0 || p.dead || p.stunT > 0 ||
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   breakRecall(p); // the roll is the one way YOU end your own recall channel
-  if (p.zip >= 0) zipEnd(p, false); // ...and the way off the zipline's handle
   let dx = p.input.mx, dy = p.input.my;
   if (!dx && !dy) {
     dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
@@ -293,7 +281,7 @@ function tackleObjAhead(p, nx, ny) {
 }
 
 // Everything the roll is touching this step. Small units are swiped and
-// passed through, once each per roll (p.rollHit); a deer is swiped and then
+// passed through, once each per roll (p.rollHit); a bear is swiped and then
 // stops the roll dead. Friendly units and teammates are passed through
 // untouched - you roll under them, you do not run them down.
 function rollSweep(p) {
@@ -302,12 +290,12 @@ function rollSweep(p) {
   const dmg = rollDmg(p, sp), stun = rollLerp(ROLL_STUN, rollPow(p, sp));
 
   for (const a of animals) {
-    if (!unitFoe(p, a) || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
+    if (!unitFoe(p, a) || p.rollHit.includes(a)) continue; // your side's own beast is rolled under
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB, ab: 'roll' });
     if (a.hp > 0 && !isAnchored(a)) stunUnit(a, stun); // a bear is not knocked out of its stride by a body
-    if (a.kind === 'deer' || isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
+    if (isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
   }
   for (const b of robots) {
     if (!unitAlive(b) || b.team === p.team || p.rollHit.includes(b)) continue;
@@ -352,7 +340,7 @@ function nearestDryTile(x, y, p, r0 = 1) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
       const tx = ctx0 + dx, ty = cty0 + dy;
-      if (!inWorld(tx, ty) || waterAt(tx, ty) || isSolidTile(tx, ty) || cisternBlocks(tx, ty)) continue;
+      if (!inWorld(tx, ty) || waterAt(tx, ty) || isSolidTile(tx, ty)) continue;
       if (iceBreakWet((tx + 0.5) * TILE, (ty + 0.5) * TILE + 4)) continue; // the feet would land in a break's water (js/sim/icebreak.js)
       const d = Math.hypot(dx, dy);
       if (d < bd) { bd = d; best = { tx, ty }; }
@@ -420,7 +408,7 @@ function pickSnowdrop(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
   o.readyAt = state.elapsed + SNOWDROP_CD;
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team !== p.team) continue;
+    if (!q.active || q.dead || q.team !== p.team) continue;
     shieldUnit(q, DAWN_SHIELD, 0, 'dawn');
     sfxFor(q, 'shieldUp');
     burst(q.x, q.y - 8, '#ffd84a', 5, 26, 0.45);
@@ -506,7 +494,7 @@ const DMG_TYPES = {
 // A player is a Player, an animal has a `kind`, a bot (a soldier, a merchant) says `bot`.
 // Asked here rather than duck-typed at each site (`e.input`, `e.tx`), so a new
 // kind of walker is one line rather than a hunt through every hit in the game.
-// a body that is neither a player nor one of the barracks' (or the eagle's)
+// a body that is neither a player nor one of the waves' (or the eagle's)
 // machines is wildlife - the machines say so themselves (`bot`, makeRobot /
 // spawnMerchant, js/sim/robots.js), because a soldier carries a `kind` too
 function isAnimalUnit(e) { return !(e instanceof Player) && !e.bot; }
@@ -523,11 +511,11 @@ function unitMidY(e) { return e.y - (e.alt || 0) - 6; }
 // and nothing may stand between a player and the shop they walked to.
 function unitAlive(e) {
   if (!e || e.dead || e.merchant) return false;
-  return e instanceof Player ? e.active && !inAir(e) : true;
+  return e instanceof Player ? e.active : true;
 }
 // Whose side a unit is on. Wildlife has none (-1): neutral to everyone and
 // therefore fair game to everyone, which is exactly how the world already
-// treats a deer - all but a hero's own beast (HERO_SUMMON), which wears its side. For the sides that do have one this mirrors enemyOf's rule.
+// treats a rabbit - all but a hero's own beast (HERO_SUMMON), which wears its side. For the sides that do have one this mirrors enemyOf's rule.
 function unitTeam(e) { return e.team === undefined ? -1 : e.team; }
 // A thing left lying in the world - a planted standard, a fire, a shot in flight -
 // carries `owner` and `team` rather than being a body itself. This is the
@@ -572,9 +560,9 @@ function unitUnder(src, wx, wy) {
   for (const q of players) if (enemyOf(src, q) && Math.abs(wx - q.x) <= 8 && wy >= q.y - 14 && wy <= q.y + 4) return q;
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
-    if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
-    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' ? 9 : 16;
-    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' ? 14 : 34;
+    if (!unitFoe(src, a)) continue; // your side's own beast is no mark
+    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' || a.kind === 'scrap' ? 9 : 16;
+    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' || a.kind === 'scrap' ? 14 : 34;
     const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }
@@ -608,7 +596,7 @@ function structsNear(src, x, y, r) {
 // `half` rad to either side. A blade's cut and every swung ability
 // sweep exactly this shape and draw exactly this shape (the
 // `wedge` fx, js/sim/abilities.js), so what the snow shows is what the blade
-// reaches. A body counts by its centre plus its own radius, so a big deer
+// reaches. A body counts by its centre plus its own radius, so a big bear
 // standing just off the rim is still under the edge.
 function inCone(x, y, a, r, half, qx, qy, qr) {
   const dx = qx - x, dy = qy - y;
@@ -729,7 +717,6 @@ function stunUnit(e, t, src, firm) {
     breakRecall(e);                                // ...and so is the recall (js/sim/recall.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.dash = ''; } // (a hero's dash too: HERO_DASH, js/sim/heroes.js)
-    if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/sim/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast and the shield
     // were just knocked out of, you are told. Only the local player, only a
     // FRESH stun (a second blow inside the window extends it and says nothing
@@ -737,14 +724,12 @@ function stunUnit(e, t, src, firm) {
     // the strip's numbers cannot say that while the body is not answering.
     if (cur <= 0) sfxFor(e, 'dazed');
   }
-  if (e.zip >= 0) zipEnd(e, true);      // any body's hold on the zipline's handle: dropped at rest under the cable
-  if (e.rider) rideEnd(e.rider, true); // a stunned deer throws whoever is on it
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
 
 // Rooted: pinned where you stand, and nothing that moves you will fire. A player
 // reads it through abilityMoveMul, an animal or a bot through unitMoveMul -
-// both end at zero, so a snared deer stands in the jaws exactly as long as a
+// both end at zero, so a snared wolf stands in the jaws exactly as long as a
 // snared rival does.
 function rootUnit(e, t, src) {
   t *= ccMul(e);
@@ -753,7 +738,6 @@ function rootUnit(e, t, src) {
   ccCredit(e, cur, t, src);
   e.rootT = Math.max(cur, t);
   e.rootMax = cur > 0 ? Math.max(e.rootMax || 0, e.rootT) : e.rootT; // the hold's full length, what its plate drains from (drawStatusPlate)
-  if (e.zip >= 0) zipEnd(e, true); // a rider is pulled off the cable
   if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }
 // Slowed: a multiplier on everything that moves the body, for a window.

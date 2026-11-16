@@ -68,7 +68,7 @@
 // - HERO_HELD: fn(p) -> the player carrying body p for now, or null (PORTITOR's carry):
 //   a held body stands where its carrier does, is never pushed apart (separateUnits),
 //   leaves no tracks (the trample pass) and is drawn up on its carrier (drawPlayer);
-//   its hands stay free, like a deer's rider.
+//   its hands stay free.
 // An ability row may also carry recast(p) (true: the key pressed again is
 // its second half, castSlam), ok(p) (false: the press is refused) and aimHeld
 // (its wind-up holds the weapon on the aim: castAims, js/draw/bodies.js).

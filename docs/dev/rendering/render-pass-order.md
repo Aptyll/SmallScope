@@ -24,9 +24,8 @@
    ground marks, `HERO_GROUND`, and every wind-up's telegraph);
 6. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots,
    sorted by feet Y; empty player slots draw as team-tinted
-   silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
-   the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
-   its hole's waterline and cut at it - [the cistern](../code-map/sim/cistern.md)); a body under a big
+   silhouettes via `drawGhost`; the orca out of the water, `drawOrcaBreach`, sorts by its hole's
+   waterline and is cut at it); a body under a big
    hit is drawn off its spot by `hitNudge` (held where it was struck, then 1 px back); a hero, a
    soldier or a beast more than `BODY_CULL` px outside the world view never joins the array
    (`bodyOffView`, js/draw/passes.js: nothing it draws reaches that far from its feet), unless it wears a
@@ -34,8 +33,7 @@
    record, the callout anchor);
 7. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
-8. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
-    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
+8. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → arrows (`drawShaft`);
 9. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's sight line, bolt and spent bolt, js/draw/towers.js);
 10. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
@@ -44,14 +42,12 @@
     [gameplay.md](../gameplay/robots.md#farming));
 11. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](drawing-a-thousand-of-something.md#the-wind-field))
-    → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
-    exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cables, span by span with its sag and wind lean —
-    over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
-    js/draw/zipline.js);
+    → `drawEagles` (a bird on its perch, while `state.drop` exists; one driven off draws on the
+    air layer, below);
 12. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](debug-overlays-hitboxes-and-routes.md));
-13. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
-    the riders and every faller) → the zipline riders and a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
+13. the air layer (`ctx = actx`): `drawEagles(…, true)` (a bird driven off, climbing away, and its
+    shadow) → a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see
@@ -62,9 +58,8 @@ a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn c
 **`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](the-hud-corners/the-hover-tooltip.md)'s one answer for the frame) →
-`renderUI` (skipped in `title` and `drop`) →
-`renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropHeadline` (mode
-`play`, the landing's PROTECT YOUR EAGLE while your bird's wings settle, [the arrival](eagle-drop-mode-drop.md)) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
+`renderUI` (skipped in `title`) → `drawDropHeadline` (mode `play`, the opening's PROTECT YOUR
+EAGLE while your bird's wings settle, [the perch](the-perch.md)) → `renderWorldMap` (the M map, in `play`) → `renderWheel` (the radial menu — after
 the chart, because a ping wheel opens over it) → `renderSettings` → `renderTitle` (the main
 menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
 death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw

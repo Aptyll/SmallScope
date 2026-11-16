@@ -25,10 +25,9 @@ const AI_ABIL_T = 0.5;    // s between ability rolls
 const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a ranged hero holds off the rival bird at (outside its gust)
-const AI_GATE = 128;      // px up the road from a base's junction where a walk to a roost stages
 const AI_PATROL_T = 40;   // s of a guard's cycle...
-const AI_PATROL_OUT = 14; // ...the first of which it spends on patrol up the road
-const AI_PATROL_D = 360;  // px up the road from the base's junction the patrol reaches
+const AI_PATROL_OUT = 14; // ...the first of which it spends on patrol up a lane
+const AI_PATROL_D = 22;   // tiles out along the lane from the perch the patrol reaches
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 // the two objectives as a bot sees them: a roosting bird, or null
 function aiRivalEagle(p) { const e = state.drop && state.drop.eagles[1 - p.team]; return e && e.state === 'down' ? e : null; }
@@ -65,7 +64,7 @@ function aiSideHuman(team) { for (const q of players) if (q.team === team && aiP
 function aiWard(p) {
   let best = null, bd = Infinity;
   for (const q of players) {
-    if (q === p || q.team !== p.team || !aiPerson(q) || q.dead || inAir(q)) continue;
+    if (q === p || q.team !== p.team || !aiPerson(q) || q.dead) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d < bd) { bd = d; best = q; }
   }
@@ -80,7 +79,7 @@ function aiSituation() {
     if (!e || e.state !== 'down') return null;
     const s = { e, team, hp: e.hp / e.maxHp, hitT: e.hitT, attackers: 0, defenders: 0, human: false, threat: false };
     for (const q of players) {
-      if (!q.active || q.dead || inAir(q)) continue;
+      if (!q.active || q.dead) continue;
       const d = Math.hypot(q.x - e.x, q.y - e.y);
       if (d >= AI_ROOST_R) continue;
       if (q.team === team) s.defenders++;
@@ -125,36 +124,12 @@ function aiOnGuard(p, prof) {
   const T = aiPlan(p.team), r = aiRank(p);
   return r >= T.nPush && r < T.nPush + T.nGuard ? e : null;
 }
-// the staging point of a roost: AI_GATE px up the road from the base's
-// junction (e.mouth) toward the field, on the road itself, so the way in is
-// always road -> junction -> the road through the hollow -> bird (roadNest/roadPoint, world.js)
-function aiLaneGate(e) {
-  return roadPoint(roadNest(e.team).u + (e.team === 0 ? 1 : -1) * AI_GATE / (TILE * Math.SQRT2));
-}
-// Walk toward a roost the way its lane allows: from the field to the gate,
-// in through the mouth, then down the lane to the bird (reach tiles off it).
-// Returns steerTo's distance, or -1 for no route this frame. A route straight
-// at a bird from the field runs the pathfinder out in the border's trees and
-// leaves the bot wedged in a pocket - which is what this exists to prevent.
-function aiToRoost(p, e, steerTo, reach) {
-  if (aiInLane(p, e)) return steerTo(e.x, e.y, reach, AI_ROOST_BUDGET);
-  const dm = Math.hypot(e.mouth.x - p.x, e.mouth.y - p.y);
-  if (dm <= 24) return steerTo(e.x, e.y, reach, AI_ROOST_BUDGET);
-  const g = aiLaneGate(e);
-  const dg = Math.hypot(g.x - p.x, g.y - p.y);
-  if (dg > 40 && dm > AI_GATE * 0.75) return steerTo(g.x, g.y, 2, AI_ROOST_BUDGET);
-  return steerTo(e.mouth.x, e.mouth.y, 1, AI_ROOST_BUDGET);
-}
-// is p inside a roost's lane - the band from the bird out to the lane's
-// mouth on the treeline - or at the bird itself? Off it, the way to the
-// roost is the mouth (aiInLane is asked before every walk to a bird).
-function aiInLane(p, e) {
-  const vx = e.mouth.x - e.x, vy = e.mouth.y - e.y, L2 = vx * vx + vy * vy || 1;
-  const px = p.x - e.x, py = p.y - e.y;
-  const t = (px * vx + py * vy) / L2;
-  const perp = Math.abs(px * vy - py * vx) / Math.sqrt(L2);
-  return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
-}
+// Walk toward a roost: the bird stands in the open on its plaza, so the
+// route is the pathfinder's own, with a roost walk's budget. Returns
+// steerTo's distance, or -1 for no route this frame.
+function aiToRoost(p, e, steerTo, reach) { return steerTo(e.x, e.y, reach, AI_ROOST_BUDGET); }
+// is p on a roost's plaza, the open disc round the bird (BASE_R)?
+function aiInLane(p, e) { return Math.hypot(p.x - e.x, p.y - e.y) < BASE_R * TILE; }
 // THE FORT IN A PUSHER'S WAY, as the tile of it nearest the bot (a part of a
 // big building carries its own tx/ty), or null: a rival road tower
 // (towerNear, js/sim/towers.js) with the bot's own wave under it to take the
@@ -244,7 +219,7 @@ function aiNearestEnemy(p, prof, anchors) {
 // the head of its side's wave on the road: the own soldier nearest the
 // rival bird that is still on the march (outside AI_ROOST_R of it) and near
 // enough to be worth walking with - a push rides its wave (rung 5c)
-const AI_PACK = 5;       // relentless pushers that must be together at the rally (their cable's end) before the pack goes on
+const AI_PACK = 3;       // relentless pushers that must be together at the rally (aiRally) before the pack goes on
 const AI_PACK_R = 200;   // px round the rally a pusher counts as at it (bodies milling at a point stand 70-150 px apart)
 const AI_REGROUP = 2;    // pushers every other side meets at the rally before going in (the team brain)
 const AI_REGROUP_T = 15; // s one waits there before it goes in alone
@@ -298,50 +273,16 @@ function aiRoad(p, dt) {
   return best;
 }
 // where a bot with nothing to do wanders next: round its leash when it has
-// one, else near the middle of the map or near its own landing, by halves
+// one, else near the middle of the map or near its own start, by halves
 // (rung 11)
 function aiRoamPick(p, leash) {
   const ai = p.ai;
   if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; return; }
-  const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
+  const toward = rng() < 0.5 ? { x: FIELD_C * TILE, y: FIELD_C * TILE } :
     { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
   const w = aiMood(p).roam; // (a wild bot wanders wider)
   ai.wx = toward.x + rand(-14, 14) * TILE * w;
   ai.wy = toward.y + rand(-14, 14) * TILE * w;
-}
-
-// ---- the ride ---------------------------------------------------------------
-// A bot rides the zipline (the `zipline` banner, js/sim/zipline.js) the way a hand
-// does, through the same hop intent: every walk the ladder orders goes
-// through steerTo, and steerTo asks aiZipWorth first - would walking to
-// either side's cable, riding to the point nearest the goal and walking the
-// rest beat the feet by ZIP_AI_GAIN seconds? (The better of the two, if both
-// would.) If so it walks to the mount
-// (zipMount, js/sim/zipline.js: the nearest point of the cable whose ground a body can stand
-// on), presses the hop under it, holds the stick along the cable toward the
-// exit while it rides, and presses the hop again ZIP_AI_OFF short of the
-// exit. The goal is re-read every think, so a rider called home mid-cable
-// simply holds the other way. Nothing here decides WHERE a bot goes - the
-// rungs do - only how it covers the ground; and a ride with no rung wanting
-// it (aiThink returned without a walk) is let go of at once, so a bot never
-// coasts to the terminus by accident. A fight (rung 3) and a camp on it
-// (rung 4) let go first: nobody rides past an enemy holding the handle.
-const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
-const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
-// the feet's time over a straight line, at the bot's own walk
-function aiWalkT(p, d) { return d / statOf(p, 'ms'); }
-// the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
-// feet: { z, d0, d1 } (px along at the mount and the exit), else null
-function aiZipWorth(p, x, y) {
-  const feet = aiWalkT(p, Math.hypot(x - p.x, y - p.y));
-  let best = null, bt = feet - ZIP_AI_GAIN;
-  for (const z of zips) {
-    if (!z) continue;
-    const nb = zipNearest(z, p.x, p.y), ng = zipNearest(z, x, y);
-    const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
-    if (ride <= bt) { bt = ride; best = { z, d0: nb.d, d1: ng.d }; }
-  }
-  return best;
 }
 
 // the camp monster nearest of those in a fight this bot is in. A camp is
@@ -371,7 +312,7 @@ function aiNearestAnimal(p) {
   let best = null, bd = AI_HUNT;
   for (const a of animals) {
     // The two midline camps' kinds are never a hunt: a lone bot pulling one dies to it
-    if (a.dead || a === p.ai.huntAvoid || a.rider || !inSight(p.team, a)) continue; // a ridden deer is its rider's; one in the fog is not there
+    if (a.dead || a === p.ai.huntAvoid || !inSight(p.team, a)) continue; // one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
@@ -451,14 +392,11 @@ function aiSpend(p, inp, steerTo) {
 
 function updateAI(p, dt) {
   const ai = p.ai;
-  ai.zipUsed = false;
   if (p.dead) ai.packGo = false;
   aiThink(p, dt); // the ladder (js/ai/ai-ladder.js)
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
   if (!p.dead) skillStrike(p, aiProfile(p), dt); // ...and the mark it named is struck in the hands' own rhythm
   aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
-  // riding with no rung wanting the ride this think: let go (the ride, above)
-  if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
 // THE HEAL a bot takes, as a human takes it: it drinks a potion under
 // AI_POTION_HP - early, since the heal comes over POTION_T and a level-1 body
@@ -467,7 +405,7 @@ function updateAI(p, dt) {
 const AI_POTION_HP = 0.6;   // share of max health under which a bot drinks
 function aiDrink(p) {
   const s = potionSlot(p);
-  if (s < 0 || p.potT > 0 || p.dead || inAir(p) || roostRing(p)) return;
+  if (s < 0 || p.potT > 0 || p.dead || roostRing(p)) return;
   if (p.hp < p.maxHp * AI_POTION_HP) p.input.useItem = s;
 }
 // THE WAY HOME (js/sim/recall.js). Read after the ladder, so it overrides
@@ -483,7 +421,7 @@ const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beat
 const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
 const AI_RING_FULL = 0.9;       // share of max health a bot waits in its ring for
 function aiRecall(p) {
-  if (p.dead || inAir(p) || p.zip >= 0 || p.mount) return;
+  if (p.dead) return;
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return;
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would

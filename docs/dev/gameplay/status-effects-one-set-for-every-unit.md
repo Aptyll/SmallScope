@@ -35,7 +35,6 @@ sets it nowhere.** The only things that grant it are deliberate:
 | --- | --- | --- |
 | `tryDodge` | `DODGE_T` + 0.05 s | the roll *is* the dodge — [Dodge roll](dodge-roll.md) |
 | `Player.reset` — so `respawnPlayer` | 3 s (0 on the very first spawn) | nobody is spawn-camped |
-| `landPlayer` | 2 s | a beat of grace while the snow settles |
 | the ice-hole scramble (`updatePlayer`, js/sim/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
 
 `rollTackle` **drops** them ([the roll is a hit](dodge-roll.md#the-roll-is-a-hit)).

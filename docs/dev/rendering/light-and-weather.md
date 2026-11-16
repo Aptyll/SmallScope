@@ -79,8 +79,8 @@ the other way round:
 - **God rays** (`godRays`) — **parallel** shafts of low sun on one heading (`RAY_ANG`, drifting on
   a long sine), and they are a **moment, not weather**. Low sun is the light of an arrival and of
   the top of the day, and a beam that is always there stops being a beam, so `rayLight()` gates the
-  whole pass to two windows and it is dark the rest of the time: the **entire eagle ride** plus
-  `RAY_AFTER` (4 s) past the landing — `landPlayer` stamps `state.rayT`, `updateFx` counts it down —
+  whole pass to two windows and it is dark the rest of the time: the first `RAY_AFTER` (4 s) of a
+  match — `matchHandOver` stamps `state.rayT`, `updateFx` counts it down —
   and a **~15 s window around noon** (`RAY_NOON`, the middle of the daylight half). Both ease in and
   out over `RAY_WINDOW_FADE`. The gate is read *first*, so outside those windows the eight blits and
   the 240 motes behind them never run at all. The sun is far away, so nothing here converges: shafts fanned

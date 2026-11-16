@@ -188,10 +188,10 @@ function vaultFits(p, x, y) {
   const r = PLAYER_R;
   for (let ty = Math.floor((y - r) / TILE); ty <= Math.floor((y + r) / TILE); ty++) {
     for (let tx = Math.floor((x - r) / TILE); tx <= Math.floor((x + r) / TILE); tx++) {
-      if (isSolidTile(tx, ty, p, true) || waterAt(tx, ty)) return false;
+      if (isSolidTile(tx, ty, p) || waterAt(tx, ty)) return false;
     }
   }
-  return !cisternCrowds(x, y, r);
+  return true;
 }
 function vaultSpot(p, a) {
   const nx = Math.cos(a), ny = Math.sin(a);

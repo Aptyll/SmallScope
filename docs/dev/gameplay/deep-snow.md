@@ -1,7 +1,7 @@
 # Deep snow
 
 Deep snow is the valley's **brush**: the DEEP band of the [snow depth map](../world.md#snow-depth),
-laid by hand in mirrored patches (`BRUSH_PATCHES`, `layBrush`, [js/sim/depth.js](../../../js/sim/depth.js))
+laid by hand in mirrored patches (`FIELD_BRUSH`, js/sim/field.js; `layBrush`, [js/sim/depth.js](../../../js/sim/depth.js))
 and in each warren's pool. It does not slow anybody.
 
 **Hiding** is the fog of war's rule ([fog of war](fog-of-war.md)), so every reader of sight obeys

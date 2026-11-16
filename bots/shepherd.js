@@ -13,7 +13,7 @@ defineBot({
 
   think(obs) {
     const me = obs.me;
-    if (me.dead || me.aboard || me.falling) return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } };
+    if (me.dead) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
     if (me.skillPts > 0) { const k = pickKey(me, me.attack === 'cut' ? [2, 1, 3, 0] : [0, 1, 3, 2]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }

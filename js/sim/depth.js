@@ -1,6 +1,6 @@
 'use strict';
-// The valley's one map of how deep the snow lies, and the deep snow that is
-// the valley's BRUSH: hand-placed patches a body hides in.
+// The field's one map of how deep the snow lies, and the deep snow that is
+// the field's BRUSH: hand-placed patches a body hides in.
 // ------------------------------------------------------------ snow depth
 // Snow piles where the wind drops it, so the map is a set of DRIFTS, each a
 // mound of depth: the deep BRUSH patches (layBrush), the warrens' pools
@@ -16,7 +16,7 @@
 const DEPTH_DEEP = 0.6;     // snowDepth at and above which snow is DEEP: the brush
 const DEPTH_MID = 0.25;     // ...and the band under it: a drift you see but do not hide in
 const DRIFT_HOLLOW = 0.2;   // the deepest a hollow's dusting gets: under DEPTH_MID, a dusting and never a drift
-const DRIFT_WIND_ARC = 0.4; // rad either side of the creek's line the prevailing wind may blow
+const DRIFT_WIND_ARC = 0.4; // rad either side of the field's diagonal the prevailing wind may blow
 const DRIFT_RAG = 0.16;     // how far a lee pad's edge wanders either way, as a share of its width
 const LEE_AMP = 0.42;       // the tallest pad of snow in one object's own lee: the MID band, never DEPTH_DEEP
 const LEE_WOODS = 4;        // breakers among its eight neighbours past which an object is forest floor and gets no pad
@@ -51,7 +51,7 @@ function driftDepth(D, fx, fy) {
   if (q * q >= 1) return 0;
   return D.amp * (1 - q * q) * (1 - 0.2 * t);
 }
-// the shallow dusting in the valley's hollows: low on the position noise
+// the shallow dusting in the field's hollows: low on the position noise
 function hollowDepth(fx, fy) {
   const n = vnoise(fx / 9 + 41.7, fy / 9 + 13.3);
   return n < 0.35 ? DRIFT_HOLLOW * (0.35 - n) / 0.35 : 0;
@@ -95,29 +95,12 @@ function brushOf(x, y) {
 // ---- the brush ---------------------------------------------------------------
 // THE BRUSH: deep snow, hand-placed - the same patches every match, each a
 // stand of frosted reeds in a drift (js/draw/depth.js draws both) that hides
-// whoever is in it from the other side (brushHide, js/sim/fog.js). RED's half
-// is listed in the road's frame (baseTile, js/sim/base.js: u along the road
-// from RED's corner, s across it, - the top side); BLUE's is the same list
-// mirrored across the creek's line, which is (tx, ty) -> (ty, tx), so both
-// sides get the same ambushes; a patch ON the creek's line (the cistern's)
-// is its own mirror, laid once. Per patch: [u, s, half-length, half-width
-// (tiles), angle (deg, world: 0 east, 90 south)] - an ellipse with a
-// wandering rim.
-//   lane:   one by each side lane, on its inside edge, short of the lane's middle
-//   mid:    one either side of the mid road
-//   jungle: one each side of the road between the mid road and the dens
-//   river:  one each side short of the creek, toward the bears
-//   ring:   the cistern's floor, one drift either side of the road through it,
-//           in the middle of the floor: clear of the road's verge and of the wall
-const CIST_DRIFT_S = 6.9; // tiles off the road's middle a ring drift lies: its rim stays a tile and a half off the road's verge and its skirt inside the wall (9.5)
-const BRUSH_PATCHES = [
-  [60, -25.5, 4, 1.7, -70], [60, 25.5, 4, 1.7, -20], // lane, inside the first tower
-  [86, -55, 4, 1.7, -85], [86, 55, 4, 1.7, -5],     // lane, out by the second tower
-  [90, -8.5, 3.5, 1.5, -45], [90, 8.5, 3.5, 1.5, -45], // mid
-  [76, -13, 3, 2, 45], [76, 13, 3, 2, 45],         // jungle
-  [103, -28, 3.5, 2, 45], [103, 30, 3.5, 2, 45],   // river
-  [(WORLD - 1) / 2 / MAP_K, -CIST_DRIFT_S / MAP_K, 2.8, 1.1, -45], [(WORLD - 1) / 2 / MAP_K, CIST_DRIFT_S / MAP_K, 2.8, 1.1, -45], // ring
-].map(([u, s, a, b, ang]) => [u * MAP_K, s * MAP_K, a, b, ang]); // MAP_K spreads where they stand, never their size
+// whoever is in it from the other side (brushHide, js/sim/fog.js). The patches
+// are the field's FIELD_BRUSH (js/sim/field.js): stadiums listed for RED's top
+// quarter and laid in all four (fieldFour), a patch on the middle row or
+// column laid once as its own twin. Its rim wanders, and the wander reads the
+// quarter's own folded point (fieldFold), so the four copies are mirror images
+// by construction.
 const BRUSH_AMP = 0.95;   // the depth in a patch past its rim's slope
 const BRUSH_EDGE = 0.6;   // tiles in from the rim it takes to reach BRUSH_AMP
 const BRUSH_SKIRT = 1;    // tiles out from the rim its skirt (the MID band) runs
@@ -129,12 +112,11 @@ const brushes = [];       // the patches, as drifts with brush: true (also in dr
 // how the fog of war asks whether an eye is in a patch or right next to it
 function brushIn(D, fx, fy) {
   if (D.pool) return poolIn(D, fx, fy) - DEPTH_DEEP / D.amp * D.edge; // a pool is deep from there in
-  const dx = fx - D.x, dy = fy - D.y;
-  const a = dx * D.c + dy * D.s, b = -dx * D.s + dy * D.c;
-  const r = Math.hypot(a / D.a, b / D.b), th = Math.atan2(b * D.flip / D.b, (D.self ? Math.abs(a) : a) / D.a);
-  const wob = 1 + BRUSH_WOB * (vnoise(Math.cos(th) * 2 + D.key * 7.3, Math.sin(th) * 2 + D.key * 3.1) - 0.5) * 2
+  const x = fieldFold(fx), y = fieldFold(fy), r = Math.min(D.hx, D.hy);
+  const th = Math.atan2(y - D.qy, x - D.qx);
+  const wob = BRUSH_WOB * (vnoise(Math.cos(th) * 2 + D.key * 7.3, Math.sin(th) * 2 + D.key * 3.1) - 0.5) * 2
     + BRUSH_WOB2 * (vnoise(Math.cos(th) * 5 + D.key * 11.7, Math.sin(th) * 5 + D.key * 5.9) - 0.5) * 2;
-  return (wob - r) * D.b;
+  return wob * r - fieldBox(x, y, D.qx - D.hx, D.qy - D.hy, D.qx + D.hx, D.qy + D.hy, r);
 }
 // one patch's depth: DEEP from its rim in, rising to BRUSH_AMP; a skirt in
 // the MID band outside it
@@ -154,22 +136,21 @@ function brushNear(x, y, r, ok) {
   }
   return best && { x: best.x * TILE, y: best.y * TILE };
 }
-// lay the patches, both sides', and clear what stands in them: the pines,
-// bushes, stumps and snags inside BRUSH_CLEAR of the rim, and the ice
-// (to snow). Anything else on a tile there - a landmark, a camp's
-// prop - stands, and the reeds round it. No rng(): placed, never rolled.
+// lay the patches, all four quarters', and clear what stands in them: the
+// pines, stumps and snags inside BRUSH_CLEAR of the rim (never a wall pine:
+// the field's edge stands), and the ice (to snow). Anything else on a tile
+// there - a camp's prop - stands, and the reeds round it. No rng(): placed,
+// never rolled.
 function layBrush() {
   brushes.length = 0;
-  BRUSH_PATCHES.forEach(([u, s, a, b, ang], k) => {
-    const t = baseTile(0, u, s);
-    // a patch on the mirror line is its own twin: laid at -45 degrees its long
-    // axis crosses the line square, so its rim wobbles alike either side of it (D.self)
-    const self = Math.abs(u - (WORLD - 1) / 2) < 0.01;
-    for (const side of self ? [0] : [0, 1]) {
-      const g = (side ? 90 - ang : ang) * Math.PI / 180;
+  FIELD_BRUSH.forEach(([qx, qy, hx, hy], k) => {
+    const seen = new Set();
+    for (const [x, y] of fieldFour(qx, qy)) {
+      if (seen.has(x + ',' + y)) continue; // on the middle row or column: its own twin
+      seen.add(x + ',' + y);
       const D = {
-        brush: true, key: k, self, x: side ? t.ty : t.tx, y: side ? t.tx : t.ty, a, b, c: Math.cos(g), s: Math.sin(g), flip: side ? -1 : 1,
-        len: a * (1 + BRUSH_WOB + BRUSH_WOB2) + BRUSH_SKIRT, head: 0, wid: 0, bend: 0, // driftTiles' reach
+        brush: true, key: k, qx, qy, hx, hy, x, y,
+        len: Math.max(hx, hy) * (1 + BRUSH_WOB + BRUSH_WOB2) + BRUSH_SKIRT, head: 0, wid: 0, bend: 0, // driftTiles' reach
       };
       brushes.push(D); drifts.push(D);
       const R = Math.ceil(D.len + BRUSH_CLEAR);
@@ -177,7 +158,7 @@ function layBrush() {
         if (!inWorld(tx, ty) || brushIn(D, tx + 0.5, ty + 0.5) < -BRUSH_CLEAR) continue;
         const i = idx(tx, ty), o = objects[i];
         if (ground[i] === 1) ground[i] = 0;
-        if (o && BRUSH_FELLS[o.type]) objects[i] = null;
+        if (o && BRUSH_FELLS[o.type] && !o.wall) objects[i] = null;
       }
     }
   });
@@ -186,7 +167,7 @@ const BRUSH_FELLS = { tree: true, stump: true, snag: true };
 
 // ---- laying the drifts ----------------------------------------------------
 // what breaks the wind: anything worldgen stood up that stands above the
-// snow (a pine, a snag, a den, a hut) - each holds a lee pad (layLees)
+// snow (a pine, a snag, a den) - each holds a lee pad (layLees)
 function driftBreak(tx, ty) {
   const o = objAt(tx, ty);
   return !!o && (!!(OBJECTS[o.type] && OBJECTS[o.type].solid) || o.type === 'part');
@@ -211,8 +192,8 @@ function driftTiles(D, pad) {
 function layDrifts() {
   drifts.length = 0; brushes.length = 0;
   driftCell = new Array(WORLD * WORLD).fill(null);
-  // the prevailing wind: within DRIFT_WIND_ARC of the creek's line, either
-  // way along it, so each side's half of the valley wears its lee pads alike
+  // the prevailing wind: within DRIFT_WIND_ARC of the field's diagonal,
+  // either way along it (the lee pads are dress, never cover: LEE_AMP)
   const a = Math.PI / 4 + (hash2(9011, 373) - 0.5) * 2 * DRIFT_WIND_ARC + (hash2(17, 9901) < 0.5 ? Math.PI : 0);
   driftWind.ang = a; driftWind.dx = Math.cos(a); driftWind.dy = Math.sin(a);
   // ...and the ground's swells (SNOW_ANG, js/draw/ground.js) lie along it, so
@@ -227,25 +208,21 @@ function layDrifts() {
   }
   layLees();
 }
-// THE WARRENS' SNOW (CAMPS.meadow, js/sim/camps.js): each warren's ring of pines
-// holds a round pool of deep snow - brush like any other - that fills its clearing to the trees,
-// laid in the camp's own frame (campFrame) so both warrens wear the same
-// pool, mirrored. MEADOW_POOL in tiles: `r` the pool's radius off the camp's
-// centre, `edge` how far in from its rim it takes to reach full depth,
-// `ring` the radius of a crust island left in its middle (0: none), `lane`
-// the half-width of a crust lane winding in from the mouth to the middle
-// (0: none). The rim wanders on a fixed wave even about the camp's own axis,
-// so the pool is the same on every seed. Its rabbits never leave it
+// THE WARRENS' SNOW (CAMPS.meadow, js/sim/camps.js): each warren holds a
+// round pool of deep snow - brush like any other - that fills its clearing,
+// its rim wandering on a fixed wave in the camp's own mirrored frame (C.fx,
+// C.fy), so all four warrens wear the same pool, mirrored. MEADOW_POOL in
+// tiles: `r` the pool's radius off the camp's centre, `edge` how far in from
+// its rim it takes to reach full depth. Its rabbits never leave it
 // (warrenHolds, js/sim/wildlife.js).
-const MEADOW_POOL = { r: 6.9, edge: 1.4, ring: 0, lane: 0 };
+const MEADOW_POOL = { r: 4.6, edge: 1.2 };
 const MEADOW_AMP = 0.95;
 function layMeadowDrifts() {
   for (const C of camps) {
     if (C.key !== 'meadow') continue;
-    const F = campFrame(C), P = MEADOW_POOL;
+    const P = MEADOW_POOL;
     drifts.push({
-      pool: true, x: C.tx + 0.5, y: C.ty + 0.5, ax: F.ax, ay: F.ay, ox: F.ox, oy: F.oy,
-      r: P.r, edge: P.edge, ring: P.ring, lane: P.lane, amp: MEADOW_AMP,
+      pool: true, x: C.tx + 0.5, y: C.ty + 0.5, fx: C.fx, fy: C.fy, r: P.r, edge: P.edge, amp: MEADOW_AMP,
       len: P.r + 1, head: 0, wid: 0, bend: 0, // driftTiles' reach: the pool and its rim
     });
   }
@@ -257,15 +234,12 @@ function poolDepth(D, fx, fy) {
 }
 // ...tiles in from its rim (negative outside)
 function poolIn(D, fx, fy) {
-  const dx = fx - D.x, dy = fy - D.y, a = dx * D.ax + dy * D.ay, o = dx * D.ox + dy * D.oy;
-  const d = Math.hypot(a, o), th = Math.atan2(a, o);
-  let m = D.r * (1 + 0.05 * Math.cos(5 * th) + 0.03 * Math.cos(3 * th)) - d; // in from the rim
-  if (D.ring) m = Math.min(m, d - D.ring);                                      // ...out from the island
-  if (D.lane) m = Math.min(m, (o > 0 ? Math.abs(a - 0.9 * Math.sin(o * 0.5)) : d) - D.lane); // ...out from the lane, winding in from the mouth to a round end at the middle
-  return m;
+  const a = (fx - D.x) * D.fx, o = (fy - D.y) * D.fy, th = Math.atan2(a, o);
+  return D.r * (1 + 0.05 * Math.cos(5 * th) + 0.03 * Math.cos(3 * th)) - Math.hypot(a, o);
 }
+
 // Every standing thing out in the open - a pine on the treeline's edge or in
-// a stand's fringe, a stump, a snag, a den, a hut - holds a
+// a stand's fringe, a stump, a snag, a den - holds a
 // small pad of snow in its own lee along driftWind: the same drift shape at a
 // tile or two long and LEE_AMP tall, so it lives in the MID band and never
 // slows anybody. Forest floor (LEE_WOODS breakers round it) gets none: the

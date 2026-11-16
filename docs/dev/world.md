@@ -7,82 +7,55 @@ stable per tile.
 
 ## The tile world
 
-- `WORLD = 278` tiles of `TILE = 16` px → a 4448×4448 px world.
-  **`MAP_K` (1.2, core.js) spreads the layout**: every place in the match (the bases, lanes,
-  camps, brush, jungle walls, the treeline's depth and its noise) is written at the old 232-tile
-  scale and multiplied by `MAP_K` where its table is declared; bodies, road widths, camp
-  clearings and the cistern keep their size. The forest border is
-  `BORDER_MIN`/`BORDER_MAX` (30–70 times `MAP_K`) tiles deep round an interior ~158 tiles
-  across, open snow. The two **roost corners** —
-  bottom-left and top-right, where the eagles always come down
-  ([eagle drop](rendering/eagle-drop-mode-drop.md)) — are forested to `ROOST_R` (68 times `MAP_K` tiles from the
-  corner, ~58 along the diagonal) outright: `borderDepth` is the map's own `borderNoise` **or**
-  a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the noise grew
-  there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
-  the road's gate is at least the arc out. The union only adds pines and rolls nothing.
-- `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
-  from the centre at the treeline. Nobody starts there (players land from the eagles,
-  [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the rivers
-  run from each to the centre and round from one to the next, and the ponds and rivers keep
-  clear of them — which is why `RING_N` is frozen at six instead of tracking `MAX_PLAYERS`:
-  the roster's size must not reshape terrain.
+- `WORLD = 140` tiles of `TILE = 16` px (js/sim/core.js) → a 2240×2240 px world, square.
+  **The field** that fills it is one signed distance (`fieldOpen`, js/sim/field.js): negative on
+  ground a body can walk, written for RED's top-left quarter and folded four ways (`fieldFold`,
+  `fieldFour`), so both sides and both halves are the same shape by construction. Two lanes are the
+  two halves of one rounded rectangle round the middle (`laneLoop`); each side's perch sits on it at
+  the middle of its own end ([the perch](rendering/the-perch.md)); a walled jungle fills the inside
+  (`JUNGLE_BOX`, `FIELD_WALLS`, met in smooth unions so every inside corner gets the same fillet);
+  two pits open off the lanes, the orca's above the top one and the black bear's below the bottom
+  one (`LAIR`, `LAIR_MOUTH`); and a pine border at least `FIELD_EDGE` tiles deep stands round it
+  all. RED (team 0) holds the west end, BLUE the east. Nothing rolls.
+- `genWorld()` (first at boot, js/app/boot.js) stands a wall pine (`wall: true`, which never falls:
+  `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
+  is negative, and freezes the orca's pool (ground `1`, `orcaLakeAt`). The camps, towers, stalls,
+  pumps and drifts are laid on it after, each from written-down sites.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
-  [Ice holes](#ice-holes)), `3` the road ([The road](#the-road)). The frozen creek is ground `1`
-  ([the creek](code-map/sim/world.md)). **Open water is `waterAt(tx, ty)`**, a carved hole, the one
-  read every walker, route, spawn and climb-out asks. Ice is **mechanically slippery** (see
-  [Momentum movement](gameplay/momentum-movement-players-only.md)), and worldgen carves it as a travel
-  network: 14 frozen lakes plus winding ~5-tile-wide rivers (`carveRiver` in `genWorld()`) —
-  a spoke from each ring point to the central clearing and a ring linking each point to its
-  neighbour. The shared `carveIce` rule skips existing objects, the ring points, the clearing and
-  everything within `ROAD_ICE_KEEP` (6) tiles of [the road](#the-road)'s edge, so rivers gap
-  naturally around them — and a river running at the road narrows to nothing over
-  `ROAD_ICE_TAPER` (7) tiles first (`carveRiver`'s disc shrinks with `roadDist`), so it peters out
-  instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
+  [Ice holes](#ice-holes)), `3` the road. **Open water is `waterAt(tx, ty)`**, a carved hole, the
+  one read every walker, route, spawn and climb-out asks. Ice is **mechanically slippery** (see
+  [Momentum movement](gameplay/momentum-movement-players-only.md)); the orca's pool is the only ice
+  worldgen lays.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
-  `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `snowdrop`, `den`, `banner`, `trunk`,
-  `pylon`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `boat` and `waypost` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
-  `barracks`, `tower`. `banner` is
-  [the road](#the-road)'s furniture, `trunk` the fallen pine a
-  junction's landmark (`jungleMarks`: each tile it lies across carries the trunk's whole line), `pylon`
-  [the zipline](#the-zipline)'s. `den` (solid, inert scenery
-  two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
-  carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
-  exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
-  HUT: solid, inert, 2×2 by `OBJECTS.hut.w`/`h`, its parts stamped east and north so the anchor is
-  the front row, drawing the whole building). `part` is the filler a multi-tile building (or a prop
-  with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
-  building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
-  is here" read (right-click, cursor, wheel, orders).
+  `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table names the scenery types
+  (`tree`, `snowdrop`, `den`, `stump`, `eagle`, `part` and the rest); the `STRUCTS` table's are
+  `pump` and `tower`. `den` (solid, inert scenery two tiles wide — `OBJECTS.den.w`, so
+  `placeCamps` fills the tile east of it with a `part` — that carries its `site`, the camp record,
+  so a hover on either tile can wear the camp's clock) exists only inside [camps](#camps) (the
+  wolf dens). `part` is the filler a multi-tile building (or a prop with a `w`/`h` in `OBJECTS`)
+  leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid,
+  coloured like its building on both maps, ignored by work swings, and resolved by `structOf()`
+  for every "what building is here" read (right-click, cursor, wheel, orders).
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. A tile written or
   deleted during a match goes through `setTile(i, o)` (null deletes), which marks it for the host's
   wire (`snapTouch`, [the ack-keyed base](../pvp-architecture.md#the-wire-form)); a bare
   `objects[i] = ...` reaches clients only on the wire's slow sweep. Worldgen writes bare.
   Structures go through `destroyStructure` so the `structures` registry stays in sync — it routes
   `STRUCTS` types through `removeStruct`.
-- `pump`, `barracks` and `tower` are the **structures** (see
+- `pump` and `tower` are the **structures** (see
   [Buildings](gameplay/buildings.md)); nobody builds by hand. Each carries `{ maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus the fields its entry's `init` lays (pump `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); barracks `waveT`, `queue`,
-  `rollT`, `born`, `door`; tower `ang`, `tgt`, `chg`, `cd`, `bolt`), and every live one is also referenced from the module-scope `structures`
-  array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
+  buildTotal, dustT, sparkT }` plus the fields its entry's `init` lays (pump `hold`, `cap`, `capBy`, `payT`, `paid`, `lane`: [the gold pumps](gameplay/buildings.md#the-gold-pumps); tower `ang`, `tgt`, `chg`, `cd`, `bolt`), and every live one is also referenced from the module-scope `structures`
+  array so `updateStructures()` never scans the 19,600-tile grid. Nor do the object clocks
   (`flash`/`shake`): `tickObjTimers` (js/sim/sim.js, the
   `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
   once its clocks run down. A clock is started only through `joltObj(o, flash, shake)` or
   `timeObj(o)`, which enrol the object; one set straight on the object never runs.
   `objTimersRescan` rebuilds the set after a load (`saveApply`). Each
-  type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()`,
-  `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
-  helpers. A wreck leaves the tiles empty.
-- The world center is an empty clearing: `CENTER_R` keeps the ice ponds clear of it, so the
-  river spokes meet in open ground.
-- Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
-  roll makes a `TREE_RARE_CHANCE` (25%) of them **gold pines** — the only pines that pay:
-  `YIELD.treeRare` gold (straight to the feller through `awardGold`, the plain gold number and a
-  gold burst; nothing marks one standing), paid by `chopTree()` only when the tree actually
-  falls, so felling is side income ([Economy](gameplay/economy-one-currency.md)). Being a position hash rather than an `rng()`
-  draw, the roll is the same whenever it is asked — `DBG.treeRare(tx, ty)` reports it for any
-  tile, occupied or not.
+  type has one tier and a footprint (`STRUCTS[type].w/h`, 1×1 when absent), with `footprint()` and
+  `structCenter()` as the geometry helpers. A wreck leaves the tiles empty.
+- Every `tree` worldgen stands is a wall pine. `chopTree()` (js/sim/actions.js) still pays a
+  pine that can fall (`YIELD.treeFall`, and `YIELD.treeRare` for one marked `rare`), but none on
+  the 3v3 field can ([Economy](gameplay/economy-one-currency.md)).
 - **The ground is baked once, lazily.** The whole ground lives in one offscreen canvas and the
   frame loop blits the camera window out of it, but nothing is painted at boot: `prepGround()`
   (js/draw/ground.js) readies what the painter reads (`bakeLakes`, `bakeDressing`, `noteCasts`),
@@ -98,7 +71,7 @@ stable per tile.
   pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes) and
-  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, and a roost pad's paving ([the road](#the-road)). The bake also lays the scenery's
+  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, . The bake also lays the scenery's
   [cast shadows](rendering/light-and-weather.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
@@ -114,6 +87,44 @@ stable per tile.
   tile alone would cost the map half a second — under every tile but ice and holes (the road lies
   over snow), and shares the height lattice across the chunk (`snowLatOpen`: a
   tile reads a 12-point square for its own 8, so alone it works out each height about twice).
+
+## The lanes
+
+Lane 0 is the TOP, lane 1 the BOTTOM: each the half of the lanes' loop on its side of the middle,
+from RED's perch to BLUE's (`laneLine`, js/sim/field.js, a point about every tile with the tiles
+along it). A lane is open `LANE_HALF` tiles either side of its centreline, and **the road** is the
+packed earth down its middle, `ROAD_HALF` either side, plus the plaza round each perch
+(`laneDist`, `onRoad`; ground `3`). A wave marches its lane's waypoints (`laneWaypoints`,
+`LANE_STEP` apart), and a laner with no column of its own on the lane waits `LANE_HOLD` of the way
+to its middle (`laneHold`). Two towers a side stand on each lane's centreline, one on the straight
+and one on the bend by the perch (`TOWER_SPOTS`, js/sim/towers.js, folded with `fieldFour`).
+The road's pixels are `paintRoadOverlay` (js/draw/paving.js).
+
+## The bases
+
+A side's base is its PERCH: a disc `BASE_R` tiles round a point on the loop at the middle of its
+own end (`basePerch`; RED's at field x `BASE_X`), its plaza of stones `PLAZA_R` round the bird.
+The eagle sits there from the first frame ([the perch](rendering/the-perch.md)), the soldiers walk
+out of it both ways, and the side's merchant keeps a stall behind it (`MERCH_STALL`,
+js/sim/robots.js). `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
+
+## Camps
+
+The neutral monsters stand at fixed, mirrored sites (`CAMP_SITES`, js/sim/camps.js), written for
+RED's top quarter and folded to the other three like the field (`campSites`): a site on the middle
+row or column is its own twin. Per side: two wolf dens in the top half (`resource`), two SCRAP
+PILES of stray robots in the bottom half (`scrap`, placeholder art), and a rabbit WARREN in deep
+snow by the base mouth (`meadow`). The orca's pool is the pit above the top lane and the black
+bear's den the pit below the bottom one, one each for the whole map. Nothing rolls. What lives
+in them: [wildlife](gameplay/wildlife.md#camp-monsters-neutral-until-hit). The gold pumps stand
+one each side of the middle (`PUMP_SPOT`, js/sim/pumps.js).
+
+### Snow depth
+
+The brush is deep snow at written-down places (`FIELD_BRUSH`, js/sim/field.js, laid in all four
+quarters by `layBrush`, js/sim/depth.js), plus each warren's round pool (`layMeadowDrifts`).
+`snowDepth` is the whole map of how deep the snow lies; `brushOf`/`deepAt` ask after the deep
+band a body hides in ([fog of war](gameplay/fog-of-war.md)).
 
 ### The ice shore
 
@@ -138,7 +149,6 @@ array only ever flips ice ↔ hole at runtime and both are lake, so it never nee
 | --- | --- | --- |
 | **LIP** (`w` 1) | gentle wander, 2 px shade band | the sheet's two tones on a dithered low noise |
 | **DEEP** (`w` 2) | gentle wander, 3 px deeper band | pale shallows along the shore, then two steps darker to the middle, off `lakeDepth` |
-| **RIVER** (`w` 0, never rolled: the frozen creek's, `CREEK_ICE_STYLE`) | harder than a pond's: a three-step rim under the bank facing away from the sun (`RIVER_RIM`), a bright face and the crest's line on the sunward one (`RIVER_FACE`, `RIVER_CREST`) | `riverTone`, in the creek's own frame: a darker clear channel down the middle, wind-laid snow streaks along the flow on the sheet either side, a crack bank to bank every few tiles, leaning and jagged by `hash2`, snow swept across it in tongues along the wind (`RIVER_SWEPT*`), and a few frost glints a tile (`RIVER_GLINTS`) |
 
 The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
 the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
@@ -164,7 +174,7 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
   a tile the deep band owns, so a pile that looks deep is always deep snow. Nothing is stamped on
   a tile an object stands on (a landmark on the ice covers its own).
 - **Drifts in the lee**: the map's mid band drawn per pixel (`bakeDrifts`, reading `leeDepth` and
-  `driftsDepth`) - the pads the map lays behind a pine or the hut, and the skirt round each
+  `driftsDepth`) - the pads the map lays behind a pine or a den, and the skirt round each
   deep drift - as a low flat pile, sunward rim lit and a pixel of shade past its lee. Its shape is
   the map's, so it ends where the deep band's own look begins. Nothing on ice, the road or a
   tile something stands on.
@@ -184,16 +194,16 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
 
 ## One map
 
-The game plays **one map**: one wide interior inside a ring of pines, the only wood the
-border's. Two other map shapes (THICKET, all woods with paths cut through; FROZEN ISLES, one
-lake with wooded islands) and the path network they needed were removed for now; the PR that
-removed them names the commit to recover them from.
+The game plays **one map**: the 3v3 field, two lanes round a walled jungle
+([the tile world](#the-tile-world)). The old 5v5 valley (three lanes, the creek, the cistern, the
+ziplines and the landmarks) was cut with the 3v3 field; the PR that cut it names the commit to
+recover it from.
 
 ## Determinism and noise
 
 There is **one map**, grown from `MAP_SEED` (471, js/sim/core.js), a constant that is never rolled
 and never sent: every match and every screen stand on the
-same valley, and a page is born on it. **Everything random derives from two numbers** and there is
+same field, and a page is born on it. **Everything random derives from two numbers** and there is
 no other entropy source: `MAP_SEED` for the map, `SEED` for the match. `SEED` is rolled when the
 page loads, so no two matches play out alike (bots' first heroes, tie-breaks, the orca's wanders,
 every `rng()` roll), unless `?seed=N` pins it, which a tool uses to replay a bot match; it never
@@ -203,26 +213,21 @@ matters online: a client paints what the host sends. Players never see either. `
 The info stack (`drawTags`, **F3** or the INFO DISPLAY row in the ESC
 menu, default **off**) prints fps, frame times and the framed player's tile, no seed.
 
-- **The map is made on streams of its own.** Each worldgen pass that rolls draws from
-  `worldRng(name)` (js/sim/core.js: the pass's name hashed into `MAP_SEED`, carrying its own `rand`
-  and `randi`): `genWorld`'s `'ponds'` and `'rivers'`, `placeLandmarks`' `'landmarks'`. Every
-  other boot pass rolls nothing (positions, `hash2`, `vnoise`, written-down sites). So a pass that
-  changes moves only its own layer, and the rest of the valley stays where it was
-  (CLAUDE.md hard rule 3). Every screen grows the map itself from `MAP_SEED`, so worldgen never
-  reads `rng()`, `Math.random()` or anything local.
+- **The map rolls nothing.** The field, the camps' sites, the brush, the towers and the stalls are
+  all written down, and per-tile looks read `hash2`/`vnoise`. A worldgen pass that ever rolls must
+  draw from `worldRng(name)` (js/sim/core.js: the pass's name hashed into `MAP_SEED`, carrying its
+  own `rand` and `randi`), so a pass that changes moves only its own layer (CLAUDE.md hard rule 3).
+  Every screen grows the map itself, so worldgen never reads `rng()`, `Math.random()` or anything
+  local.
 - `rng` is the **match's** `mulberry32(SEED)` stream: runtime rolls (particle bursts, animal
-  wanders, drop velocities) and the beasts the match starts with (`spawnAnimals` and the passes
-  after it at boot). Its state is saved, so a loaded match draws the next number the saved one would.
+  wanders, drop velocities) and the beasts the match starts with (`stockCamps` at boot). Its state is saved, so a loaded match draws the next number the saved one would.
 - `hash2(x, y)` (js/draw/ground.js) mixes `MAP_SEED` in, and `vnoise(x, y)` is built on it. Both are pure functions
   of position — use them for anything that must stay stable per tile no matter when
   it is asked (ground texture, forest boundary, tree rare-drops, the day's weather, which every
   screen works out for itself).
-  `borderDepth()` rides on `vnoise`, so the forest's edge is the map's own, never the match's.
 - `fxRng` (`SEED ^ 0x9e3779b9`) feeds the snowflakes (the boot fall and `fitFlakes()`' resize
   top-ups), so window size and zoom cannot move a match's rolls. The [camps](#camps) roll nothing at all -
-  their sites are written down - and neither does [the creek](code-map/sim/world.md); the creek and the
-  camps' clearings are the boot passes that write `ground` after `genWorld`, so the map's ground
-  hash includes them.
+  their sites are written down.
 - `MAP_SEED` and `SEED` are `const`s in the rng banner and `hash2` closes over `MAP_SEED`, so nothing may call `hash2`
   before that line runs. Everything that does — `genWorld`, the ground bake, the panel bakes — is
   further down in boot order.

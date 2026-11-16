@@ -2,10 +2,10 @@
 // Each PNG stands in the world as a beast would: the game draws it, its shade, its health
 // frame and the light over it, so nothing is pasted on afterwards. The frame is STAGED: the
 // art is not in the game yet. Needs `node app/server.js` up.
-//   node app/art/stage.js --out frame.png --art a.png,b.png [--refs hero,wolf,deer,bear] [--hero ARMATOS]
+//   node app/art/stage.js --out frame.png --art a.png,b.png [--refs hero,wolf,rabbit,bear] [--hero ARMATOS]
 //        [--ground snow|dirt|both] [--k 4] [--time 0.45] [--bars 0] [--face left|right] [--cut refs/]
 // --art PNGs are 1x, drawn facing --face (default left; the other way is mirrored).
-// --cut DIR also saves today's sprites as 1x PNGs (hero.png, wolf.png, deer.png, bear.png,
+// --cut DIR also saves today's sprites as 1x PNGs (hero.png, wolf.png, bear.png,
 // rabbit.png) for the board and the checks to measure against.
 // Prints one JSON line: the crop of the frame that holds the line-up.
 'use strict';
@@ -15,9 +15,9 @@ const { openGame, args } = require('../media/browser');
 
 (async () => {
   const A = args(process.argv.slice(2));
-  if (!A.out && !A.cut) { console.log('usage: node app/art/stage.js --out frame.png --art a.png[,b.png] [--refs hero,wolf,deer,bear] [--ground snow|dirt|both] [--cut DIR]'); process.exit(1); }
+  if (!A.out && !A.cut) { console.log('usage: node app/art/stage.js --out frame.png --art a.png[,b.png] [--refs hero,wolf,rabbit,bear] [--ground snow|dirt|both] [--cut DIR]'); process.exit(1); }
   const art = String(A.art || '').split(',').filter(Boolean).map((f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base64'));
-  const refs = String(A.refs == null ? 'hero,wolf,deer,bear' : A.refs).split(',').filter(Boolean);
+  const refs = String(A.refs == null ? 'hero,wolf,rabbit,bear' : A.refs).split(',').filter(Boolean);
   const grounds = A.ground === 'both' || !A.ground ? ['snow', 'dirt'] : [A.ground];
   const k = +(A.k || 4);
   const pg = await openGame({ seed: +(A.seed || 7), width: 1280, height: 720, dpr: 1 });
@@ -33,7 +33,7 @@ const { openGame, args } = require('../media/browser');
     const base = clipFrame;
     clipFrame = (set, a) => (a.staged ? a.staged[a.dir] : base(set, a)); // a staged beast wears its PNG
     // a strip of one ground wide enough for the line-up: snow is ground 0, the worn dirt is the lanes'
-    const widths = o.refs.map((r) => (r === 'bear' ? 76 : r === 'deer' ? 44 : 26)).concat(sets.map((s) => s.left.width + 14));
+    const widths = o.refs.map((r) => (r === 'bear' ? 76 : 26)).concat(sets.map((s) => s.left.width + 14));
     const total = widths.reduce((a, b) => a + b, 0);
     const tilesW = Math.ceil(total / TILE) + 4;
     // a strip of open ground wide enough for the line-up: clean snow, or the road's worn earth
@@ -87,7 +87,7 @@ const { openGame, args } = require('../media/browser');
     const cut = {};
     if (o.cut) {
       const url = (c) => { const d = document.createElement('canvas'); d.width = c.width; d.height = c.height; d.getContext('2d').drawImage(c, 0, 0); return d.toDataURL(); };
-      for (const [name, kind] of [['wolf', 'wolf'], ['deer', 'deer'], ['bear', BEAR], ['rabbit', 'rabbit']]) if (SPRITES[kind]) cut[name] = url(SPRITES[kind].left.idle[0]);
+      for (const [name, kind] of [['wolf', 'wolf'], ['bear', BEAR], ['rabbit', 'rabbit']]) if (SPRITES[kind]) cut[name] = url(SPRITES[kind].left.idle[0]);
     }
     return { rows: out, k: DBG.getZoom().k, cut, heroName: CLASSES[hero].name };
   }, { art, refs, grounds, k, time: A.time != null ? +A.time : 0.45, hero: String(A.hero || 'ARMATOS').toUpperCase(), face: A.face || 'left', cut: !!A.cut });

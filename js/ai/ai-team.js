@@ -124,13 +124,22 @@ function aiTeamNew() {
   return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, pos: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, bearN: 0, answerT: 0, nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
+// THE RALLY a side's pushers meet at before they go in on the rival bird:
+// the middle of the lane where the rival has fewer towers standing (the
+// top on a tie), in px - read live, so a fallen tower turns the next push
+function aiRally(team) {
+  const up = [0, 0];
+  for (const o of structures) if (o.type === 'tower' && o.team !== team && o.hp > 0 && o.lane >= 0) up[o.lane]++;
+  const lane = up[1] < up[0] ? 1 : 0, L = laneLine(lane);
+  return lanePx(laneAt(L, L.at[L.at.length - 1] / 2));
+}
 
 // the side's bots, the way aiRank has always counted them: living, on the
 // ground, driven by the brain (a bot FILE's seat plays its own plan,
 // js/ai/bot-api.js), never the local player
 function aiSideBots(team) {
   const out = [];
-  for (const q of players) if (q.active && !q.dead && !inAir(q) && q.team === team && q.control === 'ai' && !q.botId && q !== player) out.push(q);
+  for (const q of players) if (q.active && !q.dead && q.team === team && q.control === 'ai' && !q.botId && q !== player) out.push(q);
   return out;
 }
 // how many of a side are down (dead and coming back, or out for good)
@@ -480,7 +489,7 @@ function aiStalkTarget(p, prof) {
 function aiOdds(p, foe, prof) {
   let them = 0, us = 0;
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q)) continue;
+    if (!q.active || q.dead) continue;
     if (q.team === p.team) { if (Math.hypot(q.x - p.x, q.y - p.y) < AI_ODDS_R) us++; }
     else if (enemyOf(p, q) && Math.hypot(q.x - foe.x, q.y - foe.y) < AI_ODDS_R && Math.hypot(q.x - p.x, q.y - p.y) < seenAt(q, prof.sight, p.team)) them++;
   }
@@ -503,7 +512,7 @@ function aiFallBack(p, prof, foe, odds) {
 function aiFallBackTo(p, foe) {
   let best = null, bd = Infinity;
   for (const q of players) {
-    if (q === p || !q.active || q.dead || inAir(q) || q.team !== p.team) continue;
+    if (q === p || !q.active || q.dead || q.team !== p.team) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (Math.hypot(q.x - foe.x, q.y - foe.y) < AI_ODDS_R * 0.5) continue; // one of the fight, not a way out of it
     if (d < bd) { bd = d; best = q; }
@@ -517,7 +526,7 @@ function aiFallBackTo(p, foe) {
 // them is the call)
 function aiHumanCall(team) {
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team !== team || !isHuman(q)) continue;
+    if (!q.active || q.dead || q.team !== team || !isHuman(q)) continue;
     if (q.hurtT <= 0 || q.hp > q.maxHp * 0.7) continue;
     let foe = null;
     for (const r of players) if (enemyOf(q, r) && Math.hypot(r.x - q.x, r.y - q.y) < 200) { foe = r; break; }

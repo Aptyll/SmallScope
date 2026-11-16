@@ -58,9 +58,7 @@ camp is its glyph in its camp's ink (while it is cleared and your side knows it,
 white under the glyph, stamped after every dot: `drawCampMark`/`drawChartClocks`, as
 on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
-(`drawChartCamps`/`chartTag`). The ziplines on both maps are `drawMapZip` (js/draw/marks.js): a
-crisp two-pixel ribbon in the side's ink, pylon to pylon, each pylon a pale pixel on it
-(`MAP_ZIP_PYLON`), drawn under every body. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
+(`drawChartCamps`/`chartTag`). Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is

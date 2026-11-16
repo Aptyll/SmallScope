@@ -116,12 +116,10 @@ function paintGroundTile(g, tx, ty) {
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
-        if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py, RIVER_GLINTS); // the orca's pool: the river's few glints of frost (rough ice that holds a foot, slickUnder)
-        else if (inner && lakeStyle[idx(tx, ty)] === CREEK_ICE_STYLE) paintRime(g, tx, ty, px, py, RIVER_GLINTS); // the river: a few glints of the same frost
-        // ...and, where any road reaches the lake, the earth spilling over
+        if (inner && orcaLakeAt(tx, ty)) paintRime(g, tx, ty, px, py, POOL_GLINTS); // the orca's pool: a few glints of frost (rough ice that holds a foot, slickUnder)
+        // ...and, where a lane reaches the ice, the earth spilling over
         // this tile's share of the crossing, rimmed along its own ragged edge
-        // rather than along the tile's sides. The diagonal road never meets
-        // ice (ROAD_ICE_KEEP).
+        // rather than along the tile's sides
         if (laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
       } else {
         // the drifts, every pixel (the `snow's pixels` banner below)
@@ -147,15 +145,6 @@ function paintGroundTile(g, tx, ty) {
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
       }
-      // a fallen pine on the bank (jungleMarks) reaches up to two tiles past the tiles it holds
-      for (let dy = -2, seen = []; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-        const tr = objAt(tx + dx, ty + dy);
-        if (!tr || tr.type !== 'trunk' || seen.includes(tr.x0 * 8192 + tr.y0)) continue;
-        seen.push(tr.x0 * 8192 + tr.y0);
-        paintTrunk(g, tr, px, py);
-      }
-      // the cistern's sills and the shadow its stone throws (js/draw/cistern.js)
-      paintCisternFlat(g, tx, ty, px, py);
       // last, over everything lying on the ground: the shade the scenery
       // standing around this tile throws across it (the `cast shadows` banner)
       paintCastShade(g, tx, ty, px, py);
@@ -269,11 +258,9 @@ function repaintGround(tx, ty) {
 const ICE_STYLES = [
   { id: 'lip',   w: 1, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2 },
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
-  { id: 'river', w: 0, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 3, river: true }, // never rolled: the frozen creek's own (riverTone)
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
 const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's pool's style, whatever its roll (bakeLakes)
-const CREEK_ICE_STYLE = ICE_STYLES.findIndex((s) => s.river); // ...and the frozen creek's: river ice, lane to lane
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -281,12 +268,6 @@ const ICE_MID = [rgbOf('#a6cde2'), rgbOf('#add2e6')];      // ...the water deepe
 const ICE_DEEP = [rgbOf('#8fbcd8'), rgbOf('#96c1db')];     // ...the middle
 const BANK_SHADE = rgbOf('#9ec5da'), BANK_SHADE_DEEP = rgbOf('#8db6d0'), BANK_SHADE2 = rgbOf('#aacfe2');
 const BANK_LIP = rgbOf('#ffffff'), BANK_FACE = rgbOf('#e0f2f9');
-// THE RIVER'S BANKS are drawn harder than a pond's, so the map's spine has an
-// edge: under the bank that faces away from the sun a rim of three steps,
-// dark first; on the sunward bank a bright face and, on the snow behind it,
-// the line of the bank's crest in shade
-const RIVER_RIM = [rgbOf('#7aa9c7'), rgbOf('#8fbbd6'), rgbOf('#a3cbe1')], RIVER_FACE = rgbOf('#f4fbfe'), RIVER_CREST = rgbOf('#c3d6ea');
-
 let lakeStyle = null; // per tile: its lake's index into ICE_STYLES, 255 off the ice
 let lakeDepth = null; // per tile: tiles in from the lake's edge (1 = on it), 0 off the ice
 function isLake(tx, ty) {
@@ -320,9 +301,8 @@ function relabelIce(tx, ty) {
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
-  // the orca's pool (js/sim/world.js) is labelled first, and always DEEP: the
-  // dark middle is where it swims; then the frozen creek's, always plain. Whatever
-  // ice either meets takes its style.
+  // the orca's pool (js/sim/field.js) is labelled first, and always DEEP: the
+  // dark middle is where it swims. Whatever ice it meets takes its style.
   const first = [], styleOf = new Map();
   const seed = (c, r, inside, s) => {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -331,7 +311,6 @@ function bakeLakes() {
     }
   };
   seed(orcaPool(), Math.ceil(ORCA_LAKE_R + 2), orcaLakeAt, ORCA_ICE);
-  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) if (isLake(tx, ty) && creekIceAt(tx, ty)) { first.push(idx(tx, ty)); styleOf.set(idx(tx, ty), CREEK_ICE_STYLE); }
   for (let o = -first.length; o < N; o++) {
     const i = o < 0 ? first[-o - 1] : o;
     if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
@@ -393,7 +372,6 @@ function depthAtPx(x, y) {
 }
 // the sheet's colour at a pixel (hp: the pixel's own roll)
 function iceTone(x, y, s, hp) {
-  if (s.river) return riverTone(x, y);
   if (s.deep && orcaLakeAt(Math.floor(x / TILE), Math.floor(y / TILE))) return poolTone(x, y);
   const k = vnoise(x / 37 + 3, y / 29 + 5) + (hp - 0.5) * 0.18 > 0.5 ? 0 : 1;
   if (s.deep) {
@@ -405,64 +383,19 @@ function iceTone(x, y, s, hp) {
   return ICE_TONE[k];
 }
 
-// THE FROZEN RIVER's own ice, so it never reads as one more pond: a sheet
-// that remembers it flowed. Down its middle runs the clear channel, darker,
-// where the current froze last; wind-laid snow lies on it in long thin
-// streaks along the flow; and now and then a crack runs bank to bank across
-// it, a dark line with its lit lip under. The streaks keep off the channel. Flat tones meeting on clean edges,
-// no dither. Read in the creek's own frame (creekAt: CQ.a along the water,
-// CQ.n across it from its centre), so every streak follows the bends.
-const RIVER_SHEET = rgbOf('#bddeed');      // the sheet
-const RIVER_CHANNEL = rgbOf('#a9d0e4');    // the clear channel down the middle
-const RIVER_CORE = rgbOf('#9cc6de');       // ...its deepest thread
-const RIVER_STREAK = rgbOf('#d4eaf4');     // wind-laid snow along the flow, on the sheet either side of the channel
-const RIVER_CRACK = rgbOf('#86b2cc'), RIVER_CRACK_LIT = rgbOf('#e6f4fa');
-const RIVER_SNOW = rgbOf('#e9f3fa');        // snow swept across it by the wind
-const RIVER_SWEPT_LONG = 30, RIVER_SWEPT_WIDE = 4.5, RIVER_SWEPT = 0.74; // px per step of that snow's noise along and across the wind, and the noise it lies over
-const RIVER_GLINTS = 3;                    // frost glints on a tile of it well inside the banks
-const RIVER_CHANNEL_W = 0.42;              // share of the half-width the channel takes, either side of the middle
-const RIVER_STREAK_ROW = 2.5;              // px across between streak rows
-const RIVER_CRACK_EVERY = 7;               // tiles along the water between cracks, give or take
-const RIVER_CRACK_JAG = 0.8;               // tiles across the water per leg of a crack's zigzag
-function riverTone(x, y) {
-  const fx = (x + 0.5) / TILE - 0.5, fy = (y + 0.5) / TILE - 0.5;
-  creekAt(fx, fy);
-  const a = CQ.a, n = CQ.n, hw = creekHW(a, n < 0 ? -1 : 1) || 1, t = Math.abs(n) / hw;
-  // a crack across: each one its own line bank to bank, leaning by its hash
-  // and broken into jags (RIVER_CRACK_JAG tiles a leg), never ruler-straight
-  for (let ci = Math.floor(a / RIVER_CRACK_EVERY) - 1, c1 = ci + 2; ci <= c1; ci++) {
-    if (hash2(ci * 7 + 3, 91) >= 0.7) continue;
-    const lean = (hash2(ci * 11 + 5, 37) - 0.5) * 0.7, leg = n / RIVER_CRACK_JAG, k = Math.floor(leg), f = leg - k;
-    const jag = (q) => (hash2(ci * 13 + q * 7, 53) - 0.5) * 0.6;
-    const line = (ci + 0.5) * RIVER_CRACK_EVERY + lean * n + jag(k) + (jag(k + 1) - jag(k)) * f;
-    const off = (a - line) * TILE; // px from the crack's line, along the flow
-    if (off >= 0 && off < 1) return RIVER_CRACK;
-    if (off >= 1 && off < 2) return RIVER_CRACK_LIT;
-  }
-  // snow the wind has swept over the sheet: long tongues lying along the
-  // wind (not the flow), a flat near-white, off the crack lines
-  const u = x * LW_X + y * LW_Y, v = -x * LW_Y + y * LW_X;
-  if (vnoise(u / RIVER_SWEPT_LONG + 9.5, v / RIVER_SWEPT_WIDE + 3.5) > RIVER_SWEPT) return RIVER_SNOW;
-  // a streak: 2 px rows across the flow, each with its own runs along it
-  const row = Math.floor((n * TILE) / RIVER_STREAK_ROW);
-  if (t > RIVER_CHANNEL_W + 0.12 && vnoise(a * 0.22 + row * 5.3, row * 1.9) > 0.72) return RIVER_STREAK; // on the sheet only: a streak down the channel reads as a road's paint
-  const wob = (vnoise(a * 0.18, 7.7) - 0.5) * 0.22;
-  if (t < RIVER_CHANNEL_W * 0.45 + wob * 0.5) return RIVER_CORE;
-  if (t < RIVER_CHANNEL_W + wob) return RIVER_CHANNEL;
-  return RIVER_SHEET;
-}
-
-// THE ORCA'S POOL in the river's ice: its tones, flat and on clean edges, no
-// dither. The sheet at the shore deepens to the clear channel's blue and then
-// the core's at the middle (lakeDepth, its edges wandering on a low noise),
-// with the river's few frost glints over it (paintRime), so the map has one
-// ice. The river's wind-swept tongues are left off: across a wide round sheet
-// they line up into one ruled hatch
+// The pool's tones, flat and on clean edges, no dither
+const POOL_SHEET = rgbOf('#bddeed');      // the sheet
+const POOL_CHAN = rgbOf('#a9d0e4');    // ...deepening
+const POOL_DEEP = rgbOf('#9cc6de');       // ...its deepest
+const POOL_GLINTS = 3;                    // frost glints on a tile of it well inside the shore
+// THE ORCA'S POOL: the sheet at the shore deepens to the channel's blue and
+// then the core's at the middle (lakeDepth, its edges wandering on a low
+// noise), with a few frost glints over it (paintRime)
 const POOL_CHANNEL = 2.2, POOL_CORE = 4.4; // tiles in from the shore where the channel's tone, then the core's, begins
 const POOL_WANDER = 1.1;                   // tiles those edges wander by
 function poolTone(x, y) {
   const d = depthAtPx(x, y) + (vnoise(x / 23 + 1.5, y / 19 + 4.5) - 0.5) * 2 * POOL_WANDER;
-  return d > POOL_CORE ? RIVER_CORE : d > POOL_CHANNEL ? RIVER_CHANNEL : RIVER_SHEET;
+  return d > POOL_CORE ? POOL_DEEP : d > POOL_CHANNEL ? POOL_CHAN : POOL_SHEET;
 }
 
 // one tile's edge, and the pixels round it the bank reads: SHORE_M before
@@ -498,12 +431,11 @@ function markMirror(tx, ty) {
 function bankAt(i, j, s) {
   if (iceMk(i, j)) {
     for (let k = 1; k <= s.band; k++) {
-      if (!iceMk(i, j - k) || (k <= (s.river ? 2 : 1) && !iceMk(i - k, j))) return s.river ? RIVER_RIM[k - 1] : k === 1 ? (s.deep ? BANK_SHADE_DEEP : BANK_SHADE) : BANK_SHADE2;
+      if (!iceMk(i, j - k) || (k <= 1 && !iceMk(i - k, j))) return k === 1 ? (s.deep ? BANK_SHADE_DEEP : BANK_SHADE) : BANK_SHADE2;
     }
-    return !iceMk(i, j + 1) || !iceMk(i + 1, j) ? (s.river ? RIVER_FACE : BANK_FACE) : null;
+    return !iceMk(i, j + 1) || !iceMk(i + 1, j) ? BANK_FACE : null;
   }
-  if (iceMk(i, j + 1) || iceMk(i + 1, j)) return BANK_LIP;
-  return s.river && (iceMk(i, j - 1) || iceMk(i - 1, j)) ? RIVER_CREST : null;
+  return iceMk(i, j + 1) || iceMk(i + 1, j) ? BANK_LIP : null;
 }
 function lakesAround(tx, ty) {
   let n = 0;
@@ -588,7 +520,7 @@ const SNOW_REGION = 22 * TILE;       // world px per step of the region noise
 const SNOW_CUT = [0.41, 0.6];        // region noise thresholds between the looks (~thirds of the map)
 const SNOW_BLEND = 0.05;             // half-width of the blend across each threshold
 // THE WIND'S RIDGES: here and there over the open snow (a low noise, SNOW_RIDGE_FIELD, says where) the wind has
-// cut long thin ridges lying along it, like the snow it sweeps over the river: a crest one tone up, the line in its
+// cut long thin ridges lying along it: a crest one tone up, the line in its
 // lee one tone down, no outline. They thin out toward the edge of their patch and keep off a deep drift.
 const SNOW_RIDGE_FIELD = 11 * TILE;  // world px per step of the noise that says where the ridges lie
 const SNOW_RIDGE_CUT = 0.56, SNOW_RIDGE_FULL = 0.66; // that noise where they begin, and where they stand at full
@@ -733,7 +665,7 @@ function paintSnowTile(g, px, py) {
 function snowStrip(g, ty, tx0, tx1, strip) {
   for (let tx = tx0; tx < tx1; tx++) {
     const gv = ground[idx(tx, ty)];
-    if (gv === 1 || gv === 2) continue; // ice and holes (the frozen creek's too) paint every pixel of their own
+    if (gv === 1 || gv === 2) continue; // ice and holes paint every pixel of their own
     snowTile(tx * TILE, ty * TILE);
     inkSnow(strip, (tx - tx0) * TILE);
   }
@@ -936,7 +868,7 @@ const CASTERS = {
               } },
   // a stump's code is its cut AND where it stands (stumpLook), like a pine's
   // (STUMP_CODE up, clear of the pines' codes: a look, then dx and dy each -9..9)
-  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty, o); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
+  stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
               art: (c) => { const k = c - STUMP_CODE, r = k % 400; return whole(SPRITES.stumps[Math.floor(k / 400)], Math.floor(r / 20) - 9, 4 + r % 20 - 9); } },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },

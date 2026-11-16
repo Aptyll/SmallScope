@@ -16,10 +16,10 @@ rather than a different resource (the League model: one number, many ways to ear
 
 | Source | Pays | Profile |
 | --- | --- | --- |
-| the start | `START_GOLD` (500, js/sim/player.js), in the wallet from the landing | League's start: a first part and a potion; never `earned` |
+| the start | `START_GOLD` (500, js/sim/player.js), in the wallet from the start | League's start: a first part and a potion; never `earned` |
 | the clock | `TRICKLE_GOLD` (8) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 120 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
-| tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 0: a plain pine pays nothing (`treeHit` is 0 too) | side income, never the farm — a pine a second chained, and only a gold pine pays; leaves a stump. A jungle wall's pine never falls (`treeFells`) |
-| gold pine (25%) | `treeRare` 14 on the fell | the `rare` roll, `treeRare()`: one pine in four, unmarked, so a chain of pines pays about 196 a minute |
+| tree | `treeFall` 0: a plain pine pays nothing (`treeHit` is 0 too) | side income, never the farm — a pine a second chained, and only a gold pine pays; leaves a stump. No pine on the 3v3 field falls: all are wall pines (`treeFells`) |
+| gold pine | `treeRare` 14 on the fell | a pine marked `rare`; none stands on the 3v3 field |
 | rabbit | `rabbit` 2 coins × 35 → 70 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 40 → 120 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 2 coins × 55 → 110 | a den's four (440), each a FARM ([Farming](robots.md#farming)); neutral until hit, and then the pack bites back |

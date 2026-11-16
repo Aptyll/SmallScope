@@ -31,10 +31,7 @@
 // concern rather than the match's is skipped: a player's `input` (the host
 // fills it), `ai` (the bot brain runs only on the host), `nav` (a route is
 // the mover's own business and the client moves nothing), and the `_`
-// fields the client's interpolation keeps (js/net/net.js). The eagle's
-// `pad` is an entry of the road registry (`pads`, js/sim/world.js) shared by
-// identity, so the registry is a section of its own and an eagle is
-// re-pointed at its entry after the apply.
+// fields the client's interpolation keeps (js/net/net.js).
 const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t0', '_nid',
   // ...and the sim's own bookkeeping that ticks every step and that no draw
   // pass reads: a client neither steps nor shows these, and each is a few
@@ -42,10 +39,10 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // adding a name here is proven harmless or caught as pixels
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', // (not swingCd: the axe is drawn out until it runs down, drawHeldTool)
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
-  'avoidT', 'baySite', 'zipLast', 'pingLog',
+  'avoidT', 'pingLog',
   'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
   'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
-  'mvx', 'mvy', 'lastMx', 'lastMy', // a walker's heading (nav, walkHeading): only the sim steers by it, `dir` is what is drawn
+  'mvx', 'mvy', // a walker's heading (nav): only the sim steers by it, `dir` is what is drawn
   'hurtLog', // the blows a body is taking (recapNote): only a death's copy, deathLog, is ever drawn
   'position']); // a seat's drafted position (POSITIONS, player.js): the host's bots read it, and the rivals' stay hidden as in the draft
 // (a name here is skipped on EVERY kind that carries it: `fleeT` is not one,
@@ -179,14 +176,13 @@ function snapB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s
 function snapUnB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
 
 // ---- build ---------------------------------------------------------------
-// the singletons beside the entities: the match's state keys, the road
-// registry, the ice, the camps' clocks, the ride, each hero's world
+// the singletons beside the entities: the match's state keys, the ice, the
+// camps' clocks, whether the birds are out, each hero's world
 function snapSingles() {
   const s = { state: {}, camps: [] };
   for (const k of SNAP_STATE) { const v = pack(state[k], 0); if (v !== undefined) s.state[k] = v; }
   for (const c of camps) s.camps.push({ repopT: c.repopT, seen: (c.seen || [0, 0]).slice() }); // the rest of a camp is written down by worldgen
-  s.dropMeta = state.drop ? {} : null; // the ride is there or not: its birds ride with the entities
-  s.pads = pack(pads, 0); // the road registry: each side's crash pad
+  s.dropMeta = state.drop ? {} : null; // the match is live or not: its birds ride with the entities
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/sim/icebreak.js)
   s.orca = pack(orca, 0); // the orca's few numbers (js/sim/orca.js); a client eases its x/y like a body's
   s.guards = pack(guards, 0); // ARMATOS's planted standards (js/sim/armatos.js)
@@ -243,16 +239,6 @@ function snapApplySingles(s) {
     if (!s.dropMeta) state.drop = null;
     else if (!state.drop) state.drop = { eagles: [] };
   }
-  if (s.pads) {
-    // the road registry, merged by team so an entry keeps its identity
-    const keep = [];
-    for (const src of unpack(s.pads)) {
-      let sp = pads.find((q) => q.team === src.team);
-      if (sp) { for (const k of Object.keys(sp)) delete sp[k]; Object.assign(sp, src); } else sp = src;
-      keep.push(sp);
-    }
-    pads.length = 0; for (const sp of keep) pads.push(sp);
-  }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
   if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.guards) { guards.length = 0; for (const g of unpack(s.guards)) guards.push(g); }
@@ -291,12 +277,6 @@ function snapAssign(e, k, v) {
 function snapEagleFields(e, src) {
   for (const k of Object.keys(src)) e[k] = unpack(src[k]);
 }
-function snapEaglesRepoint() {
-  if (!state.drop) return;
-  for (const e of state.drop.eagles) {
-    if (e.pad) e.pad = pads.find((q) => q.team === e.team) || e.pad;
-  }
-}
 // the tiles and the ground: wholesale from the full form, where they changed
 // from a delta; then the structures registry re-pointed at the tiles
 function snapApplyTiles(s) {
@@ -321,9 +301,6 @@ function snapApplyTiles(s) {
     }
   }
   if (s.structs) { structures.length = 0; for (const i of s.structs) if (objects[i]) structures.push(objects[i]); }
-  // ...and each cable cut to the towers just sent (towersSync, js/sim/towers.js), now, so
-  // nothing drawn before the cables this frame (the zipline's E) reads last frame's
-  towersSync();
   // the ground: only tiles that changed are repainted - the whole array is
   // a boot-time bake (repaintGround, js/draw/ground.js)
   if (s.ground) {
@@ -357,7 +334,6 @@ function snapApply(s) {
     for (let i = 0; i < s.eagles.length; i++) snapEagleFields(state.drop.eagles[i] || (state.drop.eagles[i] = {}), s.eagles[i]);
     state.drop.eagles.length = s.eagles.length;
   }
-  snapEaglesRepoint();
   // and the references, now that everything they can point at exists
   const seen = new Set();
   for (const p of players) snapResolve(p, seen);
@@ -712,7 +688,6 @@ function snapApplyDelta(d) {
     if (dk.order) { arr.length = 0; for (const n of dk.order) { const e = m.get(n); if (e) arr.push(e); else lost = true; } }
   }
   if (d.eagles && state.drop) for (const [i, f] of d.eagles) { const e = state.drop.eagles[i] || (state.drop.eagles[i] = {}); snapEagleFields(e, f); changed.push([e, f]); }
-  snapEaglesRepoint();
   const seen = new Set();
   for (const [e] of changed) snapResolve(e, seen);
   for (const i of Object.keys(tiles)) if (objects[i]) snapResolve(objects[i], seen);
@@ -750,7 +725,7 @@ function snapFogHid() {
   const out = [{}, {}];
   for (const team of [0, 1]) for (const kind of SNAP_FOG_KINDS) {
     const s = out[team][kind] = new Set();
-    if (kind === 'P') { for (const p of players) if (p.active && !inAir(p) && !inSight(team, p)) s.add(p.id); } // a body in the air is the flight's: everyone sees the bird
+    if (kind === 'P') { for (const p of players) if (p.active && !inSight(team, p)) s.add(p.id); } // a body in the air is the flight's: everyone sees the bird
     else for (const e of SNAP_KINDS[kind]()) if (!inSight(team, e)) s.add(snapNid(e));
   }
   return out;
@@ -840,7 +815,7 @@ function snapBuildSeen(full) {
 const SNAP_Q = 8;                     // quanta per px
 const SNAP_Q_MAX = 32767 / SNAP_Q;    // the int16's reach in px
 const SNAP_QPOS = new Set(['x', 'y']);                                  // floored
-const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'zipD']); // all of them; kbx/kby are a knockback's velocity, same unit as vx; zipD is px along a zipline
+const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby']); // all of them; kbx/kby are a knockback's velocity, same unit as vx
 function snapQable(k, v) { return SNAP_QUANT.has(k) && typeof v === 'number' && v >= -SNAP_Q_MAX && v <= SNAP_Q_MAX; } // NaN/Infinity fail the range
 function snapQi(k, v) { return SNAP_QPOS.has(k) ? Math.floor(v * SNAP_Q) : Math.round(v * SNAP_Q); } // the int16 on the wire
 function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } // what the client will hold for field k
@@ -973,7 +948,7 @@ function snapBlank() {
   bucinaEchoes.length = 0; bucinaCalls.length = 0;
   hiemsGlazes.length = 0; hiemsStorms.length = 0;
   veloxStones.length = 0; veloxLanes.length = 0; arcusShafts.length = 0; arcusRains.length = 0; fossorBanks.length = 0; fossorQuakes.length = 0; portitorCrates.length = 0;
-  iceBreaks.length = 0; pads.length = 0;
+  iceBreaks.length = 0;
   nixShards.length = 0; nixClouds.length = 0;
   faberParts.length = 0; faberArcs.length = 0; faberBolts.length = 0; faberSprings.length = 0;
   falcoKnives.length = 0;
@@ -1044,7 +1019,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(arcusShafts); walk(arcusRains); walk(fossorBanks); walk(fossorQuakes); walk(portitorCrates); walk(pads); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(arcusShafts); walk(arcusRains); walk(fossorBanks); walk(fossorQuakes); walk(portitorCrates); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

@@ -25,7 +25,7 @@
 // party screen (js/ui/rooms.js). When the pick ends the COUNTDOWN runs in
 // the top band (draftCount): a gold ring bursting off the figure (lockFx),
 // one rival row turning face-up per tick, and at zero lockIn() flies to the
-// eagle (lockT -> beginDrop). Nothing on the screen is instructions: the
+// eagle (lockT -> beginMatch). Nothing on the screen is instructions: the
 // shapes carry it.
 const LOBBY_PANEL_W = 148;               // a side's column of seat rows at its widest, glued to its screen edge
 const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view drops grid columns before going under it
@@ -303,7 +303,7 @@ function lobbyRevealed() {
   return m.countN === 0 ? MAX_PLAYERS : 0;
 }
 // the count's end: the short hold, then the eagle (updateTitle: lockT ->
-// beginDrop)
+// beginMatch)
 function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;

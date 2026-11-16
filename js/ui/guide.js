@@ -13,7 +13,7 @@
 // the world, never writes the sim, so every screen in a FIRST MATCH party
 // coaches its own player and the match itself is any other match. A step's
 // whole meaning is its GUIDE_STEPS row.
-const GUIDE_MOVE_PX = 96;      // px walked from the landing that counts as moving
+const GUIDE_MOVE_PX = 96;      // px walked from the start that counts as moving
 const GUIDE_RECALL_GOLD = 400; // gold in the purse (or half health) before RECALL is taught
 const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before the next
 const GUIDE_TIP_T = 7;         // s a lesson's line of detail stands open before it folds away
@@ -56,8 +56,8 @@ function guideFightUp() {
   }
   return false;
 }
-// s until the first wave leaves the barracks (barracksBeat, js/sim/structures.js); 0 once it has
-function guideWave() { return state.elapsed < STRUCTS.barracks.first ? Math.ceil(barracksBeat(STRUCTS.barracks)) : 0; }
+// s until the first wave leaves the perch (waveBeat, js/sim/robots.js); 0 once it has
+function guideWave() { return state.elapsed < WAVE.first ? Math.ceil(waveBeat()) : 0; }
 // RECALL's moment: hurt and away from home. It takes the card ahead of its turn under GUIDE_HURT of
 // your health and keeps it until GUIDE_HURT_OUT, so a hero at the line does not flip cards
 function guideHurt() {
@@ -164,7 +164,7 @@ function guideHeadlineUp() {
 }
 function guideOn() {
   return NET.mode === 'guide' && !guide.off && state.mode === 'play' && !!state.drop &&
-    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp() && guideTour.t >= 0 && !guideTouring(); // the ride to their roost first; hudHome: never over a cinematic, the landing's or a bird driven off
+    hudHome() && !guideHeadlineUp() && guideTour.t >= 0 && !guideTouring(); // the ride to their roost first; hudHome: never over a cinematic, the landing's or a bird driven off
 }
 function guideOpen(i) { guide.step = i; guide.t = 0; }
 function guideDone(s) { return s.need ? s.count(guide) >= s.need : s.done(guide); }
@@ -424,7 +424,7 @@ function drawGuideCard(now, s, lit, cur, x0) {
 }
 
 // ---- the ride to their roost -----------------------------------------------
-// A FIRST MATCH shows the goal before the first lesson: once your landing's
+// A FIRST MATCH shows the goal before the first lesson: once your start's
 // headline has gone, the camera rides down your lane from your eagle to
 // theirs (zoomed out to the shows' framing, applyZoom, js/sim/sim.js), holds
 // on their bird under one headline in their paint, and glides home. Walking
@@ -433,18 +433,11 @@ function drawGuideCard(now, s, lit, cur, x0) {
 const GUIDE_TOUR_GO = 3.4;    // s the ride down the lane takes, eased at both ends
 const GUIDE_TOUR_HOLD = 2.4;  // s it holds over their eagle
 const GUIDE_TOUR_STOP = 24;   // px the hero walks that hands the camera back
-const GUIDE_TOUR_ROAD = 24;   // points the middle road's ride is sampled at
 const guideTour = { t: -1, path: null, len: 0, x0: 0, y0: 0, done: false }; // t: s into the ride, -1 before it
-// the line the camera rides: your eagle, your lane to their hollow (the middle road for MID or the jungle), their eagle
+// the line the camera rides: your eagle, down your lane (the top one for the jungle), their eagle
 function guideTourPath() {
   const mine = state.drop.eagles[player.team], theirs = state.drop.eagles[1 - player.team], lane = guideLaneOf();
-  let pts;
-  if (lane === 0 || lane === 2) pts = laneWaypoints(player.team, lane);
-  else {
-    const u0 = roadNest(player.team).u, u1 = roadNest(1 - player.team).u;
-    pts = [];
-    for (let i = 0; i <= GUIDE_TOUR_ROAD; i++) pts.push(roadPoint(u0 + (u1 - u0) * i / GUIDE_TOUR_ROAD));
-  }
+  const pts = laneWaypoints(player.team, Math.max(0, lane)); // the jungle rides the top lane
   return [{ x: mine.x, y: mine.y }].concat(pts, [{ x: theirs.x, y: theirs.y }]);
 }
 function guideTourAt(d) {
@@ -462,7 +455,7 @@ function guideTourAim(dt) {
   if (guideTour.done || NET.mode !== 'guide' || guide.off || state.mode !== 'play' || !state.drop) return null;
   const e = state.drop.eagles[player.team], r = state.drop.eagles[1 - player.team];
   if (guideTour.t < 0) { // it waits for both birds down and your headline gone
-    if (!e || !r || e.state !== 'down' || r.state !== 'down' || guideHeadlineUp() || player.aboard || inAir(player)) return null;
+    if (!e || !r || e.state !== 'down' || r.state !== 'down' || guideHeadlineUp()) return null;
     guideTour.path = guideTourPath(); guideTour.t = 0; guideTour.x0 = player.x; guideTour.y0 = player.y;
     guideTour.len = 0;
     for (let i = 1; i < guideTour.path.length; i++) guideTour.len += Math.hypot(guideTour.path[i].x - guideTour.path[i - 1].x, guideTour.path[i].y - guideTour.path[i - 1].y);

@@ -2,11 +2,11 @@
 // Everything wild: prey and the shared animal lifecycle, the fish under the
 // ice, and the camps' monsters - each with its own tuning above it.
 // ------------------------------------------------------------ animals
-// Rabbits and deer are the passive half (updatePrey); the three wolves are
+// Rabbits are the passive half (updatePrey); the three wolves are
 // the camps' monsters (updateCampMonster), and go in this same array so
 // arrows, the draw list, the kill payouts and the cursor all treat them as
 // what they are: things you shoot.
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, orca: 1560 };
+const ANIMAL_HP = { rabbit: 8, wolf: 30, scrap: 30, alpha: 640, orca: 1560 };
 // Every animal wears a hero-style level: the table's average hero level
 // (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
 // spawn (makeAnimal) and follows the table after (relevelAnimal) while the
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, orca: 1560 };
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Its XP (YIELD's `xp`, shared by the hunter's side standing
 // near: shareXp, js/sim/player.js) grows the same tenth a level.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, orca: 100 };
+const ANIMAL_LV_HP = { rabbit: 1, wolf: 3, scrap: 3, alpha: 50, orca: 100 };
 const ANIMAL_LV_GOLD = 0.1;
 const ANIMAL_LV_XP = 0.1;
 function animalLevel() {
@@ -39,34 +39,15 @@ function relevelAnimal(a) {
   if (level !== a.level) { a.level = level; a.hp = a.maxHp = animalHpAt(a.kind, level); }
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
-// took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', orca: '#2b3550' };
-// Prey: how close a player gets before it bolts, how long it runs, and the two
-// speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
-// and then goes off like a spring. Both resolve the ring through seenAt, so
-// a hero's stealth is what gets inside it.
-const FLEE_SIGHT = { rabbit: 36, deer: 46 };
-const FLEE_TIME = { rabbit: [1.6, 2.6], deer: [1.1, 1.9] };
-const PREY_SPD = { rabbit: 42, deer: 26 };   // px/s grazing
-// A deer's two flight gaits, as multiples of a player's walk (PLAYER_SPEED):
-// the run while its stamina bar lasts and the walk once it is empty. The
-// px/s numbers below are derived from these two, so this is the one place
-// a deer's pace is tuned.
-const DEER_WALK_MUL = 1.15;   // 1.1 to 1.2 is the band
-const DEER_RUN_MUL = 1.4;     // 1.3 to 1.5 is the band
-// ...and the time it takes to get from one pace to another: a startled deer
-// is at its run, and a spent one back down at its walk, DEER_EASE_T after the
-// change, on an ease-out (fast at first, settling in) - never a jump in speed
-const DEER_EASE_T = 0.28;     // s; 0.2 to 0.35 reads as a startle, not a dash
-const PREY_RUN = { rabbit: 104, deer: Math.round(PLAYER_SPEED * DEER_WALK_MUL) };   // px/s bolting
-// A deer's sprint: the first stretch of a flight goes at DEER_SPRINT, a run
-// a walking player cannot match, off a stamina bar it always wears (a.sprint,
-// 0..1); the bar drains over DEER_SPRINT_T of running and refills over
-// DEER_SPRINT_REGEN of grazing, so a deer that has just been run is the one
-// you can close on, and the bar says which
-const DEER_SPRINT = Math.round(PLAYER_SPEED * DEER_RUN_MUL); // px/s while the bar lasts
-const DEER_SPRINT_T = 2.5;    // s of sprint in a full bar
-const DEER_SPRINT_REGEN = 10; // s from empty to full, grazing
+// took the blow.
+const HIT_PUFF = { rabbit: '#9a6a45', wolf: '#6f778c', scrap: '#9a5f36', alpha: '#3b3b53', orca: '#2b3550' };
+// Prey: how close a player gets before it bolts, how long it runs, and its
+// two speeds: a rabbit sits tight and then goes off like a spring. The ring
+// resolves through seenAt, so a hero's stealth is what gets inside it.
+const FLEE_SIGHT = 36;
+const FLEE_TIME = [1.6, 2.6];
+const PREY_SPD = 42;   // px/s grazing
+const PREY_RUN = 104;  // px/s bolting
 // A rabbit's jink: the same bar under its health (a.dodge, 0..1) holds ONE
 // charge, ready only when full, and spends it the instant a shot is coming
 // at it - an arrow inside RABBIT_DODGE_SIGHT, still flying toward the rabbit,
@@ -92,16 +73,15 @@ const RABBIT_ALERT = 0.3;
 // PREY_RUN it circles a hero rather than leaving the circle.
 const RABBIT_LEG = 3.5;
 function warrenHolds(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, 0) && deepAt(x, y); }
-// The head-up window: seconds either prey keeps WATCHING after the last sign
-// of a player - the beat a deer stands in when a flight ends, before it puts
-// its head back down. It costs nothing (no speed, no sight, no bolt of its
+// The head-up window: seconds a rabbit keeps WATCHING after the last sign
+// of a player - the beat it sits up in when a flight ends, before it settles. It costs nothing (no speed, no sight, no bolt of its
 // own; a.senseT and the mark over the head are unchanged) and buys the one
 // thing that cannot be said in words: grazing MEANS "has not seen you", so a
 // meadow of heads-down is a meadow you can still walk into.
 const PREY_WARY_T = 3;
 
 // What a beast is DOING, drawn: the sprite clip it plays and the frames a
-// second it plays at. The imported bunny and stag came in AS behaviours - a
+// second it plays at. The imported bunny came in AS behaviours - a
 // graze, a gallop, a sit-up - so a beast's animation is not a walk flag any
 // more but a name, chosen from its state by the `setClip` calls at the end of
 // updatePrey / updateCampMonster / updateBird (and by the stun branch of
@@ -112,8 +92,8 @@ const PREY_WARY_T = 3;
 // A one-frame clip's rate is moot, hence the zeroes.
 const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
-  deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
+  scrap: { idle: 0, run: 8 },
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10 }, // the bear: patrols at a walk, charges at a gallop
   orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
@@ -142,12 +122,8 @@ function makeAnimal(kind, x, y, fix) {
     clip: 'idle', animT: fix ? 0 : rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
     alertT: 0, wary: 0,                  // rabbit: the sit-up before the bolt (RABBIT_ALERT); both: the head-up window after one (PREY_WARY_T)
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
-    sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
-    spd: 0,                              // deer: the pace it is actually at, px/s, eased toward the one it wants (deerPace)
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
-    rider: null,                         // a ridden deer: the player on its back (the `riding` banner)
-    route: null, leg: 0, way: 1, lost: null, // a valley deer: its side's line, the point it heads for, which way along it, and what it last ran from (deerRouteGoal)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     dead: false,
   };
@@ -160,11 +136,10 @@ function makeAnimal(kind, x, y, fix) {
 
 // the body an arrow tests against. The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
 // shot's whole step against it (sweepDisc, js/sim/sim.js); a homing shot just lands.
-// The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
-// and a bear is wider still (its 112x76 frame, js/baked/bears.js), so their
-// discs are wider and sit up on the flank.
-function animalHitR(a) { return isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
-function animalHitY(a) { return a.y - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
+// A bear is wider (its 112x76 frame, js/baked/bears.js), so its disc is
+// wider and sits up on the flank.
+function animalHitR(a) { return isBigBeast(a) ? 28 : 8; }
+function animalHitY(a) { return a.y - (isBigBeast(a) ? 10 : 3); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
 // come through here so a swipe reacts exactly like a shot does - the den
@@ -177,124 +152,11 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner) {
   // a camp monster does not run from a hit - the whole camp comes for you,
   // and a hit is the ONLY thing that wakes one
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
-  else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
+  else { a.fleeT = 1.4; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
   tallyHit(a, dmg);
   a.kbx = nx * kb; a.kby = ny * kb;
   burst(a.x, a.y - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
   sfxAt('hit', a.x, a.y); if (a.hp > 0) sfxAt('yelp', a.x, a.y);
-}
-
-// The deer: TWO in the valley, one each side of the creek, and they never
-// stand still for long. Each walks its side's ROUTE (deerRoutes, laid at boot
-// by layDeerRoutes): points DEER_ROUTE_STEP tiles apart on a line parallel
-// to the creek, DEER_ROUTE_U tiles out along the road from that side's roost,
-// from one treeline to the other across the road, kept DEER_ROUTE_KEEP tiles
-// off the woods and off every camp's ground. It runs the line end to end and
-// back (a.leg, a.way) at DEER_ROAM, stopping to graze at DEER_GRAZE_P of its
-// points, and bolts from any player it sees and from any wolf or bear inside
-// DEER_BEAST_SIGHT (updatePrey) - then picks the line up again heading on
-// away from what it ran from. So a deer is a thing you hunt down or wait
-// for, not one you walk past, and catching one to ride is the prize. A side
-// whose deer goes down gets the next one DEER_BACK seconds later, at the
-// point of its line furthest from every player (updatePreyStock), so nothing
-// is ever seen to appear. The rabbits are not stock: three live in each
-// WARREN and come back as a camp does, on its clock (CAMPS.meadow,
-// updateCamps, js/sim/camps.js).
-const DEER_ROUTE_U = 100 * MAP_K; // tiles along the road from a roost to its side's line (the creek is at (WORLD - 1) / 2)
-const DEER_ROUTE_STEP = 5;    // tiles between the points of a line
-const DEER_ROUTE_KEEP = 3;    // tiles a point keeps off the woods and off a camp's ground
-const DEER_ROAM = PLAYER_SPEED; // px/s along the line: a walk keeps up, it does not close
-const DEER_GRAZE_P = 0.25;    // the share of points a deer stops at
-const DEER_GRAZE_T = [1.5, 3.5]; // s it grazes there
-const DEER_BEAST_SIGHT = 96;  // px a deer bolts from a wolf or a bear at
-const DEER_BACK = 60;         // s after a side's deer goes down before the next comes
-const PREY_CLEAR = 280;       // px from every live player a newcomer must land
-let deerRoutes = [[], []];    // each side's line, world px points (layDeerRoutes)
-let deerBackT = [DEER_BACK, DEER_BACK]; // s until each side's next deer, counting while it has none
-
-// each side's line: (u, s) road coordinates (campTile, camps.js) mirrored
-// across the middle, sampled every DEER_ROUTE_STEP tiles of s, keeping the
-// open tiles clear of the woods and of camp ground. Pure position: no rng.
-function layDeerRoutes() {
-  deerRoutes = [0, 1].map((side) => {
-    const u = side ? WORLD - 1 - DEER_ROUTE_U : DEER_ROUTE_U, out = [];
-    for (let s = -WORLD; s <= WORLD; s += DEER_ROUTE_STEP) {
-      const { tx, ty } = campTile(u, s);
-      if (!inWorld(tx, ty) || !walkable(tx, ty)) continue;
-      if (Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < borderDepth(tx, ty) + DEER_ROUTE_KEEP) continue;
-      if (camps.some((C) => campNear(C, tx, ty, CAMP_GROUND + DEER_ROUTE_KEEP))) continue;
-      out.push({ x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE });
-    }
-    return out;
-  });
-}
-
-// a side's deer on a point of its line: the middle at boot, and on a restock
-// the point furthest from every live player, if that is past PREY_CLEAR. The
-// animal, or null if the line is empty or nowhere is out of sight yet
-function spawnDeer(side, clear) {
-  const R = deerRoutes[side];
-  if (!R.length) return null;
-  let i = R.length >> 1;
-  if (clear) {
-    let best = -1;
-    for (let k = 0; k < R.length; k++) {
-      let d = 1e9;
-      for (const p of players) if (p.active && !p.dead && !inAir(p)) d = Math.min(d, Math.hypot(p.x - R[k].x, p.y - R[k].y));
-      if (d >= PREY_CLEAR && d > best) { best = d; i = k; }
-    }
-    if (best < 0) return null;
-  }
-  const a = makeAnimal('deer', R[i].x, R[i].y);
-  a.route = side; a.leg = i; a.way = rng() < 0.5 ? 1 : -1;
-  animals.push(a);
-  return a;
-}
-
-function spawnAnimals() {
-  layDeerRoutes();
-  for (const side of [0, 1]) spawnDeer(side, false);
-}
-
-// the restock: a side with no deer counts DEER_BACK down and then gets one.
-// A deer from a save older than the lines (no a.route) is taken onto an
-// empty side's line rather than a new one spawned beside it
-function updatePreyStock(dt) {
-  for (const side of [0, 1]) {
-    if (animals.some((a) => !a.dead && a.kind === 'deer' && a.route === side)) { deerBackT[side] = DEER_BACK; continue; }
-    const stray = animals.find((a) => !a.dead && a.kind === 'deer' && a.route == null);
-    if (stray) { stray.route = side; stray.leg = deerLegNear(stray, side); stray.way = 1; continue; }
-    deerBackT[side] -= dt;
-    if (deerBackT[side] <= 0 && spawnDeer(side, true)) deerBackT[side] = DEER_BACK;
-  }
-}
-
-// the point of a side's line nearest a body
-function deerLegNear(a, side) {
-  const R = deerRoutes[side];
-  let best = 0, bd = 1e18;
-  for (let k = 0; k < R.length; k++) { const d = (R[k].x - a.x) ** 2 + (R[k].y - a.y) ** 2; if (d < bd) { bd = d; best = k; } }
-  return best;
-}
-
-// the deer's next point along its line, turning at either end; after a
-// flight (a.lost) it picks the line up at the nearest point, heading on
-// the way that points away from what it ran from
-function deerRouteGoal(a) {
-  const R = deerRoutes[a.route];
-  if (!R || R.length < 2) return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 3, 6); // a seed with no room for a line
-  // carried off its line (a rider, a long flight): back to the nearest point
-  if (!a.lost && Math.hypot(R[a.leg].x - a.x, R[a.leg].y - a.y) > 3 * DEER_ROUTE_STEP * TILE) a.lost = { x: a.x, y: a.y };
-  if (a.lost) {
-    a.leg = deerLegNear(a, a.route);
-    const k = Math.min(R.length - 1, a.leg + 1), j = Math.max(0, a.leg - 1);
-    const fx = a.lost.x, fy = a.lost.y;
-    a.way = Math.hypot(R[k].x - fx, R[k].y - fy) >= Math.hypot(R[j].x - fx, R[j].y - fy) ? 1 : -1;
-    a.lost = null;
-  }
-  if (a.leg + a.way < 0 || a.leg + a.way >= R.length) a.way = -a.way;
-  a.leg = Math.max(0, Math.min(R.length - 1, a.leg + a.way));
-  return { x: R[a.leg].x, y: R[a.leg].y };
 }
 
 // ------------------------------------------------------------ open water
@@ -326,10 +188,10 @@ function nearestObj(x, y, rTiles, pred) {
 
 // the title's ambient world: the wildlife and the shoal live on behind the
 // menu (updateTitle, js/ui/menu.js) - but stand still once the room is
-// shared. A client's animals are the host's (its own steps would turn a deer
-// the host never turned), and the host's clock does not tick at the title,
-// so every guest's full sync shares one ring entry: a deer turned and turned
-// back between two joins would never reach the second (snapHistoryPush)
+// shared. A client's animals are the host's (its own steps would turn a
+// rabbit the host never turned), and the host's clock does not tick at the
+// title, so every guest's full sync shares one ring entry: a rabbit turned and
+// turned back between two joins would never reach the second (snapHistoryPush)
 function titleWild(dt) {
   if (netShared()) return;
   for (const a of animals) updateAnimal(a, dt);
@@ -346,14 +208,12 @@ function updateAnimal(a, dt) {
   updateUnitStatus(a, dt);
   if (a.hp <= 0 && !a.dead) { animalDies(a); return; }
   relevelAnimal(a);
-  if (a.rider) { rideCarry(a, dt); return; } // carried under its rider, brain off (the `riding` banner)
   if (a.stunT > 0) {
     // seeing stars: no brain for the window, and the route it was walking is
     // dropped rather than resumed - a tackle can slide a body a long way from
     // the leg it was on. A shove still moves it, same as any idle animal.
     a.stunT = Math.max(0, a.stunT - dt);
     setClip(a, 'idle'); // stars over a still body: the standing clip, held
-    a.spd = 0;          // ...and a deer comes out of it from a standstill (deerPace)
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
     if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; a.alertT = 0; navClear(a); a.idleT = 0.3; }
   } else if (a.summon) heroSummonStep(a, dt); // a hero's own beast (HERO_SUMMON, js/sim/heroes.js)
@@ -408,7 +268,6 @@ function wanderGoal(a, base, spread, near, far, C) {
 // back toward the middle, and on it takes short hops of a tile or three any
 // way that stays on it; everyone else just picks an open way out
 function preyWander(a) {
-  if (a.route != null) return deerRouteGoal(a); // a valley deer walks its line
   const C = a.meadow;
   if (C) {
     const hx = (C.tx + 0.5) * TILE, hy = (C.ty + 0.5) * TILE;
@@ -451,68 +310,42 @@ function rabbitDodge(a, s) {
       navLineClear(a.x, a.y, a.x - px * side * len, a.y - py * side * len, 2.5)) side = -side;
   a.dashX = px * side; a.dashY = py * side; a.dashT = RABBIT_DODGE_T;
   a.dodge = 0;
-  const t = FLEE_TIME.rabbit;
-  a.fleeT = rand(t[0], t[1]);
+  a.fleeT = rand(FLEE_TIME[0], FLEE_TIME[1]);
   a.fleeGoal = null; a.goal = null; navClear(a);
   burst(a.x, a.y, '#eef2fa', 5, 30, 0.3); // the snow it kicks off
 }
 
-// A deer never changes pace in one step: a.spd closes on the pace it wants by
-// a fixed share of the gap per second - an ease-out, steepest at the moment of
-// the change - and is there (within 2%) DEER_EASE_T later. The share is an
-// exponential of dt, so the curve is the same at any step length.
-function deerPace(a, want, dt) {
-  a.spd += (want - a.spd) * (1 - Math.exp(-4 * dt / DEER_EASE_T));
-  if (Math.abs(want - a.spd) < 0.5) a.spd = want;
-  return a.spd;
-}
-
-// rabbits and deer: wander, nibble, and bolt from anyone who gets close
+// rabbits: wander, nibble, and bolt from anyone who gets close
 function updatePrey(a, dt) {
-  const rabbit = a.kind === 'rabbit';
-  const r = rabbit ? 2.5 : 5;
+  const r = 2.5;
 
-  // a rabbit's jink charge comes back on the clock whatever it is doing, and
-  // a rabbit holding one spends it on the first shot coming at it (a rooted
-  // or netted one cannot move, so it does not waste the charge trying)
-  if (rabbit) {
-    a.dodge = Math.min(1, a.dodge + dt / RABBIT_DODGE_CD);
-    if (a.dodge >= 1 && a.dashT <= 0 && unitMoveMul(a) > 0) {
-      const s = arrowAtRabbit(a);
-      if (s) rabbitDodge(a, s);
-    }
+  // the jink charge comes back on the clock whatever it is doing, and a
+  // rabbit holding one spends it on the first shot coming at it (a rooted or
+  // netted one cannot move, so it does not waste the charge trying)
+  a.dodge = Math.min(1, a.dodge + dt / RABBIT_DODGE_CD);
+  if (a.dodge >= 1 && a.dashT <= 0 && unitMoveMul(a) > 0) {
+    const s = arrowAtRabbit(a);
+    if (s) rabbitDodge(a, s);
   }
 
-  // both prey bolt from a player who gets close - the deer from further out
-  // than the rabbit. The ring is what the player is SEEN at, so stealth is
-  // how a hero closes on a deer at all.
+  // it bolts from a player who gets close. The ring is what the player is
+  // SEEN at, so stealth is how a hero closes on one at all.
   let scare = null, sd = 1e9;
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p)) continue;
+    if (!p.active || p.dead) continue;
     const d = Math.hypot(p.x - a.x, p.y - a.y);
     if (d < sd) { sd = d; scare = p; }
   }
-  let seen = !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
-  // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
-  // whether it is hunting or not: neutral to a hero is not neutral to a deer
-  if (!rabbit) for (const m of animals) {
-    if (m.dead || !isCampKind(m.kind)) continue;
-    const d = Math.hypot(m.x - a.x, m.y - a.y);
-    if (d < DEER_BEAST_SIGHT && (!seen || d < sd)) { seen = true; scare = m; sd = d; }
-  }
+  const seen = !!scare && sd < seenAt(scare, FLEE_SIGHT);
   if (a.fleeT <= 0 && seen) {
     // a rabbit that has only just noticed you sits up first (RABBIT_ALERT);
-    // the deer, and a rabbit whose beat is spent, go
-    if (rabbit && a.senseT <= 0 && a.alertT <= 0) a.alertT = RABBIT_ALERT;
-    else if (a.alertT <= 0) {
-      const t = FLEE_TIME[a.kind];
-      a.fleeT = rand(t[0], t[1]);
-      if (a.route != null) a.lost = { x: scare.x, y: scare.y }; // the line is picked up heading away from it (deerRouteGoal)
-    }
+    // one whose beat is spent goes
+    if (a.senseT <= 0 && a.alertT <= 0) a.alertT = RABBIT_ALERT;
+    else if (a.alertT <= 0) a.fleeT = rand(FLEE_TIME[0], FLEE_TIME[1]);
     a.goal = null; navClear(a); // the graze is off either way
   }
 
-  let moving = false, sprinting = false, dashing = false;
+  let moving = false, dashing = false;
   if (a.dashT > 0) {
     // the jink: a hand-steered dash, so unitMoveMul is folded in here the
     // way navStep folds it into every routed step
@@ -529,17 +362,11 @@ function updatePrey(a, dt) {
     a.fleeT -= dt;
     // the flight is a chain of routed legs a few tiles long, each picked
     // away from the threat; a leg that fails or arrives hands over to the next.
-    // With no threat on the ground (every hero dead or aloft) the leg under
-    // way is run out and the flight ends there
+    // With no threat on the ground (every hero dead) the leg under way is run
+    // out and the flight ends there
     if (!a.fleeGoal && scare) a.fleeGoal = fleeGoal(a, scare);
     if (a.fleeGoal) {
-      // a deer with sprint left in the bar spends it here, and runs for it
-      sprinting = !rabbit && a.sprint > 0;
-      if (sprinting) a.sprint = Math.max(0, a.sprint - dt / DEER_SPRINT_T);
-      // ...up to it from whatever pace the startle caught it at, and back
-      // down to the walk when the bar empties (deerPace): never a jump
-      const want = sprinting ? DEER_SPRINT : PREY_RUN[a.kind];
-      const n = navStep(a, a.fleeGoal.x, a.fleeGoal.y, r, rabbit ? want : deerPace(a, want, dt), dt);
+      const n = navStep(a, a.fleeGoal.x, a.fleeGoal.y, r, PREY_RUN, dt);
       if (!n.ok || n.d < 6) a.fleeGoal = null;
       moving = true;
     } else {
@@ -549,67 +376,48 @@ function updatePrey(a, dt) {
   } else if (a.goal) {
     // grazing is a routed walk to a real tile: it rounds the trees instead of
     // bumping them, and it ends on the spot the animal was heading for
-    // (a valley deer walks its line at DEER_ROAM, and grazes at only some of its points)
-    const roam = a.route != null;
-    const n = navStep(a, a.goal.x, a.goal.y, r, rabbit ? PREY_SPD[a.kind] : deerPace(a, roam ? DEER_ROAM : PREY_SPD[a.kind], dt), dt);
-    if (!n.ok || n.d < 6) {
-      a.goal = null; navClear(a);
-      a.idleT = rabbit ? rand(0.8, 2.2) : !roam ? rand(1.6, 4) : rng() < DEER_GRAZE_P ? rand(DEER_GRAZE_T[0], DEER_GRAZE_T[1]) : 0;
-    } else moving = true;
+    const n = navStep(a, a.goal.x, a.goal.y, r, PREY_SPD, dt);
+    if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rand(0.8, 2.2); }
+    else moving = true;
   } else {
     a.idleT -= dt;
-    // a deer that has just stopped runs its pace out along the heading it
-    // had (deerPace, to nothing) rather than halting dead - hand-steered, so
-    // unitMoveMul is folded in here the way navStep folds it into a routed step
-    const coast = rabbit ? 0 : deerPace(a, 0, dt) * unitMoveMul(a);
-    if (coast > 4) moving = true; // still in its gait until it has all but stopped
     // a shove (arrow or unit collision) still moves an idle animal
-    if (coast > 0 || Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, (a.mvx * coast + a.kbx) * dt, (a.mvy * coast + a.kby) * dt, r);
+    if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, r);
     if (a.idleT <= 0) {
       a.goal = preyWander(a);
       if (!a.goal) a.idleT = rand(1.5, 3); // nibbling where it stands, or boxed in
     }
   }
 
-  // the sprint comes back on its own once the deer has stopped running
-  if (!rabbit && a.fleeT <= 0) a.sprint = Math.min(1, a.sprint + dt / DEER_SPRINT_REGEN);
   // the mark over its head (drawAnimal): up from the frame it has a player
   // inside its ring or is running from one, down the frame neither is true -
-  // so a deer wearing it is a deer that has seen you, and one without has not
+  // so a rabbit wearing it has seen you, and one without has not
   a.senseT = seen || a.fleeT > 0 ? a.senseT + dt : 0;
   // ...and the softer one under it: the mark snaps off the moment it loses
   // you, but the animal keeps its head up a while longer (PREY_WARY_T)
   a.wary = seen || a.fleeT > 0 || a.alertT > 0 ? PREY_WARY_T : Math.max(0, a.wary - dt);
 
   if (moving && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  // Which clip, and that IS the read on what the animal knows (ANIM_CLIPS).
-  // Standing still and settled, a deer has its HEAD DOWN in the snow and a
-  // rabbit is low over its paws; standing still and WARY - it has you in
-  // sight, or it has just finished running from you - the deer's head is up
-  // and turning and the rabbit is rocked back on its haunches. So a grazing
-  // deer is a deer that has not seen you, which is the whole of why closing
-  // on one under stealth or buried in the snow is worth doing, and it is
-  // told without a word. Moving is the gallop or the hop, run slower for a
-  // wander than for a flight: the same gait, not a different one.
-  if (moving) setClip(a, rabbit ? 'hop' : 'run');
-  else if (a.wary > 0) setClip(a, rabbit ? 'rise' : 'idle');
-  else setClip(a, rabbit ? 'idle' : 'graze');
-  // a deer's gallop keeps time with its eased pace (1 at its flight walk, the
-  // wander's 0.6 the floor), so the legs wind up and down with the body
-  const gait = rabbit ? (a.fleeT > 0 ? 1 : 0.6) : Math.max(0.6, a.spd / PREY_RUN.deer);
-  stepClip(a, dt, dashing ? 1.4 : moving ? gait : 1);
+  // Which clip, and that IS the read on what the animal knows (ANIM_CLIPS):
+  // low over its paws when settled, rocked back on its haunches when WARY -
+  // it has you in sight, or it has just finished running from you - and the
+  // hop when it moves, run slower for a wander than for a flight. So a
+  // settled rabbit has not seen you, told without a word.
+  if (moving) setClip(a, 'hop');
+  else if (a.wary > 0) setClip(a, 'rise');
+  else setClip(a, 'idle');
+  stepClip(a, dt, dashing ? 1.4 : moving ? (a.fleeT > 0 ? 1 : 0.6) : 1);
 }
 
 // what a kill pays: one profile per kind out of the YIELD table, grown
 // ANIMAL_LV_GOLD a level for the animal's own level (the top of the banner),
 // straight into the wallet of whoever landed the final blow (a.lastHit,
 // stamped by hurtAnimal) - gold is never a physical drop. A kill nobody is left
-// alive to credit pays nobody. A camp monster's or a deer's `xp` is the
+// alive to credit pays nobody. A camp monster's `xp` is the
 // hunter's side's, shared by whoever of it stands near (shareXp), the
 // hunter too if they are still up; a rabbit teaches nobody anything.
 function animalDies(a) {
   a.dead = true;
-  if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
   // a hero's summon (HERO_SUMMON) is no quarry: it pays nobody and counts for nothing
   const hunter = a.lastHit !== undefined && !a.summon ? players[a.lastHit] : null;
@@ -637,7 +445,7 @@ function animalDies(a) {
     if (hunter) {
       for (const q of players) {
         if (!q.active || q.team !== hunter.team) continue;
-        if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
+        if (q !== hunter && !q.dead) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
         if (MONSTER[a.kind].push) q.pushT = Math.max(q.pushT || 0, ORCA_PUSH_T); // the orca's: the push (orcaPushMul)
         else campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
@@ -688,6 +496,7 @@ const ORCA_SPOUT_R = 15 * TILE; // px the orca spouts at whoever it hunts past i
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
+  scrap: { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'scrap' }, // the stray robots: the wolves' numbers, the bottom half's farm
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME, stack: true }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
   orca:  { bite: 28, lvBite: 3, reach: 80, cd: 1.8, spd: 0, r: 20, foot: 5, mass: 9, big: true, teamPay: true, feed: 'ORCA', buff: 'ORCA BUFF', buffCol: '#7fd4ff', anchor: true, cause: 'orca', lv: ORCA_LV, frame: BEAR_FRAME, still: true, hole: true, spout: ORCA_SPOUT_R, push: true }, // the late fight: up in its pool, a lunge across the ice and a spout at range
 };
@@ -751,177 +560,6 @@ function orcaPushMul(b) {
 // a fresh grant only extends what is left, and the latest bear is the one worn
 function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'alpha'; } }
 
-// ------------------------------------------------------------ riding
-// A deer can be ridden. E beside a wild one (rideNear) hops the player on
-// (rideStart), and from then the PLAYER is the body that moves: updatePlayer
-// walks it at the mount's gallop off the same input struct, and the deer is
-// carried under it (rideCarry, from updateAnimal) with its brain off. While
-// ridden the deer wears its rider's `team`, so every target picker that asks
-// unitFoe (the arrows, the swings, the area effects, the pointer) takes it
-// as the rider's side: your own shots and your allies' pass through it, a
-// rival's land, and its bar wears the side's colour (drawAnimal). The hands
-// stay free, so the bow and the blades work from the saddle. The roll key is
-// the LEAP (rideLeap): a short hop that owns the velocity, as a roll does,
-// and clears anything whose OBJECTS entry says `leap` (the felled trunk
-// across the road, isSolidTile). E again hops off (rideEnd) and the deer
-// bolts, wild again; a stun on either body, a fall through the ice, the zipline, the air, or either one dying throws the rider
-// (rideCheck, stunUnit, die, animalDies).
-// What can be ridden, per kind: its gallop as a multiple of a player's walk
-// (RIDE_GALLOP_MUL: a ridden deer outruns its own wild sprint) and where on its back the rider sits
-// (the draw, riderSeat): `col` is the seat's column in the right-facing frame,
-// and the rider's 16-row cell sinks until its row `hip` meets the back there,
-// so the back hides the legs and the rider sits IN the deer, not on top
-const RIDE_GALLOP_MUL = 1.65; // a ridden deer's gallop; its wild sprint is DEER_RUN_MUL (1.4)
-const RIDE = { deer: { mul: RIDE_GALLOP_MUL, col: 13, hip: 14 } };
-const RIDE_REACH = 20;     // px from the player to a deer that E reaches
-const RIDE_LEAP_T = 0.45;  // s a leap is in the air
-const RIDE_LEAP_CD = 0.6;  // s on the ground before the next leap
-const RIDE_LEAP_H = 7;     // px the arc rises at its top (the draw)
-const RIDE_LEAP_HOLD = 0.4; // s a leap may stay up past RIDE_LEAP_T to come down clear of the trunk it is over
-// the wild deer nearest the player inside RIDE_REACH, if one stands to be
-// ridden - the one resolver the E press (keyPress), the hop (hopToggle) and
-// the cap over its back (drawRideHint) all ask
-function rideNear(p) {
-  if (p.mount || p.dead || inAir(p) || p.zip >= 0) return null;
-  let best = null, bd = RIDE_REACH;
-  for (const a of animals) {
-    if (!RIDE[a.kind] || a.rider || !unitAlive(a) || a.stunT > 0) continue;
-    const d = Math.hypot(a.x - p.x, a.y - p.y);
-    if (d < bd) { bd = d; best = a; }
-  }
-  return best;
-}
-// the hop intent on the ground (updatePlay reads input.jump for every player
-// alike), in keyPress's own order: off a deer first, then the zipline's
-// claims overhead, then a deer in reach, then the walk to a cable under the
-// pointer (zipToggle, js/sim/zipline.js)
-function hopToggle(p) {
-  if (p.mount) { rideEnd(p, false); return; }
-  if (p.zip >= 0 || p.zipWalk || zipNear(p)) { zipToggle(p); return; }
-  // two players on one deer in the same step: one back, settled fairly (contest, js/sim/player.js)
-  const a = rideNear(p);
-  if (a) { contest('ride:' + animals.indexOf(a), p, () => rideStart(p, a)); return; }
-  zipToggle(p);
-}
-function rideStart(p, a) {
-  if (!a || p.mount || a.rider || p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 ||
-    p.zip >= 0 || inAir(p)) return;
-  if (p.zipWalk) zipWalkEnd(p);
-  p.sliding = false; p.slideT = 0;
-  p.mount = a; a.rider = p; a.team = p.team;
-  p.leapT = 0; p.leapCd = 0;
-  // the deer's own plans are over: no flight, no graze, no mark over it
-  a.fleeT = 0; a.fleeGoal = null; a.goal = null; a.alertT = 0; a.senseT = 0; a.dashT = 0;
-  a.kbx = a.kby = 0;
-  navClear(a);
-  p.x = a.x; p.y = a.y; // up onto its back
-  sfxAt('dodge', p.x, p.y);
-  burst(p.x, p.y + 4, '#dfe8f4', 5, 28, 0.3, true);
-}
-// off the deer: `thrown` (a stun, a fall, a death) drops the rider at rest;
-// a hop-off keeps the gallop's velocity for the surface to spend. The deer
-// is wild again either way, and runs from whoever is nearest
-function rideEnd(p, thrown) {
-  const a = p.mount;
-  if (!a) return;
-  p.mount = null; p.leapT = 0;
-  if (a.rider === p) { a.rider = null; delete a.team; }
-  if (thrown) { p.vx = 0; p.vy = 0; }
-  // a leap cut short over the trunk comes down beside it, both bodies
-  const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-  if (isSolidTile(tx, ty) || cisternCrowds(p.x, p.y, PLAYER_R)) {
-    const out = nearestDryTile(p.x, p.y + 4, p);
-    p.x = (out.tx + 0.5) * TILE; p.y = (out.ty + 0.5) * TILE - 4;
-    if (!a.dead) { a.x = p.x; a.y = p.y; }
-  }
-  if (!a.dead) {
-    const t = FLEE_TIME[a.kind] || FLEE_TIME.deer;
-    a.fleeT = rand(t[0], t[1]); a.fleeGoal = null; a.goal = null;
-    navClear(a);
-  }
-  if (!thrown) sfxAt('dodge', p.x, p.y);
-  burst(p.x, p.y + 4, '#cfd8e8', 4, 30, 0.3, true);
-}
-// every step, before the rider moves (updatePlayer): anything that takes the
-// body out of the saddle throws it
-function rideCheck(p) {
-  const a = p.mount;
-  if (!a) return;
-  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 ||
-    p.zip >= 0 || inAir(p)) rideEnd(p, true);
-}
-// the ridden deer's step (updateAnimal, in place of its brain): it stands
-// where its rider is, faces the way they ride, and gallops in time with them
-function rideCarry(a, dt) {
-  const p = a.rider;
-  if (p.mount !== a || p.dead || !p.active) {
-    if (p.mount === a) rideEnd(p, true);
-    else { a.rider = null; delete a.team; }
-    return;
-  }
-  a.x = p.x; a.y = p.y;
-  a.kbx = a.kby = 0;
-  const sp = Math.hypot(p.vx, p.vy);
-  a.spd = sp;
-  if (p.vx < -4) a.dir = 'left'; else if (p.vx > 4) a.dir = 'right';
-  setClip(a, sp > 8 ? 'run' : 'idle');
-  stepClip(a, dt, Math.max(0.6, sp / PREY_RUN.deer));
-}
-// THE LEAP: the roll key on deer-back (tryDodge hands it here). The deer
-// springs at its gallop the way the stick points (or the way it faces), and
-// the leap owns the velocity until it lands (rideLeapStep), so it carries
-// over the trunk whatever the stick does mid-air
-function rideLeap(p) {
-  if (p.leapT > 0 || p.leapCd > 0 || p.rootT > 0 || p.stunT > 0) return;
-  let dx = p.input.mx, dy = p.input.my;
-  if (!dx && !dy) {
-    dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
-    dy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
-  }
-  const d = Math.hypot(dx, dy) || 1;
-  const v = Math.max(PLAYER_SPEED * RIDE[p.mount.kind].mul, Math.hypot(p.vx, p.vy));
-  p.vx = dx / d * v; p.vy = dy / d * v;
-  p.leapT = RIDE_LEAP_T; p.leapUp = 0;
-  sfxAt('dodge', p.x, p.y);
-  burst(p.x, p.y + 4, '#dfe8f4', 5, 30, 0.3, true);
-}
-// one step in the air (playerMove, updatePlayer's movement ladder). A leap never comes
-// down ON a trunk: over one at the end, it stays up (up to RIDE_LEAP_HOLD)
-// and carries on until it is clear
-function rideLeapStep(p, dt) {
-  p.leapT = Math.max(0, p.leapT - dt);
-  p.leapUp += dt;
-  const mv = moveEntity(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, PLAYER_R);
-  if (mv.blockedX) p.vx = 0;
-  if (mv.blockedY) p.vy = 0;
-  if (p.leapT > 0) return;
-  if (rideOverLeap(p) && p.leapUp < RIDE_LEAP_T + RIDE_LEAP_HOLD) { p.leapT = dt; return; }
-  p.leapCd = RIDE_LEAP_CD;
-  burst(p.x, p.y + 4, '#cfd8e8', 4, 28, 0.3, true);
-  if (rideOverLeap(p)) rideEnd(p, true); // stopped dead on the trunk: off, beside it
-}
-// is any tile under the body (PLAYER_R about its middle) one a leap clears
-function rideOverLeap(p) {
-  const x0 = Math.floor((p.x - PLAYER_R) / TILE), x1 = Math.floor((p.x + PLAYER_R) / TILE);
-  const y0 = Math.floor((p.y - PLAYER_R) / TILE), y1 = Math.floor((p.y + PLAYER_R) / TILE);
-  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
-    const o = inWorld(tx, ty) ? objects[idx(tx, ty)] : null;
-    if (o && OBJECTS[o.type] && OBJECTS[o.type].leap) return true;
-  }
-  return false;
-}
-// how far off the ground a body is drawn by the ride: the leap's arc for the
-// deer and its rider alike (drawAnimal, drawPlayer; the seat is riderSeat's)
-function leapArc(p) {
-  if (!p || !(p.leapT > 0)) return 0;
-  const u = p.leapUp || 0; // past RIDE_LEAP_T it is holding over a trunk: low, still clear of it
-  return u < RIDE_LEAP_T ? Math.round(Math.sin(Math.PI * u / RIDE_LEAP_T) * RIDE_LEAP_H) : 2;
-}
-function rideLift(e) {
-  if (e instanceof Player) return e.mount ? leapArc(e) : 0;
-  return e.rider ? leapArc(e.rider) : 0;
-}
-
 // ------------------------------------------------------------ camp monsters
 // A camp monster holds station at its camp and minds its own business: no
 // sight, no threat bar filling while you linger - you can walk through a den
@@ -983,7 +621,7 @@ function updateCampMonster(a, dt) {
 
   let t = a.target;
   const awake = !!t;
-  if (t && (!t.active || t.dead || inAir(t))) { t = null; a.threat = 0; navClear(a); }
+  if (t && (!t.active || t.dead)) { t = null; a.threat = 0; navClear(a); }
   // awake, it turns to whoever is nearest - between blows, never in the
   // middle of one or of its roar; a quarry that falls hands the hunt on at once
   if (awake && (!t || !(a.clip === 'roar' || BEAR_ATTACKS.includes(a.clip)))) {

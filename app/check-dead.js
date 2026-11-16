@@ -43,6 +43,7 @@ const { tokenize, loadOrder, declarations } = require('./check-globals.js');
 const ROOT = path.join(__dirname, '..');
 const KEEP = {
   timeObj: 'the documented way to give a map object a clock (docs/dev/world.md)',
+  worldRng: 'the stream any rolled worldgen pass draws from (CLAUDE.md rule 3); the 3v3 field rolls nothing today',
   MENU_BW: 'the title frame\'s layout, which the lobby and rooms screens line up with',
   MENU_BH: 'the title frame\'s layout, which the lobby and rooms screens line up with',
   MENU_PITCH: 'the title frame\'s layout, which the lobby and rooms screens line up with',

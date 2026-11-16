@@ -1,12 +1,12 @@
 # Robots
 
-`robots` holds the barracks' [soldiers](#soldiers-the-waves) (one 12×10 faceless tread-bot grid
+`robots` holds the waves' [soldiers](#soldiers-the-waves) (one 12×10 faceless tread-bot grid
 in team colour, two tread frames — see [sprites.md](../sprites.md)) and the two eagles'
 [merchants](#the-merchant), which ride the same list with `merchant: true`. `updateRobot()` runs
 `updateUnitStatus` first, so a chassis wears every state a player can be put under (`makeRobot`
 clears the full set into it): rooted, netted, slowed, marked, stunned, on fire, and scrapped by a
 burn like anything else ([status effects](status-effects-one-set-for-every-unit.md)). A stun
-switches the brain off, a bot on a zipline rides it, and otherwise the merchant runs
+switches the brain off, and otherwise the merchant runs
 `updateMerchant` and a soldier `updateSoldier`. Worker bots (the player-built bot bay's crew)
 were cut in 0.525.
 Robots drive on `navStep` ([Pathfinding](pathfinding.md)) and are solid to players and animals
@@ -46,19 +46,18 @@ bot is not a downed player, so it never touches the kill count; what it pays is
 
 ## Soldiers: the waves
 
-The `soldiers` banner (js/sim/robots.js). On the match's wave beat (`barracksBeat`: `STRUCTS.barracks`
-`first`, 60 s of match clock, then every `waveT`, 30 s) each merchant's [barracks](buildings.md) rolls out a column of **soldiers** — a tread-bot chassis in its
-side's paint that carries nothing (a melee soldier's blow is the chassis itself ramming in,
-`soldierRam` in `drawRobot`) — that marches **its bay's lane** (`b.lane`, from the
-bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `makeRobot` with
-`kind: 'soldier'`, `owner: -1` (no cargo, no payout but the bounty) and a
-**route**. A top or bot soldier's is its own mouth of the [base](../world.md#the-bases) (`baseGate`),
-then `laneWaypoints(team, lane)`: [the side lane](../world.md#the-side-lanes) every `ROAD_STEP` tiles to
-the rival mouth, then the rival hollow's centre. A mid soldier's is its own eagle's junction
-(`e.mouth`, where the road leaves its base), `roadWaypoints(team)`, the rival's junction. The
-rival roost itself is read live each frame, since it may have flown. The road runs straight through
-[the cistern](../code-map/sim/cistern.md), gate to gate over its floor, so a mid column walks it end
-to end and the two sides' waves meet inside the ring. `updateSoldier` is four rungs, first hit wins:
+The `waves` and `soldiers` banners (js/sim/robots.js). On the match's wave beat (`waveBeat`:
+`WAVE.first`, 60 s of match clock, then every `WAVE.waveT`, 30 s) each side queues a column on
+**each lane** (`waves`, one per side per lane; `waveKinds` cuts it to the lane's `WAVE.cap`) and
+`updateWaves` walks it out of its own perch one soldier every `WAVE_ROLL` — a tread-bot chassis in
+its side's paint that carries nothing (a melee soldier's blow is the chassis itself ramming in,
+`soldierRam` in `drawRobot`) — and marches **its lane** (`b.lane`: 0 top, 1 bottom) to the rival
+bird. A side whose bird is off its perch sends none. `makeSoldier(team, lane, type)` is
+`robotBody` with `kind: 'soldier'`, `owner: -1` (no cargo, no payout but the bounty), stood
+`WAVE_OUT` tiles out along its lane (`laneOut`, js/sim/field.js), and a **route**: its lane's
+waypoints from its own perch to the rival's (`laneWaypoints`, [the lanes](../world.md#the-lanes),
+every `LANE_STEP` tiles). The rival roost itself is read live each frame. `updateSoldier` is four
+rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a hero hidden from it lets a
    column walk past): close to its kind's `reach` and strike (`robotStrike`, its kind's blow,
@@ -68,23 +67,15 @@ to end and the two sides' waves meet inside the ring. `updateSoldier` is four ru
    its kind's `eagle` (a melee 8, against a hand's 20) a blow through `hurtEagle` — ahead of any
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a rival
-   barracks), or a rival [road tower](#road-towers) inside
+   pump), or a rival [lane tower](#road-towers) inside
    `SOLDIER_TOWER_R` (160 px, `towerNear`), which a wave stops to bring down before it marches
    on: `hurtStruct` through the same `robotStrike`;
-4. the **march**: first **the zipline** (`soldierBoard`): its own side's cable of its own lane within `SOLDIER_ZIP_REACH`
-   (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
-   soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
-   toward that end, out to the front. Never the rival's: it always ends under a standing rival
-   [road tower](#road-towers), and riding it in would skip that tower. On
-   the cable the brain is off (the ride branch in `updateRobot`: `zipRide`, no swing), so a
-   rival who meets it there crashes with it ([the zipline](momentum-movement-players-only.md#the-zipline)). Off it, at the end or
-   knocked off, `soldierRejoin` reads the route again from where it stands (the leg it is
-   nearest). Else the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
+4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
-   roost through its lane, stopping at every rival road tower standing on the way.
+   roost, stopping at every rival lane tower standing on the way.
 
 It is allowed to fight and nothing else — no tree tempts it. Two waves
-meeting on the road therefore grind each other down (they are rival units to each other), which
+meeting on a lane therefore grind each other down (they are rival units to each other), which
 is the stalemate a player breaks by walking out. It takes every hit, state and sweep like any
 other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
@@ -92,9 +83,8 @@ and buffets it like a player (`updateEagle`/`eagleGust`), a road tower marks it,
 `robotDies` paying its bounty to the rival who lands the **last hit** ([Farming](#farming)) and
 `SOLDIER_XP` (20) times its kind's `xp` shared by every rival hero standing near, whoever scrapped it
 ([Hero levels](../multiplayer.md#hero-levels)) — no feed line, six or seven a wave. Its health is its kind's `hp` plus its `grow`
-for every barracks `grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
-hit a last hit. The cap on a barracks' live soldiers is
-`STRUCTS.barracks.cap`. Bots read them as attackers at their bird and as targets in
+for every `WAVE.grow` the match has run (`makeSoldier`), so a hero's grown blow never makes every
+hit a last hit. The cap on a side's soldiers on one lane is `WAVE.cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.md#bots)).
 
 
@@ -102,7 +92,7 @@ sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.m
 
 js/sim/farm.js. League's last hit: a rival soldier pays **only** the rival who lands its final
 blow — `soldierBounty(b)`, its kind's `bounty` share (melee 1, ranged 0.65, siege 3.2) of `SOLDIER_BOUNTY`
-(57) plus `SOLDIER_BOUNTY_GROW` (4) for every barracks `grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
+(57) plus `SOLDIER_BOUNTY_GROW` (4) for every `WAVE.grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
 (`a.home`: the wolves and the bears) pays its killer as ever (`animalDies`). Each is one **farm**
 (`farmHit`: `p.farm`, in `PLAYER_RECORD`), which the scoreboard's FARM column and the post-game
 COMBAT group's FARM row print. A soldier the waves, a tower or a beast finish pays nobody: the
@@ -110,15 +100,16 @@ COMBAT group's FARM row print. A soldier the waves, a tower or a beast finish pa
 do not run the step, aged by `state.tick`): a gold coin that hops and spins off a last hit, and a
 grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
 within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
-the fog is not drawn. The wolf den is the jungle: four wolves at 110 each and back `repop` (75 s)
-after the last dies, its clock on the den and on both maps ([world.md](../world.md#runtime)).
+the fog is not drawn. The wolf dens and scrap piles are the jungle: three wolves (or stray robots) at 110 each and back `repop` (75 s)
+after the last dies, its clock on the den and on both maps ([camps](../world.md#camps)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../multiplayer.md#bots)).
 
 ## Road towers
 
-The `road towers` banner (js/sim/towers.js). Every zipline has three `STRUCTS.tower` (`TOWER_AT`) (ROAD TOWER: 3x2,
-700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund) beside it, placed at boot
-([the zipline](../world.md#the-zipline)); the cable runs only to the furthest one standing.
+The `road towers` banner (js/sim/towers.js). Each lane has two `STRUCTS.tower` a side (ROAD TOWER:
+3x2, 700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund) on its centreline,
+one on the straight and one on the bend by the perch (`TOWER_SPOTS`, placed at boot by
+`placeTowers`, [the lanes](../world.md#the-lanes)).
 `updateTower` (called from `updateStructures`) is one gun on a turntable:
 
 - **What it shoots** (`towerMark`): a rival hero inside `TOWER_RANGE` (112 px from the foot)
@@ -141,54 +132,20 @@ pushing bot only walks in to hit one while its own wave stands in the ring (`aiL
 
 ## The merchant
 
-Each eagle is **driven** by its team's merchant — the old trader in the wide fur hat with the
-team-cloth crown and the white beard, seated on the bird's neck in flight (`SPRITES.perch.merchSeat`, `drawEagle`; the look is
-[sprites.md](../sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
-with a bar in its side's paint over it and no word (its stall and the B SHOP prompt say what it is), `drawMerchant`; the bird wears only its hp bar) — who climbs
-down the moment it roosts (`spawnMerchant`, called
-from `eagleCrash`, the `merchant` banner in js/sim/robots.js) and works **home** for its side, never
-toward the fight. It raises no walls and no guns. Its
-first job is its **stall**, and after that **home production**: it raises the **barracks** at its
-base's three lane mouths and fells the **back woods** for logs to rebuild them.
+Each side's merchant — the old trader in the wide fur hat with the team-cloth crown and the white
+beard ([sprites.md](../sprites.md)'s own 16 × 18 grids, built so it never reads as a player on
+either side, with a bar in its side's paint over it and no word: its stall and the B SHOP prompt
+say what it is, `drawMerchant`) — keeps its side's **stall** beside the perch, the shop players
+walk to (the `merchant` banner, js/sim/robots.js). It raises nothing and fells nothing.
 
-**The stall** (`OBJECTS.stall`, world.js) is the shop players walk to. The moment the merchant is
-off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (6) tiles from
-the roost at `MERCH_STALL_ANG` (1.0 rad) either side of the road's axis (`e.laneDir`): just past the
-paved crater, beside the road's head, where everybody lands and respawns, never on the road itself
-(`laneDist`), on snow holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
-`raise` inside `updateMerchant`), and `pitchStall` sets it: the anchor is the front-left tile (the
-row the y-sort reads, like the hut's), parts east and north, and the ground under its shade is
-repainted. It carries its `team` and nothing else: no `tool`, no hp and no place in `structures`,
-so nothing swings at it, shoots it or sieges it. It goes up once, about twenty seconds after the
-landing, and until then the merchant's own body is the only counter. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
-the crater). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
-roost whose bearing off the road's axis (`e.laneDir`, 0 up the road) is at least
-`MERCH_BACK_ARC` (90°): the half facing away from the road. `merchBackPine` picks the one nearest
-the roost first (the merchant's own distance breaks near ties) that still has an open side to
-stand on, so the clearing grows out from home as one front. Each falls to a **stump** at
-`MERCH_SWING_T` a swing, and a timed `b.avoids` list keeps trunks no route reached out of the
-pick (without it the pick flips forever between two walled-in trees).
+**The stall** (`OBJECTS.stall`, world.js) stands from boot at a written-down spot behind the perch
+on the top lane's side (`MERCH_STALL`, mirrored for BLUE; `placeStalls`): the anchor is the
+front-left tile (the row the y-sort reads), parts east and north. It carries its `team` and
+nothing else: no `tool`, no hp and no place in `structures`, so nothing swings at it, shoots it or
+sieges it. The merchant stands at its counter from the first second of a match (`spawnMerchants`
+at `beginMatch`; `merchPost`).
 
-The **bays** (the barracks, [base building](buildings.md)) jump that queue whenever one is due:
-**one per lane**, each just inside that lane's mouth of the hollow (`baseBaySpot`,
-js/sim/base.js), whose waves walk that lane. Worldgen keeps each spot in a clearing (`bayKeeps`:
-`BAY_CLEAR` tiles round the footprint, one more in front, pines only, never a jungle wall's), so a
-bay stands in the open like a tower. They are due the moment its stall stands; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
-bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
-off the road holding nothing the axe cannot take. Each lane's **first** bay is free
-(`b.bayGift`), so all three go up one after another, about 0:28 to 0:46 of match time on seed 42 and risen by
-0:52, before the first wave at 1:00. The merchant walks at `MERCH_SPD` (64 px/s), a step under a hero.
-`merchBayBlocker` hands it every pine and snag on the
-footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
-at `MERCH_BAY_SWING` (0.17 s) through `merchFell` (the axe always leaves a stump everywhere but
-the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,
-with the merchant wholly off the footprint so the bay never goes up round it, sets the site
-(`createStruct`, nobody pays gold) and stamps its `lane`. A wrecked bay drops out of `b.bays` and
-holds the next raise `MERCH_BAY_REBUILD` (45 s); a rebuild costs `MERCH_BAY_WOOD` (40) logs, except
-in an empty yard, so a side is never out of waves.
-
-With nothing due and the back woods felled, it keeps to its post on the road just up from the bird, a step or
-two either way. **Wherever it is, it keeps shop** too: its own body is a
+It keeps to its post a step in front of its counter, strolling a step or two either way now and then. **Wherever it is, it keeps shop** too: its own body is a
 [counter](the-merchants-counter.md) as well as its stall, open to either team, and it stands still
 and faces a customer served at its body for as long as the sale takes.
 
@@ -202,8 +159,7 @@ targets one as it targets a soldier. Every wreck also runs `HERO_WRECK` (FABER's
 It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a
 soldier rides, dispatched to `updateMerchant`/`drawMerchant` off the flag after `updateRobot`'s
-shared status/stun handling. A bay's owner is the team's first player (`createStruct` needs
-one). `owner` is -1: it pays nobody.
+shared status/stun handling. `owner` is -1: it pays nobody.
 
 **It cannot be hurt, and it has no `hp` field at all rather than a large one.** `unitAlive`
 (js/sim/actions.js) answers false for a merchant, and that one function is the gate every target

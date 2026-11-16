@@ -30,19 +30,13 @@ let camVp = null, camVpX = 0, camVpY = 0;
 // follow lerp then only has the lean's change to close - and the play camera
 // takes that share too, off the scale this returns (the one it started from).
 function applyZoom(dt, snap) {
-  // the ride's OPENING SHOT: beginDrop's intro starts tight on your seat
-  // (DROP_OPEN_ZOOM) and pulls out to the ride's framing as it runs down -
-  // fractional in motion like any zoom, landing exact on DROP_ZOOM
   // the title holds ZOOM_TITLE (its scene, js/ui/titlescene.js); the shows the match puts on (the roost tour, the
   // driven-off ceremony) hold ZOOM_SHOW whatever the wheel says: they frame
   // birds and valley, not your boots, and glide back to the wheel's zoom after
   const show = (state.drop && (state.eagleCine || guideTouring() || // the FIRST MATCH's ride to their roost (js/ui/guide.js)
     (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee'))));
   // (each authored at the default UI SIZE: zu() carries it to this canvas)
-  const want = state.mode === 'title' ? zu(ZOOM_TITLE) : show ? zu(ZOOM_SHOW)
-    : state.mode !== 'drop' ? zoomWantOf()
-    : state.intro > 0 ? zu(DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen)))
-      : dropStoopZoom(zoomWantOf());
+  const want = state.mode === 'title' ? zu(ZOOM_TITLE) : show ? zu(ZOOM_SHOW) : zoomWantOf();
   const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/app/director.js)
   const zPrev = zoomCur;
   if (snap) zoomCur = want;
@@ -78,8 +72,8 @@ function update(dt) {
   SFX.setAmbience(!state.paused && (state.mode !== 'dead' || state.over === 'respawning'),
     state.darkness > NIGHT_CUE);
 
-  // time (the clock starts with the eagle - the match is live while you ride)
-  if (state.mode === 'play' || state.mode === 'drop') {
+  // time (the clock starts with the match)
+  if (state.mode === 'play') {
     state.time += dt;
     state.elapsed += dt;
     if (state.time >= CYCLE) {
@@ -100,7 +94,7 @@ function update(dt) {
   // far anyone can see. Only the way DOWN speaks - the curve crosses this
   // number again on its way out, and the chime already owns that moment.
   if (dark >= NIGHT_CUE && state.darkness < NIGHT_CUE
-    && (state.mode === 'play' || state.mode === 'drop')) SFX.nightFall();
+    && state.mode === 'play') SFX.nightFall();
   state.darkness = dark;
 
   if (state.mode === 'dead') {
@@ -122,7 +116,7 @@ function update(dt) {
   // with the world still moving, the same deal the build wheel takes.
   // A CLIENT never steps: it sends what its hands are doing and applies what
   // the host says the match is (netClientStep, js/net/net.js) - in every
-  // mode, since the host decides when the ride begins. A host (solo is one
+  // mode, since the host decides when the match begins. A host (solo is one
   // with no peers) reads its peers' inputs into their bodies before the step
   // and sends the snapshot after it.
   if (NET.isClient) {
@@ -130,7 +124,7 @@ function update(dt) {
     netClientStep(dt);
     trampleStep(dt); // the trampled snow reads what the client draws (js/draw/trample.js)
     if (state.mode === 'title') updateTitle(dt); // the waiting room is the title's: its eases and hovers run here too
-  } else if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
+  } else if ((state.mode === 'play' || state.mode === 'dead') &&
     ((!state.paused && !state.settingsOpen) || netShared())) { // a host's menu never stops the match for its peers
     sampleHumanInput(player, dt);
     netHostStep(dt);
@@ -139,7 +133,7 @@ function update(dt) {
     evInStep = false;
     trampleStep(dt); // visual only: it runs beside the step, never records (js/draw/trample.js)
     netHostFlush();
-  } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') {
+  } else if (state.mode === 'play' || state.mode === 'dead') {
     sampleHumanInput(player, dt); // still drops a held draw when an overlay opens
   } else if (state.mode === 'title') {
     netHostStep(dt); // a peer may knock while the host is still at the title
@@ -155,24 +149,6 @@ function update(dt) {
   } else if (state.mode === 'title') {
     const c = titleCamTarget();
     camX = c.x; camY = c.y;
-  } else if (state.mode === 'drop') {
-    // riding: the arrival's one shot (dropCamAim, js/sim/eagle.js). The
-    // first INTRO_T is the opening: tight on your seat while applyZoom pulls
-    // the view out round it, the lean toward your roost growing in. Kept
-    // inside the world, like play's: the bird comes in over its own corner,
-    // from the very edge of the map. While your bird is up the camera holds
-    // the aim exactly, so the stoop's zoom (dropStoopZoom) lands on the very
-    // framing the crash hands over (handOver).
-    const aim = dropCamAim();
-    const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, aim.x - WV_W / 2));
-    const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, aim.y - WV_H / 2));
-    if (state.intro > 0 || dropFlies(state.drop.eagles[player.team])) {
-      state.intro = Math.max(0, state.intro - dt);
-      camX = tx; camY = ty;
-    } else {
-      camX += (tx - camX) * Math.min(1, dt * 9);
-      camY += (ty - camY) * Math.min(1, dt * 9);
-    }
   } else if (state.drop && (state.eagleCine ||
       (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee')))) {
     // the match is decided: every eye goes to the bird that broke. The camera
@@ -303,7 +279,7 @@ function sweepBox(x0, y0, dx, dy, b) {
 
 // A STANDING BUILDING stops a shot wherever it is DRAWN, not only on the
 // footprint tiles the walk asks: its art stands on the footprint's bottom
-// edge and may rise past the top (the barracks' roof) or overhang the sides
+// edge and may rise past the top (a tower's gun) or overhang the sides
 // - so a shot through any of that flew through the building. Its shape is the
 // box its sprite's opaque pixels cover where the draw lays them
 // (structArtOff), the footprint included. Null for a
@@ -403,7 +379,7 @@ function shotContacts(a, x0, y0, dx, dy) {
     if (a.team === t.team || t.id === a.owner) continue;
     const r = ARROW_HIT_R, cy = t.y - 6;
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
-    if (!t.active || t.dead || inAir(t) || t.invuln > 0) continue;
+    if (!t.active || t.dead || t.invuln > 0) continue;
     if (a.pierce && a.pierceHit.includes(t)) continue;
     const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
@@ -423,7 +399,7 @@ function shotContacts(a, x0, y0, dx, dy) {
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'robot', t }); if (!a.pierce) stop = s; }
   }
   for (const t of animals) {
-    if (t.team !== undefined && a.team === t.team) continue; // a deer ridden by the shot's side (js/sim/wildlife.js)
+    if (t.team !== undefined && a.team === t.team) continue; // a hero's own beast, to its own side (HERO_SUMMON)
     const r = animalHitR(t), cy = animalHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
@@ -490,13 +466,8 @@ function updatePlay(dt) {
   updateVotes(dt);
 
   // every player steps through the same code, each off its own input struct
-  // (players still on or under the eagle are moved by updateDrop instead)
   for (const p of players) {
-    // the hop off the roost is the one act a rider can take: read here, before
-    // the air skips the body, so a remote hand's press lands like a local one
-    // ...and on the ground the same intent is the zipline's and the deer's (hopToggle, wildlife.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && !p.dead && !inAir(p)) hopToggle(p); } // seated on the bird there is no hop to ask for: the crew leaps on its own
-    if (!p.active || inAir(p)) continue;
+    if (!p.active) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);
     trickle(p, dt);
@@ -507,7 +478,7 @@ function updatePlay(dt) {
   sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // the ability flashes, and what each hero left in the world
-  if (state.drop) updateDrop(dt);
+  if (state.drop) updateEagles(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
   updateCallouts(dt); // the bots' calls to their side (js/ai/ai-callouts.js)
 
@@ -532,7 +503,7 @@ function updatePlay(dt) {
     a.x += dx; a.y += dy;
     // What the shot does to a BODY, said once for all three kinds: the
     // damage and the shove it lands go through hurtUnit (js/sim/actions.js) to
-    // a player, a deer or a bot alike. Only the hit disc differs per
+    // a player, a beast or a bot alike. Only the hit disc differs per
     // kind (shotContacts, above). `base` is the px/s shove this KIND of body
     // takes from a shot; the shot's own KNOCKBACK (a.kb) scales it - and
     // scales a player's HIT_KB too, which is why it travels as a multiplier.
@@ -592,10 +563,10 @@ function updatePlay(dt) {
 
   // structures + their robots
   updateStructures(dt);
+  updateWaves(dt); // each lane's soldier waves on the match's beat (js/sim/robots.js)
   updateRespawns(dt);
   for (const b of robots) updateRobot(b, dt);
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
-  zipCrash(); // rivals meeting on a cable (js/sim/zipline.js): every rider has stepped
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)
   separateUnits(dt);
@@ -611,7 +582,6 @@ function updateWildlife(dt) {
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   updateCampSight(); // and each side learns the clocks it can see
-  updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 
 const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
@@ -637,26 +607,24 @@ function iceUnder(p) {
   return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) || heroIce(p); // ...or a rival hero's ice (HERO_ICE, js/sim/heroes.js)
 }
 // ...and whether that ice glides, which is what the walk reads (walkSlide,
-// walkStep). The orca's pool and the frozen creek are rough ice, crusted with
-// rime: they hold a foot like snow, so the orca's late fight is fought
-// standing a blade's reach from the hole, and a river fight is fought like
-// one on the bank, not skating past it. A rival hero's ice glides anywhere.
+// walkStep). The orca's pool is rough ice, crusted with rime: it holds a
+// foot like snow, so the orca's late fight is fought standing a blade's
+// reach from the hole. A rival hero's ice glides anywhere.
 function slickUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty) && !creekIceAt(ftx, fty)) || heroIce(p);
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty)) || heroIce(p);
 }
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
   p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
 }
 // the input's heading, normalised, and its length before (0: no input); the
-// body faces it and remembers it
-function walkHeading(p, mx, my, auto) {
+// body faces it
+function walkHeading(p, mx, my) {
   const len = Math.hypot(mx, my);
   p.moving = len > 0;
   if (len > 0) {
     mx /= len; my /= len;
-    if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, js/sim/zipline.js)
     if (p.swingT <= 0 && p.faceT <= 0) faceToward(p, mx, my);
   }
   return { mx, my, len };
@@ -664,7 +632,7 @@ function walkHeading(p, mx, my, auto) {
 // shift-slide: only engages above walking speed; keeps momentum, drops the tools
 function walkSlide(p, slide, dt, onIce, kit) {
   const sp = Math.hypot(p.vx, p.vy);
-  const wantSlide = slide && p.dodgeT <= 0 && !p.mount; // nothing glides on deer-back
+  const wantSlide = slide && p.dodgeT <= 0;
   if (!p.sliding && wantSlide && sp > kit.slideMin) {
     p.sliding = true;
   }
@@ -683,10 +651,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
   // every cap an ability may drag on (root, slow, cast, shield),
   // folded once - js/sim/abilities.js
   const abMul = abilityMoveMul(p);
-  // a rider goes at the deer's gallop (RIDE, js/sim/wildlife.js): not the
-  // hero's stride
-  const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
-    : statOf(p, 'ms')) * abMul; // MOVE SPEED (js/sim/stats.js)
+  const walkMax = statOf(p, 'ms') * abMul; // MOVE SPEED (js/sim/stats.js)
 
   if (p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
@@ -837,15 +802,6 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     p.vy = p.rushNY * hd.spd * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
     hd.step(p, mv, dt);
-  } else if (p.leapT > 0) {
-    // THE LEAP on deer-back: it owns the velocity the way a roll does, and
-    // clears a felled trunk (rideLeapStep, js/sim/wildlife.js)
-    rideLeapStep(p, dt);
-  } else if (p.zip >= 0) {
-    // ZIPLINE: the cable owns the position outright - no moveEntity, so
-    // nothing under it stops a rider - and sets the velocity the exit keeps
-    // (zipStep/zipEnd, js/sim/zipline.js). Knockback decays above and is never spent.
-    zipStep(p, dt, mx, my, len);
   } else {
     walkStep(p, dt, mx, my, len, onIce, kit);
   }
@@ -903,7 +859,7 @@ function playerStamina(p, dt, kit) {
 // slide's carved double trail
 function playerTrails(p, dt, onIce) {
   const spNow = Math.hypot(p.vx, p.vy);
-  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && p.zip < 0) { // a rider's feet are off the snow
+  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding) { // a rider's feet are off the snow
     // the stride keeps time with the snow going by: a drawn bow's creep
     // steps slower, an ice run a little quicker (nothing but the
     // drawn stride reads it: drawPlayer, js/draw/bodies.js)
@@ -987,7 +943,7 @@ function playerAttack(p, dt) {
   // (attackStep, js/sim/attack.js). A body mid-ability, mid-roll, falling
   // or on a cable has no hand free for it.
   const free = p.fallT <= 0 && p.stunT <= 0 && (p.swingT <= 0 || p.autoSwing) && p.castT <= 0 && p.shieldT <= 0 &&
-    p.rushT <= 0 && p.zip < 0 && p.dodgeT <= 0;
+    p.rushT <= 0 && p.dodgeT <= 0;
   attackStep(p, dt, free);
 }
 
@@ -1011,17 +967,8 @@ function updatePlayer(p, dt) {
   // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
   updateRecall(p, dt);
 
-  // a stun, a fall or the cable takes a rider out of the saddle (js/sim/wildlife.js)
-  rideCheck(p);
-  if (p.leapCd > 0) p.leapCd = Math.max(0, p.leapCd - dt);
-
-  // input - or the walk to the zipline holding the stick for the player
-  // (zipWalkStep, js/sim/zipline.js: any input of their own ends it), which leaves
-  // lastMx/lastMy alone so the clip-on still reads the walk before the press
-  let mx = inp.mx, my = inp.my, auto = false;
-  if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
-  const hd = walkHeading(p, mx, my, auto), len = hd.len;
-  mx = hd.mx; my = hd.my;
+  const hd = walkHeading(p, inp.mx, inp.my), len = hd.len;
+  let mx = hd.mx, my = hd.my;
 
   kbDecay(p, dt);
 

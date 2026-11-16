@@ -16,13 +16,13 @@
 // it (evPush, js/net/events.js), and it is aged by the sim's tick, the way a
 // damage total is, so a client fades it exactly as the host does.
 const SOLDIER_BOUNTY = 57;     // gold the last hit on a rival MELEE soldier pays at the start; a kind pays its `bounty` share of it (SOLDIER_TYPES, robots.js): lanes are the main farm (the `economy` scale, YIELD in js/sim/core.js)
-const SOLDIER_BOUNTY_GROW = 4; // ...and the more it pays for every barracks `grow` (the clock that adds a soldier to the wave)
+const SOLDIER_BOUNTY_GROW = 4; // ...and the more it pays for every wave `grow` (the clock that adds a soldier to the wave: WAVE, js/sim/robots.js)
 const COIN_POP_T = 0.8;        // s a coin pop lives
 const coinPops = [];           // { x, y, miss, team, tick }: miss pops are for `team`'s screens only
 
 // what the last hit on rival soldier b pays right now: its kind's share of a melee one's
 function soldierBounty(b) {
-  return Math.round(soldierType(b).bounty * (SOLDIER_BOUNTY + SOLDIER_BOUNTY_GROW * Math.floor(state.elapsed / STRUCTS.barracks.grow)));
+  return Math.round(soldierType(b).bounty * (SOLDIER_BOUNTY + SOLDIER_BOUNTY_GROW * Math.floor(state.elapsed / WAVE.grow)));
 }
 
 // one coin into the air: the gold one off a last hit, or (miss) the grey one

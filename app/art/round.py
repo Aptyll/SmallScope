@@ -7,7 +7,7 @@
 #   DETAIL = 'ew'                                 letters allowed to be single pixels (eye, glint)
 #   TEAM = 'tT'                                   letters that wear the team colour (heroes)
 #   VS = [('TODAY', 'old.png')]                   what to show it beside: today's sprite, the rejected one
-#   REFS = 'hero,wolf,deer,bear'                  today's sprites standing in the game frame with it
+#   REFS = 'hero,wolf,rabbit,bear'                  today's sprites standing in the game frame with it
 # Writes beside the asset, in <asset>/now/: <view>.png (1x), <view>.txt (the grid, as the game
 # takes it), checks.txt, board.png, and with --frame the real game frames (needs app/server.js).
 # --keep also copies now/ to the next r<N>/, and the board shows the last kept round beside the
@@ -47,7 +47,7 @@ def main(argv):
     if '--frame' in argv:
         out = os.path.join(now, 'frame.png')
         art = ','.join([f for _, f in vs if 'TODAY' not in _.upper() or True][:3] + pngs)
-        r = subprocess.run(['node', os.path.join(HERE, 'stage.js'), '--out', out, '--art', art, '--refs', getattr(M, 'REFS', 'hero,wolf,deer,bear')], capture_output=True, text=True)
+        r = subprocess.run(['node', os.path.join(HERE, 'stage.js'), '--out', out, '--art', art, '--refs', getattr(M, 'REFS', 'hero,wolf,rabbit,bear')], capture_output=True, text=True)
         line = [l for l in r.stdout.splitlines() if l.startswith('{')]
         if line:
             from PIL import Image

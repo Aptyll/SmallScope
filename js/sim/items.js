@@ -386,7 +386,7 @@ function itemStat(p, key) {
   if (key !== 'armor' || !p.kit) return 0;
   let n = p.kit.brace && p.hp < p.maxHp * BRACE_BELOW ? BRACE_ARMOR : 0;
   for (const q of players) {
-    if (q !== p && q.active && !q.dead && q.team === p.team && q.kit && q.kit.rally && !inAir(q) &&
+    if (q !== p && q.active && !q.dead && q.team === p.team && q.kit && q.kit.rally &&
       Math.hypot(q.x - p.x, q.y - p.y) <= BANNER_R) { n += BANNER_ARMOR; break; }
   }
   return n;
@@ -456,7 +456,7 @@ function useItem(p, slot) {
   if (p === player) itemDenied(slot);
 }
 function drinkPotion(p, slot) {
-  if (p.dead || p.potT > 0 || p.hp >= p.maxHp || (p.potions || 0) <= 0 || inAir(p)) {
+  if (p.dead || p.potT > 0 || p.hp >= p.maxHp || (p.potions || 0) <= 0) {
     if (p === player) itemDenied(slot);
     return;
   }

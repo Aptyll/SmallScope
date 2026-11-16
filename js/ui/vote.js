@@ -14,7 +14,7 @@ const VOTE_NO = '#c8463c';     // a no's dash
 // is the panel up on this screen: your side has a vote open (or a failed
 // one holding its dashes) and the match has not ended for you
 function voteUp() {
-  if (!player || state.over === 'won' || state.over === 'lost' || state.mode === 'title' || state.mode === 'drop') return false;
+  if (!player || state.over === 'won' || state.over === 'lost' || state.mode === 'title') return false;
   return !!votes()[player.team] && hudHome();
 }
 // the panel's top edge: where the top-centre notes start (voteY, js/ui/rail.js)

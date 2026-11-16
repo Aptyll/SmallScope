@@ -4,9 +4,8 @@
 // and buildings stay; a rival body or a creature out of sight is not drawn
 // (fogShown, asked by every place that draws a body or its map dot).
 // ------------------------------------------------------------ fog of war (draw)
-// How: once a frame (fogView, on first need) each of the side's eyes is
-// traced as a fan of sight lines; an eye with no stone in reach needs none.
-// The edge's distance is taken on world-locked FOG_CELL px corners, and a mask
+// How: once a frame (fogView, on first need) the side's eyes are gathered,
+// each a circle of its reach. The edge's distance is taken on world-locked FOG_CELL px corners, and a mask
 // at FOG_STEP px per mask px is filled - whole cells in one run, the cells the
 // edge crosses px by px - then laid over the world with ONE multiply, under
 // the night (renderLighting calls drawFog first). The cells sit on the world's
@@ -14,7 +13,6 @@
 const FOG_TINT = [158, 160, 168]; // the multiply: a flat grey dim, cooler than nothing and far lighter than the night
 const FOG_CELL = 4;   // world px between the corners the edge is measured at
 const FOG_STEP = 2;   // world px per step of the rim
-const FOG_ARC = 3;    // world px of arc between two sight lines at the end of their reach
 const FOG_CLAMP = 16; // px inside the edge a corner's distance is kept to (and out of it, for who is shown)
 const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is two flat steps, not one hard line
 const FOG_HALF = FOG_TINT.map((v) => Math.round((v + 255) / 2)); // ...and that band's multiply, halfway to no dim
@@ -29,8 +27,7 @@ const FOG_JOIN = 64;
 const FOG_REACH = 64;
 
 const fogEyesDraw = [];
-const fogBands = []; // the cables' eyes joined pair by pair, for the mask (fogBand)
-let fogNow = -1, fogTeam = -1, fogLines = new Map();
+let fogNow = -1, fogTeam = -1;
 const fogShownMap = new Map();
 const fogMaskCv = document.createElement('canvas'), fogMaskCtx = fogMaskCv.getContext('2d');
 let fogImg = null, fogPx = null, fogGrid = null, fogGW = 0, fogGH = 0;
@@ -38,53 +35,14 @@ let fogImg = null, fogPx = null, fogGrid = null, fogGW = 0, fogGH = 0;
 const fogMapCv = document.createElement('canvas'), fogMapCtx = fogMapCv.getContext('2d');
 let fogMapImg = null, fogMapPx = null, fogMapKey = '';
 
-// whether the fog is drawn this frame, for whom, and each eye's sight lines
+// whether the fog is drawn this frame, and for whom
 function fogView(now) {
   if (now === fogNow) return fogTeam >= 0;
   fogNow = now; fogShownMap.clear();
   fogTeam = fogUp() ? viewPlayer().team : -1;
   if (fogTeam < 0) return false;
   sightSources(fogTeam, fogEyesDraw);
-  fogBands.length = 0;
-  // an eye that has not moved a px since the last frame keeps its lines
-  const was = fogLines;
-  fogLines = new Map();
-  for (const s of fogEyesDraw) {
-    s.n = Math.ceil(Math.PI * 2 * s.r / FOG_ARC);
-    if (s.next && s.open && s.next.open) fogBand(s, s.next);
-    if (s.open) continue;
-    const key = Math.round(s.x) + ',' + Math.round(s.y) + ',' + s.r;
-    let d = was.get(key);
-    if (!d) {
-      d = new Float32Array(s.n);
-      for (let i = 0; i < s.n; i++) {
-        const a = i / s.n * Math.PI * 2, t = sightReach(s.x, s.y, Math.cos(a), Math.sin(a), s.r, s.stone);
-        d[i] = t >= s.r ? s.r : Math.min(s.r, t + FOG_FACE);
-      }
-    }
-    s.d = d; fogLines.set(key, d);
-  }
   return true;
-}
-
-// Two eyes in a row on one cable, drawn as ONE straight band between them and
-// not as two circles: a row of circles has a cusp between every pair, and a
-// cable's worth of cusps read as a saw edge. The band is as wide as the two
-// circles are where they cross, so it lies wholly inside what the side sees:
-// the mask dims at most the cusps' own depth (under FOG_BAND) of seen ground
-// and lights nothing unseen. Only the mask reads it; who is shown (fogShown)
-// and the maps still ask the eyes themselves.
-function fogBand(a, b) {
-  const dx = b.x - a.x, dy = b.y - a.y, half = Math.hypot(dx, dy) / 2, r = Math.min(a.r, b.r);
-  if (half >= r) return; // too far apart to touch: two circles
-  a.banded = b.banded = true;
-  fogBands.push({ ax: a.x, ay: a.y, dx, dy, len2: dx * dx + dy * dy || 1, r: Math.sqrt(r * r - half * half) });
-}
-// which of eye s's sight lines points along (dx, dy)
-function fogRay(s, dx, dy) {
-  let a = Math.atan2(dy, dx);
-  if (a < 0) a += Math.PI * 2;
-  return ((a * s.n / (Math.PI * 2)) | 0) % s.n;
 }
 
 // signed px from (x, y) to the side's nearest fog edge, up to FOG_CLAMP: >= 0 lit
@@ -94,9 +52,7 @@ function fogMargin(x, y) {
     const dx = x - s.x, dy = y - s.y;
     if (dx > s.r || dx < -s.r || dy > s.r || dy < -s.r) continue;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    let m;
-    if (s.open) m = s.r - dist;
-    else m = s.d[fogRay(s, dx, dy)] - dist;
+    const m = s.r - dist;
     if (m > best) best = m;
   }
   return best > FOG_CLAMP ? FOG_CLAMP : best;
@@ -125,30 +81,15 @@ function fogJoin(a, b) {
   const h = FOG_JOIN - Math.abs(a - b), m = (a > b ? a : b) + (h > 0 ? h * h / (4 * FOG_JOIN) : 0);
   return m > FOG_CLAMP ? FOG_CLAMP : m;
 }
-// the corners' distances for the cells over the world view, eye by eye: an
-// open eye's circle by its radius, a stopped one through its sight lines
+// the corners' distances for the cells over the world view, eye by eye: each
+// eye's circle by its radius
 function fogCorners(gx0, gy0) {
   fogGW = Math.ceil(WV_W / FOG_CELL) + 3; fogGH = Math.ceil(WV_H / FOG_CELL) + 3;
   if (!fogGrid || fogGrid.length < fogGW * fogGH) fogGrid = new Float32Array(fogGW * fogGH);
   const g = fogGrid, W = fogGW;
   g.fill(-FOG_REACH, 0, W * fogGH);
-  for (const s of fogBands) {
-    const r = s.r + FOG_REACH;
-    const i0 = Math.max(0, Math.floor((Math.min(s.ax, s.ax + s.dx) - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((Math.max(s.ax, s.ax + s.dx) + r) / FOG_CELL) - gx0);
-    const j0 = Math.max(0, Math.floor((Math.min(s.ay, s.ay + s.dy) - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((Math.max(s.ay, s.ay + s.dy) + r) / FOG_CELL) - gy0);
-    for (let j = j0; j <= j1; j++) {
-      const py = (gy0 + j) * FOG_CELL - s.ay, row = j * W;
-      for (let i = i0; i <= i1; i++) {
-        if (g[row + i] >= FOG_CLAMP) continue;
-        const px = (gx0 + i) * FOG_CELL - s.ax;
-        const t = Math.max(0, Math.min(1, (px * s.dx + py * s.dy) / s.len2)), ex = px - s.dx * t, ey = py - s.dy * t;
-        g[row + i] = fogJoin(g[row + i], s.r - Math.sqrt(ex * ex + ey * ey));
-      }
-    }
-  }
   for (const s of fogEyesDraw) {
-    if (s.banded) continue; // drawn by its band
-    const r = s.r + FOG_REACH, inner = s.open ? s.r - FOG_CLAMP : -1;
+    const r = s.r + FOG_REACH, inner = s.r - FOG_CLAMP;
     const i0 = Math.max(0, Math.floor((s.x - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((s.x + r) / FOG_CELL) - gx0);
     const j0 = Math.max(0, Math.floor((s.y - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((s.y + r) / FOG_CELL) - gy0);
     for (let j = j0; j <= j1; j++) {
@@ -157,11 +98,7 @@ function fogCorners(gx0, gy0) {
         if (g[row + i] >= FOG_CLAMP) continue;
         const dx = (gx0 + i) * FOG_CELL - s.x, dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > r) continue;
-        let m;
-        if (dist <= inner) m = FOG_CLAMP;
-        else if (s.open) m = s.r - dist;
-        else m = s.d[fogRay(s, dx, dy)] - dist;
-        g[row + i] = fogJoin(g[row + i], m);
+        g[row + i] = fogJoin(g[row + i], dist <= inner ? FOG_CLAMP : s.r - dist);
       }
     }
   }
@@ -244,7 +181,7 @@ function fogMapFrame(now) {
     fogMapCv.width = fogMapCv.height = WORLD;
     fogMapImg = fogMapCtx.createImageData(WORLD, WORLD); fogMapPx = new Uint32Array(fogMapImg.data.buffer);
   }
-  // the key: every eye's tile and reach (a stopped eye's lines change only as it moves)
+  // the key: every eye's tile and reach
   let key = structures.length + ':';
   for (const s of fogEyesDraw) key += ((s.x / 4) | 0) + ',' + ((s.y / 4) | 0) + ',' + s.r + ';';
   if (key === fogMapKey) return true;
@@ -259,7 +196,7 @@ function fogMapFrame(now) {
     for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
       if (!fogMapPx[ty * WORLD + tx]) continue;
       const dx = (tx + 0.5) * TILE - s.x, dy = (ty + 0.5) * TILE - s.y, dist = Math.sqrt(dx * dx + dy * dy);
-      if ((s.open ? s.r : s.d[fogRay(s, dx, dy)]) - dist >= 0) fogMapPx[ty * WORLD + tx] = 0;
+      if (s.r - dist >= 0) fogMapPx[ty * WORLD + tx] = 0;
     }
   }
   fogMapCtx.putImageData(fogMapImg, 0, 0);

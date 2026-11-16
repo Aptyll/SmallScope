@@ -4,36 +4,27 @@ The design in one page: the shape of a match and the handful of ideas every syst
 Read this before proposing a feature or judging whether one fits — the *how* of each pillar is in
 the deep doc it links to. Nothing here is an invariant; [CLAUDE.md](../../CLAUDE.md) carries those.
 
-**Softfall is a browser canvas 2D top-down pixel-art five-versus-five team battle (a MOBA) on a winter map.**
+**Softfall is a browser canvas 2D top-down pixel-art three-versus-three team battle (a MOBA) on a winter map.**
 Cozy and a war at once is the whole tension: the snowfield is quiet, the trees are pretty, and
-nine other people are on it.
+five other people are on it.
 
 ## A match
 
 Six players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of three, RED vs
-BLUE** (players alternate). Everyone plays one of **twenty-two heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher, SAGITTA the siege marksman, CLIVUS the climbing fighter, ARCUS the fletcher, FOSSOR the digger and PORTITOR the carrier — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
-the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
-into its **corner's** woods, RED always bottom-left, BLUE always top-right
-([the bases](world.md#the-bases)); the bird roosts on its perch at the back and becomes its team's
-**objective**; its
-**merchant** climbs down and works home, never toward the fight: it pitches a stall beside
-the road's head, a shop for anybody at all who walks up to it, then raises the bot bays and fells
-the back woods behind the bird for logs to rebuild them; idle, it keeps to the road just up from the bird.
-**Three lanes** join the bases, like a Rift: **the road** (mid) runs the map's diagonal from one
-perch to the other, one straight flagstone lane, and **the top and bot lanes** run
-straight up either edge of the valley and turn one hard corner, like the Rift's, where the frozen creek ends under them. All
-three are there from worldgen, the same every match and readable from anywhere, and each leaves a
-base by its own mouth of the hollow ([the road](world.md#the-road),
-[the side lanes](world.md#the-side-lanes)). Half a minute after landing each merchant raises a
-**barracks** (a bot bay) just inside the mid mouth, then one inside the top and bot mouths:
-every thirty seconds each one marches a **wave** of soldier bots down its own lane at the rival
-bird, one soldier more every three minutes, each lane's live soldiers capped. Both sides get the
-same waves, so with nobody on a lane the two columns meet at its middle (the mid ones straight
-through the cistern) and grind there — which side's wave
-gets through is decided by who walks out to it. **Drive off the rival eagle
-and the match is won** — nothing else ends one: a player who goes down waits, and is set back
-down at their own bird.
+BLUE** (players alternate). Everyone plays one of **twenty-two heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher, SAGITTA the siege marksman, CLIVUS the climbing fighter, ARCUS the fletcher, FOSSOR the digger and PORTITOR the carrier — a human's is the one picked on the champ select's hero grid) and **starts at home**, beside
+their team's armoured eagle on its perch. The map is a **Twisted Treeline in the snow**: a square
+field, RED's perch at the middle of the west end and BLUE's at the east
+([the bases](world.md#the-bases)). The bird sits on its perch from the first frame and is its
+team's **objective**; its **merchant** keeps a stall behind it, a shop for anybody at all who
+walks up. **Two lanes** join the perches, the top and the bottom halves of one rounded loop round
+the middle ([the lanes](world.md#the-lanes)), the same every match and readable from anywhere.
+Every thirty seconds from the first minute each side marches a **wave** of soldier bots out of its
+perch down both lanes at the rival bird, one soldier more every three minutes, each lane's live
+soldiers capped. Both sides get the same waves, so with nobody on a lane the two columns meet at
+its middle and grind there — which side's wave gets through is decided by who walks out to it.
+**Drive off the rival eagle and the match is won** — nothing else ends one: a player who goes
+down waits, and is set back down at their own bird.
 
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
@@ -42,25 +33,14 @@ Every hero, you included, stands in a ring of its side's colour under a bar of t
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
-**The creek is the Rift's river, frozen.** One creek runs the other diagonal, lane to lane: it
-starts under the top lane and ends under the bot lane, and past them the border woods stand
-unbroken. It is rough ice that holds a foot like snow, so everyone walks across it anywhere, and
-it meets the road once, at the middle, under **the cistern**. The cistern is the works' ring of cut
-stone round the crossing: the road runs straight through it, in at one gate with a stone sill and
-out at the other, over a floor of snow with a brush drift either side of the road. The wall is
-down in four breaches with the fallen blocks round them, the creek runs in and out under it, and
-nothing gets through the stone itself, roll or charge. The orca lives
-in **its own pool** on the creek's upstream bend, top-left of the middle: anyone
-can walk over it, but the orca
-under the ice locks on a player out on it, stalks them while a 3 2 1 counts down over their head, and then it comes up
-through the ice and they go down. [The orca](gameplay/wildlife.md#the-orca). The creek swings round the two
-spots on the mirror line in a half-loop each, so each side is nearer one: the **orca's pool**, its own
-frozen pond where the orca lives, on RED's bank top-left of the middle, and the **black bear** on
-BLUE's bank bottom-right, keeping to its clearing. [The creek](code-map/sim/world.md),
-[the cistern](code-map/sim/cistern.md).
+**A walled jungle fills the inside of the loop**, and two pits open off the lanes: the
+**orca's pool** above the top lane, its own frozen pond where the orca lives — anyone can walk
+over it, but the orca under the ice locks on a player out on it, stalks them while a 3 2 1 counts
+down over their head, and then it comes up through the ice and they go down
+([the orca](gameplay/wildlife.md#the-orca)) — and the **black bear's den** below the bottom lane.
 
-The world is 278 tiles of 16 px — a 4448×4448 px snowfield with a forest border and an interior
-threaded by frozen lakes and rivers. Every match plays this one map.
+The world is 140 tiles of 16 px — a 2240×2240 px field inside a pine border, symmetric both ways
+by construction. Every match plays this one map.
 See [world.md](world.md#the-tile-world) and [one map](world.md#one-map).
 
 ## The pillars
@@ -130,11 +110,8 @@ slots are the build. There is no backpack and no food pouch.
 **Items are bought at a counter.** You walk to a body to get them.
 [Buying and selling](gameplay/the-merchants-counter.md#buying-and-selling).
 
-**Your eagle is your life.** The bird that carried the team in crashes onto its base's perch and
-roosts there, armoured in team colour — the hollow round it, the crater it blows (packed earth,
-one ground with the road) and the bays its merchant raises at the lane mouths are the team's
-starting base, an
-easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
+**Your eagle is your life.** The bird roosts on its side's perch from the first frame, armoured in
+team colour; the perch's disc and the plaza round it are the team's base. Its hp pool is its **nerve**:
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
@@ -145,18 +122,17 @@ match ends, which is why both teams always have somewhere worth walking to — a
 on the map knows where both birds are and what is happening at them, and answers a hit on its
 own from anywhere. A side that wants out can **surrender** past fifteen minutes, League-style: a
 vote calls its own bird home, so even giving up is the bird leaving
-([Surrender vote](multiplayer.md#surrender-vote)). [Eagle drop](rendering/eagle-drop-mode-drop.md),
+([Surrender vote](multiplayer.md#surrender-vote)). [The perch](rendering/the-perch.md),
 [Death and respawn](gameplay/death-and-respawn.md), [Bots](multiplayer.md#bots).
 
 **Roguelike cards are parked** (0.531): the cards and the treeline's chests that dropped them are
 out of the game for now, to be rebuilt later. [Roguelike cards](gameplay/roguelike-cards.md).
 
-**Nobody builds.** Every building on the map is the map's own or the merchant's: the road
-towers, the barracks and the two gold pumps. Player building (walls, gates, turrets, bot bays
+**Nobody builds.** Every building on the map is the map's own: the lane towers and the two gold
+pumps. Player building (walls, gates, turrets, bot bays
 and the build list) was cut in 0.525. [Buildings](gameplay/buildings.md).
 
-**Two gold pumps are the map's objectives**, one beside the middle of the top lane and one beside
-the bot lane's, off the road. Heroes take one by standing in its ring with no rival hero inside
+**Two gold pumps are the map's objectives**, one each side of the middle of the jungle. Heroes take one by standing in its ring with no rival hero inside
 (5 s; a rival inside pauses it), and while a side holds it every hero on that side gets 20 gold
 every 10 s. The ring and the pump wear the holder's colour, grey when nobody holds it; no text.
 Bots take and contest them. [The gold pumps](gameplay/buildings.md#the-gold-pumps).
@@ -168,39 +144,30 @@ minimap and on the chart, with a short cue, for your own side only. It is a hint
 the two bots nearest an ATTACK, ON MY WAY, DEFEND or GO HERE say ON IT and go there, and the
 bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#bots).
 
-**Pine walls make the field a jungle** (js/sim/jungle.js): in each quarter a wall off the mid road, one
-off the river, one between the den and the warren and a block at the lane's corner, mirrored to all four, with gaps to walk in.
-**The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
-road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
-**BLACK BEAR BEND**, the one bear, patrolling its clearing on a bend of the creek: first out at 5:00 and back 5:00
-after each kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the
-side's count: +5% on every blow for the rest of the match, up to four. Facing it across the road is
-the **ORCA'S POOL**: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 20:00 up in a hole
+**Pine walls make the field a jungle** (js/sim/field.js): walls written for one quarter and folded
+to all four, with doors to walk through. **The camps are the jungle, and the jungle is symmetric.**
+Each side has two **WOLF DENS** in the top half and two **SCRAP PILES** of stray robots in the
+bottom half (placeholder art for now), all paying gold, and a rabbit warren by its base mouth. The
+**BLACK BEAR** keeps its den below the bottom lane: first out at 5:00 and back 5:00 after each
+kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the side's count:
++5% on every blow for the rest of the match, up to four. Its twin above the top lane is the
+**ORCA'S POOL**: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 20:00 up in a hole
 in the middle to be fought (back 6:00 after each kill). Its kill gives the whole team the ORCA BUFF for
 3 minutes: the side's soldiers near a hero wearing it hit buildings twice as hard.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
-they leave its ground and heals — and every site sits well off the road, so the lane is never a
+they leave its ground and heals — and every site sits off the lanes, so a lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
 
 **The lanes are where the match is fought.** The waves are the match's clock: a column that is not
 met on its lane reaches the rival bird, and a scrapped soldier pays its killer gold and every
 rival standing near XP — so the lane is where the fighting, the pushing and the levels are, and a base is
-something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
-merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side
-has a cable down each lane, from beside its bird along the lane's verge to short of the middle, and any body
-under one clips on with E, rides either way at three times a walk, and lets go
-anywhere — hands on the handle, still a target, dropped by a stun or a root, and the last stretch
-into the fight always walked. **Three road towers hold each cable**: a stone tower with a
-great crossbow on its deck stands beside the lane a third and two thirds of the way out and at the end of every cable,
-so nine a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
-from the rival's ride. Past that tower the cable runs on to a stake in the open snow, so the ride lets go clear of
-the stone. A tower shoots the rival wave first, so a hero who walks in under it with
-their own soldiers can bring it down, and a hero who hits one of its side's heroes in its ring, or
-walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
-each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots.md#road-towers),
-[the road](world.md#the-road), [the zipline](world.md#the-zipline),
-[the ride](gameplay/momentum-movement-players-only.md#the-zipline), [the waves](gameplay/robots.md#soldiers-the-waves),
-[the barracks](gameplay/buildings.md).
+something to walk *out* of. **Two lane towers a side stand on each lane**: a stone tower with a
+great crossbow on its deck, one on the straight and one on the bend by the perch. A tower shoots
+the rival wave first, so a hero who walks in under it with their own soldiers can bring it down,
+and a hero who hits one of its side's heroes in its ring, or walks in alone, gets the bolt: it
+winds for a beat with a dashed line on the snow to its mark, and each bolt in a row into the same
+hero hits harder. [Road towers](gameplay/robots.md#road-towers), [the lanes](world.md#the-lanes),
+[the waves](gameplay/robots.md#soldiers-the-waves).
 
 ## What the design is not
 

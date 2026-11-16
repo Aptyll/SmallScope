@@ -121,7 +121,7 @@ function portSpot(p, range) {
 // carrying nobody and carried by nobody
 function portLiftable(p, q) {
   return q !== p && q.team === p.team && unitAlive(q) && q.portBy < 0 && q.portRide < 0 &&
-    q.zip < 0 && !q.mount && q.fallT <= 0 && !(q.rushT > 0);
+    q.fallT <= 0 && !(q.rushT > 0);
 }
 // the ally nearest the aim within `reach` of him and `pick` of the aim
 function portPick(p, reach, pick) {
@@ -167,7 +167,6 @@ function portLift(p, q, t, shield) {
   if (p.portRide >= 0) portSetDown(p, null);
   p.portRide = q.id; p.portT = t;
   q.portBy = p.id;
-  if (q.zipWalk) zipWalkEnd(q);
   q.sliding = false; q.vx = 0; q.vy = 0; q.kbx = 0; q.kby = 0;
   q.x = p.x; q.y = p.y;
   breakRecall(q);
@@ -194,10 +193,10 @@ function portSetDown(p, at) {
   sfxAt('place', q.x, q.y);
 }
 // what ends a carry, either body's: down, gone, the air, a fall, a stun on him;
-// on them a roll, a dash, a fall or the zipline (their own way down)
+// on them a roll, a dash or a fall (their own way down)
 function portCarryOver(p, q) {
-  return !q || !p.active || p.dead || inAir(p) || p.stunT > 0 || p.fallT > 0 || p.zip >= 0 || p.mount ||
-    !q.active || q.dead || inAir(q) || q.dodgeT > 0 || q.rushT > 0 || q.fallT > 0 || q.zip >= 0 || q.mount ||
+  return !q || !p.active || p.dead || p.stunT > 0 || p.fallT > 0 ||
+    !q.active || q.dead || q.dodgeT > 0 || q.rushT > 0 || q.fallT > 0 ||
     q.team !== p.team || !isPortitor(p);
 }
 // every step, after every body has moved: each carry holds or ends, and a held body

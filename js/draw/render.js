@@ -119,11 +119,9 @@ function render() {
   const tx1 = Math.min(WORLD - 1, Math.ceil((ox + WV_W) / TILE) + 1);
   const ty1 = Math.min(WORLD - 1, Math.ceil((oy + WV_H) / TILE) + 2);
 
-  drawRoostFootings(ex, ey); // each roost's kerbed round, under its healing ring (js/draw/footings.js)
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
-  drawYards(ex, ey); // the trodden yard at a wolf den's mouth and a hog hut's door (js/draw/yards.js)
-  drawFootings(ex, ey); // the paved round a tower, a bay or the stall stands on, under the bodies (js/draw/footings.js)
-  drawZipStakes(ex, ey); // where a cut cable comes down past its tower, under the bodies (js/draw/zipline.js)
+  drawYards(ex, ey); // the trodden yard at a wolf den's mouth (js/draw/yards.js)
+  drawFootings(ex, ey); // the paved round a tower or the stall stands on, under the bodies (js/draw/footings.js)
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
   drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
@@ -136,8 +134,6 @@ function render() {
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);
   drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
-
-  drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
 
   drawArrows(ex, ey, now);
 
@@ -156,9 +152,8 @@ function render() {
   drawPops(ex, ey); // the floaters and the farm's coins, stamped above the night grade (js/draw/pops.js)
 
   drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim/weather.js)
-  drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
+  drawEagles(ex, ey, now, false); // a bird on its perch (one driven off: the air layer, below)
   drawLooseFeathers(ex, ey); // ...and the feathers knocked off it, over it (js/draw/recall.js)
-  drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   drawCallouts(ex, ey); // the bots' calls, above the night like all world text (js/draw/callouts.js)
   // the two debug views, above the lighting on purpose - see the banner
@@ -285,10 +280,9 @@ function drawHitboxes(ox, oy, ex, ey) {
   const tx1 = Math.floor((ox + WV_W) / TILE), ty1 = Math.floor((oy + WV_H) / TILE);
   for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
     const px = tx * TILE - ox, py = ty * TILE - oy;
-    if (isSolidTile(tx, ty, null, true)) hbBox(px, py, TILE, TILE, HB_SOLID);
+    if (isSolidTile(tx, ty, null)) hbBox(px, py, TILE, TILE, HB_SOLID);
     else if (waterAt(tx, ty)) hbBox(px, py, TILE, TILE, HB_WATER);
   }
-  drawCisternHitbox(ox, oy, ex, ey, HB_SOLID, HB_BODY); // the middle's stone is held to the px, not the tile
 
   // players: the body circle everything is pushed out of, and the hurt circle
   // an arrow is tested against - which sits 6px UP, at the chest, so a shot
@@ -296,7 +290,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   // A live roll adds the sweep it swipes units with, which is the body circle
   // grown by ROLL_HIT_R and centred on the feet, not the chest.
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p)) continue;
+    if (!p.active || p.dead) continue;
     hbRing(p.x - ex, p.y - ey, PLAYER_R, HB_BODY);
     hbRing(p.x - ex, p.y - 6 - ey, ARROW_HIT_R, HB_HURT);
     if (p.dodgeT > 0) hbRing(p.x - ex, p.y - ey, PLAYER_R + ROLL_HIT_R, HB_HURT);
@@ -365,7 +359,7 @@ function drawNavPaths(ox, oy, ex, ey) {
   };
   // one colour per kind of walker, as they read on the minimap: the players
   // gold, a wolf red, the rest of the wildlife green, a bot blue
-  for (const p of players) if (p.active && !p.dead && !inAir(p)) one(p, '#ffe27a');
+  for (const p of players) if (p.active && !p.dead) one(p, '#ffe27a');
   for (const a of animals) {
     if (a.dead) continue;
     one(a, isCampKind(a.kind) ? '#ff6a6a' : '#8ef0a0');
@@ -399,7 +393,6 @@ function cursorInfo() {
   }
   if (state.mode === 'dead' && profileUp()) { const h = state.menu.charT >= 1 ? profileHit() : null; return { kind: h && h.kind !== 'slab' && h.kind !== 'off' && h.kind !== 'badge' ? 'hand' : 'arrow' }; }
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || endRowHit() >= 0 || (state.deadView === 'scores' && (scoresHit() || {}).kind === 'who') || specHit() || rpCloseHit() || recapHot() ? 'hand' : 'arrow' };
-  if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
     if (dragSlider) return { kind: 'grab' };

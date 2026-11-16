@@ -13,7 +13,7 @@ things, do not paint big and shrink, do not trust your own eye on whether it rea
 
 1. Write the brief in three lines at the top of the asset file: what it is, its `KIND` (size band),
    and the one feature that makes its flat shape its own.
-2. `node app/art/stage.js --cut W/refs --out W/today.png` and look at today's hero, wolf, deer and
+2. `node app/art/stage.js --cut W/refs --out W/today.png` and look at today's hero, wolf, rabbit and
    bear at game size. Take the palette ramps from them. If Noah gave a picture, fit to the picture.
 3. If the sprite replaces one, put the old one in `VS` so every board shows old beside new.
 

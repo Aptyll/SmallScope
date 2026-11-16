@@ -205,7 +205,7 @@ const RAY_A = 0.092;        // peak alpha of a shaft's core
 const RAY_MOTES = 30;       // dust motes riding each shaft
 const RAY_MOTE_SPD = 0.05;  // fraction of the shaft's length a mote drifts per second
 const RAY_MOTE_LIT = 26;    // how much brighter a mote is than the shaft carrying it
-const RAY_AFTER = 4;        // s of shafts still owed once the drop's boots land
+const RAY_AFTER = 4;        // s of shafts at a match's start (matchHandOver)
 const RAY_NOON = DAY_LEN * 0.5; // the middle of the daylight half of the cycle
 const RAY_NOON_HALF = 7.5;  // s either side of it the shafts are up: a ~15 s window
 const RAY_WINDOW_FADE = 2;  // s of ease at every edge of both windows
@@ -262,13 +262,12 @@ const RAY_CV = (() => {
 // The shafts are not weather, they are a MOMENT. Low sun is the light of an
 // arrival and of the top of the day, and a beam that is always there stops
 // being a beam - so they are up for exactly two windows and dark the rest of
-// the time: the whole eagle ride and RAY_AFTER seconds past the landing, and a
-// ~15 s window around noon. Both ease in and out over RAY_WINDOW_FADE.
+// the time: the first RAY_AFTER seconds of a match, and a ~15 s window around
+// noon. Both ease in and out over RAY_WINDOW_FADE.
 function rayLight() {
-  const drop = state.mode === 'drop' || player.aboard || player.dropT > 0 // the ride
-    ? 1 : Math.min(1, state.rayT / RAY_WINDOW_FADE);
+  const start = Math.min(1, state.rayT / RAY_WINDOW_FADE);
   const noon = (RAY_NOON_HALF - Math.abs(state.time - RAY_NOON)) / RAY_WINDOW_FADE;
-  return Math.max(0, Math.min(1, Math.max(drop, noon)));
+  return Math.max(0, Math.min(1, Math.max(start, noon)));
 }
 
 function godRays(ox, oy, day) {
@@ -826,42 +825,8 @@ function drawWorldText(text, x, y, color, scale, alpha, rim) {
   worldInk.push(text, x, y, color, scale || 1,
     (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false, rim || WORLD_RIM);
 }
-// A name that must never sit on another name. On the ground names overlap
-// the way League's do - a crowd's tags stacked into a tower read worse than
-// a pile - but a wing of riders is seated a few pixels apart for the whole
-// ride, and their names stamped on each other would read as none of them
-// (seatedName, eagle.js). So those are queued as tags, and the flush sorts
-// the tags out before it stamps: the lowest on screen keeps its place, and
-// one that would touch a placed tag climbs to clear it. Only tags move;
-// every other world text keeps where it was put.
-function drawNameTag(text, x, y, color, scale) {
-  if (!inWorldLayer()) { drawWorldText(text, x, y, color, scale); return; }
-  worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true, WORLD_RIM);
-}
-const TAG_GAP = 1;      // px kept clear between two tags' outlines
-const TAG_CLIMB = 8;    // most climbs one tag makes before it settles where it is
-function settleNameTags() {
-  const tags = [];
-  for (let i = 0; i < worldInk.length; i += INK_STRIDE) if (worldInk[i + 6]) tags.push(i);
-  if (tags.length < 2) return;
-  tags.sort((a, b) => worldInk[b + 2] - worldInk[a + 2] || a - b);
-  const placed = []; // [x0, y0, x1, y1] outline boxes, outline included
-  for (const i of tags) {
-    const sc = worldInk[i + 4], x0 = worldInk[i + 1] - 1, x1 = x0 + pixelTextWidth(worldInk[i], sc) + 2;
-    const h = 5 * sc + 2; // the glyph rows and the outline above and below
-    let y0 = worldInk[i + 2] - 1;
-    for (let n = 0; n < TAG_CLIMB; n++) {
-      const hit = placed.find((r) => x0 < r[2] + TAG_GAP && x1 + TAG_GAP > r[0] && y0 < r[3] + TAG_GAP && y0 + h + TAG_GAP > r[1]);
-      if (!hit) break;
-      y0 = hit[1] - TAG_GAP - h;
-    }
-    placed.push([x0, y0, x1, y0 + h]);
-    worldInk[i + 2] = y0 + 1;
-  }
-}
 function flushWorldInk() {
   flushPlates(); // under the loose ink: a damage floater still lands over a frame
-  settleNameTags();
   for (let i = 0; i < worldInk.length; i += INK_STRIDE) {
     ctx.globalAlpha = worldInk[i + 5];
     drawPixelTextOutline(ctx, worldInk[i], worldInk[i + 1], worldInk[i + 2],

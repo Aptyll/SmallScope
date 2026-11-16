@@ -81,7 +81,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (!o) continue;
       const px = tx * TILE - ox, py = ty * TILE - oy;
       // +4 - any lower and the canopy of a tree on the tile below buries it
-      if (o.type === 'stump') { const L = stumpLook(tx, ty, o); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
+      if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
   drawRecallGround(ex, ey); // each roost's reach: its floor lit where its bird heals, under a pale rim (js/draw/recall.js)
@@ -141,7 +141,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   // the title's cast stands in for them
   for (const p of state.mode === 'title' ? [] : players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
-    if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
+    if (p.dead || !fogShown(p, now)) continue; // one in the fog not at all (js/draw/fog.js)
     if (bodyOffView(p, ox, oy)) { if (p.active) playerUnseen(p, ox, oy, now); continue; }
     draws.push({ y: p.y + 8 + heldSort(p), p, ghost: !p.active }); // empty slots stand as silhouettes; a carried body just behind its carrier (heldSort, js/draw/bodies.js)
   }
@@ -149,8 +149,8 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });
   for (const b of robots) if (fogShown(b, now) && !bodyOffView(b, ox, oy)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
-  // the middle's stone and the orca out of its ice (js/draw/cistern.js)
-  pushMiddleDraws(draws, ox, oy);
+  // the orca out of its ice (drawOrcaBreach, js/draw/orca.js)
+  if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: (d, ex, ey) => drawOrcaBreach(ex, ey) });
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   campClockDraws(draws, tx0, ty0, tx1, ty1); // the clocks of the camps with no anchor prop (js/draw/marks.js)
   draws.sort((a, b) => a.y - b.y);
@@ -166,7 +166,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
   // sprite on the ground to hide; the canopy window, js/draw/canopy.js) and
   // the tree its cursor is resting on
   let heroP = viewPlayer();
-  if (!heroP.active || heroP.dead || inAir(heroP)) heroP = null;
+  if (!heroP.active || heroP.dead) heroP = null;
   canopyFrame(heroP);
   bodyLightFrame(); // tonight's record of where a body shows (the body light banner, js/draw/light.js)
   let wkO = null;
@@ -186,7 +186,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.fall) { drawFall(d.fall, ex, ey); continue; }
-    if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
+    if (d.p && !d.ghost && (heroDashOver(d.p))) { airRiders.push(d.p); continue; } // over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
     // a body under a big hit is drawn held where it was struck, then 1 px back (hitNudge, js/draw/hitfx.js)
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else { const n = hitNudge(d.p, now); drawPlayer(d.p, ex - n.x, ey - n.y, now); } continue; }
     if (d.a) { const n = hitNudge(d.a, now); drawAnimal(d.a, ex - n.x, ey - n.y, now); continue; }
@@ -251,12 +251,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const spr = SPRITES.teamBuild[skin(o.team)].stall;
     drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
     drawHourLit(spr, px + sh, py + TILE - spr.height);
-  } else if (LANDMARKS[o.type]) {
-    drawLandmark(o, px + sh, py); // the boat (js/draw/landmarks.js); their parts draw nothing
-  } else if (o.type === 'pylon') {
-    drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
-  } else if (o.type === 'banner') {
-    drawBanner(o, px + sh, py, now); // the road's pennant pole (js/draw/paving.js)
   } else if (o.type === 'snowdrop') {
     // a warren's clump: open until picked, then the snapped stem, then the
     // shut bud as it comes back (snowdropLeft, world.js) - and hovered while
@@ -331,11 +325,11 @@ function drawStructObj(o, px, py, sh, now) {
       ctx.fillRect(sx + (w * 5 >> 3), sy + (h * 3 >> 4), 1, 4); ctx.fillRect(sx + (w * 5 >> 3) + 1, sy + (h * 7 >> 4), 1, 2);
     }
     // damage readout: only once hurt, so an untouched base stays clean.
-    // The barracks and the tower draw their own bars - don't draw two.
+    // The tower draws its own bar - don't draw two.
     // `+ sh` so the readout rides the hit shudder with the building it
     // belongs to: a bar holding still over a building that is rocking is a
     // bar centred on nothing.
-    if (o.type !== 'barracks' && o.type !== 'tower' && o.hp < o.maxHp) {
+    if (o.type !== 'tower' && o.hp < o.maxHp) {
       drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team, undefined, o);
     }
   }
@@ -406,7 +400,7 @@ function drawArrows(ex, ey, now) {
 function drawSwingArcs(ex, ey, now) {
   // swing arcs (every player who is mid-swing)
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p) || p.swingT <= 0 || !fogShown(p, now)) continue;
+    if (!p.active || p.dead || p.swingT <= 0 || !fogShown(p, now)) continue;
     const prog = 1 - p.swingT / 0.18;
     const a0 = p.swingDir - 1.1 + prog * 2.2;
     ctx.fillStyle = 'rgba(255,255,255,' + (0.8 - prog * 0.6).toFixed(2) + ')';
@@ -421,17 +415,16 @@ function drawSwingArcs(ex, ey, now) {
 }
 
 function renderAirLayer(now) {
-  // the air layer (airCv, js/app/canvas.js): a bird in flight, its riders,
-  // anyone falling and a player on a zipline's handle, off the EXACT camera
-  // so the body the camera rides holds still on the screen while the ground
-  // slides under it; the day's grade laid over it the way renderLighting
-  // laid it over the world. Only the box round what it holds is graded and
-  // blitted (airBox): a bird's trail and shadow reach across the frame, so a
-  // flight takes all of it, but a rider is a few dozen px
+  // the air layer (airCv, js/app/canvas.js): a bird driven off and a hero
+  // dashing over the pines, off the EXACT camera so the body the camera rides
+  // holds still on the screen while the ground slides under it; the day's
+  // grade laid over it the way renderLighting laid it over the world. Only the
+  // box round what it holds is graded and blitted (airBox): a bird's shadow
+  // reaches across the frame, so a flight takes all of it, but a body is a
+  // few dozen px
   const ax = camX, ay = camY;
   airBox.x0 = airBox.y0 = Infinity; airBox.x1 = airBox.y1 = -Infinity;
-  if (state.drop && state.drop.eagles.some(dropFlies)) airGrow(0, 0, WV_W, WV_H);
-  for (const p of players) if (p.active && p.dropT > 0) airGrow(p.x - ax - AIR_PAD, p.y - ay - DROP_ALT - 60, p.x - ax + AIR_PAD, p.y - ay + AIR_PAD);
+  if (state.drop && state.drop.eagles.some(eagleAloft)) airGrow(0, 0, WV_W, WV_H);
   for (const p of airRiders) airGrow(p.x - ax - AIR_PAD, p.y - ay - AIR_TOP, p.x - ax + AIR_PAD, p.y - ay + AIR_PAD);
   airBox.x0 = Math.max(0, Math.floor(airBox.x0)); airBox.y0 = Math.max(0, Math.floor(airBox.y0));
   airBox.x1 = Math.min(WV_W, Math.ceil(airBox.x1)); airBox.y1 = Math.min(WV_H, Math.ceil(airBox.y1));
@@ -440,7 +433,7 @@ function renderAirLayer(now) {
     ctx = actx;
     actx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, WV_W, WV_H);
-    if (state.drop) drawDropAir(ax, ay, now, true);
+    if (state.drop) drawEagles(ax, ay, now, true);
     for (const p of airRiders) drawPlayer(p, ax, ay, now);
     lightAir(airBox.x0, airBox.y0, airBox.x1 - airBox.x0, airBox.y1 - airBox.y0);
   }
@@ -484,13 +477,11 @@ function renderScreen(ox, oy, now) {
   // what the pointer is on, resolved ONCE per frame, before the UI draws
   // (see the tooltips banner, ui.js)
   tipResolve();
-  // the landing's headline over your roost (drawDropHeadline, js/draw/eagle.js): under the HUD, so the
+  // the opening headline over your roost (drawDropHeadline, js/draw/eagle.js): under the HUD, so the
   // merchant's counter opened in the first seconds stands over it and not behind it
   if (state.mode === 'play') drawDropHeadline();
   renderUI(now);
-  if (state.mode === 'drop') renderDropUI(now);
-  // the M map works mid-flight too: the ride's wider read lives here now
-  if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
+  if (state.mode === 'play' && state.mapOpen) renderWorldMap(now);
   // after the chart: a ping wheel opens over it too (pinned to the press point)
   if (state.mode === 'play' && state.wheel) renderWheel(now);
   if (state.mode === 'play' && state.settingsOpen) renderSettings(now);

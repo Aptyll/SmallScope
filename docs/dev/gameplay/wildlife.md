@@ -1,39 +1,16 @@
 # Wildlife
 
-`animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
-`a.kind` with hp from `ANIMAL_HP`. **There are two deer (24 HP), one each side of the creek**, the
-valley's roaming neutral (League's scuttle crab): see [the deer's lines](#the-deer-run-the-valley).
+`animals` holds **everything that is shot rather than swung at** — the warrens' rabbits, the camps'
+wolves and stray robots, the black bear, the orca up in its hole, and the dormant bird, keyed by
+`a.kind` with hp from `ANIMAL_HP`. There is no roaming neutral: every beast belongs to a camp.
 **The rabbits (8 HP) are a camp's**:
 three live in each [SNOWDROP WARREN](../world.md#camps), stocked by `stockCamps` at their plan's
 spots and back all at once 40 s after the last of a warren's three dies, on the camp clock
 (`updateCamps`, held while anyone stands in the warren). `a.meadow` remembers the warren (not
 `a.home`, which is a camp monster's, so a rabbit is never a camp fight).
-The three wolf kinds
+The camp monsters
 ([their table](#camp-monsters-neutral-until-hit)) belong to a [camp](../world.md#camps) instead — `a.home` points at it,
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
-
-## The deer run the valley
-
-`spawnAnimals()` (boot, after worldgen) lays **each side's line**
-(`layDeerRoutes`, `deerRoutes[side]`): points `DEER_ROUTE_STEP` (5) tiles apart on a line parallel
-to the creek, `DEER_ROUTE_U` (100) tiles out along the road from that side's roost (the creek is
-at about 115), from one treeline to the other across the road, kept `DEER_ROUTE_KEEP` (3) tiles
-off the woods and off every camp's ground (`campNear` past `CAMP_GROUND`). Pure position, no
-`rng()`. One deer stands on the middle of each line (`spawnDeer`; `a.route` is its side).
-
-It **walks its line end to end and back** (`deerRouteGoal`: `a.leg` the point it heads for,
-`a.way` which way, turning at either end) at `DEER_ROAM` (a hero's walk, so a walk keeps up but
-never closes), grazing at `DEER_GRAZE_P` (a quarter) of its points for `DEER_GRAZE_T` (1.5–3.5 s).
-It bolts as any deer does from a player it sees, and **from any wolf or bear inside
-`DEER_BEAST_SIGHT`** (96 px), hunting or not (`updatePrey`). A flight remembers what it ran from
-(`a.lost`), and the deer picks its line up again at the nearest point heading on away from it; a
-deer carried far off its line (a rider, a long flight) walks back to the nearest point the same
-way. So a deer is found by knowing where its line runs, and caught by waiting on it.
-
-A side whose deer goes down gets the next one `DEER_BACK` (60 s) later (`updatePreyStock`, from
-`updateWildlife` in `updatePlay`; `deerBackT` per side, saved in the `wild` root), on the point of its line furthest
-from every player and past `PREY_CLEAR` (280 px), so nothing is ever seen to appear: never more
-than two. A deer from a save older than the lines is taken onto an empty side's line.
 
 **Every animal wears a level** (`a.level`), the hero's plate on the left of its frame
 ([rendering.md](../rendering/overhead-health-bars.md)): `animalLevelOf(kind)`, which is
@@ -42,13 +19,12 @@ than two. A deer from a save older than the lines is taken onto an empty side's 
 it at spawn and `relevelAnimal` (every tick in `updateAnimal`) keeps it on the table's average
 after, but only while the body is at full hp and hunts nobody: never mid-fight, so a blow never
 meets more hp than the last one did. A relevel resets hp to the new full. So the bear that sat out
-the early game is as tough as the table when someone finally pulls it. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
-+2; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`) — the wolves' numbers are in
+the early game is as tough as the table when someone finally pulls it. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, wolf +3; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`) — the wolves' numbers are in
 [their table](#camp-monsters-neutral-until-hit).
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
 a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 105 gold, a
 level-6 wolf 165, and a level-12 beast a little over twice its level-1 self, about what its hp
-grew by. A kind with an `xp` in `YIELD` (deer, wolf, the bear) is also worth that much XP,
+grew by. A kind with an `xp` in `YIELD` (wolf, stray robot, the bear) is also worth that much XP,
 grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the killer's side standing near
 (`shareXp`, [Hero levels](../multiplayer.md#hero-levels)); a rabbit is worth no XP.
 
@@ -57,34 +33,10 @@ grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the killer's side st
 prey and threat red on a wolf — for as long as it does: `a.senseT` counts the seconds since it
 first did and is 0 whenever it does not. For prey, "in sight" is a player inside the
 `FLEE_SIGHT` ring (through `seenAt`, so stealth keeps it down) **or a flight already under way**,
-so a deer running wears the reason it is running and a deer that grazes on has not seen you; for
+so a rabbit running wears the reason it is running and one that grazes on has not seen you; for
 a camp monster it is a hunt in progress and nothing else — a leash bar still draining is still
 a hunt — and the mark going out is the monster giving you up. The **body** says the same thing
 at a distance where a `!` is a speck — see the clips below.
-
-## Riding a deer
-
-E beside a wild deer (`rideNear`, inside `RIDE_REACH`) hops on (`hopToggle` → `rideStart`, through
-`contest` so two riders on one deer resolve fairly), and a bare work cap over its back says so
-(`drawRideHint`). The **player** stays the body that moves: `updatePlayer` walks it at the mount's
-gallop (`RIDE[kind].mul` times `PLAYER_SPEED`: `RIDE_GALLOP_MUL`, 1.65, a step past the deer's own wild sprint, with no draw penalty and no
-slide), and `updateAnimal` hands the ridden deer to `rideCarry` instead of its brain, which stands
-it where its rider is and plays its gallop. While ridden the deer carries the rider's `team`, so
-`unitFoe` and the arrow sweep (`shotContacts`) treat it as that side: your shots and your allies'
-pass through it, a rival's land. Its bar hangs one row under the rider's stamina, in the deer's coat
-tan (`MOUNT_BAR_COL`, `drawPlayer`), so it never reads as the rider's own health, and the rider sits *in* the deer with no shadow of their own (`riderSeat`):
-the player's own frame sinks until its row `RIDE[kind].hip` meets the back at the seat column
-`RIDE[kind].col` (toward the rump), and nothing of the body under that row is drawn, so the deer's
-back line hides the legs. The seat is read off the frame on show, so the rider rides the gallop's
-bob; the plate holds still on the standing frame's seat. The hands stay free: the bow, the blades and the abilities all work from the saddle.
-
-The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
-owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
-says `leap` (a felled trunk, `isSolidTile`). A leap never lands on a trunk: it holds up to
-`RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
-again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
-throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`). Bots never mount. The `riding` banner in
-js/sim/wildlife.js holds all of it.
 
 ## What a beast is doing: the clips
 
@@ -99,20 +51,18 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | kind | its clips | set by |
 | --- | --- | --- |
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
-| `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
-| `wolf` | `idle`, `run` | `updateCampMonster` |
+| `wolf`, `scrap` | `idle`, `run` | `updateCampMonster` |
 | `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar` | `updateCampMonster` |
 
-**The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
-rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
-the rabbit is rocked back on its haunches. So **a grazing deer is a deer that has not seen
+**The head is the tell.** Standing still and settled, a rabbit is low over its paws; standing
+still and *wary*, it is rocked back on its haunches. So **a rabbit low over its paws has not seen
 you** — the fact the `!` carries, said by the body, at a range where the mark is a speck. It is
 what makes closing on one in a SNOW CLOAK (the DRIFT passive) visibly worth doing.
 
 Wary is `a.wary`, held at `PREY_WARY_T` (3 s) whenever a player is in sight or a flight is
 under way and decaying otherwise. It is deliberately softer than `a.senseT`, which snaps to 0:
 the mark goes out the instant the animal loses you, the head stays up a moment longer, and a
-deer that has just been run **stands and watches before it grazes again**. It costs nothing —
+rabbit that has just been run **sits up and watches before it settles again**. It costs nothing —
 no speed, no sight, no bolt of its own.
 
 **A rabbit sits up before it goes.** `RABBIT_ALERT` (0.3 s): the first time a rabbit notices a
@@ -130,7 +80,7 @@ for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it
 hunt reticle, and joins the y-sorted draws.
 
 **An animal is a unit like any other.** `makeAnimal` hands every kind the full status set through
-`clearUnitStatus`, so a rabbit, a deer, a wolf and a bird take the same damage and the same six
+`clearUnitStatus`, so a rabbit, a wolf, a stray robot and a bird take the same damage and the same six
 states from every ability and every attack that a player does — rooted, netted, slowed, marked,
 stunned, set alight — and wear the same tells at their own size
 ([status effects](status-effects-one-set-for-every-unit.md)). Nothing about wildlife is exempted
@@ -146,16 +96,14 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
   chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
-  on it takes short 1–3 tile hops that end on it, so the warren reads as theirs; a deer takes an
-  open direction, 3–6 tiles. `navStep` walks it at
+  on it takes short 1–3 tile hops that end on it, so the warren reads as theirs. `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
-  the end of it is where a settled deer's head actually goes down.
-- **Bolting.** Both species flee, on `FLEE_SIGHT` / `FLEE_TIME`: a rabbit sits tight and goes
-  at 36 px and runs 1.6–2.6 s, a deer watches wider at 46 px. The trigger asks
-  **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so a hero's stealth (DRIFT, −0.15 on
-  `kit.stealth`) is how one closes on a deer at all: it shrinks the ring by that share. A hit
-  also sends either species running from the nearest player (`fleeT`).
+  the end of it is where a settled rabbit drops back over its paws.
+- **Bolting.** A rabbit flees on `FLEE_SIGHT` / `FLEE_TIME`: it sits tight and goes at 36 px and
+  runs 1.6–2.6 s. The trigger asks **`seenAt(p, FLEE_SIGHT)`**, not raw distance, so a hero's
+  stealth (DRIFT, −0.15 on `kit.stealth`) shrinks the ring by that share. A hit also sends it
+  running from the nearest player (`fleeT`).
 - **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
   walking hero's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
   threat as the ground allows (fanning out, then sideways, then past it), the first it can route
@@ -163,21 +111,6 @@ included, which is what keeps the `.` overlay honest ([rendering.md](../renderin
   fleeing. With no threat on the ground (every hero dead or aloft, no beast in sight) it runs out
   the leg under way and stops there. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
   snow (`warrenHolds`), so it circles a hero wading after it instead of leaving the circle.
-- **A deer's sprint.** A deer always wears a second bar under its health — stamina white
-  (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
-  of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
-  drains over `DEER_SPRINT_T` (2.5 s of running); empty, the flight drops to `PREY_RUN.deer`, its
-  walk. Both paces are multiples of a player's walk, tuned in one place — `DEER_RUN_MUL` (1.4,
-  101 px/s) and `DEER_WALK_MUL` (1.15, 83 px/s), the px/s consts derived from them — so a deer
-  outpaces a walking hero either way and the empty bar is when a roll, a slide or an arrow closes
-  the gap. It refills over `DEER_SPRINT_REGEN` (10 s) whenever the deer is not fleeing, so the bar
-  is the hunt's read: a full one means the deer will simply leave, a low one means run it again now.
-- **A deer never jumps pace.** `a.spd` is the speed it is at, and `deerPace(a, want, dt)` closes
-  it on the one it wants by an exponential of `dt` — an ease-out, the same curve at any step
-  length, there within 2% after `DEER_EASE_T` (0.28 s): the startle from a standstill to the run,
-  the drop to the walk when the bar empties, the graze, and the stop, where the idle branch
-  coasts the body along its last heading until the pace is spent. A stun zeroes it. The gallop
-  clip's rate follows `a.spd` too, so the legs wind up and down with the body.
 - **A rabbit's jink.** A rabbit wears the same white bar (`a.dodge`, 0..1), but it is one
   **dodge charge**, ready only when full. `arrowAtRabbit` looks at every shot in flight each step:
   one inside `RABBIT_DODGE_SIGHT` (90 px), still flying *toward* the rabbit, on a line that passes
@@ -201,8 +134,10 @@ They are not shown on the minimap or world map.
 
 ## Camp monsters: neutral until hit
 
-The [camps](../world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
-(`alpha`, BLUE's bend camp, 1) — one `MONSTER`
+The [camps](../world.md#camps) keep four kinds — the **wolf** (a den's 3, the top half), the
+**stray robot** (`scrap`, a scrap pile's 3, the bottom half: the wolves' numbers in placeholder
+art), the **black bear** (`alpha`, its den below the bottom lane, 1) and the **orca** up in its
+hole ([below](#the-orca)) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
 `cause`, the death line a bite writes). The kind keys are the old wolves' and stay so saves
@@ -265,8 +200,8 @@ still load. All three run
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
 | orca (up in its pool, from 20:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
-The bear is the one `teamPay` camp kind, in its clearing on its bend of [the creek](../code-map/sim/world.md)
-(BLUE's bank; the orca's pool faces it across the road on RED's). It is first out at 5:00
+The bear is a `teamPay` camp kind (the orca is the other), in its den in the pit below the bottom
+lane (the orca's pool is the pit above the top one). It is first out at 5:00
 (`CAMPS.buff.first`; `stockCamps` holds it, `updateCamps` runs the clock, `campCleared` reads it
 as cleared until then) and back `repop` (5:00) after each kill. Each kill also counts one more
 black bear for the side, for good: `state.bearStacks[team]`, `BLACK_STACK_DMG` (+5%) on every
@@ -300,17 +235,17 @@ lone bot would die to. No bot walks *to* a camp deliberately yet — see
 
 ## The orca
 
-**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond on the creek's upstream bend** (`CAMPS.orca`, laid by `layOrcaPool`; the disc is `orcaLakeAt` round `orcaPool()`, `ORCA_LAKE_R` with a rim wandering `ORCA_LAKE_RAG`)
+**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond in the pit above the top lane** (`CAMPS.orca`; the pond is laid by `genWorld`, js/sim/field.js, as `orcaLakeAt` round `orcaPool()`, an oval `LAIR_POOL` tiles across)
 ([js/sim/orca.js](../../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). Under the ice it is not an animal: nothing shoots it,
 nothing walks into it, and it never leaves the water (up, from 20:00, it is one: below). `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
 - **It cruises** the whole disc (`orcaWater`) as a shadow under the ice at
-  `ORCA_SWIM`, a dark under-ice silhouette the size of a deer, from one home tile (`orcaHome`: room
+  `ORCA_SWIM`, a dark under-ice silhouette the size of a bear, from one home tile (`orcaHome`: room
   of `ORCA_MARGIN` round it) to the next; every pick is `hash2` off the tick, never `rng()`.
 - **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
-  `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within
+  `1` inside the disc, not in the air) within
   `seenAt(p, ORCA_SIGHT)` of it. Every tile of the pool is its ice. A countdown over their head (`orcaLine`, drawn by `drawOrcaCount`) runs
   `ORCA_LINE` (3) s, 3 2 1, a knock in the ice under them on each number (`iceKnock`), while it
   stalks them (`orcaStalk`): a glide past beside them (`orcaPass` picks the mark, `ORCA_PASS`, on
