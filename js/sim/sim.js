@@ -48,14 +48,6 @@ function applyZoom(dt, snap) {
   sizeWorldView();
   camX += (ow - WV_W) / 2;
   camY += (oh - WV_H) / 2;
-  // the minimap rides the same ease off the same constant, so both zooms
-  // under one hand feel like one control
-  const mw = mmWant();
-  if (snap || mmCur < 0) mmCur = mw;
-  else {
-    mmCur += (mw - mmCur) * k;
-    if (Math.abs(mw - mmCur) < 0.0008) mmCur = mw;
-  }
   return zPrev;
 }
 

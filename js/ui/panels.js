@@ -1,6 +1,6 @@
 'use strict';
 // The overlay panels: the TAB scoreboard (and the match log behind it), the
-// M world map on its parchment, the ESC settings slab, and the PLAYER name
+// M world map's slab, the ESC settings slab, and the PLAYER name
 // panel with its lifetime numbers.
 // ------------------------------------------------------------ scoreboard & log
 // Two readouts of the match rather than of the world. TAB, held, opens the
@@ -139,207 +139,50 @@ function renderScoreboard() {
 // ------------------------------------------------------------ world map (M)
 // PANEL_*/MAP_* anchors are declared in the canvas banner (relayout() writes them).
 //
-// THE CHART IS A DRAWN MAP, NOT A PHOTOGRAPH OF THE TILES (3.32). Every tile
-// files under one CH_* class (objChart for what stands on it, else the
-// ground array), and the class map is FLATTENED before it is painted: a lone
-// tile of forest or ice is dropped (fewer than CHART_NEED neighbours of its
-// own kind and it is ground again), a snow pinhole with three sides of one
-// mass is that mass. Then it is RESAMPLED into the MAP_W slot by priority -
-// chartSpan says which tiles each chart pixel covers, and the pixel takes
-// the highest class among them, so a one-tile wall never drops out of its
-// run where WORLD tiles fold into MAP_W px - and PAINTED one flat ink per
-// class (CHART_INK) - A FLAT CHART in quiet greys: the open ground pale
-// snow, the woods a deep slate, the lakes and the creek cold blue, the road
-// a track through it. Nothing is painted over the inks - no lit or inked
-// rims, no grain (both went in 0.459: the marks and the team inks are the
-// read, and the old winter shading fought them).
-// No grid, no dot for a single tile: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
-// minimap's (a wall going up half a second late on a chart is invisible)
-// and on the tick a fresh match resets the clock.
-//
+// The chart itself - the drawn map, its inks and its marks - is both maps'
+// (the `chart` banner, js/ui/minimap.js); this is its big slab.
 // THE SLAB is the chart and a header, nothing else, on the HUD's own
-// graphite plate (drawHudFrame, strip.js; the frost slab's navy stone and
-// its CLOSE plank went in 0.459): the map centred with the same margin
-// either side, and over it the day. No close button: M or Escape closes it,
-// and so does a press anywhere off the slab (mapCloseHit). No compass (the
-// chart is north-up, as the world is), no key (the marks are the minimap's
-// own, learnt there), no clock (the disc wears it), no title, and no names
-// until asked: a camp is its glyph, and the one under the pointer wears its
-// name (drawChartCamps). The slab fits the view (fitMapSlab, canvas.js) and
+// graphite plate (drawHudFrame, strip.js): the map centred with the same
+// margin either side, and over it the clock. No close button: M or Escape
+// closes it, and so does a press anywhere off the slab (mapCloseHit). No
+// compass (the chart is north-up, as the world is), no key (the marks are
+// the minimap's own, learnt there), no title, and no names until asked: a
+// camp is its glyph, and the one under the pointer wears its name
+// (drawChartCamps). The slab fits the view (fitMapSlab, canvas.js) and
 // mapAlloc follows it - the chart's buffers and the slab's bake are remade
 // when MAP_W changes.
 
 // a screen point over the chart -> the world tile under it (null off the map).
 // The chart is a way to ping a spot that is off-screen, so the ping wheel
-// needs the inverse of the MAP_S projection everything else draws with.
+// needs the inverse of the projection everything else draws with.
 function mapTileAt(sx, sy) {
-  if (sx < MAP_X || sy < MAP_Y || sx >= MAP_X + MAP_W || sy >= MAP_Y + MAP_W) return null;
-  const tx = Math.floor((sx - MAP_OX) / MAP_S), ty = Math.floor((sy - MAP_OY) / MAP_S);
-  return inWorld(tx, ty) ? { tx, ty } : null;
+  const w = chartWorldAt(mapView(), sx, sy);
+  return w ? { tx: Math.floor(w.x / TILE), ty: Math.floor(w.y / TILE) } : null;
 }
 // whether a press would close the chart: the pointer off the slab
 const MAP_HEAD_Y = 6; // the header row inside the slab: where the match clock sits
 function mapCloseHit() {
   return mouse.inside && !overRect({ x: PANEL_X, y: PANEL_Y, w: PANEL_W, h: PANEL_H });
 }
-
-const mapCv = document.createElement('canvas');
-const mapCtx = mapCv.getContext('2d');
-let mapImg = null;
-const chartCls = new Uint8Array(WORLD * WORLD);  // the class of every tile
-const chartTmp = new Uint8Array(WORLD * WORLD);  // the flatten's scratch
-let chartOut = null;   // the class of every chart pixel
-let chartSpan = null;  // the tiles [t0, t1] chart pixel p covers on either axis
-let mapAllocW = 0;     // the MAP_W the buffers and the bake were made for...
-let mapAllocN = 0;     // ...and the square they show
-// the square of tiles worth showing: every tile that is not woods (the
-// lanes, the jungle's corridors, the huts' clearings) and CHART_PAD more,
-// centred, so the chart spends its pixels on the played map, not the border wood
-const CHART_PAD = 5;
-let chartFitted = false; // the world grows once a page (boot), so the fit is taken once, the first time the chart opens
-function chartFit() {
-  if (chartFitted) return;
-  chartFitted = true;
-  let x0 = WORLD, y0 = WORLD, x1 = -1, y1 = -1;
-  for (let i = 0; i < WORLD * WORLD; i++) {
-    const o = structOf(objects[i]), c = o ? objChart(o) : null;
-    if ((c == null ? chartGround(i) : c) === CH_FOREST) continue;
-    const x = i % WORLD, y = (i / WORLD) | 0;
-    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-  }
-  if (x1 < 0) { MAP_T0 = 0; MAP_N = WORLD; } else {
-    MAP_N = Math.min(WORLD, Math.max(x1 - x0, y1 - y0) + 1 + CHART_PAD * 2);
-    MAP_T0 = Math.max(0, Math.min(WORLD - MAP_N, Math.round((x0 + x1 + y0 + y1) / 4 - MAP_N / 2)));
-  }
-  relayout(); // the slab's size and the chart's origin follow the square
-}
+const mapChart = chartNew();
+function mapView() { return chartView(MAP_X, MAP_Y, MAP_W); }
+// the chart's buffers and the slab's bake at the slab's current size
 function mapAlloc() {
-  chartFit();
-  if (mapAllocW === MAP_W && mapAllocN === MAP_N + MAP_T0 * WORLD) return;
-  mapAllocW = MAP_W; mapAllocN = MAP_N + MAP_T0 * WORLD;
-  mapCv.width = mapCv.height = MAP_W;
-  mapImg = mapCtx.createImageData(MAP_W, MAP_W);
-  chartOut = new Uint8Array(MAP_W * MAP_W);
-  chartSpan = [];
-  for (let p = 0; p < MAP_W; p++) chartSpan.push([MAP_T0 + Math.floor(p / MAP_S), Math.min(MAP_T0 + MAP_N - 1, MAP_T0 + Math.floor((p + 1) / MAP_S - 1e-6))]);
-  chartBuiltAt = -1e9;
-  buildMapPanel();
-}
-// one flat ink per class, indexed by CH_* (world.js) - the snow, the
-// woods, the road, the ice, open water, then a side's buildings
-// and its bird in the two depths of each team's ink, the cistern's stone
-const CHART_INK = [
-  [214, 219, 226], [44, 60, 62], [150, 136, 116], [124, 182, 222], [52, 74, 98],
-  [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
-  [104, 112, 128],
-];
-const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
-CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
-const CHART_DARK = HUD_INK; // the minimap's own dark: every mark's rim on the chart, so a mark reads the same on both maps
-const CHART_INK_TXT = '#d4d7dc'; // the header's ink
-let chartBuiltAt = -1e9;
-
-function chartGround(i) { // a hole inks as open water
-  const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW;
-}
-function buildWorldMapImg() {
-  if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
-  chartBuiltAt = state.tick;
-  const N = WORLD, cls = chartCls, tmp = chartTmp, out = chartOut, W = MAP_W;
-  for (let i = 0; i < N * N; i++) {
-    const o = structOf(objects[i]); // resolves a multi-tile building's 'part' fillers to the anchor
-    const c = o ? objChart(o) : null;
-    cls[i] = c == null ? chartGround(i) : c;
-  }
-  // flatten: a lone tile of a mass is ground again (the road under it stays a road)...
-  tmp.set(cls);
-  for (let ty = 1; ty < N - 1; ty++) for (let tx = 1; tx < N - 1; tx++) {
-    const i = ty * N + tx, c = cls[i], need = CHART_NEED[c];
-    if (!need) continue;
-    const n = (cls[i - 1] === c) + (cls[i + 1] === c) + (cls[i - N] === c) + (cls[i + N] === c);
-    if (n < need) tmp[i] = ground[i] === 3 ? CH_ROAD : CH_SNOW;
-  }
-  // ...and a snow pinhole with three sides of one mass is that mass
-  cls.set(tmp);
-  for (let ty = 1; ty < N - 1; ty++) for (let tx = 1; tx < N - 1; tx++) {
-    const i = ty * N + tx;
-    if (tmp[i] !== CH_SNOW) continue;
-    const a = tmp[i - 1], b = tmp[i + 1], u = tmp[i - N], d = tmp[i + N];
-    const three = (c) => CHART_NEED[c] && (a === c) + (b === c) + (u === c) + (d === c) >= 3;
-    if (three(a)) cls[i] = a; else if (three(u)) cls[i] = u;
-  }
-  // resample: each chart pixel is the highest class of the tiles it covers
-  for (let py = 0; py < W; py++) {
-    const [ty0, ty1] = chartSpan[py];
-    for (let px = 0; px < W; px++) {
-      const [tx0, tx1] = chartSpan[px];
-      let best = 0;
-      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const c = cls[ty * N + tx]; if (c > best) best = c; }
-      out[py * W + px] = best;
-    }
-  }
-  // paint: one flat ink per class, nothing over it
-  const dd = mapImg.data;
-  for (let i = 0; i < W * W; i++) {
-    const ink = CHART_INK[out[i]];
-    const j = i * 4;
-    dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
-  }
-  mapCtx.putImageData(mapImg, 0, 0);
+  if (chartSize(mapChart, MAP_W)) buildMapPanel();
 }
 
 const panelCv = document.createElement('canvas');
 
-// the slab's chrome: the frost slab every panel shares (untitled - the
-// header is the day), and the map's mat: an icy line round a dark frame.
-// The header is drawn live (renderWorldMap): the day changes and the plate
-// lifts.
+// the slab's chrome: the graphite plate (untitled - the header is the clock),
+// and the map's dark rim. The header is drawn live (renderWorldMap).
 function buildMapPanel() {
   panelCv.width = PANEL_W; panelCv.height = PANEL_H;
   const g = panelCv.getContext('2d');
   const keep = ctx; ctx = g; // drawHudFrame paints on ctx
   try { drawHudFrame(0, 0, PANEL_W, PANEL_H, { corners: { tl: true, tr: true, bl: true, br: true } }); } finally { ctx = keep; }
   const mx = MAP_X - PANEL_X, my = MAP_Y - PANEL_Y;
-  g.fillStyle = HUD_INK;
+  g.fillStyle = CHART_DARK;
   g.fillRect(mx - 1, my - 1, MAP_W + 2, MAP_W + 2);
-}
-
-// the camps on the chart: the glyph in its camp's ink (its seconds under it
-// while it is cleared, drawChartClocks). The camp
-// under the pointer lights white and wears its name on a small graphite tag
-// that runs away from the chart's middle (a name on every camp at the
-// chart's 3x5 font crowded the map and still read badly; the glyph says
-// what a camp is, the hover says which).
-const CHART_HOVER_R = 7; // px from a glyph the pointer still names it
-function chartTagRect(lx, ly, L, right) {
-  const w = pixelTextWidth(L.name) + 13, h = 11;
-  return { x: right ? lx - w + 5 : lx - 5, y: ly - 5, w, h };
-}
-function chartTag(lx, ly, L, right) {
-  const { x, y, w, h } = chartTagRect(lx, ly, L, right);
-  ctx.fillStyle = HUD_INK; chamRect(x, y, w, h);
-  ctx.fillStyle = AB_BG; chamRect(x + 1, y + 1, w - 2, h - 2);
-  drawCampIcon(ctx, L, lx, ly, '#f4f7ff', HUD_INK);
-  drawPixelText(ctx, L.name, right ? x + 3 : x + 10, y + 3, '#f4f7ff');
-}
-function drawChartCamps() {
-  let hov = null, hd = CHART_HOVER_R;
-  const pts = camps.map((L) => {
-    const m = campMark(L);
-    const lx = MAP_OX + Math.round((m.tx + 0.5) * MAP_S), ly = MAP_OY + Math.round((m.ty + 0.5) * MAP_S);
-    const d = Math.hypot(mouse.x - lx, mouse.y - ly);
-    if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
-    return { L, lx, ly };
-  });
-  for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly); // a cleared one's glyph gives way to its seconds (js/draw/marks.js)
-  if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MAP_X + MAP_W / 2);
-}
-// the cleared camps' seconds, stamped over every body (drawCampMapClock)
-function drawChartClocks() {
-  for (const L of camps) {
-    const m = campMark(L);
-    drawCampMapClock(ctx, L, MAP_OX + Math.round((m.tx + 0.5) * MAP_S), MAP_OY + Math.round((m.ty + 0.5) * MAP_S));
-  }
 }
 
 function renderWorldMap(now) {
@@ -348,90 +191,17 @@ function renderWorldMap(now) {
   ctx.fillStyle = 'rgba(8,9,11,0.62)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(panelCv, PANEL_X, PANEL_Y);
-
   // the header: the match clock, the one the top bar shows
   const clock = clockTxt(state.elapsed);
-  drawPixelText(ctx, clock, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
-
-  // terrain
-  buildWorldMapImg();
-  ctx.drawImage(mapCv, MAP_X, MAP_Y);
-  fogOverMap(ctx, now, MAP_T0, MAP_T0, MAP_N, MAP_N, MAP_X, MAP_Y, MAP_W, MAP_W); // the fog of war (js/draw/fog.js)
-
-  // night falls over the chart too
-  if (state.darkness > 0.01) {
-    ctx.globalAlpha = state.darkness * 0.22;
-    ctx.fillStyle = '#2c3c6e';
-    ctx.fillRect(MAP_X, MAP_Y, MAP_W, MAP_W);
-    ctx.globalAlpha = 1;
-  }
-
-  // current camera view
+  drawPixelText(ctx, clock, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, '#d4d7dc', 2);
+  const v = mapView();
   ctx.save();
-  ctx.beginPath(); ctx.rect(MAP_X, MAP_Y, MAP_W, MAP_W); ctx.clip(); // (it may run off the square)
-  ctx.strokeStyle = 'rgba(40,52,80,0.55)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(MAP_OX + (camX / TILE) * MAP_S + 0.5, MAP_OY + (camY / TILE) * MAP_S + 0.5,
-    (WV_W / TILE) * MAP_S - 1, (WV_H / TILE) * MAP_S - 1);
+  ctx.beginPath(); ctx.rect(v.x, v.y, v.w, v.w); ctx.clip(); // (the camera's frame may run off the square)
+  drawChartGround(mapChart, v, now, 2);
   ctx.restore();
-
-  const vp = viewPlayer();
-  const mx = (x) => MAP_OX + Math.round((x / TILE) * MAP_S), my = (y) => MAP_OY + Math.round((y / TILE) * MAP_S);
-  // the landmarks (the road towers) over their own tiles, under the camps and every body
-  drawMapStructs(ctx, (x, y) => [mx(x), my(y)], CHART_DARK, 2);
-
-  // the camps, glyph only; the one under the pointer lights and wears its name
-  drawChartCamps();
-
-  // every body on the chart wears the one grammar both maps share (drawMap*,
-  // draw-world.js), in its side's ink: the robots first - every
-  // soldier and merchant standing, none of them hides - then the players,
-  // then the birds over all of them, since the objective is the read
-  for (const r of robots) {
-    if (r.dead || !fogShown(r, now)) continue;
-    drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
-  }
-  for (const p of players) {
-    if (p === vp || !p.active || p.dead || !fogShown(p, now)) continue;
-    drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
-  }
-  // the eagles as bird diamonds in team colour: the two roosted objectives,
-  // and mid-flight (the M map is the ride's chart) each bird on its own line,
-  // dashed across the parchment
-  if (state.drop) for (const e of state.drop.eagles) {
-    if (e.state === 'fly' || e.state === 'dive') {
-      ctx.save();
-      ctx.strokeStyle = TEAMS[skin(e.team)].mark;
-      ctx.setLineDash([3, 2]);
-      ctx.beginPath();
-      ctx.moveTo(MAP_OX + (e.x0 / TILE) * MAP_S, MAP_OY + (e.y0 / TILE) * MAP_S);
-      ctx.lineTo(MAP_OX + (e.x1 / TILE) * MAP_S, MAP_OY + (e.y1 / TILE) * MAP_S);
-      ctx.stroke();
-      ctx.restore();
-    } else if (e.state !== 'down') continue;
-    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK, 2);
-  }
-
-  // your side's pings, the minimap's glyph at the spot (drawPingGlyph,
-  // js/draw/callouts.js): the chart is where a ping across the world is made
-  for (const c of callouts) {
-    if (c.see !== vp.team || !CALLS[c.k].ping) continue;
-    ctx.globalAlpha = Math.max(0, callFade(c));
-    drawPingGlyph(ctx, c.k, MAP_OX + (c.x / TILE) * MAP_S, MAP_OY + (c.y / TILE) * MAP_S, 1, CALLS[c.k].ink, CHART_DARK);
-  }
-  ctx.globalAlpha = 1;
-
-  // the watched body - you, or whoever the camera rides: the white heart in
-  // its side's ink, under a pulse ring in the same ink
-  const ink = TEAMS[skin(vp.team)].mark;
-  const pmx = mx(vp.x), pmy = my(vp.y);
-  const ph = (now * 0.9) % 1;
-  ctx.globalAlpha = (1 - ph) * 0.5;
-  ctx.strokeStyle = ink;
-  ctx.beginPath(); ctx.arc(pmx, pmy, 2 + ph * 6, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  drawMapYou(ctx, pmx, pmy, ink, CHART_DARK, 2);
-  drawChartClocks(); // the camps' clocks last: a number is never under a dot
+  drawChartCamps(v);
+  drawChartBodies(v, now, 2);
+  drawChartClocks(v); // the camps' clocks last: a number is never under a dot
 }
 
 // ------------------------------------------------------------ settings menu (ESC)
@@ -750,7 +520,7 @@ function applySliderDrag() {
     settings.sfxVol = Math.round(t * 20) / 20;
     SFX.setSfxVolume(settings.sfxVol);
   } else if (dragSlider === 'map') {
-    settings.mmR = Math.round(MM_R_MIN + t * (MM_R_MAX - MM_R_MIN));
+    settings.mmSize = Math.round((MM_SIZE_MIN + t * (MM_SIZE_MAX - MM_SIZE_MIN)) * 20) / 20;
     applyMinimapSize();
   } else if (HUD_DIALS[dragSlider]) {
     // the knob lands on the dial's nearest stop (hudSizes, js/ui/strip.js),
@@ -1005,7 +775,7 @@ function drawSliderById(id, y, off) {
   if (id === 'vol') drawSliderRow(y, settings.volume, String(Math.round(settings.volume * 100)), off);
   else if (id === 'music') drawSliderRow(y, settings.musicVol, String(Math.round(settings.musicVol * 100)), off);
   else if (id === 'sfx') drawSliderRow(y, settings.sfxVol, String(Math.round(settings.sfxVol * 100)), off);
-  else if (id === 'map') drawSliderRow(y, (settings.mmR - MM_R_MIN) / (MM_R_MAX - MM_R_MIN), String(Math.round(settings.mmR / 24 * 100)));
+  else if (id === 'map') drawSliderRow(y, (settings.mmSize - MM_SIZE_MIN) / (MM_SIZE_MAX - MM_SIZE_MIN), String(Math.round(settings.mmSize * 100)));
   else if (HUD_DIALS[id]) {
     const d = HUD_DIALS[id], cap = d.cap(), v = hudPick(settings[d.key] || 1, cap);
     drawSliderRow(y, hudDialT(v), String(Math.round(v * 100)), false, hudCrisp(cap).map(hudDialT), Math.min(1, hudDialT(hudSizes(cap).at(-1))));

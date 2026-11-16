@@ -19,7 +19,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
   the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse.
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
-  counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), the DAY headline's bake,
+  counts, the clock over the minimap (the rail's clock is on its own well, `drawPixelText`), the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
   (js/ui/wheel.js) itself.
 

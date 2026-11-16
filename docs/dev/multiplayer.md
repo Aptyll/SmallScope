@@ -171,7 +171,7 @@ that action takes the old key (`setBind`) — so every action always has one key
 two share one. Every held key lets go on a rebind, the listen dies with the slab (`rebindLive`),
 on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Several
 presses share `openPingWheel()`: the ping wheel on the point under the pointer (the chart's or
-the minimap disc's point when the pointer is on one); the right button and G
+the minimap's point when the pointer is on one); the right button and G
 open it.
 
 ### The CLICK scheme
@@ -892,7 +892,7 @@ level is for, and with a hand rather than a bot on the human's side that dive is
 
 Every `'ai'` seat, brain or bot file, **says what it sees** to its own side (`updateCallouts`,
 js/ai/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
-spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
+spot it is about, both on the two maps too (js/draw/callouts.js). A call never decides
 anything; it reports something already true, most urgent first (`callLook`): its own bird just
 hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
 (NIX LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto

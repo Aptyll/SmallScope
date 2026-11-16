@@ -198,13 +198,13 @@ function drawAtkMark(t, ex, ey, alpha) {
   drawAtkRing(Math.round(t.x - ex), Math.round(t.y - ey) + 4, r, Math.max(3, Math.round(r * 0.45)), ATK_MARK_COL, alpha, 0);
 }
 // ---- what a body looks like on a map ------------------------------------
-// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)
-// and the parchment chart (renderWorldMap, panels.js) draw every moving thing
+// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap (renderMinimap) and the M
+// map (renderWorldMap) draw every moving thing (drawChartBodies, minimap.js)
 // through these three, so a shape learnt on one is read on the other:
 //   a SQUARE in the side's ink is a body, and its size says which - a player
 //   k + 1 px, a robot (a soldier, the merchant) k px, so a base's
-//   crew never outweighs the ten that matter (k is 2 on the chart, 1 on the
-//   disc);
+//   crew never outweighs the ten that matter (k is 2 on the M map, 1 on the
+//   minimap);
 //   the WATCHED body - you, or whoever the camera rides - is a player's
 //   square gone WHITE inside a ring of its side's ink: "me" and "my side" in
 //   one mark, never a colour of its own that would read as a third team;
@@ -237,7 +237,7 @@ function drawMapYou(g, x, y, col, rim, k) {
 // A LANDMARK: a building whose STRUCTS entry names a `glyph` (the road tower, a bay)
 // wears it on both maps over its own tiles, in its side's ink on the map's
 // dark rim. A tower is a rook: a merlon either side of a gap over a solid
-// body, 3 x 5 px on the disc (k 1) and 5 x 7 on the chart (k 2), so where a
+// body, 3 x 5 px on the minimap (k 1) and 5 x 7 on the M map (k 2), so where a
 // lane is held reads before any body on it does. Standing ones only: a
 // felled tower leaves `structures`, and its glyph goes with it.
 const MAP_GLYPHS = {
@@ -265,7 +265,7 @@ function drawMapStructs(g, put, rim, k) {
   }
 }
 // the objective is the biggest mark on a map: a solid diamond in its side's
-// ink, 7 px across on the disc (k 1) and 9 on the chart (k 2), over a tower's rook
+// ink, 7 px across on the minimap (k 1) and 9 on the M map (k 2), over a tower's rook
 function drawMapBird(g, x, y, col, rim, k) {
   const gx = Math.round(x), gy = Math.round(y), r = k + 2;
   for (const [c, q] of [[rim, r + 1], [col, r]]) {

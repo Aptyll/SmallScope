@@ -204,7 +204,7 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/sim/player.js); off = the roster's real colours
   teamBlue: true,
@@ -240,22 +240,10 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   scheme: 'wasd',
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
   // hudScale the bottom strip, hudRail the team rail along the top; the
-  // minimap's is mmR above
+  // minimap's is mmSize above (1 = MM_W_BASE px a side, applyMinimapSize)
   hudRail: 1 };
-// Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
-// baseline). Twice the rungs and twice the reach of the old six, and like the
-// camera it eases between them rather than snapping - mmCur is what anything
-// drawing the disc reads.
-const MM_ZOOMS = [0.25, 0.35, 0.5, 0.65, 0.8, 1, 1.25, 1.6, 2, 2.5, 3.2, 4];
-// saves written before settings.v existed hold an index into the old
-// [0.5, 0.75, 1, 1.5, 2, 3]; land each one on its nearest new rung
-const MM_MIGRATE = [2, 3, 5, 7, 8, 10];
-let mmCur = -1; // eased px per tile; negative = not yet snapped to the setting
-function mmStep() { return Math.max(0, Math.min(MM_ZOOMS.length - 1, settings.mmZoom | 0)); }
-function mmWant() { return MM_ZOOMS[mmStep()]; }
-function mmScale() { return mmCur < 0 ? mmWant() : mmCur; }
-// pointer over the minimap disc (its ring included)
-function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 7; } // to the outline's outer edge
+// pointer over the minimap's square, its frame included
+function overMinimap() { return mouse.inside && overRect(mmFrameRect()); }
 
 // performance monitor: fps averaged over half-second windows from raw
 // (unclamped) frame deltas, so sim clamping can't mask slow frames; sim and
@@ -277,7 +265,7 @@ function perfFrame(rawDt) {
 // Settings live UNDER the profile - PROFILE.putSettings / PROFILE.settings,
 // js/app/profile.js, the one file in the game that touches storage. A pre-profile
 // save under the old 'softfall.settings' key is folded in by PROFILE.load()
-// before this ever runs, so the mmZoom migration below still sees it.
+// before this ever runs, so the migrations below still see it.
 function saveSettings() { PROFILE.putSettings(settings, SETTINGS_LOCAL); }
 // the settings that stay on this machine when the rest follow the Steam
 // account to another PC (PROFILE.cloudSync): what this PC's screen and GPU
@@ -292,13 +280,6 @@ function loadSettings() {
     if (s) Object.assign(settings, s);
     delete settings.shake; // the screen shake and its toggle are gone (0.711)
     applyTeamPal();
-    // a save from before the minimap ladder grew: its mmZoom indexes the old
-    // six-rung array, so carry it across instead of silently rescaling the
-    // disc under someone who had already set it where they wanted it
-    if (s && (s.v | 0) < 2) {
-      settings.mmZoom = MM_MIGRATE[Math.max(0, Math.min(MM_MIGRATE.length - 1, s.mmZoom | 0))];
-      settings.v = 2;
-    }
     // ...and one from before EASY: its aiLevel counted from NORMAL, so a
     // saved level moves up one to stay the level it was
     if (s && (s.v | 0) < 3) {
@@ -311,21 +292,32 @@ function loadSettings() {
       if (s.hudScale != null) settings.hudRail = s.hudScale;
       settings.v = 4;
     }
-    settings.mmR = Math.max(MM_R_MIN, Math.min(MM_R_MAX, settings.mmR | 0 || 24));
+    // ...and one from before the square minimap (0.964): the round disc's
+    // radius dial (mmR, 24 = 100) becomes the square's size dial, and the
+    // disc's zoom goes, since the square always shows the whole map
+    if (s && (s.v | 0) < 5) {
+      if (s.mmR != null) settings.mmSize = (s.mmR | 0) / 24;
+      settings.v = 5;
+    }
+    delete settings.mmR; delete settings.mmZoom;
+    settings.mmSize = Math.max(MM_SIZE_MIN, Math.min(MM_SIZE_MAX, Math.round((+settings.mmSize || 1) * 20) / 20));
   } catch (e) { }
-  mmCur = mmWant();
 }
-// The disc sits in the top-right corner with the SAME gap to both edges
-// (MM_GAP, measured from the black outline's outer edge at MM_R + MM_OUT),
-// so it reads as one compact shape tucked into the corner, not a thing
-// hugging one edge and floating off the other.
-const MM_OUT = 7;  // outline's outer radius past MM_R (mmChrome, ui.js)
-const MM_GAP = 4;  // px of screen between the outline and either edge
-const MM_R_MIN = 12, MM_R_MAX = 48; // the MINIMAP SIZE dial's reach, px of radius (24 = 100)
+// THE MINIMAP is a square of the whole played map in the BOTTOM-RIGHT
+// corner, the League place, with the same gap to both edges (MM_GAP,
+// measured from its outline). MM_X/MM_Y is the chart's own top-left and
+// MM_W its side; the frame round it is MM_PAD px on three sides and
+// MM_PAD_TOP on top, where the day band runs (mmFrameRect, js/ui/minimap.js).
+const MM_GAP = 4;       // px of screen between the outline and either edge
+const MM_PAD = 3;       // the frame past the chart: outline, edge, the chart's own dark rim
+const MM_PAD_TOP = 5;   // ...and on top: outline, the 3 px day band, the rim
+const MM_W_BASE = 112;  // the chart's side at 100 on the MINIMAP SIZE dial
+const MM_SIZE_MIN = 0.6, MM_SIZE_MAX = 1.5; // the dial's reach (settings.mmSize)
 function applyMinimapSize() {
-  MM_R = settings.mmR;
-  MM_CX = VIEW_W - MM_R - MM_OUT - MM_GAP;
-  MM_CY = MM_R + MM_OUT + MM_GAP;
+  // never taller than leaves the top of the view to the news plates
+  MM_W = Math.max(48, Math.min(Math.round(MM_W_BASE * settings.mmSize), Math.floor(VIEW_H * 0.55)));
+  MM_X = VIEW_W - MM_GAP - MM_PAD - MM_W;
+  MM_Y = VIEW_H - MM_GAP - MM_PAD - MM_W;
 }
 // recompute everything positioned off VIEW_W/VIEW_H; must run after any
 // change to the canvas size (window resize, fullscreen)
@@ -335,7 +327,6 @@ function relayout() {
   PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);
   PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
   MAP_X = PANEL_X + MAP_SIDE; MAP_Y = PANEL_Y + MAP_HEAD;
-  MAP_OX = MAP_X - MAP_T0 * MAP_S; MAP_OY = MAP_Y - MAP_T0 * MAP_S;
   SET_Y = Math.round((VIEW_H - SET_H) / 2);
   placeSlab(VIEW_W);
   fitFlakes();

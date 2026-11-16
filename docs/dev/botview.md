@@ -13,7 +13,7 @@ would show a host the rival side's plans, so F4 and F6 do nothing there. Code: [
     (`BOT_FLASH`). Hover a bot for its card: level, goal and why, what it is after and how many
     tiles away, HP, and whatever the brain wrote of its role, mood, plan and the options it
     weighed. The hovered bot's line goes solid.
-  - The table (under the minimap): every bot by side, its level's first letter in the level's
+  - The table (top right): every bot by side, its level's first letter in the level's
     colour (`BOT_LEVEL_COL`), goal, kills, deaths, and a bar of how it has spent the match,
     coloured by kind. Hovering a row is hovering that bot: its card opens beside the row, so a bot
     off screen still has one. Under the rows one line per level: bots this match (+ finished

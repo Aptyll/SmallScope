@@ -27,7 +27,7 @@ with smoothing off, so the art scales nearest-neighbour instead of every fillRec
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
 the same anchor via `stripMouse` first, so a click can never land beside its pixel. **Each HUD widget
 has its own size dial** (0.436: `hudScale` the strip, `hudRail` the
-team rail; the minimap keeps its radius dial, `mmR`). A dial's stops (`hudSizes`) are every 5%
+team rail; the minimap has its own size dial, `mmSize`). A dial's stops (`hudSizes`) are every 5%
 (`HUD_FINE`) from `HUD_MIN` to `HUD_MAX` (0.5× to 2×) plus every **crisp** size (`hudCrisp`), one at
 which a HUD pixel is a whole number of canvas pixels: a 2× canvas's are 50 / 100 / 150 / 200, a 3×
 canvas's 67 / 100 / 133 / 167 / 200. A 5% stop within half a step of a crisp size gives way to it, so
