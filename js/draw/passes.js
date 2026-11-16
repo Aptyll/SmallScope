@@ -560,9 +560,9 @@ function renderScreen(ox, oy, now) {
     ctx.globalAlpha = 1;
   }
   // pointer, last of all so it sits above every overlay
-  const cur = cursorInfo();
-  applyCursorStyle(cur);
-  if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
+  // (the system cursor wears it; only what it cannot is painted here, js/draw/cursor.js)
+  const paint = applyCursorStyle(cursorInfo(), now);
+  if (paint && mouse.inside && !window.DBG.hideUI) drawLook(paint.look, Math.round(mouse.x), Math.round(mouse.y), paint.part);
   // director mode (js/app/director.js): the finished frame goes to a take being
   // recorded, and only then the director's strip over it
   dirRecFrame();

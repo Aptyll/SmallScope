@@ -381,10 +381,9 @@ function drawNavPaths(ox, oy, ex, ey) {
 }
 
 // ------------------------------------------------------------ cursor & aim line
-// The pointer is drawn in-canvas (settings.pixelCursor) so it stays on the
-// game's pixel grid at every zoom. cursorInfo() resolves what it should look
-// like this frame, once, and both the pixel cursor and the browser-cursor
-// fallback read from it:
+// cursorInfo() resolves what the pointer should look like this frame, once,
+// and both the pixel cursor (worn by the system cursor, js/draw/cursor.js)
+// and the BROWSER setting's stock cursor read from it:
 //   kind  arrow | hand | grab | reticle
 //   mode  (reticle only) idle | lock | hunt | ice | bow
 //   dim   the action under the pointer is currently blocked / out of reach
@@ -429,7 +428,7 @@ function cursorInfo() {
 
   // Every reticle in play carries the attack's state, whatever it is
   // hovering: `nock` is how much of the cycle between attacks has elapsed
-  // (1 = ready). drawCursor turns it into the ring's own behaviour, so the
+  // (1 = ready). drawLook (js/draw/cursor.js) turns it into the ring's own behaviour, so the
   // crosshair the eye is already on is where the cooldown is read.
   const nockF = player.nockT > 0 ? 1 - player.nockT / Math.max(0.01, attackCycle(player)) : 1;
   const ret = (mode, dim, extra) =>
@@ -456,30 +455,6 @@ function cursorInfo() {
   return ret('idle', busy);
 }
 
-// sprite hotspots (the pixel that sits under the true mouse position)
-const CUR_HOT = { arrow: [0, 0], hand: [4, 0], grab: [5, 4] };
-// reticle looks: colour, tick gap from centre, corner dots
-const RETICLE = {
-  idle: { col: '#f4f7ff', gap: 3 },
-  lock: { col: '#ffd95c', gap: 3, diag: true },
-  hunt: { col: '#f2cc6a', gap: 4, diag: true },
-  ice:  { col: '#a8e0f8', gap: 3, diag: true },
-  bow:  { col: '#ffd95c', gap: 6, diag: true },
-  amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
-};
-let lastCssCursor = null;
-
-// browser-cursor fallback: hide the native pointer under the pixel cursor,
-// otherwise mirror the resolved state with the nearest CSS cursor
-function applyCursorStyle(info) {
-  let css = 'none';
-  if (!settings.pixelCursor) {
-    css = info.kind === 'reticle' ? 'crosshair' : info.kind === 'grab' ? 'grabbing' :
-      info.kind === 'arrow' ? 'default' : 'pointer';
-  }
-  if (css !== lastCssCursor) { canvas.style.cursor = css; lastCssCursor = css; }
-}
-
 // outlined pixel rects: every rect gets a dark rim first, then the fill, so
 // touching ticks never eat each other's outline
 function drawOutlinedRects(rects, col, alpha) {
@@ -490,54 +465,6 @@ function drawOutlinedRects(rects, col, alpha) {
   ctx.fillStyle = col;
   for (const r of rects) ctx.fillRect(r[0], r[1], r[2], r[3]);
   ctx.globalAlpha = 1;
-}
-
-function drawCursor(info, now) {
-  const mx = Math.round(mouse.x), my = Math.round(mouse.y);
-  const base = info.dim ? 0.5 : 1;
-  if (info.kind !== 'reticle') {
-    const [hx, hy] = CUR_HOT[info.kind];
-    ctx.globalAlpha = base * 0.45;
-    ctx.drawImage(SPRITES.cursorShadow[info.kind], mx - hx + 1, my - hy + 1);
-    ctx.globalAlpha = base;
-    ctx.drawImage(SPRITES.cursor[info.kind], mx - hx, my - hy);
-    ctx.globalAlpha = 1;
-    return;
-  }
-  const R = RETICLE[info.mode];
-  let gap = R.gap, col = R.col;
-  if (info.mode === 'bow') {
-    // the ring closes as the draw fills and goes pale gold at full, like the meter
-    gap = Math.round(6 - 3 * info.frac);
-    if (info.frac >= 1) col = DRAW_FULL_COL;
-  } else if (info.mode === 'hunt') {
-    gap = 4 + (((now * 3) | 0) % 2); // slow breathing
-  }
-  const L = 3; // tick length
-  const rects = [
-    [mx - gap - L + 1, my, L, 1], [mx + gap, my, L, 1],
-    [mx, my - gap - L + 1, 1, L], [mx, my + gap, 1, L],
-  ];
-  if (R.diag) { // corner dots one step outside the ring so they never fuse with the ticks
-    const g = gap + 1;
-    rects.push([mx - g, my - g, 1, 1], [mx + g, my - g, 1, 1], [mx - g, my + g, 1, 1], [mx + g, my + g, 1, 1]);
-  }
-  // The bow's own state, on top of whatever the pointer is over. While the
-  // renock runs, four corner marks fall inward from far out and land on the
-  // ring at the moment the bow is ready; there is nothing left of them at rest,
-  // so a ready bow is still the clean crosshair it has always been.
-  const nock = info.nock === undefined ? 1 : info.nock;
-  rects.push([mx, my, 1, 1]);
-  drawOutlinedRects(rects, col, base);
-  if (nock < 1) {
-    const g = gap + 2 + Math.round((1 - nock) * 6);
-    drawOutlinedRects([
-      [mx - g, my - g, 2, 1], [mx - g, my - g, 1, 2],
-      [mx + g - 1, my - g, 2, 1], [mx + g, my - g, 1, 2],
-      [mx - g, my + g, 2, 1], [mx - g, my + g - 1, 1, 2],
-      [mx + g - 1, my + g, 2, 1], [mx + g, my + g - 1, 1, 2],
-    ], '#ffd95c', base * (0.35 + 0.55 * nock));
-  }
 }
 
 // Dotted flight line while the bow is drawn: a static dotted line from the

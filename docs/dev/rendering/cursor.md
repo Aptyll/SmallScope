@@ -1,8 +1,11 @@
 # Cursor
 
-The native pointer is hidden over the canvas and a **pixel-art cursor is drawn in-canvas** as
-the very last thing in `render()` (above every overlay and the info stack), so it sits on the
-game's pixel grid at every zoom level. `cursorInfo()` resolves the pointer state once per
+The pointer is a **pixel-art cursor worn by the system cursor** (js/draw/cursor.js). Each look
+is baked once into a small PNG at `devScale` device px per game px and set as the canvas's CSS
+cursor (`image-set(url(...) <dpr>x) hx hy, <stock>`), so the OS draws it: it moves the instant
+the mouse does, at the desktop's own speed, to the device pixel. A cursor painted into the canvas
+trails the hand by the frames between the event and the screen and snaps to whole game px, and
+that read as a slower mouse than the desktop (fixed 11-16). `cursorInfo()` resolves the pointer state once per
 frame from `mouse`, `state`, `player` (draw/flounder/roll), and what's under the pointer, and
 both the pixel cursor and the browser-cursor fallback read from it. It returns
 `{ kind, mode, dim, frac, nock, amb }`:
@@ -33,9 +36,16 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   bevel) with one-colour `SPRITES.cursorShadow` twins drawn 1 px offset beneath; hotspots are
   in `CUR_HOT`. Reticles are procedural via `drawOutlinedRects()` (dark rim pass, then fill),
   which the aim line's markers reuse.
+- `cursorLook(info, now)` turns the state into a look with a `key` holding every value that
+  changes a pixel (the renock marks step in whole px, `NOCK_STEPS`); `drawLook` paints a look
+  through `ctx`, and `bakeHwCursor` points `ctx` at a scratch canvas to bake one, crops it, and
+  blows it up nearest-neighbour. `hwCursor` caches the CSS value per key, cleared when the px
+  size or the DPR changes. The hotspot is an arrow tip's top-left device px, a reticle dot's middle.
+- **What is still painted in-canvas** (`applyCursorStyle` returns it, the frame's last step draws
+  it at `round(mouse)`): a look over `HW_CUR_MAX` CSS px a side, which Chromium refuses (a 4K
+  screen at 100% during a renock: the system cursor wears the ring and only the falling marks
+  are painted); everything while a director take records (`director.rec`), so the footage holds
+  the pointer. `mouse.inside` and `DBG.hideUI` hide that painted part.
 - `settings.pixelCursor` (default **on**, the CURSOR row in the ESC menu: PIXEL/BROWSER)
-  switches to the native pointer; `applyCursorStyle()` then maps the same state to the
-  nearest CSS cursor (`crosshair`/`pointer`/`grabbing`/`default`) and sets
-  `canvas.style.cursor` only on change. `mouse.inside` (set by mousemove, cleared by
-  `mouseleave` on the canvas and document) hides the drawn cursor when the pointer leaves,
-  and `DBG.hideUI` hides it for captures.
+  switches to the nearest stock cursor (`stockCursor`: `crosshair`/`pointer`/`grabbing`/`default`).
+  `canvas.style.cursor` is set only on change. A headless screenshot holds no system cursor.
