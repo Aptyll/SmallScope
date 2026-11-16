@@ -123,7 +123,7 @@ a 4-byte peer id (`0xFFFFFFFF` for everyone), stripped on the way; a client's ar
 with its id in front. A host publishes its list entry with `{t:'room', data}`.
 
 **The wrapper** (`desktop/`, Electron + steamworks.js): `main.js` holds Steam, answers the bridge's
-IPC (`steam:*`) and pumps packets and lobby events to the page every 8 ms; `preload.js` exposes
+IPC (`steam:*`, the window's `win:*` and Steam Cloud's `cloud:read`/`cloud:write`) and pumps packets and lobby events to the page every 8 ms; `preload.js` exposes
 `window.steamBridge` and nothing else of Node. It loads the same `index.html` a browser opens, so
 `node app/server.js` and a double-click still run the game solo; with Steam absent the bridge
 reports `ready: false` and the page plays solo. The App ID is the environment's `SteamAppId`, else

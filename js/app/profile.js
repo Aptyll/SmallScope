@@ -127,6 +127,11 @@
       // null, not {} - game.js reads a null here as "nothing was ever saved"
       // and skips its own settings migration, which a bare {} would trigger
       settings: null,
+      // when the settings last CHANGED on this screen (ms), and a digest of the
+      // part Steam Cloud carries as it stood then: the newer side wins a sync
+      // (cloudSync), and a save that changed nothing never makes this side newer
+      setAt: 0,
+      setSum: '',
     };
   }
 
@@ -218,6 +223,8 @@
           for (const k in s.loadouts) if (/^[A-Z]+$/.test(k) && typeof s.loadouts[k] === 'string' && /^[a-z,]{0,60}$/.test(s.loadouts[k])) profile.loadouts[k] = s.loadouts[k];
         }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
+        if (typeof s.setAt === 'number' && isFinite(s.setAt) && s.setAt > 0) profile.setAt = Math.floor(s.setAt);
+        if (typeof s.setSum === 'string' && s.setSum.length <= 16) profile.setSum = s.setSum;
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
@@ -352,7 +359,44 @@
     // ---- settings ---------------------------------------------------------
     // The live stored object, or null if this profile has never saved any.
     settings() { return profile.settings; },
-    putSettings(s) { profile.settings = s; saveNow(); },
+    // `local`: the keys that stay on this machine (SETTINGS_LOCAL, js/sim/core.js);
+    // the rest ride Steam Cloud when they changed
+    putSettings(s, local) {
+      profile.settings = s;
+      // before the boot's read answers nothing here is newer than the cloud: a
+      // fresh PC saving its defaults at boot must not win over the account's
+      const sum = synced ? digest(cloudPart(s, local)) : profile.setSum;
+      if (sum !== profile.setSum) { profile.setSum = sum; profile.setAt = Date.now(); cloudPush(local); }
+      saveNow();
+    },
+    // STEAM CLOUD: the settings and key binds follow the Steam account to any
+    // PC, one small file through the wrapper (desktop/main.js, cloud:read and
+    // cloud:write; Steam must have Cloud on for the app and the account). Read
+    // once at boot: the newer side wins - the cloud's is adopted here (true:
+    // the caller applies it, js/app/boot.js), or this screen's is written up.
+    // With no wrapper, or no cloud, nothing happens and it answers false.
+    cloudSync(local) {
+      const b = window.steamBridge;
+      if (!b || !b.cloudRead) { synced = true; return Promise.resolve(false); }
+      return b.cloudRead(CLOUD_FILE).then((text) => {
+        synced = true;
+        if (text == null) return false; // no cloud for this app or account
+        let doc = null;
+        try { doc = JSON.parse(text); } catch (e) { }
+        const ok = doc && typeof doc === 'object' && doc.settings && typeof doc.settings === 'object' && !Array.isArray(doc.settings) &&
+          typeof doc.at === 'number' && isFinite(doc.at);
+        if (ok && doc.at > profile.setAt) {
+          const got = cloudPart(doc.settings, local); // a key this machine keeps is never taken from another
+          profile.settings = Object.assign({}, profile.settings || {}, got);
+          profile.setAt = Math.floor(doc.at);
+          profile.setSum = digest(got);
+          saveNow();
+          return true;
+        }
+        if (profile.settings && (!ok || doc.at < profile.setAt)) cloudPush(local, true);
+        return false;
+      }).catch(() => { synced = true; return false; });
+    },
 
     // ---- stats ------------------------------------------------------------
     // The lifetime numbers.
@@ -455,6 +499,41 @@
 
     flush,
   };
+  // ---- Steam Cloud's file -------------------------------------------------
+  const CLOUD_FILE = 'settings.json';
+  const CLOUD_WAIT = 1500; // ms a change waits for the next one before it goes up: a dragged slider is one write
+  let cloudTimer = 0, cloudLocal = null;
+  let synced = false; // the boot's cloudSync has answered (or there is no cloud to ask)
+  // the settings minus the machine's own keys, top-level keys sorted so the
+  // same settings always spell the same text (digest)
+  function cloudPart(s, local) {
+    const out = {};
+    for (const k of Object.keys(s || {}).sort()) if (!local || local.indexOf(k) < 0) out[k] = s[k];
+    return out;
+  }
+  // a short fingerprint of a part (32-bit FNV-1a over its text): has it changed?
+  function digest(part) {
+    const t = JSON.stringify(part);
+    let h = 0x811c9dc5;
+    for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return (h >>> 0).toString(16);
+  }
+  function cloudPush(local, now) {
+    const b = window.steamBridge;
+    if (!b || !b.cloudWrite) return;
+    cloudLocal = local;
+    if (cloudTimer) clearTimeout(cloudTimer);
+    cloudTimer = 0;
+    if (now) cloudWrite(); else cloudTimer = setTimeout(cloudWrite, CLOUD_WAIT);
+  }
+  function cloudWrite() {
+    cloudTimer = 0;
+    if (!profile.settings) return;
+    const doc = { v: 1, at: profile.setAt, settings: cloudPart(profile.settings, cloudLocal) };
+    window.steamBridge.cloudWrite(CLOUD_FILE, JSON.stringify(doc)).catch(() => { });
+  }
+  // a change still waiting when the window goes
+  function cloudFlush() { if (cloudTimer) { clearTimeout(cloudTimer); cloudWrite(); } }
   const PEOPLE_KEY = 'softfall.people';
   let peopleRecs = null;
   const BUILDS_KEY = 'softfall.builds';
@@ -471,6 +550,6 @@
   }
 
   // a coalesced write still pending when the tab goes away
-  window.addEventListener('pagehide', flush);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  window.addEventListener('pagehide', () => { flush(); cloudFlush(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { flush(); cloudFlush(); } });
 })();

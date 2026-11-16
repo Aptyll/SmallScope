@@ -9,7 +9,7 @@
 //   npm start -- --join=LOBBYID    join one
 //   npm start -- --seed=N          pin the match's stream, as ?seed=N does (never the map)
 //   npm start -- --transport=relay the relay's rooms instead of Steam's lobbies (the default while Steam is up)
-//   npm start -- --windowed        a 1280x720 window instead of fullscreen
+//   npm start -- --windowed        a 1280x720 window instead of fullscreen, whatever the last launch kept
 //   npm start -- --steamnet=p2p    Steam's older P2P packets instead of its newer messages (steam-messages.js)
 //
 // APP_ID: the SteamAppId Steam puts in the environment of a build it launches,
@@ -65,11 +65,19 @@ const str = (v) => (typeof v === 'bigint' ? v.toString() : v);
 const lobbyInfo = (l) => ({ id: str(l.id), owner: str(l.getOwner().steamId64), members: l.getMembers().map((m) => str(m.steamId64)), data: l.getFullData() });
 const emit = (ev) => { if (win && !win.isDestroyed()) win.webContents.send('steam:event', ev); };
 
+// the window's own prefs, kept beside the page's storage (not the profile: a
+// window is this PC's, and it must be known before the page loads, so a
+// windowed player never sees a fullscreen flash at launch)
+const WIN_PREFS = () => path.join(app.getPath('userData'), 'window.json');
+function winPrefs() { try { const p = JSON.parse(fs.readFileSync(WIN_PREFS(), 'utf8')); return p && typeof p === 'object' ? p : {}; } catch (e) { return {}; } }
+function saveWinPrefs(p) { try { fs.writeFileSync(WIN_PREFS(), JSON.stringify(p)); } catch (e) { } }
+
 function createWindow() {
   win = new BrowserWindow({
-    // a game opens fullscreen, as a click on PLAY in Steam expects; F11 or
-    // Alt+Enter toggles it, and leaving it gives the 1280x720 window
-    width: 1280, height: 720, fullscreen: !args.windowed, backgroundColor: '#0f1632', title: 'Softfall',
+    // a game opens fullscreen, as a click on PLAY in Steam expects, unless the
+    // player last left it windowed; F11, Alt+Enter or the VIDEO page's DISPLAY
+    // row toggles it, and leaving it gives the 1280x720 window
+    width: 1280, height: 720, fullscreen: !args.windowed && winPrefs().windowed !== true, backgroundColor: '#0f1632', title: 'Softfall',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
@@ -90,6 +98,10 @@ function createWindow() {
     return { action: 'allow', overrideBrowserWindowOptions: { parent: win, autoHideMenuBar: true, backgroundColor: '#0b0f16' } };
   });
   win.on('closed', () => { win = null; app.quit(); });
+  // whichever way it flipped, the page's DISPLAY row hears it and the next launch keeps it
+  const flipped = (full) => { saveWinPrefs(Object.assign(winPrefs(), { windowed: !full })); if (win && !win.isDestroyed()) win.webContents.send('win:fullscreen', full); };
+  win.on('enter-full-screen', () => flipped(true));
+  win.on('leave-full-screen', () => flipped(false));
   win.on('focus', () => win.flashFrame(false)); // a nudge stops once the window is looked at
   const query = {};
   if (args.seed) query.seed = args.seed;
@@ -151,6 +163,27 @@ ipcMain.handle('steam:lobbies', async () => { if (friends) friends.worldwide(); 
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('win:quit', () => { app.quit(); return true; });
+ipcMain.handle('win:fullscreen', (e, on) => { if (win && !win.isDestroyed()) win.setFullScreen(!!on); return !!on; });
+ipcMain.handle('win:isFullscreen', () => !!(win && !win.isDestroyed() && win.isFullScreen()));
+// STEAM CLOUD (PROFILE.cloudSync, js/app/profile.js): one small file per name,
+// read and written whole. read answers null when the cloud is off for the
+// app (Steamworks' Cloud page) or the account (Steam's own settings), '' when
+// it is on but holds no such file yet. A refused write is logged once
+const CLOUD_NAME = /^[a-z0-9_-]{1,32}\.json$/, CLOUD_MAX = 64 * 1024;
+let cloudLogged = false;
+function cloudOn() { try { return !!(steam && steam.cloud.isEnabledForAccount() && steam.cloud.isEnabledForApp()); } catch (e) { return false; } }
+ipcMain.handle('cloud:read', (e, name) => {
+  if (!CLOUD_NAME.test(String(name)) || !cloudOn()) return null;
+  try { return steam.cloud.fileExists(name) ? steam.cloud.readFile(name) : ''; } catch (err) { slog('cloud read ' + name + ' FAILED: ' + err.message); return null; }
+});
+ipcMain.handle('cloud:write', (e, name, text) => {
+  text = String(text);
+  if (!CLOUD_NAME.test(String(name)) || text.length > CLOUD_MAX || !cloudOn()) return false;
+  let ok = false;
+  try { ok = steam.cloud.writeFile(name, text); } catch (err) { ok = false; }
+  if (!ok && !cloudLogged) { cloudLogged = true; slog('cloud write ' + name + ' refused (is Steam Cloud on in Steamworks, with a quota?)'); }
+  return ok;
+});
 ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
 // THE FRIENDS PANEL (js/ui/friends.js). friends() is the list; inviteFriend

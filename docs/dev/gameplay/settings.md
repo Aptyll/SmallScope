@@ -80,17 +80,32 @@ the key each action is bound to under each
 `relay` (above) —
 `fpsCap` — the FPS CAP row, frames the loop may present a second, 0 = every frame the screen
 offers ([the fixed step](../code-map/app/boot.md)) —
+`uiSize` — the UI SIZE row, -1 / 0 / 1 (below) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
-saved any (the pre-profile migration: [architecture.md](../architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
+saved any (the pre-profile migration: [architecture.md](../architecture.md#profilejs)). `applySettings()`
+(js/app/boot.js) puts them in force: at boot, and again when Steam Cloud hands over newer ones.
+
+**Steam Cloud.** Under the wrapper the settings and key binds follow the Steam account to any PC:
+one file, `settings.json`, through the bridge's `cloudRead`/`cloudWrite` (desktop/main.js on
+`steam.cloud`). Every key but `SETTINGS_LOCAL` (js/sim/core.js: UI SIZE, FPS CAP, the video toggles
+and `relay`, what this PC's screen and GPU want) rides it. `PROFILE.putSettings` stamps the profile's
+`setAt` only when the cloud part really changed (a digest, `setSum`) and writes it up 1.5 s after the
+last change; `PROFILE.cloudSync`, once at boot, adopts the cloud's copy when its `at` is newer, else
+writes this screen's up. Until that boot read answers, no save here counts as newer, so a fresh PC
+saving its defaults never beats the account's. With no wrapper, or the cloud off for the app
+(Steamworks' Cloud page needs a quota) or the account, nothing happens. `applyMinimapSize()` must be called after changing `mmR` —
 it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
 call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
 ([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). (Old saves may still carry `res`, `fps`, `seed`, `paths`, `hudCorner` or `haptics` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
-There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener still refits the canvas when the
-browser toggles it.
+The VIDEO page's DISPLAY row is fullscreen or a window (`setFullscreen`, js/app/canvas.js): the
+wrapper's window under Electron (desktop/main.js remembers it in `window.json` beside the page's
+storage, so the next launch opens the same way, and F11 or Alt+Enter flips it there too), else the
+document's Fullscreen API, which needs the row's click. The row reads the state live
+(`fullscreenOn`), and the resize that follows refits the canvas like any resize.
 
 **The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
 night ground, never see-through) headed like the patch notes: its name big and gold with no rule
@@ -127,7 +142,11 @@ The four size sliders share one grammar: the knob lands on the dial's nearest st
 track marks each size `hudCrisp` finds crisp on this screen, and the track past the widget's cap is
 sunk (`HUD_DIALS`; [rendering](../rendering/the-hud-corners/the-hud-strip.md)). Dragging one previews its widget over the panel.
 
-**The VIDEO page** holds one QUALITY row, five toggles and the COLOUR BLIND dropdown, every one a cosmetic-only render
+**The VIDEO page** opens with DISPLAY (above) and **UI SIZE**: SMALL / MEDIUM / LARGE scale the
+whole interface (menus, HUD, text) a whole device px per game px smaller or larger than the default
+(`uiDevFor`, js/app/canvas.js), never the world: the zoom ladder is measured against `worldDev`, so
+every screen still sees the same rows of world ([world zoom](../rendering/world-zoom-and-the-two-pixel-spaces.md)).
+The size in force lights, so a window too small for LARGE keeps MEDIUM lit. Under them it holds one QUALITY row, five toggles and the COLOUR BLIND dropdown, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):
 CLOUD SHADOWS (`vidClouds` — `cloudShade`'s two full-view multiply fills, the one pass that
 costs every daytime frame), SUN SHAFTS (`vidRays` — `godRays` and its motes), ICE STARS

@@ -50,8 +50,9 @@ on a 16×16 sprite is exactly what "stretched" looks like. So the zoom the playe
 not stored as a float at all:
 
 - **`kWant` is that whole number** — device px per world px — and the wheel steps it by **±1**,
-  clamped to `kMin()`…`kMax()` (`ZOOM_MIN` … `ZOOM_MAX` × `devScale`). `zoomWantOf()`
-  derives the float scale as `kWant / devScale`.
+  clamped to `kMin()`…`kMax()` (`ZOOM_MIN` … `ZOOM_MAX` × `worldDev`, the default UI's scale,
+  [one camera](one-camera-fullscreen-pixel-rendering.md)). `zoomWantOf()` derives the float
+  scale as `kWant / devScale`, and the fixed framings below go through `zu()` the same way.
 - **The range is authored in rows of world on screen**, not in scale: `ZOOM_OUT_ROWS` (540, the
   whole clearing) and `ZOOM_IN_ROWS` (75, a face), and `ZOOM_MIN`/`ZOOM_MAX` are
   `TARGET_ROWS` over each (0.67 … 4.8 at 360 rows), so a taller frame neither hands out more
@@ -72,8 +73,9 @@ not stored as a float at all:
   rather than a lie.
 - `sizeWorldView()` **ceils** (never rounds): `WV × k` must *cover* the canvas or a sliver of
   stale pixels survives down the right edge.
-- `fitCanvas()` re-rungs `kWant` onto the new ladder (`round(zoomCur * dev)`) whenever `devScale`
-  changes — a resize, a fullscreen toggle, a drag to another monitor.
+- `fitCanvas()` re-rungs `kWant` onto the new ladder (from `kWant / worldDev`) whenever `worldDev`
+  changes — a resize, a fullscreen toggle, a drag to another monitor. A UI SIZE change leaves
+  `worldDev`, so `kWant` and the view stay put.
 
 **In motion it is deliberately not exact.** `applyZoom(dt)`, first thing in `update()`, eases
 `zoomCur` toward `kWant / devScale` exponentially at `ZOOM_EASE` 16/s (~0.13 s to 90%,

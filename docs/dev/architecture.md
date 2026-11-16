@@ -305,6 +305,9 @@ file is a save file.
   payout, `addWin` once per `endMatch('won')`, `addMatch` at eagle takeoff, `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
   `setName`, `setHero` and `putSettings` write through immediately.
+- **Steam Cloud carries the settings**: `putSettings(s, local)` and `cloudSync(local)` (the boot's
+  one read, newer side wins) keep every key but the machine's own in `settings.json` through the
+  wrapper ([settings](gameplay/settings.md)). The rest of the profile stays on this PC.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
   never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot

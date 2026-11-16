@@ -123,8 +123,12 @@ let wOX = 0, wOY = 0;       // this frame's world buffer corner in world px: the
 
 // the rungs kWant may sit on, clamped so the ends of the range are reachable
 // on any display (a devScale of 1 or 2 has very few whole numbers to offer)
-function kMin() { return Math.max(1, Math.round(ZOOM_MIN * devScale)); }
-function kMax() { return Math.max(kMin() + 1, Math.round(ZOOM_MAX * devScale)); }
+function kMin() { return Math.max(1, Math.round(ZOOM_MIN * worldDev)); }
+function kMax() { return Math.max(kMin() + 1, Math.round(ZOOM_MAX * worldDev)); }
+// a zoom authored as canvas px per world px at the default UI SIZE (every
+// ZOOM_* above, the ride's DROP_*), in this canvas's px: a smaller UI makes
+// the canvas more px across, and the world must cover the same device px
+function zu(z) { return z * worldDev / devScale; }
 function zoomWantOf() { return kWant / devScale; }
 
 // WV from the current scale, in world px. CEIL, never round: WV * k must
@@ -150,7 +154,24 @@ function mouseWX() { return mouse.x / zoomCur + camX; }
 function mouseWY() { return mouse.y / zoomCur + camY; }
 
 let scale = 2;    // CSS px per game px
-let devScale = 2; // DEVICE px per game px (the integer fitCanvas picks)
+let devScale = 2; // DEVICE px per game px (the integer fitCanvas picks): the UI's scale
+// DEVICE px per game px at the default UI SIZE: the one TARGET_ROWS asks for.
+// The world's zoom ladder is measured against it, never against devScale, so
+// the VIDEO page's UI SIZE (settings.uiSize) moves the interface alone and
+// every screen still sees the same rows of world
+let worldDev = 2;
+// UI SIZE's steps: the UI's scale as a share of worldDev, rounded onto a whole
+// device px and at least one px off the default, so every display gets a real
+// step each way (1080p: 2x, 3x, 4x; 1440p: 3x, 4x, 5x; 4K: 4x, 6x, 8x)
+const UI_SIZES = { '-1': 2 / 3, '0': 1, '1': 4 / 3 };
+function uiDevFor(wd, devW, devH) {
+  const f = UI_SIZES[settings.uiSize] || 1;
+  let d = f < 1 ? Math.min(wd - 1, Math.round(wd * f)) : f > 1 ? Math.max(wd + 1, Math.round(wd * f)) : wd;
+  d = Math.max(1, d);
+  // the same floor as the world's: never a view smaller than the UI panels' footprint
+  while (d > 1 && (devW / d < 320 || devH / d < 240)) d--;
+  return d;
+}
 function fitCanvas() {
   // pick an integer scale in DEVICE pixels, not CSS pixels: on fractional
   // display scaling (125%/150% Windows) a CSS-integer scale lands game pixels
@@ -163,12 +184,15 @@ function fitCanvas() {
   // the canvas is then shown fitted inside it (below)
   const tall = dirTall();
   const devW = tall ? DIR_TALL_W : winW, devH = tall ? DIR_TALL_H : winH;
-  let dev = Math.max(1, Math.round(devH / TARGET_ROWS));
+  let wd = Math.max(1, Math.round(devH / TARGET_ROWS));
   // never shrink the view below the UI panels' footprint
-  while (dev > 1 && (devW / dev < 320 || devH / dev < 240)) dev--;
+  while (wd > 1 && (devW / wd < 320 || devH / wd < 240)) wd--;
+  // the UI's own scale off it (UI SIZE); a Short's frame is always the default
+  const dev = tall ? wd : uiDevFor(wd, devW, devH);
   scale = dev / dpr; // CSS px per game px; mouse mapping divides by this
-  const zWas = kWant ? kWant / devScale : ZOOM_REST; // the wheel's zoom before this fit, as a scale
+  const zWas = kWant ? kWant / worldDev : ZOOM_REST; // the wheel's zoom before this fit, as a default-UI scale
   devScale = dev;    // the replay window captures at this resolution
+  worldDev = wd;
   // cover the window exactly: ceil leaves at most one game px of overflow,
   // which the body's flex centering splits and overflow:hidden clips
   VIEW_H = Math.ceil(devH / dev);
@@ -182,15 +206,16 @@ function fitCanvas() {
   // number too and stay crisp.
   canvas.width = VIEW_W * dev; canvas.height = VIEW_H * dev;
   uictx.imageSmoothingEnabled = false; // resizing the canvas resets ctx state
-  // devScale may have just changed (resize, fullscreen, a different monitor):
+  // worldDev may have just changed (resize, fullscreen, a different monitor):
   // re-rung the wheel's zoom onto the new ladder at the nearest scale to what
-  // it was - off kWant, never zoomCur, which a ride or a show is holding elsewhere
-  kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zWas * dev)));
+  // it was - off kWant, never zoomCur, which a ride or a show is holding
+  // elsewhere. A UI SIZE change leaves worldDev, so kWant stays put
+  kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zWas * wd)));
   // world buffer at the most zoomed-out size we can ever ask for, so it is
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
-  const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
+  const wMax = Math.ceil(VIEW_W / zu(ZOOM_FLOOR)) + 1, hMax = Math.ceil(VIEW_H / zu(ZOOM_FLOOR)) + 1; // + the sub-pixel camera's spare (sizeWorldView)
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
   airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;
@@ -218,6 +243,26 @@ function fitCanvas() {
 pageListen(window, 'resize', () => { fitCanvas(); relayout(); });
 pageListen(document, 'fullscreenchange', () => { fitCanvas(); relayout(); });
 fitCanvas();
+
+// FULLSCREEN, the VIDEO page's DISPLAY row. Under the wrapper it is the
+// window's own (desktop/main.js keeps it between launches, and F11 or
+// Alt+Enter flips it there too); in a browser it is the Fullscreen API, which
+// only answers a click - the row's is one. Either way the window's resize
+// refits the canvas, as any resize does.
+let winFull = null; // the wrapper's window as it last said (null: no wrapper, or no answer yet)
+if (window.steamBridge && steamBridge.fullscreen) {
+  steamBridge.isFullscreen().then((on) => { winFull = !!on; }).catch(() => {});
+  steamBridge.onFullscreen((on) => { winFull = !!on; });
+}
+function fullscreenOn() { return winFull != null ? winFull : !!document.fullscreenElement; }
+function setFullscreen(on) {
+  if (on === fullscreenOn()) return;
+  if (window.steamBridge && steamBridge.fullscreen) { winFull = on; steamBridge.fullscreen(on).catch(() => {}); return; }
+  try {
+    const p = on ? document.documentElement.requestFullscreen() : document.exitFullscreen();
+    if (p && p.catch) p.catch(() => {}); // refused (no click behind it): the row keeps showing the truth
+  } catch (e) { }
+}
 
 // Frost-panel art for the pillarbox bars (wider-than-16:9 screens), in the
 // game's palette instead of dead black. Purely decorative and deliberately

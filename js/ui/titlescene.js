@@ -31,11 +31,11 @@ let titleFit = null;           // TITLE_SPOTS fitted to the view: { spots, key }
 // and squeeze only when the room between the logo and the view's foot, or
 // between its sides, is less than the formation's own
 function titleSpots() {
-  const key = VIEW_W + 'x' + VIEW_H;
+  const key = VIEW_W + 'x' + VIEW_H + '@' + zu(ZOOM_TITLE);
   if (titleFit && titleFit.key === key) return titleFit.spots;
-  const hw = VIEW_W / 2 / ZOOM_TITLE, hh = VIEW_H / 2 / ZOOM_TITLE;
+  const zt = zu(ZOOM_TITLE), hw = VIEW_W / 2 / zt, hh = VIEW_H / 2 / zt;
   const ys = TITLE_SPOTS.map((sp) => sp[1]), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const top = Math.max(y0, (LOGO_Y + TITLE_LOGO[1]) / ZOOM_TITLE - hh + TITLE_HEAD), bot = hh - TITLE_EDGE[1];
+  const top = Math.max(y0, (LOGO_Y + TITLE_LOGO[1]) / zt - hh + TITLE_HEAD), bot = hh - TITLE_EDGE[1];
   const ky = Math.min(1, (bot - top) / (y1 - y0));
   const kx = Math.min(1, (hw - TITLE_EDGE[0]) / Math.max(...TITLE_SPOTS.map((sp) => -sp[0])));
   titleFit = { key, spots: TITLE_SPOTS.map((sp) => [Math.round(sp[0] * kx), Math.round(top + (sp[1] - y0) * ky)]) };
@@ -62,7 +62,7 @@ function titleRectGround(x0, y0, x1, y1) {
   return g || 'X';
 }
 function titleSpotOk(X, Y) {
-  const k = 1 / ZOOM_TITLE, hh = VIEW_H / 2;
+  const k = 1 / zu(ZOOM_TITLE), hh = VIEW_H / 2;
   // the logo's room and the word column's, from the view's layout into world px
   if (titleRectGround(X - TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y - hh) * k, X + TITLE_LOGO[0] / 2 * k, Y + (LOGO_Y + TITLE_LOGO[1] - hh) * k) === 'X') return false;
   // ...the column runs to the view's foot, so nothing is cut off under the last word
@@ -78,7 +78,7 @@ function titleSpotOk(X, Y) {
 }
 // the nearest clean spot to the centre, ring by ring outward; the centre itself when the map has none
 function titleSceneAt() {
-  const key = VIEW_W + 'x' + VIEW_H;
+  const key = VIEW_W + 'x' + VIEW_H + '@' + zu(ZOOM_TITLE);
   if (titleSpot && titleSpot.key === key) return titleSpot;
   const c = WORLD * TILE / 2, n = Math.floor(TITLE_REACH * TILE / TITLE_STEP);
   let best = null, bd = Infinity;
