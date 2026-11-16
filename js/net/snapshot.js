@@ -188,6 +188,7 @@ function snapSingles() {
   s.guards = pack(guards, 0); // ARMATOS's planted standards (js/sim/armatos.js)
   s.brushfires = pack(brushfires, 0); // IGNIA's lines of fire (js/sim/ignia.js)
   s.orcaSp = pack(orcaSpouts, 0); // the up orca's throws (js/sim/orca.js)
+  s.solSh = pack(soldierShots, 0); // the soldiers' snowballs and bolts in the air (js/sim/robots.js)
   s.aura = [pack(auraStars, 0), pack(auraOrbs, 0), pack(auraCurtains, 0)]; // AURA's stars, orbs and curtains (js/sim/aura.js)
   s.salvia = [pack(salviaBundles, 0), pack(salviaDrops, 0), pack(salviaThaws, 0)]; // SALVIA's poultices, snowdrops and warm rings (js/sim/salvia.js)
   s.lucerna = [pack(lucernaHooks, 0), pack(lucernaLanterns, 0), pack(lucernaCircles, 0)]; // LUCERNA's crooks, lanterns and rings of light (js/sim/lucerna.js)
@@ -244,6 +245,7 @@ function snapApplySingles(s) {
   if (s.guards) { guards.length = 0; for (const g of unpack(s.guards)) guards.push(g); }
   if (s.brushfires) { brushfires.length = 0; for (const b of unpack(s.brushfires)) brushfires.push(b); }
   if (s.orcaSp) { orcaSpouts.length = 0; for (const w of unpack(s.orcaSp)) orcaSpouts.push(w); }
+  if (s.solSh) { soldierShots.length = 0; for (const w of unpack(s.solSh)) soldierShots.push(w); }
   if (s.aura) [auraStars, auraOrbs, auraCurtains].forEach((L, i) => { L.length = 0; for (const w of unpack(s.aura[i])) L.push(w); });
   if (s.salvia) [salviaBundles, salviaDrops, salviaThaws].forEach((L, i) => { L.length = 0; for (const w of unpack(s.salvia[i])) L.push(w); });
   if (s.lucerna) [lucernaHooks, lucernaLanterns, lucernaCircles].forEach((L, i) => { L.length = 0; for (const w of unpack(s.lucerna[i])) L.push(w); });
@@ -942,7 +944,7 @@ function snapBlank() {
   }
   objects.fill(null); structures.length = 0;
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
-  guards.length = 0; brushfires.length = 0; auraStars.length = 0; orcaSpouts.length = 0; auraOrbs.length = 0; auraCurtains.length = 0;
+  guards.length = 0; brushfires.length = 0; auraStars.length = 0; orcaSpouts.length = 0; soldierShots.length = 0; auraOrbs.length = 0; auraCurtains.length = 0;
   salviaBundles.length = 0; salviaDrops.length = 0; salviaThaws.length = 0;
   lucernaHooks.length = 0; lucernaLanterns.length = 0; lucernaCircles.length = 0;
   bucinaEchoes.length = 0; bucinaCalls.length = 0;
@@ -1019,7 +1021,7 @@ function snapQuantize() {
   };
   walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
   if (state.drop) walk(state.drop.eagles);
-  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(arcusShafts); walk(arcusRains); walk(fossorBanks); walk(fossorQuakes); walk(portitorCrates); walk(state.end); walk(state.eagleCine);
+  walk(objects); walk(guards); walk(brushfires); walk(auraStars); walk(orcaSpouts); walk(soldierShots); walk(auraOrbs); walk(auraCurtains); walk(salviaBundles); walk(salviaDrops); walk(salviaThaws); walk(lucernaHooks); walk(lucernaLanterns); walk(lucernaCircles); walk(bucinaEchoes); walk(bucinaCalls); walk(hiemsGlazes); walk(hiemsStorms); walk(faberParts); walk(faberArcs); walk(faberBolts); walk(faberSprings); walk(nixShards); walk(nixClouds); walk(falcoKnives); walk(lignumAxes); walk(lignumLogs); walk(clivusRopes); walk(clivusRings); walk(veloxStones); walk(veloxLanes); walk(arcusShafts); walk(arcusRains); walk(fossorBanks); walk(fossorQuakes); walk(portitorCrates); walk(state.end); walk(state.eagleCine);
 }
 // One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that

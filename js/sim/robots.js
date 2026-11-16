@@ -57,7 +57,6 @@ function hurtRobot(b, dmg, nx, ny, src, cue) {
 // pays its own `pay` and counts no farm).
 function robotDies(b, src) {
   b.dead = true;
-  b.shot = null; // a snowball still in its hand or the air goes with it
   const M = heroMachine(b);
   if (M && M.fall) M.fall(b, src); // a hero's body that is no machine (FALCO's hawk) ends its own way and leaves no wreck
   else {
@@ -221,6 +220,7 @@ const WAVE_OUT = 4;      // tiles along its lane from the perch a soldier steps 
 const waves = [];
 function wavesReset() {
   waves.length = 0;
+  soldierShots.length = 0; // nothing of the last match's lanes still in the air
   for (const team of [0, 1]) for (const lane of [0, 1]) waves.push({ team, lane, kinds: [], rollT: 0 });
 }
 // s to the next wave on the match's beat
@@ -290,7 +290,8 @@ const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 // and `grow` more for every WAVE `grow` of the match), its blow (`dmg`
 // every `cd` s from `reach` px away; a building takes `struct` times it, the
 // rival bird `eagle` nerve), the shot that carries a blow from range (`shot`:
-// s in the air, 0 for an axe, and `look`, what flies: SOLDIER_SHOTS), its bounty as a share of SOLDIER_BOUNTY
+// s in the air, 0 for an axe, `look`, what flies: SOLDIER_SHOTS, and `hand`, px off its
+// feet where the shot leaves, facing right, mirrored when `turns` and it aims left), its bounty as a share of SOLDIER_BOUNTY
 // (soldierBounty, js/sim/farm.js) and its share of SOLDIER_XP, and its
 // sprite set (`spr`, SPRITES). MELEE walks in front, tanky and slow-hitting;
 // RANGED stands back and throws a packed snowball, about half a melee's
@@ -298,9 +299,9 @@ const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 // takes several tower bolts and hits buildings hard: it is what lets a wave
 // push a tower.
 const SOLDIER_TYPES = {
-  melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    look: null,   bounty: 1,    xp: 1,   spr: 'robotTeam' },
-  ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, look: 'ball', bounty: 0.65, xp: 0.7, spr: 'robotRanged' },
-  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.45, look: 'bolt', bounty: 3.2,  xp: 2,   spr: 'robotSiege' },
+  melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    look: null,   hand: null,     bounty: 1,    xp: 1,   spr: 'robotTeam' },
+  ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, look: 'ball', hand: [4, -7],  bounty: 0.65, xp: 0.7, spr: 'robotRanged' }, // the ball in its raised claw (js/baked/soldiers.js)
+  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.45, look: 'bolt', hand: [16, -12], turns: true, bounty: 3.2,  xp: 2,   spr: 'robotSiege' },  // the bolt's head on the loaded stock
 };
 function soldierType(b) { return SOLDIER_TYPES[b.type] || SOLDIER_TYPES.melee; }
 
@@ -314,7 +315,6 @@ function makeSoldier(team, lane, type) {
   // js/sim/farm.js), so a hero's grown blow never makes every hit on one a last hit
   const T = soldierType(b);
   b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / WAVE.grow);
-  b.shot = null; // a blow in the air from range: { tg, t, dmg, x, y } (soldierShot)
   b.faceL = team === 1; // facing left (updateSoldier turns it): toward the rival base first
   b.lane = lane; // the lane it marches: 0 the top, 1 the bottom
   b.wayI = 0;
@@ -332,7 +332,6 @@ function updateSoldier(b, dt) {
   };
   b.atkAim = null; b.hitFoe = null;
   const T = soldierType(b), x0 = b.x, y0 = b.y;
-  if (b.shot) soldierShot(b, dt);
   const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = T.cd; hit(); } };
   const rival = state.drop && state.drop.eagles[1 - b.team];
   const roost = rival && rival.state === 'down' ? rival : null;
@@ -394,7 +393,7 @@ function updateSoldier(b, dt) {
 // ------------------------------------------------------------ soldier blows
 // What a wave's soldier lands (the `soldiers` banner above): a melee one's axe,
 // a ranged or siege one's snowball. The numbers are its kind's (SOLDIER_TYPES).
-// what a shot is (SOLDIER_TYPES' `look`; drawn by drawSoldierShot, js/draw/bodies.js):
+// what a shot is (SOLDIER_TYPES' `look`; drawn by drawSoldierShots, js/draw/soldiershots.js):
 // the sound it leaves with and lands with, and the puff where it hits
 const SOLDIER_SHOTS = {
   ball: { fire: 'waveSwing', land: 'rockLand', puff: '#eef4fb', n: 5 },  // a packed snowball, thrown
@@ -447,43 +446,70 @@ function robotFoeUnit(b, range) {
   }
   return best;
 }
-// the blow itself, its kind's: an axe lands now, a snowball is thrown and
-// lands when its time in the air is up (soldierShot) on whatever it was
-// thrown at, even if that has stepped away - a lob, not a dodgeable shot
+// the blow itself, its kind's: an axe lands now, a snowball or a bolt is
+// thrown and lands when its time in the air is up (updateSoldierShots) on
+// whatever it was thrown at, even if that has stepped away - a lob, not a
+// dodgeable shot
 function robotStrike(b, e, pt) {
   const T = soldierType(b);
-  if (T.shot) {
-    sfxAt(SOLDIER_SHOTS[T.look].fire, b.x, b.y);
-    // `live`: a body is hit where it stands when the ball lands; a building or the bird where it was aimed
-    b.shot = { tg: e, t: 0, x: pt.x, y: pt.y, x0: b.x, y0: b.y - 6, live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0) };
-    return;
-  }
+  if (T.shot) { soldierThrow(b, T, e, pt); return; }
   sfxAt('waveSwing', b.x, b.y); // the lane's fight sits under the heroes' (js/app/audio.js)
-  soldierLand(b, e, pt);
+  soldierLand(soldierBlow(b), e, pt, b.x, b.y - 1);
 }
-// where a soldier's blow lands: a building goes through hurtStruct (the same
-// path an E swing takes), the rival bird through hurtEagle, any BODY through
-// the one blow every unit takes (hurtUnit, js/sim/actions.js), credited to
-// the bot's owner (a soldier's is nobody)
-function soldierLand(b, e, pt) {
-  const T = soldierType(b), src = players[b.owner] || null;
-  const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
-  const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
-  if (state.drop && state.drop.eagles.indexOf(e) >= 0) { if (e.state === 'down') hurtEagle(e, T.eagle, null, pt.x, pt.y); }
-  else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, T.dmg * T.struct * orcaPushMul(b), src, b); } // `b` swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
-  else if (unitAlive(e)) hurtUnit(e, T.dmg, nx, ny, src, { cause: 'soldier' });
+// what a soldier's blow does, fixed the moment it is swung or thrown: whose
+// side, whose credit (a soldier's is nobody's), and how hard on a body, a
+// building (orcaPushMul: the orca's push, read where the thrower stands) and
+// the rival bird. A shot carries this, so it lands the same once its thrower is a wreck
+function soldierBlow(b) {
+  const T = soldierType(b);
+  return { team: b.team, owner: b.owner, dmg: T.dmg, sdmg: T.dmg * T.struct * orcaPushMul(b), eagle: T.eagle };
 }
-// a shot in the air: when its time is up it lands on its mark (soldierLand)
-// and bursts where it hit (SOLDIER_SHOTS). A wreck's throw is lost with it (robotDies)
-function soldierShot(b, dt) {
-  const s = b.shot, T = soldierType(b);
-  s.t += dt;
-  if (s.live) { s.x = s.tg.x; s.y = s.tg.y - 4; } // the ball follows a body (drawn to where it is)
-  if (s.t < T.shot) return;
-  b.shot = null;
-  const e = s.tg, pt = { x: s.x, y: s.y };
-  soldierLand(b, e, pt);
-  const L = SOLDIER_SHOTS[T.look];
-  burst(pt.x, pt.y, L.puff, L.n, 45, 0.4, true);
-  sfxAt(L.land, pt.x, pt.y);
+// where a soldier's blow lands, come from (fx, fy): a building goes through
+// hurtStruct (the same path an E swing takes), the rival bird through
+// hurtEagle, any BODY through the one blow every unit takes (hurtUnit,
+// js/sim/actions.js), credited to the blow's owner (a soldier's is nobody)
+function soldierLand(w, e, pt, fx, fy) {
+  const src = players[w.owner] || null;
+  const d = Math.hypot(pt.x - fx, pt.y - fy) || 1;
+  const nx = (pt.x - fx) / d, ny = (pt.y - fy) / d;
+  if (state.drop && state.drop.eagles.indexOf(e) >= 0) { if (e.state === 'down') hurtEagle(e, w.eagle, null, pt.x, pt.y); }
+  else if (e.tx !== undefined) { if (structures.indexOf(e) >= 0) hurtStruct(e, w.sdmg, src, true); } // a soldier swung it, so STRUCT_DR stays off: a kind's dmg is already a building number
+  else if (unitAlive(e)) hurtUnit(e, w.dmg, nx, ny, src, { cause: 'soldier' });
+}
+
+// ---- a soldier's shot in the air ------------------------------------------
+// A thrown snowball or a ballista bolt is its own thing in the world, not a
+// field on its thrower: it leaves the hand (SOLDIER_TYPES' `hand`), flies its
+// kind's `shot` s and lands on its mark, whether or not the thrower is still
+// standing, stunned or scrapped by then. After it lands it stays SOLDIER_SPLAT_T
+// s more, `hit` counting up, for the splat its pixels show (drawSoldierShots,
+// js/draw/soldiershots.js). A SAVE_ROOTS list that rides the snapshot.
+const SOLDIER_SPLAT_T = 0.18;
+const soldierShots = []; // { look, tg, live, x, y, x0, y0, t, fly, hit, ...soldierBlow }
+function soldierThrow(b, T, e, pt) {
+  sfxAt(SOLDIER_SHOTS[T.look].fire, b.x, b.y);
+  const left = T.turns && pt.x < b.x; // the cart swings round to its mark (updateSoldier's faceL); the thrower's claw stays where it is drawn
+  soldierShots.push(Object.assign(soldierBlow(b), {
+    look: T.look, tg: e,
+    // `live`: a body is hit where it stands when the shot lands; a building or the bird where it was aimed
+    live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0),
+    x: pt.x, y: pt.y, x0: b.x + (left ? -T.hand[0] : T.hand[0]), y0: b.y + T.hand[1],
+    t: 0, fly: T.shot, hit: -1,
+  }));
+}
+function updateSoldierShots(dt) {
+  for (let i = soldierShots.length - 1; i >= 0; i--) {
+    const s = soldierShots[i];
+    if (s.hit >= 0) { s.hit += dt; if (s.hit >= SOLDIER_SPLAT_T) soldierShots.splice(i, 1); continue; }
+    s.t += dt;
+    if (s.live && unitAlive(s.tg)) { s.x = s.tg.x; s.y = unitMidY(s.tg); } // the shot follows a body (drawn to where it is)
+    if (s.t < s.fly) continue;
+    s.t = s.fly; s.hit = 0;
+    const pt = { x: s.x, y: s.y };
+    soldierLand(s, s.tg, pt, s.x0, s.y0);
+    s.tg = null; // landed: nothing more to follow
+    const L = SOLDIER_SHOTS[s.look];
+    burst(pt.x, pt.y, L.puff, L.n, 45, 0.4, true);
+    sfxAt(L.land, pt.x, pt.y);
+  }
 }

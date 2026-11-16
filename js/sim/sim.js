@@ -558,6 +558,7 @@ function updatePlay(dt) {
   updateWaves(dt); // each lane's soldier waves on the match's beat (js/sim/robots.js)
   updateRespawns(dt);
   for (const b of robots) updateRobot(b, dt);
+  updateSoldierShots(dt); // their snowballs and bolts in the air (js/sim/robots.js)
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)

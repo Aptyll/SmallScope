@@ -22,13 +22,16 @@ blow from range (`shot`, s in the air), its bounty share and its XP share, and i
 1.5 s from 72 px, 34 hp) and **siege**, the ballista cart, shoots a bolt (10 every 2.4 s from 96 px,
 three times that on a building, 150 hp). What flies is the kind's `look` (`SOLDIER_SHOTS`: the
 sounds it leaves and lands with, the puff where it hits). `robotStrike(b, e, pt)` is the single blow: an axe lands
-now through `soldierLand`, a shooter's ball or bolt is held in `b.shot` and lands when its time is up
-(`soldierShot`) on what it was aimed at, a body where it then stands (it follows, it is not a
-dodgeable shot; a wreck's shot is lost with it). `soldierLand` sends a building through `hurtStruct` (the
+now through `soldierLand`, a shooter's ball or bolt leaves its kind's `hand` (`soldierThrow`) as its
+own thing in `soldierShots` and lands when its time is up (`updateSoldierShots`) on what it was
+aimed at, a body where it then stands (it follows, it is not a dodgeable shot). It carries its blow
+(`soldierBlow`), so it lands the same if its thrower is stunned or scrapped meanwhile, and stays
+`SOLDIER_SPLAT_T` s more for its splat. `soldierLand` sends a building through `hurtStruct` (the
 same path a player's E swing takes, so the wreck, the payout and the `WRECKED A` line are one code
 path), the bird through `hurtEagle`, and any **body** through `hurtUnit` with `cause: 'soldier'`,
-credited to nobody. The shot's pixels are `drawSoldierShot` (js/draw/bodies.js): a snowball on a
-low arc, or a bolt flat off the cart's stock (`BOLT_AT`). A soldier faces what it aims at, else the
+credited to nobody. The shot's pixels are `drawSoldierShots` (js/draw/soldiershots.js), over the
+bodies: the claw's own snowball on a low lob, or a bolt flat off the cart's stock, then a splat of
+snow (or splinters) on what it struck. A soldier faces what it aims at, else the
 way it drives (`b.faceL`, set in `updateSoldier`); the cart's frames are mirrored for left. Targets come from
 `robotFoeUnit(b, range)` (nearest rival player or bot; players are noticed through `seenAt`, so a
 hidden body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
