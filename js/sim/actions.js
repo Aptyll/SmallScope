@@ -644,6 +644,7 @@ function hitAim(e, nx, ny) {
 }
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
+  if (!(e instanceof Player) && e.invuln > 0) return; // a camp monster running home takes nothing (campRunHome, wildlife.js)
   o = o || {};
   // a blow inside a key's use() is that key's (heroAbNow, js/sim/heroes.js); one
   // that lands later (a dash, a thing left in the world, a shot) names its own `ab`

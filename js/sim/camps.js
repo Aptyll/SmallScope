@@ -152,7 +152,7 @@ function spawnCampMonster(C, i) {
     tx = found.tx; ty = found.ty;
   }
   const a = makeAnimal(C.spec.kind, (tx + 0.5) * TILE, (ty + 0.5) * TILE);
-  if (isCampKind(C.spec.kind)) a.home = C;
+  if (isCampKind(C.spec.kind)) { a.home = C; a.spawnX = a.x; a.spawnY = a.y; } // the spot it runs back to when a hunt ends (campRunHome)
   else a.meadow = C; // prey stays prey: it keeps to its warren (preyWander) and is never a camp fight (ckAcquire)
   animals.push(a);
   return a;

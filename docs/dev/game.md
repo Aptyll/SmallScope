@@ -155,7 +155,7 @@ kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear 
 in the middle to be fought (back 6:00 after each kill). Its kill gives the whole team the ORCA BUFF for
 3 minutes: the side's soldiers near a hero wearing it hit buildings twice as hard.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
-they leave its ground and heals — and every site sits off the lanes, so a lane is never a
+they leave its ground and runs home fast, healing and untouchable — and every site sits off the lanes, so a lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
 
 **The lanes are where the match is fought.** The waves are the match's clock: a column that is not
