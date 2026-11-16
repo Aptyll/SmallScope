@@ -52,8 +52,8 @@ playhead and a low-res copy underneath, which keeps the window legible in a plai
 recap hides the overlay outright (`rpOverlay(false)`), which is why its close box and prompt can
 sit *inside* the frame.
 
-Fullscreen here is the browser's (F11), which fullscreens the document, so a `position: fixed`
-sibling still renders. Calling `requestFullscreen()` on `#game` itself would render *only* that
+Fullscreen here is the browser's (F11) or the VIDEO page's DISPLAY row (`setFullscreen`), which
+both fullscreen the document, so a `position: fixed` sibling still renders. Calling `requestFullscreen()` on `#game` itself would render *only* that
 element and the replay window would vanish — fullscreen the document, or move the overlay inside
 whatever element goes fullscreen.
 

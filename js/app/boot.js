@@ -32,13 +32,19 @@ function startGame() {
 
 PROFILE.load();   // the profile carries the settings, so it is read first
 PROFILE.refundRetired(SKIN_RETIRED, SKIN_RETIRED_SLOTS); // coins back for cosmetics no longer sold (js/ui/skins.js)
-loadSettings();
-mendBinds(); // the profile's key binds made whole (input.js)
-fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view
-SFX.setVolume(settings.volume);
-SFX.setMusicVolume(settings.musicVol);
-SFX.setSfxVolume(settings.sfxVol);
-SFX.setMuted(settings.muted);
+// the profile's settings put in force: at boot, and again when Steam Cloud
+// hands over newer ones from another PC (PROFILE.cloudSync, below)
+function applySettings() {
+  loadSettings();
+  mendBinds(); // the profile's key binds made whole (input.js)
+  fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet), and UI SIZE is the profile's; this places the UI for the fitted view
+  SFX.setVolume(settings.volume);
+  SFX.setMusicVolume(settings.musicVol);
+  SFX.setSfxVolume(settings.sfxVol);
+  SFX.setMuted(settings.muted);
+}
+applySettings();
+PROFILE.cloudSync(SETTINGS_LOCAL).then((got) => { if (got) applySettings(); });
 // the title track. Browsers refuse audio before a gesture, so SFX.music holds
 // this as pending and the first click or keypress starts it (see js/app/audio.js).
 SFX.music.play('intro', { in: 1.5 });
@@ -355,9 +361,9 @@ window.DBG = {
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.
-  setZoom: (z, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), Math.round((+z || 1) * devScale))); if (snap) applyZoom(0, true); },
+  setZoom: (z, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), Math.round((+z || 1) * worldDev))); if (snap) applyZoom(0, true); }, // z at the default UI SIZE
   setK: (k, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), k | 0)); if (snap) applyZoom(0, true); },
-  getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
+  getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, worldDev, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
     rungs: (() => { const r = []; for (let k = kMin(); k <= kMax(); k++) r.push(+(k / devScale).toFixed(4)); return r; })(),
     wv: [WV_W, WV_H], mm: mmScale() }),
   cam: () => ({ x: camX, y: camY }),

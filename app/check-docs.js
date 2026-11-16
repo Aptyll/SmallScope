@@ -31,7 +31,6 @@ const ALLOW = {
   posN: 'a placeholder for position N',
   skinN: 'a placeholder for skin N',
   someCue: 'an example cue name',
-  requestFullscreen: 'a browser API',
   hudCorner: 'a removed settings key old profiles may still carry',
   useCard: 'the bot API version history',
 };

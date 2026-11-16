@@ -38,9 +38,10 @@ function applyZoom(dt, snap) {
   // birds and valley, not your boots, and glide back to the wheel's zoom after
   const show = (state.drop && (state.eagleCine ||
     (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee'))));
-  const want = state.mode === 'title' ? ZOOM_TITLE : show ? ZOOM_SHOW
+  // (each authored at the default UI SIZE: zu() carries it to this canvas)
+  const want = state.mode === 'title' ? zu(ZOOM_TITLE) : show ? zu(ZOOM_SHOW)
     : state.mode !== 'drop' ? zoomWantOf()
-    : state.intro > 0 ? DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen))
+    : state.intro > 0 ? zu(DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen)))
       : dropStoopZoom(zoomWantOf());
   const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/app/director.js)
   const zPrev = zoomCur;

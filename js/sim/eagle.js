@@ -166,9 +166,10 @@ function dropStoopU() {
 // by the zoom. `play` is the zoom the landing hands over to.
 function dropStoopZoom(play) {
   const e = state.drop && state.drop.eagles[player.team];
-  if (!e || e.state !== 'dive') return DROP_ZOOM;
+  const z = zu(DROP_ZOOM); // in this canvas's px, as `play` is (UI SIZE)
+  if (!e || e.state !== 'dive') return z;
   const u = dropStoopU();
-  return (DROP_ZOOM * EAGLE_SCALE + (play * EAGLE_REST_SCALE - DROP_ZOOM * EAGLE_SCALE) * u) / eagleScale(e);
+  return (z * EAGLE_SCALE + (play * EAGLE_REST_SCALE - z * EAGLE_SCALE) * u) / eagleScale(e);
 }
 // ...and the aim: your seat, leaning DROP_CAM_LEAD of the way on toward the
 // roost the bird is bound for, so the base waiting down the road is in the

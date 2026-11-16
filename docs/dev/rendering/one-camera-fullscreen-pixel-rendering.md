@@ -13,6 +13,12 @@ and centred in the taller view through `frameTop()`, core.js — `FRAME_H` names
   `deviceH / TARGET_ROWS`. It does not depend on the zoom — the canvas is laid out the same at
   every zoom (see [World zoom](world-zoom-and-the-two-pixel-spaces.md)), which is what keeps the
   HUD a fixed size on screen. `scale` is fractional in CSS px and must not be floored.
+- That pick is **`worldDev`**, and the world's zoom ladder is measured against it alone. The UI's
+  own scale, `devScale`, is the same unless the VIDEO page's UI SIZE moves it a whole device px
+  or more either way (`uiDevFor`: SMALL is 2/3 of it, LARGE 4/3, at least one px off and never a
+  view under 320×240; a Short's 9:16 frame always takes the default). A smaller UI makes the canvas
+  more px across, so every zoom authored at the default (`ZOOM_*`, `DROP_*`) goes through
+  `zu()` into this canvas's px, and the same rows of world stay on every screen whatever the UI.
 - **The backing store is in device pixels**: `canvas.width = VIEW_W * devScale`. The UI still
   draws in `VIEW_W`×`VIEW_H` space — `render()` puts a `devScale` transform under it, so 1px
   rects and the 3×5 font blow up by a whole number and stay exact — and no layout code changes.

@@ -19,6 +19,13 @@ contextBridge.exposeInMainWorld('steamBridge', {
   log: (line) => ipcRenderer.invoke('steam:log', String(line)), // a line into softfall-steam.log beside the exe
   quit: () => ipcRenderer.invoke('win:quit'), // the title's QUIT: the app closes, Steam's "playing" with it (js/ui/menu.js)
   flash: () => ipcRenderer.invoke('win:flash'), // the taskbar button blinks until the window is looked at (js/ui/roomtalk.js)
+  // the VIDEO page's DISPLAY row (setFullscreen, js/app/canvas.js); main.js remembers it between launches
+  fullscreen: (on) => ipcRenderer.invoke('win:fullscreen', !!on),
+  isFullscreen: () => ipcRenderer.invoke('win:isFullscreen'),
+  onFullscreen: (cb) => ipcRenderer.on('win:fullscreen', (e, on) => cb(!!on)),
+  // Steam Cloud: one small text file by name, '' none yet, null no cloud (PROFILE.cloudSync, js/app/profile.js)
+  cloudRead: (name) => ipcRenderer.invoke('cloud:read', String(name)),
+  cloudWrite: (name, text) => ipcRenderer.invoke('cloud:write', String(name), String(text)),
   send: (to, data, reliable) => ipcRenderer.invoke('steam:send', String(to), data, reliable), // data: a string, or a Uint8Array sent as bytes
   accept: (id) => ipcRenderer.invoke('steam:accept', String(id)),
   // the friends panel (js/ui/friends.js, desktop/steam-friends.js)

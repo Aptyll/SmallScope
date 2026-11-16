@@ -512,6 +512,18 @@ const SET_TABS = [
     { id: 'teamBlue', label: 'set.myTeam', kind: 'toggle', on: 'set.alwaysBlue', off: 'set.asDealt' },
   ] },
   { id: 'video', label: 'set.video', rows: [
+    // fullscreen or a window (setFullscreen, js/app/canvas.js): the state is
+    // read live, so F11 or Alt+Enter on the wrapper shows here at once
+    { id: 'display', label: 'set.display', kind: 'choice',
+      opts: [{ id: 'full', label: 'set.fullscreen' }, { id: 'win', label: 'set.windowed' }],
+      val: () => (fullscreenOn() ? 'full' : 'win'), pick: (v) => setFullscreen(v === 'full') },
+    // the interface a whole device px smaller or larger per game px (uiDevFor,
+    // js/app/canvas.js); the world's view stays the same on every screen
+    { id: 'uiSize', label: 'set.uiSize', kind: 'choice',
+      opts: [{ id: '-1', label: 'set.small' }, { id: '0', label: 'set.medium' }, { id: '1', label: 'set.large' }],
+      // the size in force lights, not the one asked: a window too small for
+      // LARGE keeps MEDIUM lit (and LARGE comes back when the window grows)
+      val: () => (devScale < worldDev ? '-1' : devScale > worldDev ? '1' : '0'), pick: (v) => { settings.uiSize = +v; fitCanvas(); relayout(); } },
     { id: 'quality', label: 'set.quality', kind: 'choice',
       opts: [{ id: 'low', label: 'set.low' }, { id: 'medium', label: 'set.medium' }, { id: 'high', label: 'set.high' }],
       val: () => vidPreset(), pick: (v) => Object.assign(settings, VID_PRESETS[v]) },

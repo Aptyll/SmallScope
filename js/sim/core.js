@@ -263,6 +263,9 @@ const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // = every frame the screen offers (capSkips, js/app/boot.js); the sim's step
   // is 1/60 whatever this says
   fpsCap: 0,
+  // the VIDEO page's UI SIZE: the interface a step smaller (-1) or larger (1)
+  // than the default (0), the world's view untouched (uiDevFor, js/app/canvas.js)
+  uiSize: 0,
   // where the hover tooltip sits: true = it rides beside the pointer, false =
   // the fixed bottom-left corner it was born in (tipPos, js/ui/tooltip.js).
   tipFollow: true,
@@ -316,7 +319,11 @@ function perfFrame(rawDt) {
 // js/app/profile.js, the one file in the game that touches storage. A pre-profile
 // save under the old 'softfall.settings' key is folded in by PROFILE.load()
 // before this ever runs, so the mmZoom migration below still sees it.
-function saveSettings() { PROFILE.putSettings(settings); }
+function saveSettings() { PROFILE.putSettings(settings, SETTINGS_LOCAL); }
+// the settings that stay on this machine when the rest follow the Steam
+// account to another PC (PROFILE.cloudSync): what this PC's screen and GPU
+// want, and the relay it dials
+const SETTINGS_LOCAL = ['uiSize', 'fpsCap', 'vidClouds', 'vidRays', 'vidStars', 'vidSnow', 'vidVig', 'relay'];
 // repaint both sides in settings.teamPal: rebakes every team sprite in place
 // (SPRITES.setTeamPal), a no-op when the palette is already on
 function applyTeamPal() { SPRITES.setTeamPal(settings.teamPal); }
