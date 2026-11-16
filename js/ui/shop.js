@@ -495,7 +495,7 @@ function drawShopPanel(now) {
   drawShopSlots(L, h);
   const gold = String(player.gold);
   shopPrice(gold, L.purse.x - 10 - pixelTextWidth(gold), L.purse.y);
-  drawShopPane(L, h);
+  drawShopPane(L, h, now);
 }
 
 // the grid's more-rows marks, at each end that has more
@@ -534,7 +534,7 @@ function drawShopCats(L, h) {
 
 // THE PANE: BUILDS INTO along the top, the picked item's tree, its card (icon,
 // name, price, stats with their icons, the passive) and BUY at the foot.
-function drawShopPane(L, h) {
+function drawShopPane(L, h, now) {
   const R = L.pane, pk = shopPicked(), it = BUILD_ITEMS[pk.id];
   shopWell(R, HUD_EDGE, SHOP_PANE_BG);
   drawPixelText(ctx, tr('shop.buildsInto'), R.x + 6, R.y + 6, SHOP_DIM);
@@ -580,11 +580,27 @@ function drawShopPane(L, h) {
   // full bag, a pair already worn. Never an error's red: nothing went wrong,
   // and never a minus, which read as a price below zero.
   const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
-  if (b.ok) shopPlate(L.buy, tr('shop.buy'), b.n, hot ? SHOP_BUY_HOT : SHOP_BUY, SHOP_INK);
+  if (b.ok) { shopPlate(L.buy, tr('shop.buy'), b.n, hot ? SHOP_BUY_HOT : SHOP_BUY, SHOP_INK); drawShopShine(L.buy, now); }
   else if (b.stop === 'gold') {
     shopPlate(L.buy, tr('shop.need'), b.n - player.gold, SHOP_PLATE, SHOP_DIM, RES_COLORS.gold, tr('shop.more'));
     ctx.fillStyle = RES_COLORS.gold; ctx.fillRect(L.buy.x, L.buy.y + L.buy.h - 2, Math.round(L.buy.w * player.gold / b.n), 2);
   } else shopPlate(L.buy, tr(b.stop), undefined, SHOP_PLATE, SHOP_DIM);
+}
+// THE SHINE: while BUY can go through, a pale band slides across it every
+// SHOP_SHINE_EVERY seconds, SHOP_SHINE_T long, slanted one pixel a row and
+// clipped to the plate - "this one is yours to buy". A grey plate never shines.
+const SHOP_SHINE_EVERY = 2.4, SHOP_SHINE_T = 0.6; // s
+const SHOP_SHINE_W = 10; // the band's width, px
+const SHOP_SHINE = 'rgba(255,255,255,0.16)';
+function drawShopShine(r, now) {
+  const t = (now % SHOP_SHINE_EVERY) / SHOP_SHINE_T;
+  if (t >= 1) return;
+  const x0 = Math.round(r.x - r.h + (r.w + r.h + SHOP_SHINE_W) * t);
+  ctx.fillStyle = SHOP_SHINE;
+  for (let y = 0; y < r.h; y++) {
+    const a = Math.max(r.x, x0 - y), b = Math.min(r.x + r.w, x0 - y + SHOP_SHINE_W);
+    if (b > a) ctx.fillRect(a, r.y + y, b - a, 1);
+  }
 }
 // the tree: a line down from each parent and across to its children, then the
 // wells; a component you hold is rimmed green with a tick and wears no price
