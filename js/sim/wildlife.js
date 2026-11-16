@@ -970,13 +970,19 @@ function campQuarry(a, t, onGround) {
   return best;
 }
 
+// whether world position (x, y) is on camp C's ground: the leash, CAMP_GROUND
+// tiles past its clearing (campNear, camps.js). The leash bar holds inside it
+// and drains outside (updateCampMonster), and the ring an awake camp wears on
+// the snow is its edge, baked from this same test (drawCampLeashes, js/draw/marks.js)
+function campGround(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, CAMP_GROUND); }
+
 function updateCampMonster(a, dt) {
   const M = MONSTER[a.kind], C = a.home, foot = M.foot || M.r;
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
   const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
-  // the camp's ground: its clearing (campNear, camps.js)
-  const onGround = (p) => (C ? campNear(C, p.x / TILE - 0.5, p.y / TILE - 0.5, CAMP_GROUND) : Math.hypot(p.x - hx, p.y - hy) < groundR);
+  // the camp's ground: its clearing (campGround)
+  const onGround = (p) => (C ? campGround(C, p.x, p.y) : Math.hypot(p.x - hx, p.y - hy) < groundR);
 
   let t = a.target;
   const awake = !!t;
