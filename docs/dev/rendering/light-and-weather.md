@@ -45,11 +45,14 @@ redrawn; one without a box is tested on the whole view. `renderLighting` copies 
 it back through the record at `BODY_HOLD` (`bodyLightStamp`). The ground, the trees, the shade
 under the feet and the rim take the whole night. Never a bird, a ghost seat or a rider on the air layer; a body out of a rival's sight is not drawn
 at all (`fogShown`), so nothing hidden is lit. By day the pass does
-nothing (`litOn`). One redraw a piece, however many bodies stand behind it; the scratch is 64 px for a pine or a reed
-and view-sized for anything bigger, and the record is sized to the view in steps: a canvas read
-back as a source right after it was drawn on is copied whole. Cost on the headless software
-renderer: about 4 ms with 51 bodies on screen at a treeline (the worst crowd staged), nothing by
-day; not measured on a GPU canvas.
+nothing (`litOn`). One redraw a piece, however many bodies stand behind it. The redraws PILE UP
+on one view-sized scratch and come out of the record together (`litCut`): just before a body joins
+the record over the pile, and before `bodyLightKeep`. A canvas used as a source right after it was
+drawn on costs a GPU flush, so the old cut-per-piece paid one per reed in front of a body: a hero in
+the brush at night with a camp round it ran 38 a frame and 139 ms of draw on Noah's PC (fixed 0.972;
+the pile is 3). The record is sized to the view in steps, since a canvas read back as a source is
+copied whole. Count flushes (a `drawImage` of a canvas drawn on since its last read), not headless
+ms: the software renderer pays almost nothing for them.
 Check it with a rival under a canopy: no pixel the canopy covers may change.
 
 **The grade dims what the world *is*, never what the game is *saying*.** A name tag, the
