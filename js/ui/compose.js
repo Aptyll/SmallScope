@@ -19,7 +19,7 @@ function renderUI(now) {
   const out = state.mode === 'dead'; // the local wallet is moot once you are out
 
   ctx.save();
-  ctx.translate(0, Math.round(slide * (mmFrameRect().h + MM_GAP + 2)));
+  ctx.translate(0, Math.round(slide * (mmFrameRect().h + 2)));
   // the minimap, bottom right, with its day band
   renderMinimap(now);
   ctx.restore();
