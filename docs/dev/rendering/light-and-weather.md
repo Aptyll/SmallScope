@@ -49,7 +49,7 @@ nothing (`litOn`). One redraw a piece, however many bodies stand behind it. The 
 on one view-sized scratch and come out of the record together (`litCut`): just before a body joins
 the record over the pile, and before `bodyLightKeep`. A canvas used as a source right after it was
 drawn on costs a GPU flush, so the old cut-per-piece paid one per reed in front of a body: a hero in
-the brush at night with a camp round it ran 38 a frame and 139 ms of draw on Noah's PC (fixed 0.972;
+the brush at night with a camp round it ran 38 a frame and 139 ms of draw on Noah's PC (fixed 0.973;
 the pile is 3). The record is sized to the view in steps, since a canvas read back as a source is
 copied whole. Count flushes (a `drawImage` of a canvas drawn on since its last read), not headless
 ms: the software renderer pays almost nothing for them.
