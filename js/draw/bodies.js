@@ -96,7 +96,7 @@ function drawRobot(b, ex, ey, now) {
   // its mirror (the ballista cart) shows 4-7 while it faces left (b.faceL)
   const T = soldierType(b), team = skin(b.team === undefined ? 0 : b.team);
   const set = (SPRITES[T.spr] || SPRITES.robotTeam)[team] || SPRITES.robot;
-  const thrown = T.shot && (b.shot || b.atkCd > T.cd * 0.5) ? 2 : 0;
+  const thrown = T.shot && b.atkCd > T.cd * 0.5 ? 2 : 0;
   const left = b.faceL && set.length > 4;
   const spr = set[(left ? 4 : 0) + thrown + (b.moving ? Math.floor(b.animT) % 2 : 0)];
   const M = heroMachine(b);
@@ -117,7 +117,6 @@ function drawRobot(b, ex, ey, now) {
 
   const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
   ctx.drawImage(spr, bx + rx, by + ry); // never washed white when struck, like a hero: its sparks, its shove and its bar tell the hit (hurtRobot)
-  if (b.shot) drawSoldierShot(b, T, ex, ey, left);
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
   drawUnitStates(b, bx + rx, by + ry, spr.width, spr.height, now);
@@ -129,45 +128,6 @@ function drawRobot(b, ex, ey, now) {
   heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
 }
 const SOLDIER_BAR_ROWS = 1, SOLDIER_BAR_SEGS = 1; // a soldier's bar: one row of fill, uncut
-// a shot in the air (soldierShot, js/sim/robots.js), by its kind's `look`
-// (SOLDIER_SHOTS): a snowball thrown from the hand to where it lands on a low
-// arc, its shadow on the snow under it, 2 px with an ink rim; or a ballista
-// bolt, shot flat off the stock's front (BOLT_AT) to its mark, 5 px of shaft
-// along its flight, a steel head and the side's fletching
-const BOLT_AT = [16, 12]; // the bolt's head on the loaded cart: px ahead of b.x, px over b.y
-function drawSoldierShot(b, T, ex, ey, left) {
-  const s = b.shot, f = Math.min(1, s.t / T.shot);
-  if (T.look === 'bolt') {
-    const x0 = b.x + (left ? -BOLT_AT[0] : BOLT_AT[0]), y0 = b.y - BOLT_AT[1];
-    const dx = s.x - x0, dy = s.y - 4 - y0, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
-    const hx = x0 + dx * f, hy = y0 + dy * f; // the head
-    const fx = Math.round(hx - ex), fy = Math.round(hy - ey);
-    ctx.fillStyle = 'rgba(40,52,90,0.25)'; // its shadow on the snow, under the line it flies
-    ctx.fillRect(Math.round(hx - ux * 3 - ex) - 2, Math.round(hy + 16 - 8 * f - ey), 5, 1); // the ground: b.y + 4 at the cart, the mark's + 4 at the end
-    const at = (k) => [Math.round(hx - ux * k - ex), Math.round(hy - uy * k - ey)];
-    ctx.fillStyle = '#1c2130';
-    for (let k = 0; k <= 6; k++) { const [x, y] = at(k); ctx.fillRect(x - 1, y - 1, 3, 3); }
-    ctx.fillStyle = '#8a6142';
-    for (let k = 1; k <= 4; k++) { const [x, y] = at(k); ctx.fillRect(x, y, 1, 1); }
-    ctx.fillStyle = TEAMS[skin(b.team)].mark;
-    for (let k = 5; k <= 6; k++) { const [x, y] = at(k); ctx.fillRect(x, y, 1, 1); }
-    ctx.fillStyle = '#e4e8ee';
-    ctx.fillRect(fx, fy, 1, 1);
-    return;
-  }
-  const lift = Math.sin(f * Math.PI) * 3;
-  const gx = s.x0 + (s.x - s.x0) * f, gy = s.y0 + 6 + (s.y + 4 - s.y0 - 6) * f; // the ground under it
-  const x = Math.round(gx - ex), y = Math.round(gy - 6 - lift - ey), r = 2;
-  ctx.fillStyle = 'rgba(40,52,90,0.25)';
-  ctx.fillRect(Math.round(gx - ex) - 1, Math.round(gy - ey), r + 1, 1);
-  ctx.fillStyle = '#1c2130';
-  ctx.fillRect(x - 1, y, r + 2, r); ctx.fillRect(x, y - 1, r, r + 2);
-  ctx.fillStyle = '#eef4fb';
-  ctx.fillRect(x, y, r, r);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x, y, 1, 1);
-}
-
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe
 // grids (sprites.js), two rows taller than a slot, standing on player feet
 // (b.y + 8 in the sort, the feet on the player's own foot row),

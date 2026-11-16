@@ -672,6 +672,12 @@ function netEaseClock(now) {
   NET.gapDev = (NET.gapDev || 0) + (Math.abs(dt - NET.gapAvg) - (NET.gapDev || 0)) * 0.1;
   NET.easeMs = Math.max(base, Math.min(EASE_MAX, NET.gapAvg + 2 * NET.gapDev));
 }
+// s since the host's last word on a client (0 on a host), at most one snapshot
+// interval: what a timer the snapshot carries has run on since, so a thing drawn
+// off a clock (a hit's spark, a soldier's shot) plays smoothly between 15 Hz words
+function netSince(now) {
+  return NET.role === 'client' && NET.easeAt ? Math.max(0, Math.min(SNAP_EVERY * TICK_DT, now - NET.easeAt / 1000)) : 0;
+}
 // every tick: each eased body moves from where it was drawn toward the
 // host's position over about one snapshot interval (netEaseClock), so 15 snapshots a second read
 // as motion rather than steps. A body the host stopped naming keeps its last

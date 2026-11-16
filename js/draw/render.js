@@ -136,6 +136,7 @@ function render() {
   drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
 
   drawArrows(ex, ey, now);
+  drawSoldierShots(ex, ey, now); // the soldiers' snowballs and bolts, over the bodies (js/draw/soldiershots.js)
 
 
   // what a hero's kit has in the air - with the arrows, over the entities
