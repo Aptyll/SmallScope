@@ -1,11 +1,11 @@
 'use strict';
 // The map's own buildings and what walks out of the perch: the wave's
-// soldiers (and the scrap pile's strays), the merchant's stall and fire. The
+// soldiers, the merchant's stall and fire. The
 // gold pump and the road tower are each their own file, both baked
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
 (() => {
-  const { bake, bakeClips, mapClips, flipH, TEAM_SKINS } = SPR;
+  const { bake, TEAM_SKINS } = SPR;
 
   // ---------------------------------------------------------------- soldiers
   // Soldier: a boxy chassis sitting straight on one full-width tread, stub
@@ -171,13 +171,7 @@
     teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];
   }));
 
-  // THE SCRAP PILE's stray robots (CAMPS.scrap, js/sim/camps.js): PLACEHOLDER
-  // art, a wave's chassis in a rusted no-side paint, until their own look is drawn
-  const SCRAPPAL = Object.assign({}, BOTPAL, { L: '#c98a52', T: '#9a5f36', t: '#6b3f24' });
-  const scrapSet = bakeClips({ idle: [botA], run: [botA, botB] }, SCRAPPAL);
-
   Object.assign(SPRITES, {
-    scrap: { right: scrapSet, left: mapClips(scrapSet, flipH) },
     teamBuild: teamBuild,
     robotTeam: teamRobots,
     robot: teamRobots[0],

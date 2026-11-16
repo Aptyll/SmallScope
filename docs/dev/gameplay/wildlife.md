@@ -51,7 +51,8 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | kind | its clips | set by |
 | --- | --- | --- |
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
-| `wolf`, `scrap` | `idle`, `run` | `updateCampMonster` |
+| `wolf` | `idle`, `run` | `updateCampMonster` |
+| `scrap` (the headlamp) | `idle` (its bulb blinks one beat in six), `run`, `lunge` (the ram, held `MONSTER.scrap.lunge` s after each blow) | `updateCampMonster` |
 | `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar` | `updateCampMonster` |
 
 **The head is the tell.** Standing still and settled, a rabbit is low over its paws; standing
@@ -135,8 +136,7 @@ They are not shown on the minimap or world map.
 ## Camp monsters: neutral until hit
 
 The [camps](../world.md#camps) keep four kinds — the **wolf** (a den's 3, the top half), the
-**stray robot** (`scrap`, a scrap pile's 3, the bottom half: the wolves' numbers in placeholder
-art), the **black bear** (`alpha`, its den below the bottom lane, 1) and the **orca** up in its
+**stray robot** (`scrap`, the HEADLAMP, a scrap pile's 3, the bottom half: the wolves' numbers), the **black bear** (`alpha`, its den below the bottom lane, 1) and the **orca** up in its
 hole ([below](#the-orca)) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and

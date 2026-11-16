@@ -17,8 +17,9 @@ function fallSpr(f) {
     const type = f.spr, set = (SPRITES[type] || SPRITES.robotTeam)[skin(f.team)] || SPRITES.robot;
     return set[f.left && set.length > 4 ? 4 : 0];
   }
+  // a beast falls in its own `down` frame when it has one (the headlamp, lamps out), else standing
   const kind = f.spr, set = SPRITES[kind] && SPRITES[kind][f.dir];
-  return set && set.idle ? set.idle[0] : null;
+  return set ? (set.down || set.idle || [null])[0] : null;
 }
 // a machine's frame as what it breaks into: the treads' own pixels (its lowest rows,
 // which stay), and the body over them as plates three px square, each remembering
