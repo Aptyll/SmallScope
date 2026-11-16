@@ -226,13 +226,16 @@ still load. All three run
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
   player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
   the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r`, or past
-  a drawn camp's drawing (`campNear`) — and
+  a drawn camp's drawing (`campGround`, through `campNear`) — and
   drains over `CAMP_LEASH_T` (3 s) anywhere off it, with the monster at your heels or not; it
   keeps coming while the bar drains and the hunt ends only when the bar is empty. Then it walks
   home and **heals**: a monster with nobody to hunt mends from nothing to full over
   `CAMP_REGEN_T` (6 s), so a fight you break off is a fight reset, never a chip-away. A quarry
   that dies or boards its eagle hands the hunt straight on to the nearest player on the ground;
-  with nobody there the hunt is over.
+  with nobody there the hunt is over. While a camp hunts, the ground's edge lies on the snow as
+  its **leash ring** (`drawCampLeashes`, js/draw/marks.js), baked from `campGround` itself so it is
+  the leash to the pixel: Graphite dashes running round it, turning `THREAT_COL` red while every
+  hunter's bar drains, and gone when the hunt ends. Only a side that sees a hunter sees it.
 - **The chase.** The kind's `spd` (the table below) is faster than the 72 px/s walk and slower
   than a slide, so the answer is the momentum system, not
   distance; every one routes around trees and water ([Pathfinding](pathfinding.md)), and a quarry

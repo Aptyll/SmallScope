@@ -90,6 +90,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
   }
   drawRecallGround(ex, ey); // each roost's reach: its floor lit where its bird heals, under a pale rim (js/draw/recall.js)
   drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)
+  drawCampLeashes(ex, ey, now); // an awake camp's leash: the edge of its ground, where the hunt gives up (js/draw/marks.js)
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);

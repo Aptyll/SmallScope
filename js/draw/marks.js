@@ -66,6 +66,71 @@ function drawCampMapClock(g, C, x, y) {
   drawPixelTextOutline(g, t, Math.round(x - pixelTextWidth(t) / 2), Math.round(y) + 5, CAMP_CLOCK_INK, HUD_INK);
 }
 
+// ---- the camp's leash ------------------------------------------------------
+// While a camp is awake (any of its monsters on a hunt) the edge of its ground
+// lies on the snow: the line the leash bar holds inside and drains past
+// (campGround, wildlife.js), baked once per camp from that same test, so the
+// ring is the leash to the pixel whatever shape a camp's ground takes. It
+// comes up as the camp wakes (off the monsters' senseT, so every screen draws
+// the same ring), its dashes run round it, and it turns the leash bar's red
+// while every hunter's bar drains: the camp is about to give up and go home.
+// Only a side that sees one of the hunters sees it, so it tells nobody in the
+// fog that a camp is being taken.
+const LEASH_INK = '#2f3238'; // the Graphite edge (HUD_EDGE): a dark line reads on snow, ice and dirt
+const LEASH_ALPHA = 0.55;
+const LEASH_DASH = 6, LEASH_GAP = 4; // px on, px off, round the edge
+const LEASH_FLOW = 0.35; // dashes a second that pass a point: the slow run round
+const LEASH_IN = 0.3;    // s the ring takes to come up as the camp wakes
+const leashEdges = new Map(); // camp -> { r, px: [dx, dy, turn 0..1] } off its centre px
+function campLeashEdge(C) {
+  let E = leashEdges.get(C);
+  if (E) return E;
+  const P = C.spec.plan, cx = (C.tx + 0.5) * TILE, cy = (C.ty + 0.5) * TILE;
+  const R = (C.r + CAMP_GROUND + (P ? Math.max(P.length, P[0].length) : 0) + 1) * TILE, W = 2 * R + 1;
+  // which px are on the ground, tested at each px's centre
+  const on = new Uint8Array(W * W);
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) on[y * W + x] = campGround(C, cx - R + x + 0.5, cy - R + y + 0.5) ? 1 : 0;
+  // the edge: a ground px with open snow beside it (four ways), a clean 8-connected line
+  const px = [];
+  for (let y = 1; y < W - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const i = y * W + x;
+    if (!on[i] || (on[i - 1] && on[i + 1] && on[i - W] && on[i + W])) continue;
+    const dx = x - R, dy = y - R;
+    px.push(dx, dy, (Math.atan2(dy, dx) / (2 * Math.PI) + 1) % 1);
+  }
+  E = { r: R, px, n: Math.max(1, Math.round(px.length / 3 / (LEASH_DASH + LEASH_GAP))) }; // a whole number of dashes, so none breaks at the seam
+  leashEdges.set(C, E);
+  return E;
+}
+// how awake camp C is to this screen: null while it is asleep or its hunters
+// are out of sight, else how far up the ring is and whether every bar drains
+function campLeashState(C, now) {
+  let up = 0, drain = true;
+  for (const a of animals) {
+    if (a.dead || a.home !== C || !a.target || !fogShown(a, now)) continue;
+    up = Math.max(up, Math.min(1, a.senseT / LEASH_IN));
+    if (a.threat >= 1) drain = false;
+  }
+  return up > 0 ? { up, drain } : null;
+}
+function drawCampLeashes(ex, ey, now) {
+  for (const C of camps) {
+    if (!C.spec.pop) continue;
+    const S = campLeashState(C, now);
+    if (!S) continue;
+    const E = campLeashEdge(C), x0 = (C.tx + 0.5) * TILE - ex, y0 = (C.ty + 0.5) * TILE - ey;
+    if (x0 + E.r < 0 || y0 + E.r < 0 || x0 - E.r > WV_W || y0 - E.r > WV_H) continue;
+    const on = LEASH_DASH / (LEASH_DASH + LEASH_GAP), run = now * LEASH_FLOW;
+    ctx.globalAlpha = LEASH_ALPHA * S.up;
+    ctx.fillStyle = S.drain ? THREAT_COL : LEASH_INK;
+    for (let k = 0; k < E.px.length; k += 3) {
+      const t = E.px[k + 2] * E.n - run;
+      if (t - Math.floor(t) < on) ctx.fillRect(x0 + E.px[k], y0 + E.px[k + 1], 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
 // ---- the click marks -------------------------------------------------------
 // The CLICK scheme's two rings (the `click to move` banner, input.js), flat
 // on the snow under everything that walks: where the last order landed - a
