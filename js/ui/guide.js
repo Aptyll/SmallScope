@@ -129,7 +129,7 @@ const GUIDE_STEPS = [
     caps: () => [], icon: () => player.position >= 0 ? posIcon(player.position, GUIDE_TXT) : null,
     done: guideAtLane, clock: true,
     at: () => { const h = guideLaneSpot(); return h && { x: h.x, y: h.y - 10 }; } },
-  { id: 'ability', word: 'ABILITIES', tip: 'A POINT EACH LEVEL: PRESS ONCE TO LEARN, AGAIN TO CAST',
+  { id: 'ability', word: 'ABILITIES', tip: 'PRESS A DARK KEY TO LEARN IT, CLICK + TO RANK UP',
     caps: () => ['ab1', 'ab2', 'ab3', 'ab4'].map((a) => keyCap(a)),
     begin: (g) => { g.casts = 0; },
     need: 2, count: (g) => g.casts, clock: true },
@@ -396,8 +396,8 @@ function drawGuideCard(now, s, lit, cur, x0) {
   let x = GUIDE_PAD;
   const caps = s.caps(), icon = s.icon && s.icon();
   caps.forEach((c, i) => {
-    // an ability key a point would learn pulses gold; one not learned is dim
-    const learn = s.id === 'ability' && abLvCanBuy(player, i), dark = s.id === 'ability' && !abUnlocked(player, i);
+    // a dark key a point would learn pulses gold (the press learns it; a rank on a key that casts is its + plate's)
+    const learn = s.id === 'ability' && !abUnlocked(player, i) && abLvCanBuy(player, i), dark = s.id === 'ability' && !abUnlocked(player, i);
     x += drawKeyCap(ctx, x, 3, c, dark && !learn, learn && Math.sin(now * 8) > 0 ? 2 : 0, now) + 2;
   });
   if (caps.length) x += 2;

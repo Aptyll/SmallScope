@@ -719,6 +719,7 @@ function playerIntents(p, dt) {
     inp.ability = -1;
     inp.cmd = null;
     inp.mx = inp.my = 0;
+    p.abBufT = 0; // an early press does not outlast a stun
   }
 
   // edge-triggered intents, consumed here so a controller only has to set them
@@ -727,7 +728,12 @@ function playerIntents(p, dt) {
   // an ability key with a skill point in hand LEVELS the key instead of
   // casting it (the plate is the same buy for the mouse); the cast waits for
   // the next press. A maxed key casts through an unspent point as ever.
-  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; if (abLvCanBuy(p, i)) buyAbilityLv(p, i); else tryAbility(p, i); }
+  // a LOCKED key (rank 0) with a point in hand unlocks: it has nothing to cast
+  // yet. A key that already casts always casts - a point is spent on its plate
+  // (hudPress, js/ui/strip.js), never by the key, so a level-up mid-fight can
+  // never eat the press. A press the busy hands refuse waits (abPress)
+  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; if (Number.isInteger(i) && p.abLv[i] === 0 && abLvCanBuy(p, i)) buyAbilityLv(p, i); else abPress(p, i); }
+  else abBufStep(p, dt);
   if (inp.cmd) { // what came of it is kept for the body's bot (me.lastCmd, js/ai/bot-api.js)
     const c = inp.cmd; inp.cmd = null;
     const r = runCmd(p, c);

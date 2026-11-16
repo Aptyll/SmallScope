@@ -148,9 +148,11 @@ function buyAbilityLv(p, i) {
 // ---- casting -------------------------------------------------------------
 // The press. Refused flat while the body is otherwise occupied; a row with a
 // second half (`recast`) takes the key again as that half.
+// Returns 'busy' when the hands are taken (a roll, a cast, a dash): the
+// caller keeps that press for AB_BUF_T and tries it again (abBufStep).
 function tryAbility(p, i) {
-  if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
-    p.dodgeT > 0 || p.castT > 0) return; // a zipline's handle occupies the hands the way a cast does
+  if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0) return;
+  if (p.dodgeT > 0 || p.castT > 0) return 'busy'; // a zipline's handle occupies the hands the way a cast does
   const ab = abOf(p, i);
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already
@@ -167,11 +169,29 @@ function tryAbility(p, i) {
     startCast(p, i, RECAST_T);
     return;
   }
-  if (p.rushT > 0) return; // every other key waits out the dash
+  if (p.rushT > 0) return 'busy'; // every other key waits out the dash
   if (p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
   if (ab.ok && !ab.ok(p)) { sfxFor(p, 'deny'); return; } // a row that needs something the press lacks (a target near the aim)
   p.castSlam = false; // a fresh press is never a second half (one knocked out of the hands mid-cast must not linger)
   startCast(p, i, ab.cast);
+}
+// THE EARLY PRESS. A key pressed while the hands are busy (a roll, another
+// cast, a dash) is kept for AB_BUF_T and cast the first step they are free,
+// at the aim of that step, so a combo pressed a beat early still lands
+// instead of vanishing. The newest press replaces a kept one; a stun or a
+// death drops it (playerIntents). Every controller fills the same field, so
+// a bot's early press waits the same way.
+const AB_BUF_T = 0.25;
+function abPress(p, i) {
+  const r = tryAbility(p, i);
+  if (r === 'busy') { p.abBufI = i; p.abBufT = AB_BUF_T; } else p.abBufT = 0;
+}
+function abBufStep(p, dt) {
+  if (p.abBufT <= 0) return;
+  p.abBufT -= dt;
+  if (p.abBufT <= 0) { p.abBufT = 0; return; }
+  if (p.dodgeT > 0 || p.castT > 0) return;
+  if (tryAbility(p, p.abBufI) !== 'busy') p.abBufT = 0; // (a dash still running: a second half casts through it, any other key keeps waiting)
 }
 // is the key pressed now its row's second half (castSlam)
 function abRecast(p, ab) { return !!(ab.recast && ab.recast(p)); }

@@ -495,7 +495,8 @@ function openPingWheel() {
 // for as long as the mark is good, in range and the feet are still
 // (attackStep, js/sim/attack.js). Nothing is aimed and nothing is held: the
 // press is the whole order, and it follows the mark until another replaces
-// it. Under WASD a walk key takes the feet back - the chase is called off,
+// it. Under WASD a walk key pressed after the order takes the feet back (keys
+// already down when it was given stand aside: wasdGate) - the chase is called off,
 // the mark kept, so letting go of the keys inside range strikes again
 // (League's kite: step, stop, hit) - and a press on open ground drops the mark. The lock breaks the way the CLICK scheme's does
 // (ckSees: dead, gone, fogged, or past CK_LOCK_R).
@@ -536,6 +537,32 @@ function atkPress() {
   const q = atkPt(t);
   ckOrder({ kind: 'chase', t }, q.x, q.y + 6, 'foe');
   ck.lock = t;
+  if (!ckOn()) ck.gate = wasdHeld(); // the newest order wins: the walk keys already down when it was given stand aside (wasdGate)
+}
+// THE NEWEST ORDER WINS (WASD). A left press on a rival is an order given
+// after the walk keys already down, so it beats them, as a League click on a
+// rival beats the walk before it: the hero stops, walks into range and
+// strikes while those keys stay down. `ck.gate` is which of them were down at
+// the press; one let go stops standing aside, and any walk key pressed
+// after the press (a fresh one, or one let go and pressed again) takes the
+// feet back for every key at once and drops the gate. So does losing the
+// mark. Without it a hand that never lets go of W clicked and clicked on a
+// rival in reach and the hero never swung.
+function wasdHeld() {
+  const ar = !director.on; // a director's arrows fly the camera (dirCam, js/app/director.js)
+  return {
+    up: keyHeld('up') || (ar && !!keys['arrowup']), down: keyHeld('down') || (ar && !!keys['arrowdown']),
+    left: keyHeld('left') || (ar && !!keys['arrowleft']), right: keyHeld('right') || (ar && !!keys['arrowright']),
+  };
+}
+function wasdGate(h) {
+  const g = ck.gate;
+  if (!g) return h;
+  if (!ck.lock) { ck.gate = null; return h; }
+  let fresh = false;
+  for (const d in h) { if (g[d] && !h[d]) g[d] = false; if (h[d] && !g[d]) fresh = true; }
+  if (fresh) { ck.gate = null; return h; }
+  return { up: false, down: false, left: false, right: false };
 }
 // walk p toward mark t by route (`walk`, the scheme's own navTo leg)
 function atkWalkTo(p, t, walk) {
@@ -592,9 +619,9 @@ const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring
 //        | {kind:'use', what:'shop', o, tx, ty}
 // lock: the unit the tool is on; arm: A pressed, the next left press lays the attack-move; follow: the
 // right button is down over open ground; mark: the last ring on the snow
-const ck = { order: null, lock: null, arm: false, follow: false, mark: null };
+const ck = { order: null, lock: null, arm: false, follow: false, mark: null, gate: null };
 function ckOn() { return settings.scheme === 'click'; }
-function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; }
+function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; ck.gate = null; }
 function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
 // where a press landed, in the world: the chart's tile, the disc's point,
 // or the ground under the pointer - null over the HUD or off the map. `far`
@@ -785,11 +812,11 @@ function sampleHumanInput(p, dt) {
   let mx = 0, my = 0;
   if (ckOn() && p.dead) ckClear();
   if (!ckOn()) {
-    const ar = !director.on; // a director's arrows fly the camera (dirCam, js/app/director.js)
-    if (keyHeld('up') || (ar && keys['arrowup'])) my -= 1;
-    if (keyHeld('down') || (ar && keys['arrowdown'])) my += 1;
-    if (keyHeld('left') || (ar && keys['arrowleft'])) mx -= 1;
-    if (keyHeld('right') || (ar && keys['arrowright'])) mx += 1;
+    const h = wasdGate(wasdHeld()); // the keys an attack order beat stand aside (the `attack order` banner)
+    if (h.up) my -= 1;
+    if (h.down) my += 1;
+    if (h.left) mx -= 1;
+    if (h.right) mx += 1;
   }
   const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine;
   const c = !live ? null : ckOn() ? ckStep(p, dt) : wasdStep(p, dt, mx, my);
