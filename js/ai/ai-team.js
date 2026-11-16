@@ -12,7 +12,8 @@
 //   ROLE   every bot plays its drafted POSITION (laner, jungler:
 //          js/ai/ai-farm.js) unless the side's plan needs it for a bigger
 //          job - who pushes, who guards, who goes to the bear - picked by fit
-//          to the mood and the position. A role is kept while it is still
+//          to the mood and the position (never in the early game:
+//          aiLaning, js/ai/ai-farm.js). A role is kept while it is still
 //          wanted, so nobody flip-flops.
 //   MEMORY the side pools what it sees: every rival any bot notices is a
 //          sighting the whole side can act on, and a bot hurt or outnumbered
@@ -194,13 +195,17 @@ function aiPlan(team) {
   if (T.winT > 0) nPush = Math.max(nPush, bots.length - nGuard);
   else if (T.braceT > 0) { const home = Math.min(nPush, T.braceN); nGuard += home; nPush -= home; }
   nPush = Math.min(nPush, bots.length);
+  // the early game (aiLaning, js/ai/ai-farm.js): every bot keeps to its
+  // position, so nobody is pulled off it for a push, a guard or a window
+  const early = aiLaning();
+  if (early) { nPush = 0; nGuard = 0; T.winT = 0; }
   // the beast: the orca once it is up, and the side's own bear (the teamPay
   // camp nearest its bird) - asleep, no rival seen by it, a party strong
   // enough to spare. A party already out keeps going while its beast lives
   // and the bird is quiet. The orca's party is called off the push: it is
   // the late fight, and its buff is the push (orcaPushMul)
   let beast = null, party = 0;
-  if (!(mine && mine.threat) && T.winT <= 0) {
+  if (!early && !(mine && mine.threat) && T.winT <= 0) {
     let lv = 0;
     for (const q of bots) lv += q.level;
     lv /= bots.length;
@@ -228,7 +233,7 @@ function aiPlan(team) {
   if (party) { if (T.bear !== beast) T.bearT = 0; T.bear = beast; T.bearN = party; for (let i = 0; i < party; i++) want.push('slayer'); }
   else T.bear = null;
   // a grudge (aiDowned) takes the side's one stalker job first, whatever the clock
-  const grudger = bots.find((q) => aiGrudge(q));
+  const grudger = early ? null : bots.find((q) => aiGrudge(q)); // (a grudge waits out the early game)
   if (grudger && want.length < bots.length) want.unshift('stalker');
   // hand the jobs out best fit first, a held job counting AI_KEEP extra
   T.pos = aiPosDeal(team);
@@ -252,7 +257,7 @@ function aiPlan(team) {
     if (r) { free.splice(free.indexOf(q), 1); roles[q.id] = r; order.push(q.id); }
   }
   // and a bot with none stalks once the match is under way
-  if (state.elapsed >= AI_STALK_AT && free.length && !grudger) { const n = free.length; give('stalker'); if (free.length < n) want.push('stalker'); }
+  if (!early && state.elapsed >= AI_STALK_AT && free.length && !grudger) { const n = free.length; give('stalker'); if (free.length < n) want.push('stalker'); }
   // the order aiRank reads: pushers, then guards, then everyone else (a
   // grudge's stalker is handed out first, but never ranks ahead of them)
   const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
@@ -265,7 +270,7 @@ function aiPlan(team) {
   else if (T.bear) { T.stance = T.bear.kind === 'orca' ? 'ORCA' : 'BEAR'; T.why = 'PARTY OF ' + party; }
   else if (nPush > 0) { T.stance = 'PUSH'; T.why = nPush + ' ON BIRD'; }
   else if (want.indexOf('stalker') >= 0) { T.stance = 'PRESS'; T.why = 'HUNTING'; }
-  else { T.stance = 'FARM'; T.why = 'LEVELLING'; }
+  else { T.stance = 'FARM'; T.why = early ? 'LANING' : 'LEVELLING'; }
   // the side's focus: the rival most of its bots are shooting at (focus fire)
   const tally = {};
   let fb = -1, fn = 1;

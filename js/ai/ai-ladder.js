@@ -132,10 +132,13 @@ function aiOrders(k) {
   // a teammate's call for help it would answer (the team brain): a bot with
   // somewhere it must be - the push, its bird, a ping, a guard's post - does
   // not leave it for one
-  const call = !pushE && !defend && !order && !guardE && role !== 'pusher' ? aiHelpCall(p) : null;
+  let call = !pushE && !defend && !order && !guardE && role !== 'pusher' ? aiHelpCall(p) : null;
+  // (in the early game a laner answers only a call on its own lane: aiLaneKept, js/ai/ai-farm.js)
+  const kept = aiLaneKept(p);
+  if (call && kept >= 0 && !aiOnLane(kept, call.x, call.y)) call = null;
   const caller = call ? players[call.id] : null;
   ai.helping = call ? call.id : -1;
-  k.pushE = pushE; k.defend = defend; k.guardE = guardE; k.ward = ward; k.order = order; k.caller = caller;
+  k.pushE = pushE; k.defend = defend; k.guardE = guardE; k.ward = ward; k.order = order; k.caller = caller; k.kept = kept;
 }
 
 // the rival it would fight, and whether it fights them yet (rung 1 reads
@@ -184,7 +187,11 @@ function aiFoe(k) {
   // road are fought only at arm's length - the waves fight each other in the
   // middle, and a push that stopped for every column never reached the bird)
   const waveFoe = foe && !(foe instanceof Player) && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
-  const engage = foe && ai.seeT >= prof.react && !((siege || charge || waveFoe) && foeD > AI_SIEGE_R) ? foe : null;
+  // (and in the early game a laner keeps to its lane: a rival off it is let
+  // go unless it is at arm's length - its own bird, a ping or a call it
+  // answers are the exceptions, as they are for every walk off the lane)
+  const leashed = k.kept >= 0 && !defend && !order && !caller && foe && !aiOnLane(k.kept, foe.x, foe.y);
+  const engage = foe && ai.seeT >= prof.react && !((siege || charge || waveFoe || leashed) && foeD > AI_SIEGE_R) ? foe : null;
   k.foe = foe; k.fq = fq; k.mark = mark; k.foeD = foeD; k.siege = siege; k.charge = charge; k.engage = engage;
 }
 
@@ -563,7 +570,7 @@ const AI_PUMP_IN = 0.6;         // share of the ring's radius out from the pump 
 function aiPumpRung(k) {
   const { p, inp, ai, role, steerTo, aimAt, pushE, defend, guardE, order } = k;
   ai.pump = -1; // the pump it is going for, by its tile, for its side's count
-  if (pushE || defend || guardE || order || role === 'pusher') return false;
+  if (pushE || defend || guardE || order || role === 'pusher' || k.kept >= 0) return false; // (a laner leaves them to the jungler in the early game)
   const r = aiPos(p), jungler = r >= 0 && POSITIONS[r].job === 'jungler';
   let best = null, bd = Infinity;
   for (const o of structures) {

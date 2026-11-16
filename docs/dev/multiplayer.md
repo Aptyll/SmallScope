@@ -645,6 +645,14 @@ Three small rules, and the teamwork is what they add up to:
   position would STALK from `AI_STALK_AT` (90 s, a mood with `stalk`), and a seat the plan has
   handed nothing (a bot that landed since the last re-plan, the local seat, a bot file's seat)
   has no role: `aiRole` is null and it plays the ladder's shared rungs only.
+- **Early game.** Until `AI_LANE_T` (360 s) every bot keeps to its position (`aiLaning`,
+  js/ai/ai-farm.js): the plan hands out no pusher, guard, window, stalker (a grudge included) or
+  beast party (the stance reads FARM, LANING), and a laner stays within `AI_LANE_LEASH` (8 tiles)
+  of its own lane's road on that lane's half of the map, or in a base (`aiLaneKept`, `aiOnLane`).
+  It lets a rival off the leash go unless they are within `AI_SIEGE_R`, answers only a call on
+  its lane, leaves the pumps to the jungler, and waits only in a brush within `AI_BRUSH_LANE`
+  (4 tiles) of its road. Its own bird under threat and a person's ping still come first. After
+  that the plan is free to send anyone anywhere.
 - **Memory.** Every rival a bot notices (through `seenAt`) goes on the side's board
   (`aiLook` → `T.seen`, kept up to `AI_SEEN_T`, trusted for the profile's `memory`). A bot
   hurt under 60% or outnumbered in a fight **calls** (`aiCall`); a hurt human with a rival on
@@ -654,7 +662,7 @@ Three small rules, and the teamwork is what they add up to:
 - **Gold pumps** ([the pumps](gameplay/buildings.md#the-gold-pumps)). Rung 5e' (`aiPumpRung`):
   a pump its side does not hold, or holds with a rival hero in the ring, is walked to and stood
   in (`AI_PUMP_IN` of the ring out, on the side it came from) until it is the side's. The pump's
-  lane's laner goes from anywhere; any other bot not pushing, defending, on guard or
+  side's jungler goes from anywhere; a laner leaves them alone in the early game; any other bot not pushing, defending, on guard or
   under a ping goes only from within `AI_PUMP_NEAR`, and never more than `AI_PUMP_N` (2) of a
   side at one pump (`ai.pump`, the pump's tile, is what the side counts). A rival in the ring is
   rung 3's the moment it is seen, so taking a held pump is a fight at it. On the profile's `focus` roll a bot

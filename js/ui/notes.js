@@ -96,7 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
-    ['MINIMAP: the whole map as a square, bottom right', '0.964'],
+    ['MINIMAP: the whole map as a square, bottom right', '0.965'],
     ['MAP: two lanes and a jungle between, two towers a lane', '0.963'],
     ['CAMPS: wolves up top, scrap robots below, orca and bear in their pits', '0.963'],
     ['The perch stands on the ground from the start', '0.963'],
@@ -592,6 +592,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['BOTS keep to their role for the first 6 minutes, then roam', '0.964'],
     ['3V3: three a side, bots fill empty seats; roles TOP, JUNGLE, BOT', '0.962'],
     ['HOME: profile, history, party, heroes, items, friends and ladder on one page', '0.958'],
     ['FIRST MATCH: shows the goal, walks you to your lane, starters and roles in the pick', '0.952'],
