@@ -393,7 +393,7 @@ function cursorInfo() {
     return { kind: 'arrow' };
   }
   if (state.mode === 'dead' && profileUp()) { const h = state.menu.charT >= 1 ? profileHit() : null; return { kind: h && h.kind !== 'slab' && h.kind !== 'off' && h.kind !== 'badge' ? 'hand' : 'arrow' }; }
-  if (state.mode === 'dead') return { kind: deadHit() >= 0 || endRowHit() >= 0 || (state.deadView === 'scores' && (scoresHit() || {}).kind === 'who') || specHit() || rpCloseHit() || recapHot() || mmLockHit() ? 'hand' : 'arrow' };
+  if (state.mode === 'dead') return { kind: deadHit() >= 0 || endRowHit() >= 0 || (state.deadView === 'scores' && (scoresHit() || {}).kind === 'who') || specHit() || rpCloseHit() || recapHot() ? 'hand' : 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
     if (dragSlider) return { kind: 'grab' };
@@ -406,7 +406,7 @@ function cursorInfo() {
   // the rest of the slab (which still swallows the click)
   const sp = shopHit(mouse.x, mouse.y);
   if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
-  if (abBuyHit(mouse.x, mouse.y) >= 0 || mmLockHit()) return { kind: 'hand' };
+  if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   if (camDrag || (overMinimap() && !(ckOn() && ck.arm))) return { kind: 'arrow' }; // the minimap carries the camera, not an attack
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || (sh.kind === 'item' && player.items[sh.i] === 'potion'))) return { kind: 'hand' };

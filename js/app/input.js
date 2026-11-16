@@ -423,7 +423,6 @@ function pointerPress(button) {
     SFX.unlock();
     if (profileUp()) profileClick();
     else if (voteClick()) return;
-    else if (camLive() && mmLockHit()) camFlip(); // the camera's lock on the minimap's corner (js/ui/minimap.js)
     else if (camLive() && overMinimap()) camDragStart(); // a respawn wait looks anywhere on the map
     else deadClick();
     return;
@@ -441,7 +440,6 @@ function pointerPress(button) {
   if (shopClick(shopHit(mouse.x, mouse.y))) return;
   if (state.charOpen && charClick(charHit(mouse.x, mouse.y))) return;
   if (hudPress(mouse.x, mouse.y)) { SFX.unlock(); return; }
-  if (mmLockHit()) { camFlip(); return; } // the camera's lock on the minimap's corner (js/ui/minimap.js)
   if (overMinimap()) { camDragStart(); return; } // the camera, carried across the map (the `camera modes` banner, js/app/canvas.js)
   mouse.down = true;
   atkPress();

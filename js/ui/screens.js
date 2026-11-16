@@ -482,7 +482,7 @@ function drawRespawnLine() {
   const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const y = Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6); // clear of the spectate bar and a call under it
-  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), y, '#cfe4f2', '#0a0e23', ts);
+  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), y, SC_LIT, SC_INK, ts); // the hub's white over its ink, like every word around it
   drawDownedBy(); // who put you down, at the foot of the screen where the strip sat (js/ui/recap.js)
 }
 
@@ -493,7 +493,7 @@ function drawRespawnLine() {
 // their light and only lose their hue. It eases in as you fall and is gone
 // with the respawn.
 const DEATH_GREY_IN = 0.6; // s for the colour to drain: the fall's own length (DOWN_T, js/draw/bodies.js)
-const DEATH_GREY = 0.85;   // how much of it drains: a trace stays, so a side's red and blue still tell apart
+const DEATH_GREY = 0.35;   // how much of it drains: a quiet shift, never a black-and-white screen (Noah)
 function drawDeathGrey() {
   if (state.mode !== 'dead' || state.over !== 'respawning' || state.eagleCine) return;
   const a = DEATH_GREY * Math.min(1, state.deadTimer / DEATH_GREY_IN);

@@ -383,7 +383,7 @@ const mmImg = mmCtx.createImageData(WORLD, WORLD);
 
 // ------------------------------------------------------------ camera modes
 // LOCKED or FREE, League's two cameras (settings.camFree; the camLock key
-// flips it, and so does the lock on the minimap's corner). LOCKED rides the
+// flips it, as does the CAMERA row on the ESC menu's GAME page). LOCKED rides the
 // body you are watching, as it always has. FREE stays where it is put: the
 // pointer against an edge of the screen pans it (camEdge), the centre key
 // cuts back to the body (a tap) or holds it there (held), and a press on the

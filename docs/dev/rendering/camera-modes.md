@@ -1,8 +1,7 @@
 # Camera modes
 
 League's two cameras, one setting apart (`settings.camFree`: the GAME page's CAMERA row, the
-`camLock` key, Y by default, or the padlock against the minimap's top-left corner,
-`mmLockRect`/`drawMmLock`, js/ui/minimap.js: shut while LOCKED, open while FREE). The code is the
+`camLock` key, Y by default; no HUD button). The code is the
 `camera modes` banner of js/app/canvas.js; the follow it gates is the camera block of `update`
 (js/sim/sim.js).
 

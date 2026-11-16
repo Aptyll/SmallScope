@@ -22,7 +22,7 @@ page linked here; a page past about 30 KB splits into a folder of parts.
 - [The text table](rendering/the-text-table.md) (2 KB): Every word the game prints for its own screens lives in `TEXT` (js/app/text.js), by key
 - [Text over the world](rendering/text-over-the-world.md) (3 KB): White pixel text on a white snowfield is unreadable with a drop shadow, so text over the world wears an...
 - [Going down](rendering/going-down.md) (1 KB): A body that drops does not blink out
-- [Camera modes](rendering/camera-modes.md) (2 KB): LOCKED or FREE, League's way: the edge pan, the centre key, the minimap's drag and padlock
+- [Camera modes](rendering/camera-modes.md) (2 KB): LOCKED or FREE, League's way: the edge pan, the centre key, the minimap's drag
 - [Damage feedback](rendering/damage-feedback.md) (3 KB): Combat damage is **one running total per body**, never a number per hit
 - [Debug overlays: hitboxes and routes](rendering/debug-overlays-hitboxes-and-routes.md) (6 KB): What the sim tests, drawn over what the art shows — the two are deliberately different (a tree's canopy...
 - [Camps on the maps](rendering/camps-on-the-maps.md) (2 KB): A camp is a *named* place, so it has to be legible on every surface that shows the world
