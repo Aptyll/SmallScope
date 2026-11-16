@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.959';
+const PATCH_TXT = 'PATCH 0.960';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.960', 'A DOWNED HERO SEES WHO DOWNED THEM, THE SHOP HAS ITS OWN KEY (B), A GOLD TRAIL LEADS NEW PLAYERS TO THEIR LANE, AND THE FIRST HERO PICK WAITS FOR YOU.'],
   ['0.959', 'ATTACKS WORK LIKE A MOBA NOW: CLICK A RIVAL AND YOUR HERO WALKS INTO RANGE, WINDS UP AND STRIKES ON ITS OWN, AND SHOTS FLY STRAIGHT TO THEIR TARGET; EVERY HERO HAS ITS OWN RANGE AND ATTACK SPEED.'],
   ['0.958', 'A NEW HOME SCREEN LIKE A GAME CLIENT: YOUR PROFILE AND MATCH HISTORY, A THREE SEAT PARTY WITH PLAY BESIDE IT AND ITS CHAT, A HERO\'S ABILITIES AND BUILD, YOUR FRIENDS AND THE LADDER, ALL ON ONE PAGE.'],
   ['0.957', 'A ROLLING HERO CURLS UP IN THEIR OWN COLOURS: THE SHOULDERS UNDER THE TUCKED HEAD WEAR THEIR HOOD, HAIR OR HELM, SO ABOUT A THIRD OF THE BALL IS THEIRS AND NOT THE TEAM\'S.'],
