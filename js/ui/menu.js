@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.968';
+const PATCH_TXT = 'PATCH 0.969';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.969', 'THE ESC MENU WEARS THE HUB\'S GRAPHITE: ITS PAGES IN THE HEAD, FLAT PLATES, AND GOLD ONLY FOR WHAT IS SWITCHED ON.'],
   ['0.968', 'THE SHOP HAS AN UNDO BUTTON: TAKE BACK YOUR LAST BUY OR SALE FOR EXACTLY WHAT IT COST, AS LONG AS YOU STAY AT THE COUNTER.'],
   ['0.967', 'THE SHOP\'S RECOMMENDED TAB SHOWS THREE BIG ITEMS WITH THEIR PRICE AND WHY IN TWO WORDS, PICKED FOR YOUR HERO AND THE RIVALS YOU FACE, AND A GREY BUY NOW SAYS HOW MUCH MORE GOLD YOU NEED.'],
   ['0.966', 'RANGED SOLDIERS THROW A REAL SNOWBALL THAT FLIES ALL THE WAY TO ITS MARK AND SPLATS ON IT, AND SIEGE BOLTS NO LONGER VANISH IN THE AIR.'],

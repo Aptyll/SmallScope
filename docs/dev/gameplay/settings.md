@@ -96,7 +96,7 @@ storage, so the next launch opens the same way, and F11 or Alt+Enter flips it th
 document's Fullscreen API, which needs the row's click. The row reads the state live
 (`fullscreenOn`), and the resize that follows refits the canvas like any resize.
 
-**The panel is a hub panel** (since 0.966; it was a navy slab under a big gold title): `bakeFlatSlab`
+**The panel is a hub panel** (since 0.969; it was a navy slab under a big gold title): `bakeFlatSlab`
 lays the Graphite page's plate (`SC_*`, js/ui/lobby.js) in a one-pixel edge inside an ink outline,
 square-cornered and never see-through, with the hub's 20 px head (`SET_HEAD`): the panel's name small
 on the left (`drawSlabHead`), its pages on the right, one edge line under it. Gold is only for what is

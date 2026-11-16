@@ -68,7 +68,7 @@ on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
-**The minimap is the whole played map, always** (since 0.964; the round scrolling disc top right
+**The minimap is the whole played map, always** (since 0.965; the round scrolling disc top right
 went): a square in the **bottom-right corner**, the League place, `MM_GAP` off the right and bottom
 edges (`applyMinimapSize`, core.js: `MM_X`/`MM_Y` the chart's top-left, `MM_W` its side, 112 px at
 the MINIMAP SIZE dial's 100, `settings.mmSize`). Nothing scrolls or zooms under the eye, so the
