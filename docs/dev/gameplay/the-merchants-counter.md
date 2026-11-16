@@ -282,7 +282,7 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   costs you now: green when it can go through; grey when it cannot, saying the one thing in the
   way (`shopBuyState`'s `stop`): NEED 2300 MORE with a gold line along its foot that fills as the
   purse does, BAG FULL, ONE PAIR WORN or POTIONS FULL (never an error's red, since nothing went
-  wrong, and never a minus);
+  wrong, and never a minus). A green BUY shines: a pale slanted band slides across it every couple of seconds (`drawShopShine`);
 - in the bottom-left corner, **your six slots three by two**, the bottom bar's own shape (a potion
   stack wearing its count), the **SELL** plate with what the picked slot sells for, **UNDO** beside it (lit while this visit has a trade to take back), and the purse.
   **Gold shows once** along the bottom: the purse wears the coin, and both plates print bare
