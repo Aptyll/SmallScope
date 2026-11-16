@@ -96,8 +96,11 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MAP: two lanes and a jungle between, two towers a lane', '0.963'],
+    ['CAMPS: wolves up top, scrap robots below, orca and bear in their pits', '0.963'],
+    ['The perch stands on the ground from the start', '0.963'],
     ['DOWNED BY: the hero who downed you, under the respawn clock', '0.960'],
-    ['SHOP: its own key, B; E is only for tools and ziplines', '0.960'],
+    ['SHOP: its own key, B; E is only for tools', '0.960'],
     ['ATTACK: click a rival to attack it; shots home in', '0.959'],
     ['ROLL: a rolling hero curls up in their own colours', '0.957'],
     ['CAMPS: a hit camp shows its leash ring, red as it gives up', '0.956'],

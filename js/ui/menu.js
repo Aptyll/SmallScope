@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.962';
+const PATCH_TXT = 'PATCH 0.963';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.963', 'A NEW MAP FOR 3V3: TWO LANES WITH TWO TOWERS EACH, A JUNGLE BETWEEN THEM, WOLVES UP TOP AND SCRAP ROBOTS BELOW, THE ORCA AND THE BEAR IN THEIR PITS, AND THE PERCH ON THE GROUND FROM THE START.'],
   ['0.962', 'MATCHES ARE 3V3 NOW: THREE HEROES A SIDE, BOTS FILLING ANY EMPTY SEAT, AND THREE ROLES IN THE PICK, TOP, JUNGLE AND BOT.'],
   ['0.961', 'NO MORE SUMMONER SPELLS: A HERO IS ITS FOUR ABILITIES AND ITS ITEMS, AND THE HERO PICK HAS NO CALLING OR TRICK ROW; THE OLD 1V1 AND PRACTICE TOOL CODE IS GONE.'],
   ['0.960', 'A DOWNED HERO SEES WHO DOWNED THEM, THE SHOP HAS ITS OWN KEY (B), A GOLD TRAIL LEADS NEW PLAYERS TO THEIR LANE, AND THE FIRST HERO PICK WAITS FOR YOU.'],
@@ -1049,7 +1050,7 @@ function menuClick() {
   if (m.screen === 'profile') { profileClick(); return; }
 }
 
-// straight into play, skipping the eagle (debug: DBG.beginIntro): the menu
+// straight into play, skipping the match's start (debug: DBG.beginIntro): the menu
 // tint dissolves while the camera eases from the drift onto the player, then
 // the HUD slides in (renderUI)
 function beginIntro() {
@@ -1112,7 +1113,7 @@ function updateTitle(dt) {
   }
   if (m.lockT > 0) {
     m.lockT -= dt;
-    if (m.lockT <= 0) { m.lockT = 0; beginDrop(); }
+    if (m.lockT <= 0) { m.lockT = 0; beginMatch(); }
   }
 
   if (m.panel) {
