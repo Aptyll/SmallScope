@@ -111,7 +111,8 @@ nothing pumps under a drawn weapon; it only dips onto each strike. `roll` is a c
 tucked ball turning over once in 30° steps from the dive's end to sitting curled again, a deep
 squat and a rise. The ball is a body of its own (`paint_ball`: the back of the coat is the ball,
 the hood tucked in at the front, the knees, boots and mittens wrapped round the other
-side), turned about its centre, so its colours go round the rim while the light stays where the
+side, and the shoulders under the head in the look's own colour, the material its tucked head
+wears (`ball_own`), so about a third of a ball is the hero's and not the team's: `MANTLE_AT`), turned about its centre, so its colours go round the rim while the light stays where the
 sun is; every roll frame is set down on the ground row. `ROLL_AT` is the share of `DODGE_T` at
 which each frame starts (the crouch and the dive get the first fifth, the ball most of the rest,
 the squat and the rise the last sixth), and `rollFrame` picks off `1 - dodgeT / DODGE_T`, the two
