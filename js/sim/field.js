@@ -2,18 +2,20 @@
 // ------------------------------------------------------------ field
 // THE FIELD (3v3): the one map, a Twisted Treeline in the snow. Two lanes
 // are the two halves of one rounded rectangle round the middle, each side's
-// perch sits on it at the middle of its own end, and a walled jungle fills
-// the inside. Out past the lanes the woods close in, but for two pits that
-// open off them: the orca's above the top lane, the black bear's below the
-// bottom one.
+// perch sits on it at the middle of its own end, and a jungle of pine groves
+// fills the inside, a creek of rough ice down its middle. Out past the lanes
+// the woods close in, but for two pits that open off them: the orca's above
+// the top lane, the black bear's below the bottom one.
 //
 // The whole field is ONE signed distance (fieldOpen): negative on ground a
 // body can walk, written for the top-left quarter and folded four ways
-// (fieldFold), so the two sides AND the two halves are the same shape by
-// construction. A wall is a rounded box on a 2-tile module, the open shapes
-// meet in smooth unions (fieldSmin), so every inside corner gets the same
-// fillet. Nothing rolls and nothing reads the seed: one map, the same on every
-// screen (CLAUDE.md, rule 3).
+// (fieldFold), and the groves' edges then wander on the map's noise read
+// folded left to right only (fieldWander): the two sides are mirror images,
+// the two halves differ like real woods. The design's ways through
+// (FIELD_WAYS) and a clearing round each camp stay open whatever the wander
+// does, and fieldGrid closes any sliver under FIELD_PATH wide. Nothing rolls
+// and nothing reads the seed: one map, the same on every screen (CLAUDE.md,
+// rule 3).
 //
 // FIELD UNITS: the functions here take field coordinates, where tile (tx,
 // ty) covers [tx, tx + 1) and its middle is tx + 0.5 - a px over TILE. The
@@ -38,20 +40,44 @@ const COURT_WING = [6.4, 6.5, 0.55]; // the wings: the x they come out to (short
 const JUNGLE_BOX = [22, 40, 70, 70]; // the jungle's open box, x0 y0 x1 y1 (the quarter: it folds to the whole inside)
 const LAIR = [70, 25, 11, 7];   // the pit off the top lane: middle and radii (it folds to the bear's below)
 const LAIR_MOUTH = [64, 25, 70, 44]; // the cut from the pit through the lane to the jungle
-const WALL_R = 1.5;             // a wall's corner radius
 const FIELD_EDGE = 4;           // tiles of pines at the least between any open ground and the world's edge (the perches' discs reach past it)
-const FIELD_WALLS = [           // x0 y0 x1 y1, each 4 tiles thick, in the quarter
-  [22, 40, 36, 44], [42, 40, 64, 44], // the lane's wall, the door between them
-  [22, 40, 26, 60],             // the jungle's west wall
-  [56, 44, 60, 56], [60, 52, 64, 56], // the hollow's side wall and its foot
-  [30, 54, 50, 58],             // the long divider under the hall
-  [32, 58, 36, 62],             // its hook
-  [22, 60, 28, 66],             // the base mouth's jaw
-  [40, 62, 48, 66],             // the pillar by the pump
-  [54, 60, 62, 66],             // the block between the pump and the middle
-  [66, 62, 70, 70],             // the middle's wall (folds to 8 by 16)
+// THE GROVES: the jungle's woods, each a stand of pines with a ragged edge,
+// in the quarter. A 'cap' is a stroke from (ax, ay) to (bx, by) whose
+// half-width runs r0 to r1 (a long stand that thins at one end); an 'oval'
+// is a stand round (cx, cy), half rx by ry, turned `ang` radians. They meet
+// in smooth unions (fieldSmin), then their edge wanders (fieldWander).
+const FIELD_GROVES = [
+  ['cap', 21, 42, 34, 41.6, 2.6, 2.0],   // the lane's wood, west of the door...
+  ['cap', 44.5, 41.6, 63, 42, 2.0, 2.6], // ...and east of it
+  ['cap', 24, 42, 25, 57.5, 2.8, 2.2],   // the jungle's west wood
+  ['cap', 58, 44, 58.6, 53.5, 2.0, 2.4], // the hollow's side wood...
+  ['oval', 61.2, 54.4, 3.0, 2.0, 0.3],   // ...and its foot
+  ['cap', 30.5, 56.6, 49.5, 54.8, 2.6, 1.7], // the long wood under the hall, thinning east
+  ['cap', 33, 57, 34.6, 61.6, 2.2, 1.5],  // its hook
+  ['oval', 24.6, 63.4, 3.6, 3.0, 0.5],   // the base mouth's jaw
+  ['oval', 44.2, 64.2, 4.2, 2.1, -0.4],  // the stand by the pump
+  ['oval', 58.2, 63.2, 4.0, 2.5, 0.45],  // the stand between the pump and the middle
+  ['oval', 70, 70, 3.8, 7.8, 0],         // the middle's wood (on the middle: it is its own twin)
 ];
 const FIELD_BRUSH = [[39, 46, 5, 2], [28, 61, 2, 3], [66, 58, 4, 2], [43, 70, 3, 4]]; // the brush (layBrush, js/sim/depth.js): stadiums, middle x y and half w h, in the quarter
+// THE WAYS: the ways through that the design is built on, kept open
+// whatever the wander does: strokes from (ax, ay) to (bx, by) in the quarter
+const FIELD_WAYS = [
+  [39, 39, 39, 47],             // the lane's door into the hall
+  [66.2, 56, 64.4, 70],         // the creek's arm round the middle's wood
+];
+const WAY_HALF = 2.4;           // tiles either side of a way's line kept open
+const GROVE_CLEAR = 4.5;        // tiles round a camp's middle no grove reaches (CAMP_SITES, js/sim/camps.js; the pump's ring, js/sim/pumps.js)
+const GROVE_K = 2.2;            // tiles of fillet where two groves meet
+const WANDER_BIG = 1.5;         // tiles a grove's edge wanders in slow lobes...
+const WANDER_SMALL = 0.5;       // ...and in small bays and bulges on top
+// THE CREEK: rough ice that runs from the orca's pool down the middle
+// column, through the top hollow, splits round the middle's wood, and on
+// through the bottom hollow into the bear's den, where it pools (ground 1,
+// fieldIce). It holds a foot like the orca's pool (fieldRough, slickUnder).
+const CREEK_HALF = 1.9;         // tiles either side of the middle column the creek runs
+const CREEK_ROUND = 2.4;        // tiles out from the middle's wood its two arms run
+const DEN_POOL = [70, 115, 4.5, 2.6]; // the bear's frozen pool: middle (field units) and radii
 
 function fieldFold(v) { return Math.min(v, WORLD - v); }
 // the four copies of a quarter's point, [x, y] in field units: RED's top,
@@ -66,6 +92,46 @@ function fieldSmin(a, b, k) {
   const h = Math.max(0, Math.min(1, 0.5 + 0.5 * (b - a) / k));
   return b + (a - b) * h - k * h * (1 - h);
 }
+// a stroke whose half-width runs r0 at (ax, ay) to r1 at (bx, by): signed tiles
+function fieldCap(x, y, ax, ay, bx, by, r0, r1) {
+  const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(x - ax - dx * t, y - ay - dy * t) - (r0 + (r1 - r0) * t);
+}
+function fieldOval(x, y, cx, cy, rx, ry, ang) {
+  const c = Math.cos(ang), s = Math.sin(ang), u = (x - cx) * c + (y - cy) * s, v = -(x - cx) * s + (y - cy) * c;
+  return (Math.hypot(u / rx, v / ry) - 1) * Math.min(rx, ry);
+}
+// how far a grove's edge wanders at a point: two octaves of the map's noise
+// read at the point folded LEFT TO RIGHT only, so the two sides are mirror
+// images but the top and the bottom halves wander their own ways
+function fieldWander(x, y) {
+  const fx = fieldFold(x);
+  const calm = Math.min(1, Math.max(0.25, (Math.abs(x - FIELD_C) - 5) / 3)); // the middle's ways keep their shape
+  return calm * WANDER_BIG * (vnoise(fx / 7 + 3.1, y / 7 + 7.7) - 0.5) * 2 + calm * WANDER_SMALL * (vnoise(fx / 2.4 + 17.3, y / 2.4 + 5.9) - 0.5) * 2;
+}
+// THE GROVES as one distance: signed tiles from the nearest grove's edge, negative in the pines
+function fieldGroves(x, y) {
+  const fx = fieldFold(x), fy = fieldFold(y);
+  let d = 1e9;
+  for (const g of FIELD_GROVES) d = fieldSmin(d, g[0] === 'cap' ? fieldCap(fx, fy, g[1], g[2], g[3], g[4], g[5], g[6]) : fieldOval(fx, fy, g[1], g[2], g[3], g[4], g[5]), GROVE_K);
+  d -= fieldWander(x, y);
+  // ...the ways through stay open, and every camp and the pump stand in a clearing, however the edges wander
+  for (const w of FIELD_WAYS) d = Math.max(d, -fieldCap(fx, fy, w[0], w[1], w[2], w[3], WAY_HALF, WAY_HALF));
+  for (const c of CAMP_SITES) d = Math.max(d, GROVE_CLEAR - Math.hypot(fx - c.tx - 0.5, fy - c.ty - 0.5));
+  return Math.max(d, PUMP_R + 1 - Math.hypot(fx - PUMP_SPOT[0] - 2, fy - PUMP_SPOT[1] - 1));
+}
+// the creek and the bear's pool: where open ground off the road is ice,
+// field units (fieldIce asks it of a tile)
+function fieldCreek(x, y) {
+  if (y < LAIR[1] || y > WORLD - LAIR[1] + 3) return false;
+  const pool = Math.hypot((x - DEN_POOL[0]) / DEN_POOL[2], (y - DEN_POOL[1]) / DEN_POOL[3]) < 1;
+  if (pool) return true;
+  if (y > WORLD - LAIR[1]) return false;
+  const M = FIELD_GROVES[FIELD_GROVES.length - 1], mid = fieldOval(fieldFold(x), fieldFold(y), M[1], M[2], M[3], M[4], M[5]);
+  const swell = 0.55 * Math.sin(y / 3.3) + 0.35 * Math.sin(y / 1.9 + 1.3); // its banks swell and narrow down its length
+  if (Math.abs(y - FIELD_C) < M[4] + CREEK_ROUND) return mid > 0 && mid < CREEK_ROUND + swell * 0.6 && Math.abs(x - FIELD_C) < M[3] + CREEK_ROUND + 1;
+  return Math.abs(x - FIELD_C) < CREEK_HALF + swell;
+}
 // signed tiles from the lanes' centreline loop (either sign: inside or out)
 function laneLoop(x, y) {
   const qx = Math.abs(x - FIELD_C) - (LANE_HX - LANE_R), qy = Math.abs(y - FIELD_C) - (LANE_HY - LANE_R);
@@ -74,9 +140,7 @@ function laneLoop(x, y) {
 // THE FIELD: signed tiles from the nearest edge of walkable ground, negative on it
 function fieldOpen(x, y) {
   const fx = fieldFold(x), fy = fieldFold(y);
-  let walls = 1e9;
-  for (const w of FIELD_WALLS) walls = fieldSmin(walls, fieldBox(fx, fy, w[0], w[1], w[2], w[3], WALL_R), 1);
-  const jungle = Math.max(fieldBox(fx, fy, JUNGLE_BOX[0], JUNGLE_BOX[1], JUNGLE_BOX[2], JUNGLE_BOX[3], 0), -walls);
+  const jungle = Math.max(fieldBox(fx, fy, JUNGLE_BOX[0], JUNGLE_BOX[1], JUNGLE_BOX[2], JUNGLE_BOX[3], 0), -fieldGroves(x, y));
   const band = Math.abs(laneLoop(x, y)) - LANE_HALF;
   const base = Math.hypot(fx - BASE_X, fy - FIELD_C) - BASE_R;
   const lair = (Math.hypot((fx - LAIR[0]) / LAIR[2], (fy - LAIR[1]) / LAIR[3]) - 1) * Math.min(LAIR[2], LAIR[3]);
@@ -198,12 +262,41 @@ const LAIR_POOL = [7.5, 4.5]; // the orca's frozen pool: radii round the pit's m
 const ORCA_LAKE_R = LAIR_POOL[0]; // ...the longer of them: what a reach round the pool is sized by
 function genWorld() {
   ground.fill(0); objects.fill(null);
+  const open = fieldGrid();
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const x = tx + 0.5, y = ty + 0.5, i = idx(tx, ty);
-    if (fieldOpen(x, y) >= 0) { objects[i] = { type: 'tree', tx, ty, hp: 1, flash: 0, shake: 0, wall: true }; continue; }
+    if (!open[i]) { objects[i] = { type: 'tree', tx, ty, hp: 1, flash: 0, shake: 0, wall: true }; continue; }
     if (laneDist(tx, ty) < 0) ground[i] = 3;
-    else if (orcaLakeAt(tx, ty)) ground[i] = 1;
+    else if (orcaLakeAt(tx, ty) || fieldCreek(x, y)) ground[i] = 1;
   }
+}
+// the open tiles (1) off the one distance, and then NO SLIVERS: a tile of
+// open ground that no FIELD_PATH-wide square of open ground covers is pines
+// too, so wherever the groves' edges wander, every way through is a path a
+// body and a fight fit in. Reads only the field, so the same on every screen
+const FIELD_PATH = 4;            // tiles: the narrowest way through anywhere
+function fieldGrid() {
+  const N = WORLD, k = FIELD_PATH, open = new Uint8Array(N * N), keep = new Uint8Array(N * N);
+  for (let ty = 0; ty < N; ty++) for (let tx = 0; tx < N; tx++) open[ty * N + tx] = fieldOpen(tx + 0.5, ty + 0.5) < 0 ? 1 : 0;
+  // a summed table, so each square's count is four reads
+  const S = new Int32Array((N + 1) * (N + 1));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) S[(y + 1) * (N + 1) + x + 1] = open[y * N + x] + S[y * (N + 1) + x + 1] + S[(y + 1) * (N + 1) + x] - S[y * (N + 1) + x];
+  for (let y = 0; y + k <= N; y++) for (let x = 0; x + k <= N; x++) {
+    const n = S[(y + k) * (N + 1) + x + k] - S[y * (N + 1) + x + k] - S[(y + k) * (N + 1) + x] + S[y * (N + 1) + x];
+    if (n === k * k) for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) keep[(y + j) * N + x + i] = 1;
+  }
+  // ...and no pocket a wander walled off: open ground no walk from RED's
+  // perch reaches is pines as well
+  const seen = new Uint8Array(N * N), q = new Int32Array(N * N), b = basePerch(0);
+  let n = 0; q[n++] = Math.floor(b.y) * N + Math.floor(b.x); seen[q[0]] = 1;
+  while (n) {
+    const j = q[--n], x = j % N, y = (j / N) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const X = x + dx, Y = y + dy, a = Y * N + X;
+      if (X >= 0 && Y >= 0 && X < N && Y < N && keep[a] && !seen[a]) { seen[a] = 1; q[n++] = a; }
+    }
+  }
+  return seen;
 }
 // the orca's pool, its middle in tile-index coordinates
 function orcaPool() { return { tx: FIELD_C - 0.5, ty: LAIR[1] - 0.5 }; }
@@ -215,3 +308,7 @@ function orcaLakeEdge(fx, fy) {
   return d > 4 ? 99 : d;
 }
 function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
+// whether a tile's ice is ROUGH, crusted with rime, holding a foot like snow
+// (slickUnder): the orca's pool, the creek and the bear's pool are; a
+// rival hero's ice glides
+function fieldRough(tx, ty) { return orcaLakeAt(tx, ty) || fieldCreek(tx + 0.5, ty + 0.5); }

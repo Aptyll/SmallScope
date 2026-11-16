@@ -10,16 +10,24 @@ stable per tile.
 - `WORLD = 140` tiles of `TILE = 16` px (js/sim/core.js) → a 2240×2240 px world, square.
   **The field** that fills it is one signed distance (`fieldOpen`, js/sim/field.js): negative on
   ground a body can walk, written for RED's top-left quarter and folded four ways (`fieldFold`,
-  `fieldFour`), so both sides and both halves are the same shape by construction. Two lanes are the
+  `fieldFour`), so both sides and both halves are the same shape by construction, until the
+  groves' edges wander. Two lanes are the
   two halves of one rounded rectangle round the middle (`laneLoop`); each side's perch sits on it at
-  the middle of its own end ([the perch](rendering/the-perch.md)); a walled jungle fills the inside
-  (`JUNGLE_BOX`, `FIELD_WALLS`, met in smooth unions so every inside corner gets the same fillet);
+  the middle of its own end ([the perch](rendering/the-perch.md)); a jungle of pine groves fills the inside
+  (`JUNGLE_BOX`, `FIELD_GROVES`: strokes and ovals met in smooth unions, `fieldGroves`, whose edges
+  wander on the map's noise read folded left to right only, `fieldWander`, so blue and red are mirror
+  images but the top and bottom halves differ; `FIELD_WAYS` and a clearing round every camp and the
+  pump stay open whatever the wander does); a creek of rough ice runs down the middle column from the
+  orca's pool, round the middle's grove, to a pool in the bear's den (`fieldCreek`, `DEN_POOL`);
   two pits open off the lanes, the orca's above the top one and the black bear's below the bottom
   one (`LAIR`, `LAIR_MOUTH`); and a pine border at least `FIELD_EDGE` tiles deep stands round it
   all. RED (team 0) holds the west end, BLUE the east. Nothing rolls.
 - `genWorld()` (first at boot, js/app/boot.js) stands a wall pine (`wall: true`, which never falls:
   `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
-  is negative, and freezes the orca's pool (ground `1`, `orcaLakeAt`). The camps, towers, stalls,
+  is negative, and freezes the orca's pool and the creek (ground `1`, `orcaLakeAt`, `fieldCreek`). It reads the
+  open tiles off `fieldGrid`, which also closes any open tile no `FIELD_PATH`-wide square covers and
+  any pocket a walk from the perch never reaches, so every way through is at least `FIELD_PATH` wide.
+  All three ices are rough (`fieldRough`, read by `slickUnder`): they hold a foot like snow. The camps, towers, stalls,
   pumps and drifts are laid on it after, each from written-down sites.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
   [Ice holes](#ice-holes)), `3` the road. **Open water is `waterAt(tx, ty)`**, a carved hole, the

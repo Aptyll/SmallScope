@@ -608,7 +608,7 @@ function iceUnder(p) {
 // reach from the hole. A rival hero's ice glides anywhere.
 function slickUnder(p) {
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !orcaLakeAt(ftx, fty)) || heroIce(p);
+  return (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1 && !fieldRough(ftx, fty)) || heroIce(p);
 }
 function clampWorld(p) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
