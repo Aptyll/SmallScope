@@ -637,39 +637,20 @@ function drawPlayer(p, ex, ey, now, stage) {
     // body to square up a badge, and the frame would still grow rightwards the
     // moment a state landed, so it is left as it is.
     if (st) drawStatusPlate(fx + 8, hy - 9, p, st);
-    // bow draw meter: gold while charging, blinking white and settling to
-    // pale gold the moment the draw is full - brighter, never a new hue, so it
-    // stays the bow's colour next to a red rival's bar. Drawn for everyone -
-    // it is the tell that says a shot is coming. It sits inside the shared frame directly above the hp bar, the
-    // mirror of the stamina bar below it: its backing adds the rows above the
-    // hp backing (frame top at hy-11, fill hy-10..-9) and the hp backing's top
-    // row hy-8 is the frame-colour gap row, so the frame stays one outline.
-    // The same slot carries the renock cooldown when the bow is not drawn. So
-    // one strip above a head answers the only question a fight asks about it:
-    // gold filling = drawing (a shot is coming), pale gold = it peaked, slate
-    // filling = reloading (it is not), pale gold again for the instant it came
-    // back (the bow's own ready colour; white is the stamina bar's), and the
-    // recall's channel in the side's own glow (js/sim/recall.js: a hero
-    // leaving, and a hit keeps them there).
-    // All of them use the identical geometry, so the bar never jumps when one
-    // hands over to the next.
-    if (p.recallT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
-      const drawing = p.charging, home = p.recallT > 0;
-      // the reload divides by attackCycle - the same span the reticle's marks
-      // read - so the slate fill starts at zero the frame the
-      // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
-      const frac = home ? 1 - p.recallT / RECALL_T
-        : drawing ? drawPow(p)
-        : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, attackCycle(p));
+    // the recall's channel in the side's own glow (js/sim/recall.js: a hero
+    // leaving, and a hit keeps them there), inside the shared frame directly
+    // above the hp bar: its backing adds the rows above the hp backing
+    // (frame top at hy-11, fill hy-10..-9) and the hp backing's top row hy-8
+    // is the frame-colour gap row, so the frame stays one outline. A basic
+    // attack has no bar: its wind-up is the weapon in the hands (League's).
+    if (p.recallT > 0) {
+      const frac = 1 - p.recallT / RECALL_T;
       const x = fx - 7, y = hy - 10 - lift;
       ctx.fillStyle = BAR_FRAME;
       ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only
       ctx.fillStyle = BAR_TRACK;
       ctx.fillRect(x, y, 14, 2);         // the fill rows; the gap row under is the hp backing's
-      ctx.fillStyle = home ? TEAMS[skin(p.team)].glow
-        : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
-        : frac < 1 ? DRAW_COL
-        : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;
+      ctx.fillStyle = TEAMS[skin(p.team)].glow;
       ctx.fillRect(x, y, Math.max(1, Math.round(14 * frac)), 2);
     }
   });
@@ -695,7 +676,7 @@ function drawGhost(p, ex, ey) {
 // where a drawn weapon points: the local body off its own live pointer, any
 // other off the aim its step held (aimHold, js/sim/player.js) - a client is
 // never sent another body's input
-function aimAngle(p) { return p === player ? handAim(p) : p.aimA; }
+function aimAngle(p) { return p.charging && p.atkOn ? p.aimA : p === player ? handAim(p) : p.aimA; } // a wind-up faces its mark (atkFace, js/sim/attack.js)
 
 // the hero's weapon, drawn on a player: carried at the hand while idle or
 // walking, swept along the arc during a melee swing, aimed at that player's

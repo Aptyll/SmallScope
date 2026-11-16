@@ -15,7 +15,6 @@ const RETICLE = {
   lock: { col: '#ffd95c', gap: 3, diag: true },
   hunt: { col: '#f2cc6a', gap: 4, diag: true },
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
-  bow:  { col: '#ffd95c', gap: 6, diag: true },
   amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
 };
 const NOCK_STEPS = 6; // game px the renock marks fall in from, one look per px
@@ -28,11 +27,7 @@ function cursorLook(info, now) {
   if (info.kind !== 'reticle') return { key: info.kind + base, kind: info.kind, base };
   const R = RETICLE[info.mode];
   let gap = R.gap, col = R.col;
-  if (info.mode === 'bow') {
-    // the ring closes as the draw fills and goes pale gold at full, like the meter
-    gap = Math.round(6 - 3 * info.frac);
-    if (info.frac >= 1) col = DRAW_FULL_COL;
-  } else if (info.mode === 'hunt') {
+  if (info.mode === 'hunt') {
     gap = 4 + (((now * 3) | 0) % 2); // slow breathing
   }
   // the bow's renock: how many px out the four corner marks still are, or -1

@@ -68,17 +68,15 @@ function tipValW(v) { return Array.isArray(v) ? v.reduce((w, sg) => w + pixelTex
 // icon, plate, rim }. Everything below builds one of
 // these and drawTooltip is the only thing that knows how to paint it.
 // THE HERO'S BASIC ATTACK (CLASSES[c].attack, js/sim/attack.js): what one
-// full-draw hit does, how often it comes, and how far it reaches - read off
-// the same functions the sim swings by, so the card can never disagree
+// hit does, how often it comes, and how far it reaches - read off the same
+// functions the sim strikes by, so the card can never disagree
 function tipAttack(p) {
   const A = attackOf(p), tp = cellPlate(true);
   const d = { title: A.name, tcol: '#f4f7ff', kind: tr('tip.basicAttack'), rows: [], notes: [],
     icon: SPRITES.weaponArt[A.art], plate: tp.plate, rim: tp.rim };
-  d.rows.push([tr('tip.dmg'), String(attackDmg(p, 1, false)), '#e0637a']);
-  d.rows.push([tr('tip.fullCharge'), tipSec(drawTime(p)), '#f4f7ff']);
-  d.rows.push([tr('tip.betweenHits'), tipSec(attackCycle(p)), '#f4f7ff']);
-  const reach = A.cut ? A.cut.reach : (() => { const f = shotFlight(A.shot, 1); return Math.round(f.spd * f.life); })();
-  d.rows.push([tr('tip.reach'), String(reach), '#f4f7ff']);
+  d.rows.push([tr('tip.dmg'), String(attackDmg(p)), '#e0637a']);
+  d.rows.push([tr('tip.as'), STAT_AS(statOf(p, 'as')), '#f4f7ff']);
+  d.rows.push([tr('tip.range'), String(A.range), '#f4f7ff']);
   return d;
 }
 // the gold plate: the exact figure, since the plate itself is rounded

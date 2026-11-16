@@ -115,7 +115,7 @@ const CLASSES = [
     kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
     rankOrder: [0, 2, 1], // the verdict, the march, the brace
-    attack: { name: 'OATH GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
+    attack: { name: 'OATH GREATSWORD', art: 'sword', as: 0.77, range: 24, wind: 0.28, cut: { half: 1.05 } },
     // its art: the heroArt('armatos') row in js/sprites/armatos.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'armatos',
@@ -132,7 +132,7 @@ const CLASSES = [
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
     grow: { hp: 10, dmg: 1.7, as: 0.01, armor: 2.6 },
     rankOrder: [0, 2, 1], // the sever, the yoke, the heart
-    attack: { name: 'CHAIN GREATSWORD', art: 'sword', cycle: 30 / 60, kb: 1.2, cut: { reach: 28, half: 1.05 } },
+    attack: { name: 'CHAIN GREATSWORD', art: 'sword', as: 0.77, range: 24, wind: 0.28, cut: { half: 1.05 } },
     // its art: the heroArt('fortiva') row in js/sprites/fortiva.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'fortiva',
@@ -147,7 +147,7 @@ const CLASSES = [
     name: 'BELLA', role: 'THE IMPERIAL GENERAL', style: 'assassin', passive: 'calculated', // HERO_PASSIVE, js/sim/heroes.js
     blurb: ['FIND THE WEAKNESS. SPEND IT FIRST.', 'THE LUNGE, THE SLIP AND THE PARRY CHAIN INTO EACH OTHER.', 'CALL OUT ONE HERO AND FINISH THEM.'],
     story: 'SHE WON THE EMPIRE A WAR ITS COURT HAD ALREADY CALLED LOST, AND THE COURT NEVER FORGAVE HER. TRAITOR WAS THE KINDEST WORD THEY HAD. SHE KEPT THE SPATHA WITH THE EAGLE ON IT. SHE SAYS IT IS HERS NOW.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'EAGLE SPATHA', art: 'sword', cycle: 26 / 60, kb: 1, cut: { reach: 26, half: 0.95 } }, // quicker and a little shorter than ARMATOS's greatsword
+    attack: { name: 'EAGLE SPATHA', art: 'sword', as: 0.81, range: 22, wind: 0.25, cut: { half: 0.95 } }, // quicker and a little shorter than ARMATOS's greatsword
     // its art: the heroArt('bella') row in js/sprites/bella.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'bella',
@@ -167,7 +167,7 @@ const CLASSES = [
     story: "SHE KEPT THE GREAT HEARTH IN THE EMPEROR'S HALL, AND ONE HARD WINTER SHE CARRIED ITS COALS TO A VILLAGE THAT HAD NONE. THE COURT DID NOT FORGIVE IT. SHE STILL CARRIES THE LAST OF THOSE COALS IN HER LANTERN, AND EVERYONE IN THE VALLEY WANTS TO SIT NEAR HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's ember, not an arrow: a little shorter and slower than the shortbow
     staff: 'crook', // her CROOK AND LANTERN, carried upright (HERO_STAVES, js/draw/ignia.js)
-    attack: { name: 'CROOK AND LANTERN', art: 'staff', cycle: 60 / 60, kb: 0.6, shot: { speed: 260, life: 0.85, col: '#ff9a3a', look: 'ember' } },
+    attack: { name: 'CROOK AND LANTERN', art: 'staff', as: 0.56, range: 80, wind: 0.22, shot: { speed: 260, col: '#ff9a3a', look: 'ember' } },
     base: { hp: 84, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6, dmg: 1.1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 1, 2], // the brand, the brushfire, the warm hands
@@ -186,7 +186,7 @@ const CLASSES = [
     story: "SHE STEERED THE EMPIRE'S FLEET BY THE STARS, AND WARNED THE ADMIRALS A STORM WAS COMING. THEY SAILED ANYWAY, AND SHE BROUGHT HER ONE SHIP HOME. SHE KEPT ITS STAR-GLASS, AND ON THE VALLEY'S CLEAR NIGHTS SHE GATHERS THE STARLIGHT IN IT AND TURNS IT ON THE SNOW.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's star bolt: a little shorter and slower than the shortbow
     staff: 'shard', // her STAR-GLASS, carried upright (HERO_STAVES, js/draw/aura.js)
-    attack: { name: 'STAR-GLASS', art: 'starstaff', cycle: 66 / 60, kb: 0.5, shot: { speed: 270, life: 0.95, col: '#e6f8ff', look: 'starbolt' } },
+    attack: { name: 'STAR-GLASS', art: 'starstaff', as: 0.53, range: 84, wind: 0.22, shot: { speed: 270, col: '#e6f8ff', look: 'starbolt' } },
     base: { hp: 78, dmg: 13, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.5, dmg: 1, as: 0.01, armor: 1.7 },
     rankOrder: [0, 1, 2], // the falling star, the drifting light, the step
@@ -205,7 +205,7 @@ const CLASSES = [
     story: "SHE MENDED THE EMPIRE'S SOLDIERS ON BOTH SIDES OF A BORDER, WHICH THE EMPIRE CALLED TREASON. IN THE VALLEY THERE ARE NO SIDES IN HER TENT. SHE CHARGES BOTH COMPANIES THE SAME PRICE, AND NOBODY ARGUES WITH HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's sprig: the ember's reach, a little weaker; her keys are the point
     staff: 'snowdrop', // her SNOWDROP STAFF, carried upright (HERO_STAVES, js/draw/salvia.js)
-    attack: { name: 'SNOWDROP STAFF', art: 'dropstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 250, life: 0.85, col: '#9cc87a', look: 'sprig' } },
+    attack: { name: 'SNOWDROP STAFF', art: 'dropstaff', as: 0.55, range: 78, wind: 0.22, shot: { speed: 250, col: '#9cc87a', look: 'sprig' } },
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 5.8, dmg: 0.9, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the poultice, the cloak, the snowdrops
@@ -223,7 +223,7 @@ const CLASSES = [
     story: "SHE LIT THE EMPIRE'S ROAD LAMPS AT DUSK, AND WAS SENT AWAY FOR LIGHTING THE WAY OUT FOR PEOPLE WHO WERE NOT SUPPOSED TO LEAVE. THE VALLEY GOES BLUE AT NIGHT AND THE CLAIM DOES NOT STOP FOR IT. SOMEBODY HAS TO CARRY A LIGHT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a spark off her lantern: the staff mages' reach, a little stronger than SALVIA's sprig
     staff: 'lantern', // her LANTERN, hung from her hand (HERO_STAVES, js/draw/lucerna.js)
-    attack: { name: 'LANTERN', art: 'lantern', cycle: 62 / 60, kb: 0.6, shot: { speed: 260, life: 0.8, col: '#f2cc6a', look: 'lampspark' } },
+    attack: { name: 'LANTERN', art: 'lantern', as: 0.55, range: 78, wind: 0.22, shot: { speed: 260, col: '#f2cc6a', look: 'lampspark' } },
     base: { hp: 88, dmg: 13, armor: 12, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6.2, dmg: 1, as: 0.01, armor: 2 },
     rankOrder: [0, 2, 1], // the crook, the shoo, the lantern
@@ -242,7 +242,7 @@ const CLASSES = [
     story: "SHE KEPT THE WEATHER RECORDS FOR THE EMPIRE'S COURT, AND TOLD THEM THE COLD YEARS WERE COMING AND WOULD NOT STOP. THEY SENT HER AWAY FOR SPOILING THE HARVEST FEAST. SHE CAME UP THE PASS TO SEE WHETHER SHE WAS RIGHT. THE SNOW HAS NOT STOPPED, AND SHE HAS LEARNED TO PUT IT WHERE SHE WANTS.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's frost bolt: AURA's star bolt, a little shorter
     staff: 'flake', // her SNOWFLAKE STAFF, carried upright (HERO_STAVES, js/draw/hiems.js)
-    attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#e6f8ff', look: 'frostbolt' } },
+    attack: { name: 'SNOWFLAKE STAFF', art: 'flakestaff', as: 0.55, range: 82, wind: 0.22, shot: { speed: 270, col: '#e6f8ff', look: 'frostbolt' } },
     base: { hp: 82, dmg: 13, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 4 },
     grow: { hp: 5.8, dmg: 1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 2, 1], // the icicle, the cold snap, the clear ice
@@ -259,7 +259,7 @@ const CLASSES = [
     name: 'RUPES', role: 'THE AVALANCHE', style: 'tank', passive: 'snowpack', // HERO_PASSIVE, js/sim/rupes.js
     blurb: ['BE THE SLOPE.', 'THE HITS YOU TAKE PACK SNOW ONTO YOU. SHED IT IN ONE BURST.', 'ROLL FROM FAR OFF: THE FURTHER YOU ROLL, THE BIGGER THE BURST.'],
     story: "HE CUT ICE FOR THE EMPIRE'S CELLARS UNTIL THE QUARRY FACE CAME DOWN, AND HE HELD THE WAY OUT OPEN WITH HIS BACK UNTIL THE LAST CUTTER WAS CLEAR. THE EMPIRE BILLED HIM FOR THE ICE. IN THE VALLEY HE DIGS WHERE THE SNOW IS DEEPEST, BECAUSE IT NEVER SURPRISES HIM.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'ICE MAUL', art: 'sword', cycle: 34 / 60, kb: 1.4, cut: { reach: 27, half: 1.05 } }, // a little slower than ARMATOS's greatsword, a harder shove
+    attack: { name: 'ICE MAUL', art: 'sword', as: 0.72, range: 22, wind: 0.3, cut: { half: 1.05 } }, // a little slower than ARMATOS's greatsword, the same reach
     base: { hp: 134, dmg: 15, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 10.5, dmg: 1.3, as: 0.008, armor: 2.9 },
     rankOrder: [0, 1, 2], // the heave, the shed, the shoulder
@@ -278,7 +278,7 @@ const CLASSES = [
     blurb: ['RUN WITH THE PACK.', 'LEAP IN, MARK THEM, AND STAY ON THEM.', 'CALL THE WOLVES: ONE RIVAL CANNOT OUTRUN THEM.'],
     story: 'THE EMPIRE LEFT HIM ON THE MOUNTAIN AS A CHILD. THE WOLVES FOUND HIM FIRST AND KEPT HIM WARM THROUGH THE WINTER. HE GREW UP RUNNING WITH THEM, AND HE STILL SHARES EVERY CATCH WITH THE PACK.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a spear's thrust: a touch longer and narrower than ARMATOS's greatsword's cut
-    attack: { name: 'HUNTING SPEAR', art: 'spear', cycle: 28 / 60, kb: 1, cut: { reach: 30, half: 0.8 } },
+    attack: { name: 'HUNTING SPEAR', art: 'spear', as: 0.79, range: 26, wind: 0.26, cut: { half: 0.8 } },
     base: { hp: 112, dmg: 17, armor: 18, ap: 0, haste: 0, ms: PLAYER_SPEED + 2 },
     grow: { hp: 8.5, dmg: 1.6, as: 0.012, armor: 2.4 },
     rankOrder: [0, 2, 1], // the lunge, the snap, the howl
@@ -298,7 +298,7 @@ const CLASSES = [
     story: "SHE BLEW THE HORN FOR THE EMPIRE'S RETREATS, AND ONCE BLEW IT WITHOUT AN ORDER AND BROUGHT A WHOLE COLUMN HOME. THEY TOOK THE HORN AWAY FOR IT. NOW SHE CARRIES HER OWN, IT CALLS A COMPANY FORWARD, AND THE SNOW COMES OFF THE PINES WHEN IT DOES.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a note off her horn: the staff mages' reach, a little short of it
     staff: 'horn', // her HORN, carried upright (HERO_STAVES, js/draw/bucina.js)
-    attack: { name: 'HORN', art: 'horn', cycle: 62 / 60, kb: 0.6, shot: { speed: 255, life: 0.8, col: '#cfe0f2', look: 'hornnote' } },
+    attack: { name: 'HORN', art: 'horn', as: 0.55, range: 76, wind: 0.22, shot: { speed: 255, col: '#cfe0f2', look: 'hornnote' } },
     base: { hp: 92, dmg: 14, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 6.5, dmg: 1.1, as: 0.01, armor: 2.2 },
     rankOrder: [1, 0, 2], // the note, the blast, the echo
@@ -315,7 +315,7 @@ const CLASSES = [
     name: 'NIX', role: 'THE SNOWBLIND', style: 'assassin', passive: 'nightwatch', // HERO_PASSIVE, js/sim/nix.js
     blurb: ['THE NIGHT IS HERS TO KEEP.', 'THE SNOW HIDES HER. THE FIRST BLOW FROM IT HITS HARDEST.', 'SEEN IN THE OPEN, SHE IS EASY TO CATCH.'],
     story: "SHE WAS THE EMPIRE'S BEST SCOUT UNTIL SHE CAME HOME WITH A TRUE REPORT NOBODY WANTED TO READ. IN THE VALLEY SHE KEEPS WATCH THROUGH THE LONG NIGHTS SO THE DIGGERS CAN SLEEP. SHE DOES NOT GIVE HER NAME, SO THE COMPANY GAVE HER ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'ICE DIRK', art: 'sword', cycle: 24 / 60, kb: 0.8, cut: { reach: 22, half: 0.9 } }, // quicker and shorter than the spatha
+    attack: { name: 'ICE DIRK', art: 'sword', as: 0.84, range: 18, wind: 0.22, cut: { half: 0.9 } }, // quicker and shorter than the spatha
     // its art: the heroArt('nix') row in js/sprites/nix.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'nix',
@@ -335,7 +335,7 @@ const CLASSES = [
     story: "HE KEPT THE EMPIRE'S WATER CLOCKS RUNNING, AND ONE WINTER HE BUILT A CLOCK THAT RAN THE WHOLE CITY'S FOUNTAINS AT ONCE. IT FLOODED THE PALACE. THEY THANKED HIM AND SENT HIM UP THE PASS. THE WORKS HERE ARE FULL OF OLD MACHINES SOMEBODY BUILT WITH CARE, AND HE MEANS TO MEND EVERY ONE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's brass bolt: HIEMS's frost bolt's pace
     staff: 'clock', // his CLOCK STAFF, carried upright (HERO_STAVES, js/draw/faber.js)
-    attack: { name: 'CLOCK STAFF', art: 'clockstaff', cycle: 62 / 60, kb: 0.5, shot: { speed: 270, life: 0.85, col: '#f2cc6a', look: 'cog' } },
+    attack: { name: 'CLOCK STAFF', art: 'clockstaff', as: 0.55, range: 80, wind: 0.22, shot: { speed: 270, col: '#f2cc6a', look: 'cog' } },
     base: { hp: 80, dmg: 12, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED - 6 },
     grow: { hp: 5.6, dmg: 1, as: 0.01, armor: 1.8 },
     rankOrder: [0, 1, 2], // the spark, the small machine, the clockspring
@@ -354,7 +354,7 @@ const CLASSES = [
     story: "SHE CARRIED THE EMPIRE'S MESSAGES DOWN ITS FROZEN CANALS, FASTER THAN ANY HORSE. ONE NIGHT SHE READ THE ORDER SHE CARRIED: BURN A VILLAGE THAT WOULD NOT PAY. SHE SKATED THERE FIRST AND WARNED THEM. NOW SHE CARRIES WORD FOR ANYONE WHO NEEDS IT CARRIED FAST.",
     // a sling stone: a shorter, quicker throw than an arrow, barely slowed by her skating
     staff: 'sling', // her STAFF SLING, carried upright (HERO_STAVES, js/draw/velox.js)
-    attack: { name: 'STAFF SLING', art: 'sling', cycle: 50 / 60, kb: 0.6, shot: { speed: 300, life: 0.6, col: '#9aa3b8', look: 'slingstone' } },
+    attack: { name: 'STAFF SLING', art: 'sling', as: 0.75, range: 88, wind: 0.18, shot: { speed: 300, col: '#9aa3b8', look: 'slingstone' } },
     base: { hp: 82, dmg: 14, armor: 10, ap: 0, haste: 0, ms: PLAYER_SPEED + 3 },
     grow: { hp: 6, dmg: 1.2, as: 0.016, armor: 1.7 },
     rankOrder: [0, 2, 1], // the skip stone, the quick step, the ice lane
@@ -373,7 +373,7 @@ const CLASSES = [
     blurb: ['PATIENT, THEN SUDDEN.', 'YOUR HAWK FINDS THEM. YOUR KNIVES BITE HARDER ON WHAT IT MARKS.', 'WITHOUT A MARK YOU ARE WEAK. PICK THE LONE RIVAL.'],
     story: "HE KEPT THE HAWKS FOR AN IMPERIAL HUNT AND LET THEM ALL FLY THE DAY THE EMPIRE BURNED THE HUNTING PARK FOR A PARADE GROUND. ONE CAME BACK. IT IS THE ONLY ONE HE WILL SPEAK TO.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a thrown knife: short, quick, a little further than a blade
-    attack: { name: 'THROWING KNIFE', art: 'knife', cycle: 40 / 60, kb: 0.5, shot: { speed: 330, life: 0.42, col: '#c8d2e4', look: 'knife' } },
+    attack: { name: 'THROWING KNIFE', art: 'knife', as: 0.71, range: 66, wind: 0.18, shot: { speed: 330, col: '#c8d2e4', look: 'knife' } },
     // its art: the heroArt('falco') row in js/sprites/falco.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'falco',
@@ -390,7 +390,7 @@ const CLASSES = [
     name: 'MARIS', role: 'THE ICE DIVER', style: 'tank', passive: 'coldwater', // HERO_PASSIVE, js/sim/maris.js
     blurb: ['THE THING UNDER THE ICE.', 'ON ICE AND BY THE WATER YOU ARE QUICK, AND YOUR STRIKES CHILL.', 'ONCE YOU SURFACE YOU HAVE NO WAY OUT.'],
     story: "SHE DOVE FOR THE EMPIRE'S SUNKEN GRAIN BARGES IN WATER NOBODY ELSE WOULD TOUCH, AND WAS SENT AWAY WHEN SHE WOULD NOT DIVE FOR A SUNKEN TAX CHEST. SHE SAYS THE ORCA IN THE CISTERN POOL IS THE ONLY HONEST THING IN THE VALLEY. SHE GIVES IT THE FIRST FISH OF EVERY CATCH.", // the wiki's hero page (docs/dev/lore.md)
-    attack: { name: 'HARPOON', art: 'sword', cycle: 32 / 60, kb: 1.1, cut: { reach: 28, half: 0.8 } }, // a thrust: ARMATOS's greatsword's reach, narrower
+    attack: { name: 'HARPOON', art: 'sword', as: 0.74, range: 26, wind: 0.28, cut: { half: 0.8 } }, // a thrust: ARMATOS's greatsword's reach, narrower
     // its art: the heroArt('maris') row in js/sprites/maris.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'maris',
@@ -409,7 +409,7 @@ const CLASSES = [
     blurb: ['OWN THE TREELINE.', 'WAIT IN THE WOODS, STEP OUT, CHOP HARD, STEP BACK.', 'FELL A PINE ACROSS THE FIGHT.'],
     story: "HE FELLED TIMBER FOR THE EMPIRE'S SHIPS UNTIL THERE WAS NO FOREST LEFT TO FELL, THEN REFUSED TO BURN THE LAST ONE. THE VALLEY'S PINES GREW UP THROUGH THE WORKS AND NOBODY OWNS THEM. HE LIKES THAT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // an axe's blow: ARMATOS's greatsword's reach, a little wider and slower
-    attack: { name: 'FELLING AXE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 26, half: 1 } },
+    attack: { name: 'FELLING AXE', art: 'sword', as: 0.72, range: 22, wind: 0.3, cut: { half: 1 } },
     // its art: the heroArt('lignum') row in js/sprites/lignum.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'lignum',
@@ -429,7 +429,7 @@ const CLASSES = [
     blurb: ['SET UP, THEN STRIKE FROM FAR AWAY.', 'EVERY THIRD BOLT HITS LIKE A HAMMER.', 'PIN RIVALS TO THE TREES.'],
     story: "SHE BUILT THE EMPIRE'S SIEGE ENGINES. WHEN ONE OF THEM WAS TURNED ON THE CITY THAT PAID FOR IT, SHE SAID SO, AND WAS SENT OVER THE PASS FOR IT. THE ROAD TOWERS IN THE VALLEY CARRY CROSSBOWS SHE COULD HAVE DRAWN. SHE STUDIES THEM MORE THAN SHE LETS ON.",
     // a crossbow bolt: further and harder than an arrow, and a long wind between
-    attack: { name: 'HEAVY ARBALEST', art: 'arbalest', cycle: 80 / 60, kb: 1.3, shot: { speed: 430, life: 0.82, col: '#c3ccd8', look: 'bolt' } },
+    attack: { name: 'HEAVY ARBALEST', art: 'arbalest', as: 0.52, range: 96, wind: 0.25, shot: { speed: 430, col: '#c3ccd8', look: 'bolt' } },
     base: { hp: 78, dmg: 20, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 5 },
     grow: { hp: 5.6, dmg: 1.7, as: 0.01, armor: 1.6 },
     rankOrder: [0, 2, 1], // the pin, the crank back, the pavise
@@ -448,7 +448,7 @@ const CLASSES = [
     blurb: ['GO OVER, NOT AROUND.', 'VAULT IN, TIE THEM, STRIKE WHAT YOU HOLD.', 'STAKE A RING THEY CANNOT LEAVE.'],
     story: "HE GUIDED THE EMPIRE'S COLUMNS OVER THE PASS FOR TWENTY WINTERS. THE LAST COLUMN HE TOOK WAS FAMILIES THE EMPIRE MEANT TO KEEP, ROPED TOGETHER IN A WHITEOUT, AND HE BROUGHT EVERY ONE OF THEM DOWN. HE HAS NOT BEEN BACK UP SINCE.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // an ice axe's blow: quicker and a little shorter than LIGNUM's felling axe
-    attack: { name: 'ICE AXE', art: 'sword', cycle: 30 / 60, kb: 1, cut: { reach: 24, half: 0.95 } },
+    attack: { name: 'ICE AXE', art: 'sword', as: 0.77, range: 20, wind: 0.26, cut: { half: 0.95 } },
     // its art: the heroArt('clivus') row in js/sprites/clivus.js (its look, its paint,
     // the glyph and the emblem)
     id: 'clivus',
@@ -468,7 +468,7 @@ const CLASSES = [
     blurb: ['PLANT YOUR FEET AND FILL THE SNOW.', 'WALK OVER YOUR ARROWS TO SHOOT FASTER.', 'CALL THEM BACK THROUGH YOUR RIVALS.'],
     story: "HE MADE THE EMPIRE'S ARROWS, TEN THOUSAND A WINTER. WHEN A CARTLOAD WAS SENT AGAINST A TOWN THAT HAD DONE NOTHING, HE BROKE EVERY SHAFT ON THE CART AND WALKED OVER THE PASS. NOW HE CUTS HIS OWN FROM THE VALLEY'S WILLOWS AND WILL NOT LEAVE ONE LYING IN THE SNOW.",
     // a longbow arrow: a little further and quicker than VELOX's stone, well short of the arbalest
-    attack: { name: 'WILLOW LONGBOW', art: 'longbow', cycle: 46 / 60, kb: 0.7, shot: { speed: 400, life: 0.68, col: '#c8a46a' } },
+    attack: { name: 'WILLOW LONGBOW', art: 'longbow', as: 0.78, range: 92, wind: 0.18, shot: { speed: 400, col: '#c8a46a' } },
     base: { hp: 80, dmg: 15, armor: 9, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 5.8, dmg: 1.5, as: 0.02, armor: 1.6 },
     rankOrder: [0, 2, 1], // the volley, the gather, the twin nock
@@ -487,7 +487,7 @@ const CLASSES = [
     blurb: ['STAND YOUR GROUND AND DIG IN.', 'GO UNDER THE SNOW, COME UP UNDER THEM.', 'BREAK THE GROUND UNDER THEIR FEET.'],
     story: "THE EMPIRE DUG IT OUT OF THE OLD WORKS AND SET IT TO DIG THEIR MINES. THE WINTER A SLOPE CAME DOWN ON A VILLAGE, IT WALKED OFF THE MINE AND DUG UNTIL THE LAST CHILD WAS OUT. THEY SENT IT UP THE PASS FOR THAT. IT STILL DIGS FOR ANYONE WHO ASKS.", // who it was before the pass: the wiki's hero page (docs/dev/lore.md)
     // a spade's blow: a touch slower and wider than CLIVUS's ice axe
-    attack: { name: 'SPADE', art: 'sword', cycle: 34 / 60, kb: 1.2, cut: { reach: 25, half: 1 } },
+    attack: { name: 'SPADE', art: 'sword', as: 0.72, range: 22, wind: 0.28, cut: { half: 1 } },
     // its art: the heroArt('fossor') row in js/sprites/fossor.js (its look, its paint,
     // the glyph and the emblem)
     id: 'fossor',
@@ -507,7 +507,7 @@ const CLASSES = [
     blurb: ['NOBODY GETS LEFT IN THE SNOW.', 'LIFT AN ALLY OUT OF THE FIGHT. THEIR HANDS STAY FREE.', 'LITTLE DAMAGE OF ITS OWN.'],
     story: "IT WAS BUILT IN THE OLD WORKS TO HAUL THE EMPIRE'S SILVER OVER THE PASS. ON THE LAST RETREAT IT SET THE SILVER DOWN IN THE SNOW AND CARRIED THE WOUNDED INSTEAD, ONE AT A TIME, ALL NIGHT. THE EMPIRE LEFT IT BEHIND FOR THAT. IT STILL KEEPS A BEDROLL ON ITS BACK FOR WHOEVER NEEDS IT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a walking pole's blow: a little longer and slower than the ice axe
-    attack: { name: 'WALKING POLE', art: 'sword', cycle: 36 / 60, kb: 1.2, cut: { reach: 26, half: 0.85 } },
+    attack: { name: 'WALKING POLE', art: 'sword', as: 0.7, range: 26, wind: 0.28, cut: { half: 0.85 } },
     // its art: the heroArt('portitor') row in js/sprites/portitor.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'portitor',
@@ -690,7 +690,8 @@ function makeInput() {
   return {
     mx: 0, my: 0,        // movement axis (the sim normalises)
     aimX: 0, aimY: 0,    // world-space aim point (cursor, for the human)
-    fire: false,         // bow held: press draws, release looses
+    fire: false,         // the attack button held (the CLICK scheme's own edges; the sim attacks by `atk`)
+    atk: null,           // the MARK: the rival body or building the basic attack is on (attackStep, js/sim/attack.js)
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
@@ -830,7 +831,8 @@ class Player {
     this.dir = 'down'; this.faceT = 0; this.moving = false; this.animT = 0;
     this.hp = this.maxHp;
     this.dead = false;
-    this.charging = false; this.chargeT = 0;      // bow draw state
+    this.charging = false; this.chargeT = 0;      // the basic attack's wind-up (attackStep, js/sim/attack.js)
+    this.atkOn = null;                             // ...and the mark it is winding up on
     // the potion being drunk: its heal's time left, and its motes' clock (js/sim/items.js)
     this.potT = 0; this.potFxT = 0;
     // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)

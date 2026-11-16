@@ -143,7 +143,6 @@ function render() {
   drawParticles(ex, ey);
   drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
 
-  drawAimLine(ex, ey, now);
   drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
 
   drawArrows(ex, ey, now);
@@ -437,9 +436,6 @@ function cursorInfo() {
   // the CLICK scheme's armed attack-move: the pointer is the order waiting to
   // be laid, and reads as one wherever it is
   if (ckOn() && ck.arm) return ret('amove', false);
-  if (player.charging) {
-    return ret('bow', false, { frac: drawPow(player) });
-  }
   // a living thing under the pointer: hunting reticle (unitUnder, actions.js
   // - the boxes the CLICK scheme's right button picks a body by, so the ring
   // and the click agree; a merchant is not a mark)
@@ -465,63 +461,4 @@ function drawOutlinedRects(rects, col, alpha) {
   ctx.globalAlpha = 1;
 }
 
-// Dotted flight line while the bow is drawn: a static dotted line from the
-// shot's spawn point through the cursor, exactly as far as the shot would fly
-// if loosed this instant, stopping at the first solid tile or body. A blade's
-// draw grows the wedge its cut will sweep instead.
-function drawAimLine(ex, ey, now) {
-  if (!player.charging || state.mode !== 'play' || window.DBG.hideUI) return;
-  const full = drawPow(player) >= 1;
-  const col = full ? DRAW_FULL_COL : DRAW_COL; // the meter's own two golds (draw-world.js)
-  const A = attackOf(player);
-  // a blade's draw grows a WEDGE, not a line: the exact reach the cut will
-  // sweep at this draw (slashReach, js/sim/attack.js), from the body along the aim
-  if (A.cut) {
-    const a = Math.atan2(mouseWY() - (player.y - BOW_Y), mouseWX() - player.x);
-    drawWedge(Math.round(player.x - ex), Math.round(player.y - 2 - ey), a, slashReach(A.cut, drawPow(player)), A.cut.half, col, full ? 0.85 : 0.6, 0);
-    return;
-  }
-  // the flight THIS draw buys, right now: shotFlight is the shot's own
-  // envelope, so the line grows out of the bow as the string comes back and
-  // its cap sits exactly where a shot loosed this instant would end
-  const fl = shotFlight(A.shot, drawPow(player));
-  const range = fl.spd * fl.life;
-  const x0 = player.x, y0 = player.y - BOW_Y; // exactly shootAttack()'s origin and direction
-  const dx = mouseWX() - x0, dy = mouseWY() - y0;
-  const d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
-  // walk the flight: stop at the first solid tile or the first animal the
-  // shot would hit (the arrow update's own 8px body test)
-  let len = range, blocked = null; // 'solid' | 'animal'
-  for (let s = 10; s < range; s += 3) {
-    const x = x0 + nx * s, y = y0 + ny * s;
-    if (isSolidTile(Math.floor(x / TILE), Math.floor(y / TILE))) { len = s; blocked = 'solid'; break; }
-    let hit = false;
-    for (const an of animals) if (unitFoe(player, an) && animalHit(an, x, y)) { hit = true; break; }
-    if (!hit) for (const q of players) {
-      if (enemyOf(player, q) && Math.hypot(q.x - x, q.y - 6 - y) < 7) { hit = true; break; }
-    }
-    if (hit) { len = s; blocked = 'animal'; break; }
-  }
-  // static dots (no animation - it read as clutter), fading toward the end of the flight
-  const sp = 6;
-  for (let s = 13; s < len - 3; s += sp) {
-    const a = 0.95 * (1 - (s / range) * 0.6);
-    const sx = Math.round(x0 + nx * s - ex), sy = Math.round(y0 + ny * s - ey);
-    ctx.globalAlpha = a * 0.6; ctx.fillStyle = '#0a0e23'; ctx.fillRect(sx + 1, sy + 1, 2, 2);
-    ctx.globalAlpha = a; ctx.fillStyle = col; ctx.fillRect(sx, sy, 2, 2);
-  }
-  ctx.globalAlpha = 1;
-  const tx1 = Math.round(x0 + nx * len - ex), ty1 = Math.round(y0 + ny * len - ey);
-  if (blocked) {
-    // impact cross where the shot lands: line colour on a solid, hunt amber on a body
-    const r = [];
-    for (let i = -2; i <= 2; i++) r.push([tx1 + i, ty1 + i, 1, 1], [tx1 + i, ty1 - i, 1, 1]);
-    drawOutlinedRects(r, blocked === 'animal' ? RETICLE.hunt.col : col, 0.9);
-  } else {
-    // range cap: a short bar square to the flight line
-    const r = [];
-    for (let i = -2; i <= 2; i++) r.push([Math.round(tx1 - ny * i), Math.round(ty1 + nx * i), 1, 1]);
-    drawOutlinedRects(r, col, 0.55);
-  }
-}
 

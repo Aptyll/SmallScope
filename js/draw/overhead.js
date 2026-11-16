@@ -69,12 +69,8 @@ function paintArrowPx(px) {
 //             old green-amber-red drain spent the rival's colour on "hurt",
 //             and a hurt ally read as an enemy at a glance.
 //   stamina - WHITE for every side (the one bar with no side to it).
-//   the draw meter - GOLD filling, PALE GOLD the instant it peaks (a single
-//             white blink, DRAW_FULL_FLASH, marks the moment), slate while
-//             the renock runs. Never orange: orange
-//             beside a red rival bar was two warm bars, and it is fire's.
-// The cursor's bow ring, the aim line and the mouse icon speak the same
-// gold / pale gold (render.js, ui.js), so "full draw" is one colour everywhere.
+//   the recall - the side's own glow filling while the channel runs. A
+//             basic attack has no bar: its wind-up is the weapon in the hands.
 // Every frame is one opaque ink, the name outline's (drawPixelTextOutline),
 // over one track grey: a see-through backing came out a different colour on
 // snow, on a pine, on another body's frame, so no two frames matched.
@@ -89,8 +85,6 @@ const BAR_NEUTRAL = '#f2cc6a';
 const HP_ROWS_ALONE = 3, NAME_RIM_SOFT = '#39446b';
 function staminaShown(p) { return p === player || p.dodgeCharges < DODGE_CHARGES || !!p.mount; } // a rider keeps it: the deer's bar hangs off its frame row
 const STAM_COL = '#f4f7ff', STAM_GHOST = '#9aa4c0'; // the fill, and the dimmer chunk just spent draining into place
-const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; // s of white the peak blinks for
-const NOCK_COL = '#6f7ca8'; // reloading
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
 

@@ -66,12 +66,6 @@ const TACKLE_SELF = 0.55;  // share of a tackle's damage the roller eats
 const TACKLE_MIN = 120;    // px/s driven into the blocked axis before a wall is a tackle, not a graze
 const ROLL_KB = 90;        // px/s shove out of a roll hit
 
-// left click is the hero's basic attack: the press only records the intent
-function clickAction(p) {
-  SFX.unlock();
-  p.input.fire = true;
-}
-
 // what E would work right now for p: the tile p is aiming at, if it holds
 // something a tool can harvest. Shared by
 // tryWork(), the AI and the cursor, so the lock ring can never lie about E.
