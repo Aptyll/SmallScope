@@ -647,7 +647,7 @@ Three small rules, and the teamwork is what they add up to:
   own soldier on that lane nearest a clash, or wait at the lane's hold point (`laneHold`,
   `LANE_HOLD` (0.6) of the way from their mouth to its middle) while they have no column there
   (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. JUNGLE is the JUNGLER: it
-  walks the side's own wolf dens on their clocks (`aiDenSpot`: a den with its pack up is walked
+  walks the side's own farm camps (`farm`) on their clocks (`aiDenSpot`: a camp with its pack up is walked
   to and hunted by rung 6; a cleared one is waited on just outside `CAMP_HOLD`, set off
   `AI_DEN_EARLY` before it is due, and worked away from until then). Any bot on a rival soldier its
   own wave is wearing down **holds its draw for the last hit** (`aiFarmFire` on rung 3's trigger):

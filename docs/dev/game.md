@@ -144,10 +144,11 @@ minimap and on the chart, with a short cue, for your own side only. It is a hint
 the two bots nearest an ATTACK, ON MY WAY, DEFEND or GO HERE say ON IT and go there, and the
 bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#bots).
 
-**Pine walls make the field a jungle** (js/sim/field.js): walls written for one quarter and folded
-to all four, with doors to walk through. **The camps are the jungle, and the jungle is symmetric.**
-Each side has two **WOLF DENS** in the top half and two **SCRAP PILES** of stray robots in the
-bottom half (placeholder art for now), all paying gold, and a rabbit warren by its base mouth. The
+**Pine groves make the field a jungle** (js/sim/field.js): groves with ragged edges, mirrored left to
+right, the top and bottom halves grown their own way, and a creek of rough ice down the middle.
+**The camps are the jungle, and the jungle is symmetric left to right.** Each side has two **SCRAP
+PILES** of stray robots in the bottom half, paying gold, and a rabbit warren by its base mouth; the
+top half's halls are open snow. The
 **BLACK BEAR** keeps its den below the bottom lane: first out at 5:00 and back 5:00 after each
 kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the side's count:
 +5% on every blow for the rest of the match, up to four. Its twin above the top lane is the

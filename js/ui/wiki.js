@@ -44,8 +44,6 @@ const wikiScroll = {};        // px scrolled per page id
 const WIKI_BEASTS = [
   { kind: 'rabbit', name: 'beast.rabbit',
     line: () => tr('beast.rabbitLine', { sight: FLEE_SIGHT, cd: RABBIT_DODGE_CD }) },
-  { kind: 'wolf', name: 'beast.wolf',
-    line: () => tr('beast.wolfLine', { n: CAMPS.resource.pop, bite: MONSTER.wolf.bite, lv: MONSTER.wolf.lvBite, back: CAMPS.resource.repop }) },
   { kind: 'scrap', name: 'beast.scrap',
     line: () => tr('beast.scrapLine', { n: CAMPS.scrap.pop, bite: MONSTER.scrap.bite, lv: MONSTER.scrap.lvBite, back: CAMPS.scrap.repop }) },
   { kind: 'alpha', name: 'beast.alpha',
@@ -460,15 +458,15 @@ function renderWiki(now, a) {
       for (let px = tx + pixelTextWidth(ab.name) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, y + 8, 1, 1);
       wrapText(ab.blurb, L.right - tx).forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'legend') {
-      // the frame, labelled: one wolf, and a leader from each part of the
+      // the frame, labelled: one robot, and a leader from each part of the
       // frame to what it is. Every beast on the page wears this same frame.
       // Each leader starts a clear pixel off the frame (the plate's left
       // edge, the mark's rim, the bar backing's right wall) and the three on
       // the right fan out - a column of their own each, label rows 10 px
       // apart - so no line crosses a plate, a bar or another line.
       const fx = L.left + 40, base = y + bl.h - 6;
-      const spr = SPRITES.wolf.right.idle[0], py = base + 2 - spr.height, half = beastFrame('wolf').w >> 1;
-      drawWikiBeast(WIKI_BEASTS.find((w) => w.kind === 'wolf'), fx, base, level, now);
+      const spr = SPRITES.scrap.right.idle[0], py = base + 2 - spr.height, half = beastFrame('scrap').w >> 1;
+      drawWikiBeast(WIKI_BEASTS.find((w) => w.kind === 'scrap'), fx, base, level, now);
       wikiLeader(fx - half - 6, py - 6, fx - half - 16, py - 6, tr('tip.level'), '#f2cc6a');
       wikiLeader(fx + 4, py - 14, fx + 26, py - 22, tr('wiki.seesYou'), '#f4f7ff');
       wikiLeader(fx + half, py - 7, fx + 34, py - 12, tr('wiki.health'), BAR_NEUTRAL);

@@ -235,9 +235,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();
-  } else if (o.type === 'den') {
-    drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
-    drawCampClock(o.site, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
   } else if (o.type === 'hut') {
     // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
     // of its 2x2 footprint and draws the whole building centred over the

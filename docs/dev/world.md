@@ -18,9 +18,8 @@ stable per tile.
   wander on the map's noise read folded left to right only, `fieldWander`, so blue and red are mirror
   images but the top and bottom halves differ; `FIELD_WAYS` and a clearing round every camp and the
   pump stay open whatever the wander does); a creek of rough ice runs down the middle column from the
-  orca's pool, round the middle's grove, to a pool in the bear's den (`fieldCreek`, `DEN_POOL`);
-  two pits open off the lanes, the orca's above the top one and the black bear's below the bottom
-  one (`LAIR`, `LAIR_MOUTH`); and a pine border at least `FIELD_EDGE` tiles deep stands round it
+  top hollow's frozen pool, round the middle's grove, to the bottom hollow's (`fieldCreek`,
+  `HOLLOW_POOL`); no pits or dens open off the lanes; and a pine border at least `FIELD_EDGE` tiles deep stands round it
   all. RED (team 0) holds the west end, BLUE the east. Nothing rolls.
 - `genWorld()` (first at boot, js/app/boot.js) stands a wall pine (`wall: true`, which never falls:
   `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
@@ -36,11 +35,8 @@ stable per tile.
   worldgen lays.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table names the scenery types
-  (`tree`, `snowdrop`, `den`, `stump`, `eagle`, `part` and the rest); the `STRUCTS` table's are
-  `pump` and `tower`. `den` (solid, inert scenery two tiles wide — `OBJECTS.den.w`, so
-  `placeCamps` fills the tile east of it with a `part` — that carries its `site`, the camp record,
-  so a hover on either tile can wear the camp's clock) exists only inside [camps](#camps) (the
-  wolf dens). `part` is the filler a multi-tile building (or a prop with a `w`/`h` in `OBJECTS`)
+  (`tree`, `snowdrop`, `stump`, `eagle`, `part` and the rest); the `STRUCTS` table's are
+  `pump` and `tower`. `part` is the filler a multi-tile building (or a prop with a `w`/`h` in `OBJECTS`)
   leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid,
   coloured like its building on both maps, ignored by work swings, and resolved by `structOf()`
   for every "what building is here" read (right-click, cursor, wheel, orders).
@@ -137,8 +133,8 @@ same walk away. `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
 
 The neutral monsters stand at fixed, mirrored sites (`CAMP_SITES`, js/sim/camps.js), written for
 RED's top quarter and folded to the other three like the field (`campSites`): a site on the middle
-row or column is its own twin. Per side: two wolf dens in the top half (`resource`), two SCRAP
-PILES of stray robots in the bottom half (`scrap`, brass walkers), and a rabbit WARREN in deep
+row or column is its own twin. Per side: two SCRAP PILES of stray robots in the bottom half
+(`scrap`, brass walkers: the jungle's farm, `farm`), nothing in the top half's two sites, and a rabbit WARREN in deep
 snow by the base mouth (`meadow`). The orca's pool is the pit above the top lane and the black
 bear's den the pit below the bottom one, one each for the whole map. Nothing rolls. What lives
 in them: [wildlife](gameplay/wildlife.md#camp-monsters-neutral-until-hit). The gold pumps stand
@@ -283,8 +279,8 @@ in wildlife or the AI reads `state.darkness`. What keys off the cycle:
   snow around it after dusk, and an ice hole is a hole in the reflection.
 
 `state.day` drives no difficulty. What damages a player: another player's arrows, a
-plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
-[wolf den](#camps).
+plunge through the ice (see [PvP](multiplayer.md#pvp)), and the monsters of the
+[camps](#camps).
 
 ## Ice holes
 

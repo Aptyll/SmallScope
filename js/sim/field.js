@@ -38,8 +38,7 @@ const COURT = [4.6, 3.4, 3.1];  // the paved bay: its middle's x, and its radii 
 const COURT_CLEAR = [3.7, 3.5, 0.7, 2]; // the pocket the pines leave round it: radii, tiles its middle sits south of the line (a pine is drawn up from its foot, so the pocket looks even), and the x its back wall of pines keeps
 const COURT_WING = [6.4, 6.5, 0.55]; // the wings: the x they come out to (short of the lanes' open band), tiles off the line they hold it to, and how fast they fall back from there to the rim
 const JUNGLE_BOX = [22, 40, 70, 70]; // the jungle's open box, x0 y0 x1 y1 (the quarter: it folds to the whole inside)
-const LAIR = [70, 25, 11, 7];   // the pit off the top lane: middle and radii (it folds to the bear's below)
-const LAIR_MOUTH = [64, 25, 70, 44]; // the cut from the pit through the lane to the jungle
+const HOLLOW_POOL = [70, 49, 4.5, 2.6]; // the frozen pool in each hollow, on the middle column: middle and radii, in the quarter (it folds to the bottom hollow's)
 const FIELD_EDGE = 4;           // tiles of pines at the least between any open ground and the world's edge (the perches' discs reach past it)
 // THE GROVES: the jungle's woods, each a stand of pines with a ragged edge,
 // in the quarter. A 'cap' is a stroke from (ax, ay) to (bx, by) whose
@@ -77,7 +76,6 @@ const WANDER_SMALL = 0.5;       // ...and in small bays and bulges on top
 // fieldIce). It holds a foot like the orca's pool (fieldRough, slickUnder).
 const CREEK_HALF = 1.9;         // tiles either side of the middle column the creek runs
 const CREEK_ROUND = 2.4;        // tiles out from the middle's wood its two arms run
-const DEN_POOL = [70, 115, 4.5, 2.6]; // the bear's frozen pool: middle (field units) and radii
 
 function fieldFold(v) { return Math.min(v, WORLD - v); }
 // the four copies of a quarter's point, [x, y] in field units: RED's top,
@@ -123,10 +121,9 @@ function fieldGroves(x, y) {
 // the creek and the bear's pool: where open ground off the road is ice,
 // field units (fieldIce asks it of a tile)
 function fieldCreek(x, y) {
-  if (y < LAIR[1] || y > WORLD - LAIR[1] + 3) return false;
-  const pool = Math.hypot((x - DEN_POOL[0]) / DEN_POOL[2], (y - DEN_POOL[1]) / DEN_POOL[3]) < 1;
-  if (pool) return true;
-  if (y > WORLD - LAIR[1]) return false;
+  const fy = fieldFold(y);
+  if (Math.hypot((x - HOLLOW_POOL[0]) / HOLLOW_POOL[2], (fy - HOLLOW_POOL[1]) / HOLLOW_POOL[3]) < 1) return true;
+  if (fy < HOLLOW_POOL[1]) return false;
   const M = FIELD_GROVES[FIELD_GROVES.length - 1], mid = fieldOval(fieldFold(x), fieldFold(y), M[1], M[2], M[3], M[4], M[5]);
   const swell = 0.55 * Math.sin(y / 3.3) + 0.35 * Math.sin(y / 1.9 + 1.3); // its banks swell and narrow down its length
   if (Math.abs(y - FIELD_C) < M[4] + CREEK_ROUND) return mid > 0 && mid < CREEK_ROUND + swell * 0.6 && Math.abs(x - FIELD_C) < M[3] + CREEK_ROUND + 1;
@@ -143,11 +140,8 @@ function fieldOpen(x, y) {
   const jungle = Math.max(fieldBox(fx, fy, JUNGLE_BOX[0], JUNGLE_BOX[1], JUNGLE_BOX[2], JUNGLE_BOX[3], 0), -fieldGroves(x, y));
   const band = Math.abs(laneLoop(x, y)) - LANE_HALF;
   const base = Math.hypot(fx - BASE_X, fy - FIELD_C) - BASE_R;
-  const lair = (Math.hypot((fx - LAIR[0]) / LAIR[2], (fy - LAIR[1]) / LAIR[3]) - 1) * Math.min(LAIR[2], LAIR[3]);
-  const mouth = fieldBox(fx, fy, LAIR_MOUTH[0], LAIR_MOUTH[1], LAIR_MOUTH[2], LAIR_MOUTH[3], 0);
   let d = fieldSmin(jungle, band, 2);
   d = fieldSmin(d, base, 2);
-  d = fieldSmin(d, fieldSmin(lair, mouth, 2), 1.5);
   // ...and never within FIELD_EDGE of the world's edge: a pine border stands
   // round everything, met in a smooth corner like any other wall
   d = -fieldSmin(-d, -(FIELD_EDGE - Math.min(fx, fy)), 2);
@@ -258,7 +252,7 @@ function baseAt(tx, ty, pad) {
 // (`wall`: none of them ever falls, treeFells), the lanes' road packed earth,
 // the orca's pit a frozen pool. Runs first at boot (js/app/boot.js); the
 // camps, the towers and the pumps stand on it after.
-const LAIR_POOL = [7.5, 4.5]; // the orca's frozen pool: radii round the pit's middle (orcaLakeEdge)
+const LAIR_POOL = [HOLLOW_POOL[2], HOLLOW_POOL[3]]; // the top hollow's pool, as the orca's (orcaLakeEdge)
 const ORCA_LAKE_R = LAIR_POOL[0]; // ...the longer of them: what a reach round the pool is sized by
 function genWorld() {
   ground.fill(0); objects.fill(null);
@@ -299,11 +293,11 @@ function fieldGrid() {
   return seen;
 }
 // the orca's pool, its middle in tile-index coordinates
-function orcaPool() { return { tx: FIELD_C - 0.5, ty: LAIR[1] - 0.5 }; }
+function orcaPool() { return { tx: FIELD_C - 0.5, ty: HOLLOW_POOL[1] - 0.5 }; }
 // ...and signed tiles from its rim (negative inside), in tile-index
 // coordinates; 99 well clear of it
 function orcaLakeEdge(fx, fy) {
-  const x = fx + 0.5 - FIELD_C, y = fy + 0.5 - LAIR[1];
+  const x = fx + 0.5 - FIELD_C, y = fy + 0.5 - HOLLOW_POOL[1];
   const d = (Math.hypot(x / LAIR_POOL[0], y / LAIR_POOL[1]) - 1) * LAIR_POOL[1];
   return d > 4 ? 99 : d;
 }

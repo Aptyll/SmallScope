@@ -88,54 +88,70 @@ function deepTone(x, y, t) {
 // REED_SEE, so your own body in the brush is never lost in it. Placed on a
 // staggered REED_STEP grid jittered off the position hash, wherever the snow
 // is deep: pure position, so every screen stands the same reeds.
-const REED_PAL = { root: '#6b5f47', blade: '#a8955f', lit: '#d6c48c', tip: '#ffffff', foot: '#b4c5dc' };
+const REED_PAL = { root: '#6b5f47', blade: '#a8955f', lit: '#d6c48c', tip: '#ffffff' };
 // a stand is not one straw: whole CLUMPS of it (REED_CLUMP px across, a slow
 // noise cut in flat steps) are the straw above, an older umber, or bleached
 // pale - a row of the atlas each
 const REED_TONES = [REED_PAL, { root: '#574a38', blade: '#86703f', lit: '#ad9558' }, { root: '#7d745c', blade: '#c2b488', lit: '#ebe0b8' }];
 const REED_CLUMP = 30, REED_UMBER = 0.4, REED_PALE = 0.62; // px across a clump; the noise under which it is umber, and over which pale
 const REED_REST = 13;  // px round where a camp's beast rests that no reed stands: it lies in a form it has pressed, in plain sight
-const REED_STEP = 7;   // px between reeds on the grid
-const REED_JIT = 5;    // px either way a reed wanders off its grid point
+const REED_STEP = 6;   // px between tufts on the grid: under a tuft's width, so the stand is one mass, not a field of tufts
+const REED_JIT = 4;    // px either way a tuft wanders off its grid point
 const REED_IN = 0.03;  // depth past DEPTH_DEEP a reed's foot needs: none on the rim's own line
 const REED_GAP = 0.27; // the noise under which a stand's inside is left as open drift (never on its rim)
 const REED_GLADE = 9;  // px across one of those openings
 const REED_RIM = 0.14; // depth past DEPTH_DEEP inside which the stand is whole: the rim says where the brush is
+const REED_LOW = 0.07; // depth past DEPTH_DEEP inside which a tuft is the short kind: the stand rises from its rim to its middle
+const REED_SWALE = 14, REED_DIP = 0.3; // px across a low swale inside the stand, and the noise under which its tufts are short: a thicket has a rhythm, not one flat top
 const REED_FADE = 16;  // px from the viewed hero's feet the reeds thin...
 const REED_SEE = 0.3;  // ...to this alpha
 const REED_FADE_BEAST = 10; // px either way from a shown beast's feet they thin the same
-const REED_VARS = 8, REED_W = 11, REED_H = 14; // the atlas: variants, and each cell's size
+const REED_VARS = 8, REED_W = 15, REED_H = 20; // the atlas: variants, and each cell's size
 let reedCv = null;
-// the atlas: REED_VARS TUFTS, each a dark root three pixels wide in a foot of
-// shade, with 4 to 6 blades fanning up out of it - the outer ones short and
-// bent over, the middle ones tall - lit on the sun's (left) side, and frost
-// on the tallest tips only. A tuft is a shape with a dark base, so a stand
-// reads as clumps of straw on the drift, not as tan static over it.
+// the atlas: REED_VARS TUFTS in each straw, a tall row and a short row of
+// each. A tuft is 5 to 11 blades rooted along five pixels of drift over a
+// soft blue shade, fanning out and curving over at the top. The back blades
+// are drawn first, darker and from a dark foot; the front ones over them, lit
+// on the sun's (left) side, so the overlap makes a body with a shaded base and
+// a bright top edge. A few tips carry a pale plume or frost. Tufts this wide
+// on a grid this close overlap, so a stand reads as one thicket.
 function reedAtlas() {
   if (reedCv) return reedCv;
-  reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H * REED_TONES.length;
+  reedCv = document.createElement('canvas'); reedCv.width = REED_W * REED_VARS; reedCv.height = REED_H * REED_TONES.length * 2;
   const g = reedCv.getContext('2d');
-  for (let t = 0; t < REED_TONES.length; t++) for (let v = 0; v < REED_VARS; v++) {
-    const P = REED_TONES[t];
-    // three kinds, so a stand is not one tuft stamped over: four tall, two short and thin, two bent over by the wind
-    const short = v === 4 || v === 5, bent = v > 5;
-    const n = short ? 3 : bent ? 4 : 4 + (v % 3), tall = short ? 6 + (v & 1) : REED_H - 5 + ((v * 5) % 4);
-    const tilt = bent ? (v & 1 ? 0.4 : -0.4) : ((v * 3) % 5 - 2) * 0.12;
-    const x0 = v * REED_W + (REED_W >> 1), y0 = t * REED_H + REED_H - 3;
-    const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
-    // the foot's shade on the drift, down-right of the root, then the root itself
-    for (let i = -1; i <= 3; i++) px(x0 + i, y0 + 2, REED_PAL.foot);
-    px(x0 + 2, y0 + 1, REED_PAL.foot); px(x0 + 3, y0 + 1, REED_PAL.foot);
-    for (let i = -1; i <= 1; i++) { px(x0 + i, y0 + 1, P.root); px(x0 + i, y0, P.root); }
-    for (let k = 0; k < n; k++) {
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+  for (let t = 0; t < REED_TONES.length; t++) for (let h = 0; h < 2; h++) for (let v = 0; v < REED_VARS; v++) {
+    const P = REED_TONES[t], low = h === 1;
+    const x0 = v * REED_W + (REED_W >> 1), y0 = (t * 2 + h) * REED_H + REED_H - 3;
+    const n = low ? 5 + (v % 2) : 8 + (v % 4), tall = low ? 6 + (v & 1) : REED_H - 9 + ((v * 5) % 4);
+    const wind = ((v * 3) % 5 - 2) * 0.18; // the tuft's own lean
+    // the tuft's body first: a solid wedge of the dark straw, widening up from
+    // the foot and ragged at its sides, so no drift shows through the stand
+    const body = Math.round(tall * 0.6);
+    for (let j = 0; j <= body; j++) {
+      const w = Math.min(4, 1.6 + j * 0.45) * (j > body - 2 ? 0.6 : 1), sx = Math.round(wind * j * 0.6);
+      const l = Math.round(-w + (hash2(v * 7 + j, t + 3) - 0.5)), r = Math.round(w + (hash2(j + 13, v * 5 + t) - 0.5));
+      for (let i = l; i <= r; i++) px(x0 + sx + i, y0 - j, P.root);
+    }
+    // back blades (odd k), then the front ones over them
+    for (const back of [true, false]) for (let k = back ? 1 : 0; k < n; k += 2) {
       const off = k - (n - 1) / 2, edge = Math.abs(off) / ((n - 1) / 2); // 0 the middle blade .. 1 the outermost
-      const len = Math.max(4, Math.round(tall * (1 - edge * 0.45)) - (k & 1));
-      const lean = off * 0.5 + tilt;
-      for (let j = 1; j <= len; j++) {
-        const u = j / len, x = x0 + Math.round(off * 0.5 + lean * u * u * len * 0.55);
-        const c = j === len && edge < 0.6 ? REED_PAL.tip : j <= 2 ? P.root : off < 0 ? P.lit : P.blade;
-        px(x, y0 - j, c);
+      const rnd = hash2(v * 17 + k * 5, t * 11 + h * 29); // this blade's own length and bend
+      const len = Math.max(3, Math.round(tall * (1 - edge * 0.5) * (0.8 + rnd * 0.3)));
+      const foot = Math.round(off * 4 / Math.max(1, n - 1) * 1.2); // rooted along five px of drift
+      const bend = off * 0.35 + wind + (rnd - 0.5) * 0.5;
+      let lx = null;
+      for (let j = 0; j <= len; j++) {
+        const u = j / len, x = x0 + foot + Math.round(bend * u * u * len * 0.6), y = y0 - j;
+        const c = j === len && edge < 0.3 && rnd > 0.85 ? REED_PAL.tip
+          : back ? (j <= len * 0.5 ? P.root : P.blade)
+          : j <= 1 ? P.root : off < 0 && j > len * 0.3 ? P.lit : P.blade;
+        px(x, y, c);
+        if (lx !== null && Math.abs(x - lx) > 1) px((x + lx) >> 1, y, c); // never a gap in a blade that bends fast
+        lx = x;
       }
+      // a plume on a few of the tall front blades: two pale pixels across the tip
+      if (!back && !low && rnd > 0.72 && edge < 0.7) { const x = x0 + foot + Math.round(bend * len * 0.6); px(x + (bend < 0 ? -1 : 1), y0 - len + 1, P.lit); }
     }
   }
   return reedCv;
@@ -160,7 +176,8 @@ function reedsOf(D) {
     if (dd > DEPTH_DEEP + REED_RIM && vnoise(x / REED_GLADE + 5.5, y / (REED_GLADE * 0.8) + 2.5) < REED_GAP) continue;
     if (rest.some((q) => Math.hypot(x - q[0], (y - q[1]) * 1.4) < REED_REST)) continue;
     const tone = vnoise(x / REED_CLUMP + 31.5, y / REED_CLUMP + 12.5);
-    out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0, t: tone < REED_UMBER ? 1 : tone > REED_PALE ? 2 : 0 });
+    const t = tone < REED_UMBER ? 1 : tone > REED_PALE ? 2 : 0;
+    out.push({ x, y, v: (hash2(x * 3, y * 7) * REED_VARS) | 0, row: t * 2 + (dd < DEPTH_DEEP + REED_LOW || vnoise(x / REED_SWALE + 8.5, y / REED_SWALE + 1.5) < REED_DIP ? 1 : 0) });
   }
   out.sort((a, b) => a.y - b.y);
   return out;
@@ -186,6 +203,6 @@ function drawReed(q, ex, ey, hero) {
   let near = hero && Math.hypot(q.x - hero.x, q.y - hero.y - 4) < REED_FADE;
   for (let i = 0; !near && i < reedBeasts.length; i++) near = Math.abs(q.x - reedBeasts[i].x) < REED_FADE_BEAST && Math.abs(q.y - reedBeasts[i].y - 4) < REED_FADE_BEAST;
   if (near) ctx.globalAlpha = REED_SEE;
-  ctx.drawImage(reedAtlas(), q.v * REED_W, q.t * REED_H, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 3, REED_W, REED_H);
+  ctx.drawImage(reedAtlas(), q.v * REED_W, q.row * REED_H, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 3, REED_W, REED_H);
   if (near) ctx.globalAlpha = 1;
 }

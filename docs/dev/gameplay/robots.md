@@ -104,8 +104,8 @@ COMBAT group's FARM row print. A soldier the waves, a tower or a beast finish pa
 do not run the step, aged by `state.tick`): a gold coin that hops and spins off a last hit, and a
 grey one that drops and fades where a miss fell, drawn only for the side that missed it and only
 within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival's gold coin in
-the fog is not drawn. The wolf dens and scrap piles are the jungle: three wolves (or stray robots) at 110 each and back `repop` (75 s)
-after the last dies, its clock on the den and on both maps ([camps](../world.md#camps)).
+the fog is not drawn. The scrap piles are the jungle: three stray robots at 110 each and back `repop` (75 s)
+after the last dies, its clock over the camp and on both maps ([camps](../world.md#camps)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../multiplayer.md#bots)).
 
 ## Road towers

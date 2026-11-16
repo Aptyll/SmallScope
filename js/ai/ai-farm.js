@@ -14,7 +14,7 @@
 //            on a rival soldier its own soldiers are wearing down it holds
 //            the draw until one blow finishes it (aiFarmFire) - the last
 //            hit, never the softening. A lone soldier is simply killed.
-//   JUNGLER  walks its own side's wolf dens: a den with its pack up is
+//   JUNGLER  walks its own side's farm camps (CAMPS' farm): one with its pack up is
 //            walked into and hunted (rung 6, which hunts anything in
 //            AI_HUNT); a cleared one is waited on just outside its ground
 //            (CAMP_HOLD) so it is there as the clock ends, and while the
@@ -162,7 +162,7 @@ function aiDenSpot(p) {
   if (!own) return null;
   let up = null, ud = Infinity, next = null, nt = Infinity;
   for (const C of camps) {
-    if (C.key !== 'resource') continue;
+    if (!C.spec.farm) continue;
     const cx = (C.tx + 0.5) * TILE, cy = (C.ty + 0.5) * TILE;
     if (rival && Math.hypot(cx - rival.x, cy - rival.y) < Math.hypot(cx - own.x, cy - own.y)) continue; // the rival's half
     const d = Math.hypot(cx - p.x, cy - p.y);
