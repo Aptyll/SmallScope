@@ -185,13 +185,9 @@ const state = {
   // time t0, and one opened over the chart or the disc carries sx/sy, the
   // screen point it is pinned to (wheelLayout, js/ui/wheel.js)
   wheel: null,
-  // main menu (mode === 'title'): keyboard selection, per-item hover eases,
-  // the open sub-panel ('settings' | null) and its slide progress
-  // one hover ease per menuItems() entry (js/ui/menu.js). That length is a coupling to a
-  // table in a file that loads later, so the ease loop tops up a missing
-  // cell rather than trusting it - a short array turned into NaN and
-  // silently deleted a row when a fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
+  // the screens before a match (mode === 'title'): the open sub-panel
+  // ('settings' | null) and its slide progress
+  menu: { t: 0,
     panel: null, panelT: 0, closing: false,
     // the profile (screen 'profile', js/ui/profile.js; pfOver: up over an
     // ended match, pfBack the screen it returns to): charT its ease, pfTab

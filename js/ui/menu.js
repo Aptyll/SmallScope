@@ -1,61 +1,39 @@
 'use strict';
-// The title screen: the frost-plank menu over the living world, the reroll
-// die, the tutorial panel, the patch notes, and the intro that hands the
-// locked-in class to the eagle. The champ select it opens (the lobby and its
+// The title: the living world behind every screen before a match, the
+// settings slab, the patch notes, and the intro that hands the locked-in
+// class to the eagle. Its own screen ('menu') is only passed through, onto
+// the hub (hubEnter, js/ui/hub.js), the landing page. The champ select it opens (the lobby and its
 // hero pop-up) is js/ui/champ-select.js; the patch notes, roadmap and wiki
 // are js/ui/notes.js and js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
-// The title screen is a real menu over the living world: ten heroes face off
-// in the stone ring at the middle (js/ui/titlescene.js) while the snow keeps falling, the
-// modes take mouse or arrows+enter, and every mode change is a transition
-// rather than a cut.
+// The world keeps living behind the screens (js/ui/titlescene.js) and every
+// screen change is a transition rather than a cut.
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-// QUIT only in the desktop build (the bridge, desktop/preload.js): it opens
-// fullscreen, so the app needs its own way out; a browser tab has its X
-// FIRST MATCH leads the words for a profile that has never finished a match
-// nor seen the coach through (PROFILE.guided, js/app/profile.js): offered
-// until then, and always a mode in the party's list.
-function menuItems() {
-  return (PROFILE.guided() ? [] : ['FIRST MATCH']).concat(['QUICKPLAY', 'RANKED', '1V1', 'PRACTICE TOOL'],
-    window.steamBridge && steamBridge.quit ? ['QUIT'] : []);
-}
-// SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js),
-// and the WIKI is a tab beside the patch notes (js/ui/notes.js).
-// The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
-// stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
-// last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
-// them, and all three live from the first boot. QUICKPLAY and RANKED open
-// the party lobby (beginParty, js/ui/rooms.js), whose FIND MATCH goes on to
-// the hero select below; PRACTICE TOOL opens it too, whose START takes the
-// party onto the training arena (partyPractice).
+// The words a full screen's foot prints at MENU_TXT_SCALE (the post-game's
+// BACK and LOBBY, js/ui/lobby.js); MENU_TXT_PITCH and MENU_BOTTOM are where
+// the title scene keeps its heroes clear of (js/ui/titlescene.js).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // MENU_BW x MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.957';
-// the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
-// baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
-// A data URL decodes before the first frame in practice, and the draw checks
-// anyway; nothing else on the title changes size with it. LOGO_Y is its top
-// edge in the VIEW (not the authored frame): it hugs the top at any height.
-const LOGO_IMG = new Image();
-LOGO_IMG.src = window.LOGO_PNG || '';
+const PATCH_TXT = 'PATCH 0.958';
+// index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
+// LOGO_Y down from the top while the scripts load; the first frame takes it
+// down and the page's boot ground fades off over LOGO_DAWN under the hub.
 const LOGO_Y = 12;
-// index.html's boot mark has stood the logo here since the page's first paint
-// (it works LOGO_Y and the view's scale out for itself): the first title has
-// its logo at rest, with no drop-in, and the valley fades up under it
 let logoStood = !!document.getElementById('bootmark');
 const LOGO_DAWN = 0.5; // s that fade takes
-// PATCH_TXT prints bottom-right of the title screen; click it for the notes.
+// PATCH_TXT names this build; the notes are a tab beside the wiki (js/ui/notes.js).
 // one sentence per patch, newest first - the biggest change only, in plain english.
 // The number counts patches: 0.391 is the 391st, each patch is 0.001 more, and the
 // first digit moves only when Noah calls a release (patches 1.00 - 4.90 became
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.958', 'A NEW HOME SCREEN LIKE A GAME CLIENT: YOUR PROFILE AND MATCH HISTORY, A THREE SEAT PARTY WITH PLAY BESIDE IT AND ITS CHAT, A HERO\'S ABILITIES AND BUILD, YOUR FRIENDS AND THE LADDER, ALL ON ONE PAGE.'],
   ['0.957', 'A ROLLING HERO CURLS UP IN THEIR OWN COLOURS: THE SHOULDERS UNDER THE TUCKED HEAD WEAR THEIR HOOD, HAIR OR HELM, SO ABOUT A THIRD OF THE BALL IS THEIRS AND NOT THE TEAM\'S.'],
   ['0.956', 'HIT A CAMP AND ITS LEASH LIES ON THE SNOW: A RING OF DASHES WHERE THE MONSTERS GIVE UP, TURNING RED WHILE YOU ARE PAST IT AND THEY ARE ABOUT TO GO HOME.'],
   ['0.955', 'ON STEAM YOU ARE ALWAYS IN A PARTY OUTSIDE A MATCH, SO A FRIEND\'S JOIN GAME WORKS FROM ANY MENU OR THE PRACTICE FIELD; A LEADER WHO ACCEPTS AN INVITE BRINGS THE WHOLE PARTY ALONG.'],
@@ -996,71 +974,13 @@ const PATCH_NOTES = [
   ['0.001', 'THE GAME IS NOW SOFTFALL, WITH A CINEMATIC TITLE SCREEN OF PILLARS AND BRAZIERS.'],
 ];
 
-// the patch tag's hit rect (bottom-right); the notes panel opens from it
-function patchTagRect() {
-  const w = pixelTextWidth(PATCH_TXT);
-  return { x: VIEW_W - w - 5, y: VIEW_H - 9, w, h: 5 };
-}
-function overPatchTag() {
-  const r = patchTagRect();
-  return overRect(r, 3);
-}
-
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-// the words, centred, climbing from MENU_BOTTOM above the view's foot; toy
-// is the authored frame's top for the logo (frameTop, core.js)
-function menuLayout() {
-  const toy = frameTop();
-  const items = menuItems(), n = items.length;
-  const rects = items.map((label, i) => {
-    const w = pixelTextWidth(label, MENU_TXT_SCALE) + 8, h = 7 * MENU_TXT_SCALE + 4;
-    return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
-  });
-  return { toy, rects };
-}
-
-function menuHit() {
-  if (state.menu.panel) return -1;
-  const { rects } = menuLayout();
-  for (let i = 0; i < rects.length; i++) {
-    const r = rects[i];
-    if (overRect(r, 2, 3)) return i;
-  }
-  return -1;
-}
-
-// the keys' pick: it lights the word, and stays lit until the
-// pointer moves again (keyNav) - at rest, and under a pointer that is off
-// every word, nothing is lit
-function menuSelect(i) {
-  const m = state.menu;
-  const N = menuItems().length;
-  const n = ((i % N) + N) % N;
-  m.keyNav = true;
-  if (n === m.sel) return;
-  m.sel = n;
-  SFX.pickup();
-}
-
-// by the word, not the place
-function menuActivate(i) {
-  SFX.unlock();
-  const it = menuItems()[i];
-  if (it === 'FIRST MATCH') { beginParty('guide'); partyFind(); } // EASY bots with the coach (js/ui/guide.js), straight on to the pick: the party's seats and codes are a step back (ESC) for whoever brings a friend
-  else if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
-  else if (it === 'RANKED') beginParty('ranked');
-  else if (it === '1V1') beginParty('onevone'); // you alone, one hero a side on the mid road (js/sim/onevone.js)
-  else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
-  else if (it === 'QUIT') steamBridge.quit(); // the app closes (desktop/main.js, win:quit)
-}
 
 // Out of the training arena, for a page with no party to go back to (a
 // guest, or a page that came up on ?practice=1 by hand): the reroll's
 // whiteout onto a bare URL, landing on a fresh title world. A leader goes
 // back to its party instead (toLobby, the ESC panel's LEAVE, js/ui/panels.js).
-// The way in is the party's START (partyPractice, js/ui/rooms.js).
 function leavePractice() {
   if (state.fade) return;
   SFX.pickup();
@@ -1075,21 +995,16 @@ function leavePractice() {
 }
 
 // ---- the gear: the ESC slab's pages before a match
-// a gear top right of the title (left of the purse) and of the party screen
-// (on the social column's head, under the add-friend), opening the settings
-// bare, slid up from the foot as in a match
+// a gear in the hub's YOU card, its bottom-right corner (js/ui/hub.js),
+// opening the settings bare, slid up from the foot as in a match
 const SET_GEAR = ['...###...', '.#.###.#.', '.#######.', '###...###', '###...###', '###...###', '.#######.', '.#.###.#.', '...###...'];
-function gearShown() { const m = state.menu; return m.screen === 'menu' || (m.screen === 'room' && m.roomsT >= 1); }
-function gearRect() {
-  if (state.menu.screen === 'room') { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 9, y: 26, w: 9, h: 9 }; }
-  const c = coinTagRect(); return { x: c.x - 17, y: 4, w: 9, h: 9 };
-}
+function gearShown() { const m = state.menu; return m.screen === 'room' && m.roomsT >= 1; }
+function gearRect() { const R = hubLayout().card; return { x: R.x + R.w - 17, y: R.y + R.h - 17, w: 9, h: 9 }; }
 function overGear() { return !state.menu.panel && gearShown() && overRect(gearRect(), 3); }
-function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : '#9fb6d8'); } }
-// the slab stands centred on what it covers: the party screen's room left of
-// the social column, else the view (relayout's place, put back as it goes)
-function slabCentre(room) { placeSlab(room ? VIEW_W - socialW() : VIEW_W); }
-function openMenuPanel(k) { const m = state.menu; slabCentre(m.screen === 'room'); m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
+function drawGear() { if (gearShown()) { const r = gearRect(); frBmp(r.x, r.y, SET_GEAR, overGear() ? '#ffd95c' : SC_LBL); } }
+// the slab stands centred on the view (relayout's place)
+function slabCentre() { placeSlab(VIEW_W); }
+function openMenuPanel(k) { const m = state.menu; slabCentre(); m.panel = k; m.panelT = 0; m.closing = false; SFX.ui(true); }
 function closeMenuPanel() {
   const m = state.menu;
   if (!m.panel || m.closing) return;
@@ -1123,9 +1038,7 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
   if (m.screen === 'profile') return; // its keys arrive through profileKey (input.js), never here
-  if (moveDir(k) === 'up') menuSelect(m.sel - 1);
-  else if (moveDir(k) === 'down') menuSelect(m.sel + 1);
-  else if (k === 'enter' || k === ' ') { m.pressT = 0.12; menuActivate(m.sel); }
+  if (k === 'escape') openMenuPanel('settings'); // the title passed through (hubEnter waits on a fade): the settings
 }
 
 function menuClick() {
@@ -1147,14 +1060,6 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'profile') { profileClick(); return; }
-  if (overProfileTag()) { beginProfile(); return; }
-  if (overCoinTag()) { beginSkins(); return; }
-  if (overPatchTag()) { beginNotes(); return; }
-  const h = menuHit();
-  if (h < 0) return;
-  m.sel = h;
-  m.pressT = 0.12;
-  menuActivate(h);
 }
 
 // straight into play, skipping the eagle (debug: DBG.beginIntro): the menu
@@ -1189,13 +1094,7 @@ function updateTitle(dt) {
   m.t += dt;
   m.camT += dt;
   if (m.pressT > 0) m.pressT -= dt;
-  // the mouse only takes the selection when it moves (so arrows aren't fought)
-  if (m.moved) {
-    m.moved = false;
-    m.keyNav = false;
-    const h = menuHit();
-    if (h >= 0 && h !== m.sel) m.sel = h;
-  }
+  if (m.moved) { m.moved = false; m.keyNav = false; } // the pointer moved: the keys' pick lets go (the notes, js/ui/notes.js)
   // the profile (js/ui/profile.js): its ease and its hovers
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'profile' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'profile') updateProfile(dt);
@@ -1203,14 +1102,6 @@ function updateTitle(dt) {
   if (m.screen === 'skins') updateSkins(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'room' ? 1 : -1) * dt / 0.35));
   updateRooms(dt);
-  // a word lights under the pointer, or as the keys' pick until the pointer moves
-  const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
-  for (let i = 0; i < menuItems().length; i++) {
-    const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
-    // `|| 0` because the array's length is a literal in core.js: a missing
-    // cell would go NaN here and take its whole row off the screen
-    m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
-  }
   // lobby cross-fade and its own hovers; the hero pop-up rides a
   // second ease (popT) over the still-lit lobby
   const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
@@ -1240,7 +1131,7 @@ function updateTitle(dt) {
   if (m.panel) {
     if (m.closing) {
       m.panelT -= dt / PANEL_SLIDE_T;
-      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; slabCentre(false); }
+      if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; slabCentre(); }
     } else m.panelT = Math.min(1, m.panelT + dt / PANEL_SLIDE_T);
   }
   titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/sim/wildlife.js)
@@ -1328,71 +1219,9 @@ function renderTitle(now) {
   const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
   const tintA = 1 - easeOut(outQ / 0.45);
   if (tintA > 0.005) drawTitleBackdrop(tintA, Math.max(pan, state.settingsOpen ? 1 : 0)); // ...and the scene deepens under the settings slab too
-  const { toy, rects } = menuLayout();
-  const cx = Math.round(VIEW_W / 2);
-  const chromeA = (1 - out) * (1 - pan);
-
-  // logo: drops in at boot, lifts away on play
-  if (logoStood && m.t < LOGO_DAWN) { ctx.globalAlpha = 1 - m.t / LOGO_DAWN; ctx.fillStyle = '#0d1524'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; } // the page's boot ground (index.html's #game), lifting off the valley
+  // the page's boot ground (index.html's #game), lifting off as the hub fades up over it
+  if (logoStood && m.t < LOGO_DAWN) { ctx.globalAlpha = 1 - m.t / LOGO_DAWN; ctx.fillStyle = '#0d1524'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
   if (m.t >= 0.6) logoStood = false;
-  const logoIn = logoStood ? 1 : easeOut(m.t / 0.6);
-  const ly = Math.round(LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
-  const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
-  const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
-  const lw = logoOk ? LOGO_IMG.naturalWidth : pixelTextWidth('SOFTFALL', 4);
-  const lh = logoOk ? LOGO_IMG.naturalHeight : 28;
-  const lx = Math.round((VIEW_W - lw) / 2);
-  // a pulsing cold glow behind the letters: the picture's own cyan halo
-  ctx.globalCompositeOperation = 'lighter';
-  const pulse = 0.8 + 0.2 * Math.sin(now * 2.2);
-  const gr = 96, gy = ly + (lh >> 1);
-  const grd = ctx.createRadialGradient(cx, gy, 2, cx, gy, gr);
-  grd.addColorStop(0, 'rgba(110,200,255,' + (0.22 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(0.5, 'rgba(80,150,255,' + (0.07 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(1, 'rgba(60,120,255,0)');
-  ctx.fillStyle = grd; ctx.fillRect(cx - gr, gy - gr, gr * 2, gr * 2);
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = logoA;
-  if (logoOk) ctx.drawImage(LOGO_IMG, lx, ly);
-  else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
-  ctx.globalAlpha = 1;
-
-  // items: plain words that fade in staggered, sink away on play and duck
-  // under a panel; the picked one warms to gold and lifts a px, a press sinks it
-  for (let i = 0; i < rects.length; i++) {
-    const r = rects[i];
-    const inT = easeOut((m.t - 0.25 - i * 0.12) / 0.45);
-    const a = inT * (1 - out) * (1 - pan);
-    if (a <= 0.005) continue;
-    const hv = m.hover[i];
-    const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
-    const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
-    ctx.globalAlpha = a;
-    const label = menuItems()[i];
-    drawPixelTextOutline(ctx, label, r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
-    if (label === 'FIRST MATCH') { // the one word a new profile is offered: a gold diamond stands before it
-      const dx = r.x - 6, dy = y + 6;
-      for (const [rr, c] of [[4, 'rgba(8,12,28,0.9)'], [3, '#ffd95c']]) {
-        ctx.fillStyle = c;
-        for (let d = -rr; d <= rr; d++) { const w = rr - Math.abs(d); ctx.fillRect(dx - w, dy + d, w * 2 + 1, 1); }
-      }
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  // footer: the two corner tags ride the same fade; no gold rule under them
-  const fin = easeOut((m.t - 0.9) / 0.5) * (1 - out) * (1 - pan);
-  if (fin > 0.005) {
-    ctx.globalAlpha = fin;
-    const pr = patchTagRect();
-    const phot = !m.panel && overPatchTag();
-    drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
-    if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
-    drawProfileTag(); // your picture, name and quill, opposite corner: the way to the profile (js/ui/profile.js)
-    drawCoinTag();    // the purse, top-right: the way into the skins screen
-    drawGear();       // ...and the settings beside it
-    ctx.globalAlpha = 1;
-  }
 
   // the lobby stays fully lit under the hero pop-up, which rides an ease of
   // its own (popT)

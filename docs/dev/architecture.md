@@ -202,7 +202,7 @@ order, so the script tags still interleave them:
 | [js/ui/statpanel.js](../../js/ui/statpanel.js) | ~95 | shared scope, no `window.*` export | the stat panel left of the portrait: its cells and icons, its hit test, the hover breakdown (`tipStat`) |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
-| [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (PRACTICE TOOL only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
+| [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (the practice field only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~270 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/guide.js](../../js/ui/guide.js) | ~225 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~120 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
@@ -210,7 +210,8 @@ order, so the script tags still interleave them:
 | [js/ui/announcer.js](../../js/ui/announcer.js) | ~180 | shared scope, no `window.*` export | the announcer: a queued call (FIRST STRIKE, multi-kills, SHUTDOWN, ACE, TOWER DESTROYED, bears) on a plate under the team rail with both faces and a sting, and the kill feed under the notice lane |
 | [js/ui/shop.js](../../js/ui/shop.js) | ~570 | shared scope, no `window.*` export | the merchant's counter: which counter a body stands at, buying and selling (items and the health potion through js/sim/items.js), and League's panel (RECOMMENDED off js/app/builds.js, ALL ITEMS and the style tabs with its stat filters, the pane with BUILDS INTO, the build tree, the card and BUY, your six slots and SELL) |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1000 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
-| [js/ui/menu.js](../../js/ui/menu.js) | ~1390 | shared scope, no `window.*` export | the title screen: menu planks, tutorial panel, the settings gear, `PATCH_TXT` and `PATCH_NOTES` |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~1250 | shared scope, no `window.*` export | the title: passed through onto the hub, the settings gear, the boot ground's fade, `PATCH_TXT` and `PATCH_NOTES` |
+| [js/ui/hub.js](../../js/ui/hub.js) | ~380 | shared scope, no `window.*` export | the hub, the landing page: YOU, MATCH HISTORY, the party's seats and PLAY, HEROES, ITEMS, FRIENDS, LADDER (the party's logic: js/ui/rooms.js) |
 | [js/ui/champ-select.js](../../js/ui/champ-select.js) | ~600 | shared scope, no `window.*` export | the champ select (the lobby): its layout, hits, clicks and keys, the stage, and the hero pop-up over it |
 | [js/ui/notes.js](../../js/ui/notes.js) | ~580 | shared scope, no `window.*` export | the title's WIKI / PATCH NOTES / ROADMAP tabs and the KITCHEN link, the roadmap, and the patch notes screen |
 | [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |

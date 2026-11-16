@@ -1,57 +1,50 @@
 # Settings
 
-**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where FIRST MATCH, QUICKPLAY, RANKED and
-PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
-Steam lobby) and NET.mode names the mode. League's party lobby in Graphite, over the title's
-snowy valley behind a dark wash (`RM_WASH`): two mirrored plates at the head, the mode's name on
-the left (the leader's opens a list of the modes under it; a click on one, or the keys' Enter, up,
-down and Enter, sets it in place, `modeSet`, and spends every guest's READY, since it was said to
-the old mode). Between them a smaller plate holds the bots' level (`drawRoomBots`): rising bars,
-as many lit as the level is hard, in its colour (green, amber, red, violet), and its name. The
-leader's click (or the keys: right off the mode's name, Enter) opens the levels under it, and one
-picked (`botsSet`) is `settings.aiLevel`, carried to every guest's screen with the room's info
-(`lvl`). In RANKED it only shows, the level the party's rating gives; PRACTICE TOOL has no bots,
-so it is gone there, and while the party looks for a match the clock stands in its place. Down the right edge runs the social column (League's, js/ui/friends.js
-`drawSocial`): your face and name at its head with the party's four-letter code in gold under them
-(a click copies it, white for a moment; dim with a red dot blinking after it while the link is
-down), and your Steam friends under that. Your side's five seats stand in a row with you in the
-middle and the others filling outward: a person's seat is a card with a 3x portrait, a name, the
-hero they last locked in, the rating in RANKED, a guest's READY tick and link bars (green, amber, red as the round trip grows),
-a crown over the leader's portrait; an empty seat is a bare dotted well with a gold + that invites
-(the code copied, or Steam's overlay). The leader's pointer on a guest's card shows a red X that
-shows them out (`seatKick`). The rival side is never shown here: it is another party met by
-matchmaking, or bots. While you are alone JOIN and four slots fill the head's right plate: type or paste (Ctrl+V) a friend's four letters to join their
-party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
-carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
-rattles the slots. The foot is three plates as tall as each other. The chat sits in the
-bottom-left corner (js/ui/roomtalk.js): the last four lines, each a name in its side's paint,
-clipped at half the screen's width, over a plate showing an ENTER key cap and a speech bubble;
-Enter or a click on the plate starts a line, Enter sends it, Esc drops it. Its mirror in the
-bottom-right is INVITE (Steam's invite overlay, or the code copied, while a seat is empty), with
-the friends invited from the column listed over it, a green tick once they are in. Between them
-one button, League's, with an X attached before it that leaves: a
-guest's READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every
-guest is ready (`partyFind`). FIRST MATCH goes straight to bots, pinned EASY (`NET.botLv` 0), and its
-rematch comes back as QUICKPLAY. In QUICKPLAY and RANKED the party then looks for another party doing the
-same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
-also shows after the mode's name on every member's screen. Two parties that find each other play each
-other, the one with the higher code reloading into the other's room as its rival side; with
-nobody found within 8 s, bots take the rival side. After the match each party goes back to its
-own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
+**The hub** (js/ui/hub.js, `menu.screen = 'room'`; the party's logic is js/ui/rooms.js) is the
+landing page: the title is only passed through (`hubEnter`), so a boot, a match's end, a closed
+profile or wiki all land here. The page hosts its own party at once (`beginParty`: a room on the
+relay, or a Steam lobby). League's client home in Graphite, flat and opaque: YOU (your face,
+name, rank badge and rating, your record and the last ten results as pips, the purse that opens
+the skins, the gear that opens the settings, QUIT in the desktop build) and MATCH HISTORY down the
+left; PARTY, HEROES and ITEMS in the middle; FRIENDS (Steam's; empty off Steam) and LADDER down
+the right. A
+panel's click opens its whole page (the profile and its tabs, the wiki, the skins), and that
+page's way out comes back here. HEROES walks every hero with its arrows: the four ability wells
+(each raises the ability's card), the numbers, and the lit ability's words; ITEMS is that hero's
+build (`buildsRec`). LADDER is everyone this screen has met, by rating, you lit.
+PARTY's head names it with the count (people of `partyCap`, three: the 3v3's side) and the party's
+four-letter code in gold behind a copy mark (a click copies it, white for a moment; dim with a red
+dot blinking before it while the link is down). Your side's three seats stand under it with you
+in the middle: a person's seat is a card with a portrait, the rank badge, a name, a guest's READY
+tick and link bars (green, amber, red as the round trip grows), a crown over the leader's portrait; an empty
+seat is a well with a gold + that invites (the code copied, or Steam's overlay). The leader's
+pointer on a guest's card shows a red X that shows them out (`seatKick`). PLAY stands at the
+strip's right end: a guest's READY, or the leader's PLAY, dim and flashing the seats it waits on
+until every guest is ready (`partyFind`). Under the seats runs one row of plates as tall as each
+other: while you are alone JOIN and four slots (type or paste, Ctrl+V, a friend's four letters to
+join their party: `partySeek` looks the code up on the relay's list, or in a Steam lobby's data,
+which carries the same code: `steamCode`, js/net/transport-steam.js; a code nobody answers to
+rattles the slots); with people, the chat (js/ui/roomtalk.js: the ENTER key and the newest line;
+Enter or a click starts a line and raises the chat over the seats with its kept lines, Enter
+sends it, Esc drops it) and under PLAY the X that leaves. There is one mode, RANKED. A profile that has never seen a
+match through plays its first PLAY alone as FIRST MATCH (`roomGo`): straight to bots, pinned
+EASY (`NET.botLv` 0), with the coach, and its rematch is RANKED. RANKED looks for another party
+doing the same (js/ui/matchmaking.js): PLAY becomes a gold clock with an X (a press stops
+looking). Two parties that find each other play each other, the one with the higher code
+reloading into the other's room as its rival side; with nobody found within 8 s, bots take the
+rival side. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/champ-select.js), which every member sees as the
 leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
 guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the
 leader's; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
-(`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
-it cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
-(`partyPractice`): once every friend is READY the leader's page reloads onto the
-[practice arena](../world.md#the-practice-tool) hosting the party's code, each guest is told
-(`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
-`practiceBootJoin`). A friend can also type the code from their own party while the party is on
-the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
-LEAVE takes everyone back to the party on the title (the rematch: guests follow on hearing it,
-`rematchHeard`); a guest's LEAVE takes only them to the title. A screen that is not in focus when someone joins, a chat
+(`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`).
+FRIENDS lists your Steam friends (js/ui/friends.js). The
+keys walk the seats, right onto PLAY, down onto its X, right into the friends; Esc opens the
+settings. The practice field is off the hub and kept for the tools that stage on it
+([practice arena](../world.md#the-practice-tool)): a leader's page there hosts the party's code
+and each guest follows (`practiceBootHost`, `practiceBootJoin`); the field's LEAVE takes
+everyone back to the hub. A screen that is not in focus when someone joins, a chat
 line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
 title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
 back to the same party on a fresh copy of the map, same code, same people in the same seats (the
@@ -73,7 +66,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
 `tipFull` — the ABILITY DETAILS row: HOLD ALT (the default: an ability's hover is the short card, the DETAILS key, Alt unless rebound, opens every rank's numbers; the row prints the live bind, an `off` given as a function) or ALWAYS (`tipClassAb`) —
-`aiLevel` — the rival bots' level, picked by the leader on the party screen's head, an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
+`aiLevel` — the rival bots' level where nothing pinned one (a party's PLAY always does: `NET.botLv`), an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` (a saved `'mouse'` wakes on `'click'`, `mendBinds`) — with `binds` / `bindsClick`,
 the key each action is bound to under each
 ([the two controllers](../multiplayer.md#keyboard-and-mouse)) —

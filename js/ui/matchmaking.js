@@ -1,6 +1,6 @@
 // ------------------------------------------------------------ matchmaking
-// QUICKPLAY and RANKED meet other parties before bots: the leader's FIND
-// MATCH (partyFind, js/ui/rooms.js) puts the party on the list as looking
+// RANKED meets other parties before bots: the leader's PLAY
+// (partyFind, js/ui/rooms.js) puts the party on the list as looking
 // (`seek` in the room's data, netHostRoom, js/net/net.js) and reads the
 // list (the relay's rooms, or Steam's lobbies) for another party looking in
 // the same mode. Of every party looking, the one whose leader's machine is
@@ -57,7 +57,7 @@ function seekRivals() {
   return state.menu.rooms.filter((r) => roomOk(r) && r.data.seek === NET.mode && r.data.state === 'open' &&
     !+r.data.practice && seekKey(r) && seekKey(r) !== mine);
 }
-// FIND MATCH in QUICKPLAY or RANKED: the party starts looking. False when it
+// PLAY in RANKED: the party starts looking. False when it
 // cannot (no relay, no Steam): bots at once, as before
 function seekStart() {
   if (NET.role !== 'host' || NET.mode === 'practice' || NET.mode === 'guide' || !roomCode() || !(NET.transport && NET.transport.open)) return false; // FIRST MATCH goes straight to bots
@@ -149,17 +149,17 @@ function crossHome() { if (!state.fade) practiceGo(crossHomeUrl()); }
 function partyLost() {
   if (homeParty) { crossHome(); return; }
   if (popOpen()) leavePop();
-  const mode = NET.mode, m = state.menu;
+  const m = state.menu;
   // a join turned away here (a code typed again after a kick) ends as the
   // refusal in updateRooms does: the box shakes, and the join is over - left
-  // standing, it hid every seat and held FIND MATCH shut
+  // standing, it hid every seat and held PLAY shut
   if (m.joining) m.codeShake = NAME_SHAKE_T;
   m.joining = false; m.joinWait = 0; m.joinRetry = 0;
   netLeave();
-  beginParty(mode || 'quick');
+  beginParty('ranked');
   SFX.deny();
 }
-// the party looking: the seconds since FIND MATCH, the leader's own or a
+// the party looking: the seconds since PLAY, the leader's own or a
 // guest's copy off the roster; null while it is not
 function seekClock() {
   if (NET.isHost) return NET.seek ? NET.seek.t : null;

@@ -7,5 +7,5 @@
 | the slots the game no longer sells (the old HERO and WEAPON tints, the TRAIL streaks, the EAGLE skins) and what each skin cost, refunded once at boot | `SKIN_RETIRED`, `SKIN_RETIRED_SLOTS` (the refund: `PROFILE.refundRetired`, profile.js, called from boot.js) | `skins` › `the catalogue` |
 | what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
 | a card's picture: the hero standing in that look | `skinArt` (`SPRITES.champLook`, js/sprites/characters.js), `SK_ART_MAX` | `skins` › `the pictures` |
-| the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
+| the coin, also the purse in the hub's YOU card (`drawHubCard`, js/ui/hub.js) | `SK_COIN`, `SK_COIN_PAL` | `skins` |
 | the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, the scrolling tab row (`skTabs`, `skinTabsFrom`, `skinsScrollBy`, `skinsTabShow`, `skinsTabsOver`, its wheel in input.js), `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |

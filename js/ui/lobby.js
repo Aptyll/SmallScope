@@ -351,14 +351,14 @@ function scoreWord(r, on, hot) {
 
 // One player's face over their column: the HUD portrait's square (drawPortrait,
 // js/ui/hud-draw.js) small, a gold rim on yours, the side's colour as a line
-// under it and the level on its corner.
+// under it (not when r.bare: the party has one side) and the level on its corner.
 function drawScoreFace(x, y, s, r) {
   const q = players[r.id];
   ctx.fillStyle = SC_INK; ctx.fillRect(x, y, s, s);
   ctx.fillStyle = r.you ? '#c89a3c' : SC_EDGE; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
   if (q) drawFace(x + 2, y + 2, s - 4, q, r.sc);
   else { ctx.fillStyle = PORT_SKY; ctx.fillRect(x + 2, y + 2, s - 4, s - 4); }
-  ctx.fillStyle = TEAMS[skin(r.team)].mark; ctx.fillRect(x, y + s + 1, s, 1);
+  if (!r.bare) { ctx.fillStyle = TEAMS[skin(r.team)].mark; ctx.fillRect(x, y + s + 1, s, 1); }
   const lv = String(r.level), bw = pixelTextWidth(lv) + 4;
   const lx = x + s - bw + 2, ly = y + s - 6;
   ctx.fillStyle = SC_INK; ctx.fillRect(lx, ly, bw, 8);

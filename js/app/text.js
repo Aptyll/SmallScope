@@ -34,6 +34,26 @@ const TEXT = {
   'onevone.tower': 'FIRST TOWER',
   'onevone.line': '{why}: THE {side} SIDE WINS THE 1V1',
 
+  // ---- the hub, the landing page (js/ui/hub.js)
+  'hub.history': 'MATCH HISTORY',
+  'hub.noMatches': 'NO MATCHES YET',
+  'hub.heroes': 'HEROES',
+  'hub.items': 'ITEMS',
+  'hub.ladder': 'LADDER',
+  'hub.friends': 'FRIENDS',
+  'hub.party': 'PARTY',
+  'hub.join': 'JOIN',
+  'hub.enter': 'ENTER',
+  'hub.play': 'PLAY',
+  'hub.ready': 'READY',
+  'hub.win': 'WIN',
+  'hub.loss': 'LOSS',
+  'hub.record': '{w}W {l}L',
+  'hub.hp': 'HP',
+  'hub.dmg': 'DMG',
+  'hub.armor': 'ARM',
+  'hub.speed': 'SPD',
+
   // ---- the post-game stats (js/ui/lobby.js)
   'score.stats': 'STATS',
   'score.graphs': 'GRAPHS',

@@ -74,7 +74,7 @@ declare victory. The affordances:
   - **`node app/check-join.js`** — run it after touching the party screen, a join path or
     `js/net/`: two headless pages join a party by code on the relay, by code on Steam, from a
     Steam invite, from the friends panel's row and from its invite card (Steam faked in the script with the wrapper's bridge calls), and each must end
-    welcomed with both pages still drawing. Then FIND MATCH: a party of three on Steam, and two
+    welcomed with both pages still drawing. Then PLAY: a party of three on Steam, and two
     parties of two on Steam and on the relay, must each end in ONE draft with a friend's point
     reaching the leader (`steam-party`, `steam-match`, `relay-match`). It serves the game itself on its own port and needs
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
@@ -101,7 +101,7 @@ declare victory. The affordances:
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
-    QUICKPLAY hosts a party as a public lobby whose code a friend types into their own party
+    the hub hosts a party as a public lobby whose code a friend types into their own party
     (`--transport=relay` for the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
@@ -140,11 +140,12 @@ declare victory. The affordances:
   CONTROLS page (listing-local; add `SET_X` and the content window's top less the scroll).
   [Keyboard and mouse](multiplayer.md#keyboard-and-mouse) lists what each key and button does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
-  boots on the title with a pre-rolled name.
+  boots straight into the FIRST MATCH's pick with a pre-rolled name; a profile saved with
+  `{ guided: true }` boots onto the hub (js/ui/hub.js).
   A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
   the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
   card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
-  through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
+  through `profileLayout`; `DBG.hubLayout()` and `DBG.roomHit()` read the hub; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
   champ select's hero grid, and `DBG.DRAFT`, `DBG.draftAct(slot, 'hover'|'lock'|'role'|'skin', h, id)`, `DBG.draftPoint(h)` and
   `DBG.draftConfirm()` the draft (set `DBG.DRAFT.t` low to run a clock out). See [architecture.md](architecture.md#profilejs).
 - **The [wiki](gameplay/the-wiki.md) needs no staging**: it is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,

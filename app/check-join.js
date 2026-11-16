@@ -1,6 +1,6 @@
 // The join check: two headless pages meet through every way a friend joins a
-// party, and each must end WELCOMED with its page still drawing; then FIND
-// MATCH must take a party, and two parties that meet, into ONE draft. It serves the
+// party, and each must end WELCOMED with its page still drawing; then PLAY
+// must take a party, and two parties that meet, into ONE draft. It serves the
 // game itself (app/server.js on CHECK_PORT) and drives Chromium through
 // Playwright, which the repo does not install: `PLAYWRIGHT=<path to the
 // package>` points at one, else `playwright` is required as usual.
@@ -114,18 +114,18 @@ async function runPath(browser, kind) {
   };
   const A = await mk('host', '76561190000000001'), B = await mk('guest', '76561190000000002');
   const q = steam ? '&transport=steam' : '';
-  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
+  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof hubLayout === 'function'); await pg.waitForTimeout(800); };
   await open(A);
-  await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
+  await A.evaluate(() => beginParty('ranked')); // the hub's own party, hosted (hubEnter has it open already)
   await A.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
   let why0 = '';
   const host = await A.evaluate(() => ({ code: roomCode(), lobby: NET.transport.lobbyId || null }));
   if (kind === 'steam-invite') await B.goto(base + '?join=' + host.lobby + q); // what a Steam invite opens (steamJoinRequested / +connect_lobby)
   else if (kind.startsWith('friend')) { // the guest in a party of its own, the host in its friends' column
     await open(B);
-    // friend-invite's guest sits in a full party of its own (a 1V1 is a party
-    // of one), so the host's row for it offers INVITE, not the gold step
-    await B.evaluate((inv) => (inv ? beginParty('onevone') : menuActivate(menuItems().indexOf('QUICKPLAY'))), kind === 'friend-invite');
+    // friend-invite's guest sits in a party that tells Steam it is full (its
+    // cap held at one), so the host's row for it offers INVITE, not the gold step
+    await B.evaluate((inv) => { if (inv) partyCap = () => 1; beginParty('ranked'); FRIENDS.rp = ''; }, kind === 'friend-invite');
     await B.waitForFunction((l) => NET.role === 'host' && NET.transport.open && FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), host.lobby, { timeout: 10000 });
     if (kind === 'friend-join') {
       const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, host.lobby);
@@ -138,7 +138,7 @@ async function runPath(browser, kind) {
     }
   } else { // a code typed into the guest's own party
     await open(B);
-    await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
+    await B.evaluate(() => beginParty('ranked'));
     await B.waitForFunction(() => NET.role === 'host' && NET.transport.open, null, { timeout: 10000 });
     await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
   }
@@ -182,7 +182,7 @@ async function runParty(browser, kind) {
   const steam = kind !== 'relay-match', S = fakeSteam(), errs = [], pages = [], leads = [];
   const spec = kind === 'steam-party' ? [3] : [2, 2];
   const base = 'http://localhost:' + CHECK_PORT + '/', q = steam ? '&transport=steam' : '';
-  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function'); await pg.waitForTimeout(800); };
+  const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof hubLayout === 'function'); await pg.waitForTimeout(800); };
   const hosted = (pg) => pg.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
   let k = 0, why = '';
   for (let pi = 0; pi < spec.length && !why; pi++) {
@@ -197,12 +197,12 @@ async function runParty(browser, kind) {
     }
     const A = mine[0]; leads.push(A);
     await open(A);
-    await A.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY'))); // QUICKPLAY: a party, hosted
+    await A.evaluate(() => beginParty('ranked')); // the hub's own party, hosted (hubEnter has it open already)
     await hosted(A);
     const host = await A.evaluate(() => ({ code: roomCode() }));
     for (const B of mine.slice(1)) {
       await open(B);
-      await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
+      await B.evaluate(() => beginParty('ranked'));
       await hosted(B);
       await B.evaluate((c) => { state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, host.code);
       const t0 = Date.now(); let ok = false;
@@ -245,7 +245,7 @@ async function runParty(browser, kind) {
 }
 
 // ---- the standing party (js/ui/rooms.js) and a leader's follow ------------
-// menu-join: the host never opens a party, it only sits on the title; the
+// menu-join: the host never opens a party, it only sits on the hub; the
 // guest's row for it must offer the gold step, the join must land, the
 // host's screen must turn to the seats, and the guest's seat must be keyed
 // by its SteamID. leader-follow: a leader and a friend (joined by code) take
@@ -266,7 +266,7 @@ async function runFriends(browser, kind) {
   };
   // a player past their first match: a fresh profile's first launch is the guided match, not the title
   const open = async (pg) => {
-    const up = () => pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function');
+    const up = () => pg.waitForFunction(() => window.DBG && typeof hubLayout === 'function');
     await pg.goto(base); await up();
     if (await pg.evaluate(() => { if (PROFILE.guided()) return false; PROFILE.setGuided(); return true; })) { await pg.goto(base); await up(); }
     await pg.waitForTimeout(800);
@@ -285,13 +285,13 @@ async function runFriends(browser, kind) {
   if (kind === 'menu-join') {
     const A = await mk('host', 0), B = await mk('guest', 1);
     await open(A); await open(B);
-    const lobby = await stood(A); // on the title, no mode picked: the standing party
+    const lobby = await stood(A); // on the hub: the standing party
     const rp = await A.evaluate(() => state.menu.screen);
     await B.waitForFunction((l) => FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), lobby, { timeout: 10000 }).catch(() => { why = 'host row never showed its lobby'; });
     if (!why) {
       const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, lobby);
-      if (rp !== 'menu') why = 'host was not on the title (' + rp + ')';
-      else if (act !== 'join') why = 'host row on the title offers ' + act;
+      if (rp !== 'room') why = 'host was not on the hub (' + rp + ')';
+      else if (act !== 'join') why = 'host row on the hub offers ' + act;
       else if (!(await welcomed(B))) why = 'guest never welcomed';
       else {
         await A.waitForTimeout(600);
@@ -311,8 +311,8 @@ async function runFriends(browser, kind) {
     const A = await mk('lead', 0), B = await mk('friend', 1), C = await mk('other', 2);
     for (const pg of [A, B, C]) await open(pg);
     await stood(A); await stood(B); const lobbyC = await stood(C);
-    const code = await A.evaluate(() => { beginParty('quick'); return roomCode(); });
-    await B.evaluate((c) => { beginParty('quick'); state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, code);
+    const code = await A.evaluate(() => { beginParty('ranked'); return roomCode(); });
+    await B.evaluate((c) => { beginParty('ranked'); state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, code);
     if (!(await welcomed(B))) why = 'friend never joined the leader';
     else {
       await A.waitForTimeout(600);
@@ -327,8 +327,8 @@ async function runFriends(browser, kind) {
     const A = await mk('host', 0), B = await mk('guest', 1);
     await open(A);
     await stood(A);
-    await A.evaluate(() => { beginParty('practice'); partyPractice(); });
-    await A.waitForFunction(() => window.DBG && typeof menuActivate === 'function' && PRACTICE && NET.role === 'host' && NET.transport.open, null, { timeout: 15000 }); // the field's page, up
+    await A.evaluate(() => practiceGo(practiceUrl(true))); // the field, hosting the party's code (a tool's way there: it is off the hub)
+    await A.waitForFunction(() => window.DBG && typeof hubLayout === 'function' && PRACTICE && NET.role === 'host' && NET.transport.open, null, { timeout: 15000 }); // the field's page, up
     const lobby = await A.evaluate(() => NET.transport.lobbyId);
     await open(B);
     await B.evaluate((l) => steamJoinRequested(l), lobby);

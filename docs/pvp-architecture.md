@@ -360,7 +360,7 @@ wire: the handshake is `PATCH_TXT` and the `world` in the `hello` (a snapshot ca
 | `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `world` (`worldKind()`: 0 the match's map, 1 the practice tool, 2 the arena), `name`, `cls` (the profile's hero as a `CLASSES` index, `profileHero()`), `rank` (its RANKED rating), `pos` (the draft position it asks for, `PROFILE.pos`; -1 any), and from a page crossing to meet another party `party` (its own party's code) and `pn` (how many people it brings) |
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `tick`, `roster`, `phase` (the waiting room's page: `room` or `pick`), `ready`, `lvl` (as on a `roster`) |
 | `refuse` | h→c | JSON | `why`: `VERSION` / `WORLD` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host did not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
-| `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since FIND MATCH while the party is looking, else -1), `roomInfo` |
+| `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since PLAY while the party is looking, else -1), `roomInfo` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `draft` | c→h | JSON | `k` (`hover`, `lock`, `role` or `skin`), `h`, `id`: the guest's press in the draft - a hero pointed at or confirmed, its seat moved to position `h`, or look `id` worn on hero `h` (`draftAct`, js/ui/draft.js); the host answers with a `draft` |
 | `draft` | h→c | JSON | `ph`, `tl` (s left), `n` (bans per team), `banned`, `role`/`hover`/`lock` per slot, `lead` (each team's bans): the draft as THIS peer's side may see it (`draftMsg`) - a rival's position and points hidden (-1), its lock only as -2, its bans until the ban phase ends; all of it once `ph` is `done`. Sent per peer on every change. Through the draft a `roster` carries each seat's starting hero, not its pick |
@@ -434,15 +434,14 @@ are close to half the ring and the first thing to derive locally instead of ship
 The same screens and the same protocol ride either transport; only the list and the room differ
 (a relay room with a four-letter code, or a public Steam lobby of `STEAM_LOBBY_MAX` 10).
 
-1. **A party.** FIRST MATCH, QUICKPLAY or RANKED on the title hosts the page's own party at once
+1. **A party.** The hub (js/ui/hub.js) hosts the page's own party at once
    (`beginParty`, js/ui/rooms.js -> `netHost()` -> the transport's `listen()`), its mode in
    `NET.mode`: the relay deals a four-letter code; the Steam transport calls the bridge's
    `createLobby('public', 10)`, makes a code of the same shape (`steamCode`) and writes `patch`,
    `state: 'open'`, `code` and the host's name into lobby data. The host publishes its
    list entry once the transport is open (`netHostRoom`), and again on every join, leave and at
    the drop (`state: 'live'`). **Under Steam a page outside a match always holds a party**
-   (the standing party: `partyStandOk`/`partyStand`, mode `PARTY_IDLE` until the leader picks
-   one), from the title's first frame and on every menu, so Join Game, an invite and a friend's
+   (the standing party: `partyStandOk`/`partyStand`, mode `PARTY_IDLE`, RANKED; FIRST MATCH is set at a new profile's PLAY alone: `roomGo`), from the title's first frame and on every menu, so Join Game, an invite and a friend's
    row always have a lobby to land in; a lone leader leaving the seats keeps it (`partyKeep`), and
    a friend coming in while the title shows turns it to the seats (`partyArrived`). Rich presence
    (`friendsPresence`, js/ui/friends.js) offers Join Game (`connect`) and `sf_lobby` whenever that
@@ -477,10 +476,10 @@ The same screens and the same protocol ride either transport; only the list and 
 5. **The party**, two pages the leader turns for everyone (`NET.phase`, the `phase` message).
    The SEATS (`room`, js/ui/rooms.js): your side's five; the leader's hand on a guest's seat end
    shows them out (`seatKick`, the seat stands empty again). Each guest's READY (`ready`) shows a
-   tick on its seat, and the leader's FIND MATCH does nothing but flash the seats it waits on
+   tick on its seat, and the leader's PLAY does nothing but flash the seats it waits on
    until every person has said it (`roomAllReady`). Every person's seat carries ping bars
    (`ping`/`pong`/`pings`) and, in RANKED, its rating. The party has a chat (`say`/`said`).
-   FIND MATCH (`partyFind`) first looks for another party (**matchmaking**, below; never in FIRST MATCH), then
+   PLAY (`partyFind`) first looks for another party (**matchmaking**, below; never in FIRST MATCH), then
    (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
    in RANKED (`NET.botLv` from the people's average rating) and in FIRST MATCH (EASY) and turns the page to the HERO SELECT
    (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): bans, then everyone's blind pick,
@@ -504,7 +503,7 @@ The same screens and the same protocol ride either transport; only the list and 
    party (`rematchBootHost`); a guest's LOBBY reloads as `?join=CODE&back=1` and keeps trying the
    code for `REMATCH_WAIT` while the leader's page comes back, and the leader deals it the slot
    it held (`rematchSeat`). Leaving (`netLeave`) closes a leader's party; a guest walks out of one.
-9. **The practice tool.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
+9. **The practice tool** (off the hub, kept for the tools that stage on it). A leader taking its party there sends guests `practice` and reloads as
    `?practice=1&net=host&back=1` on the party's code; a guest reloads as `?practice=1&join=CODE&back=1`
    and keeps trying the code like a rematch. The bar's ARENA / MAP well (`practiceCross`) does the
    same with `arena` on the message and `&arena=1` on both URLs; a guest's well is dim. The field's
@@ -513,7 +512,7 @@ The same screens and the same protocol ride either transport; only the list and 
    so a code typed on a title page reloads onto the right one, and a page on the wrong one is
    refused (`WORLD`). The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
-10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
+10. **Matchmaking** (js/ui/matchmaking.js). RANKED's PLAY sets `NET.seek`,
    lists the room with `seek: mode` and `hs`, how well its leader's machine hosts (`seekPower`: a
    fixed load through `snapEncode`, timed once a page at the press, ~19% per step), and reads the list.
    Of the parties looking in one mode, the one with the highest `hs` hosts, the lowest code among equals: it waits `MATCH_WAIT` (8 s, plus `MATCH_HOLD` while one it hosts over is still

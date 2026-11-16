@@ -248,11 +248,19 @@ function beginWiki() {
   SFX.place();
   SFX.music.play('wiki', { in: 0.6, out: 0.5 }); // WHISPERING WOODS, from the moment it opens
 }
-// Esc goes back to the title; the other two tabs to the notes screen
+// the wiki from a hub panel (js/ui/hub.js): page pageId, scrolled to hero cls's block when one is named
+function wikiOpen(pageId, cls) {
+  const m = state.menu;
+  m.wikiTab = Math.max(0, WIKI_PAGES.findIndex((p) => p.id === pageId));
+  beginWiki();
+  if (cls == null) return;
+  const L = wikiLayout(), r = L.rows.find((q) => q.bl.kind === 'cls' && q.bl.cls === cls);
+  if (r) wikiScroll[pageId] = Math.max(0, Math.min(L.maxScroll, r.y - L.winY - 4));
+}
+// Esc goes back to the hub (its music takes over: beginRoom); the other two tabs to the notes screen
 function leaveWiki(to) {
   state.menu.screen = to || 'menu';
   SFX.pickup();
-  SFX.music.play('intro', { in: 0.6, out: 0.5 }); // ...and the title takes its own back
 }
 function wikiScrollBy(d) {
   const L = wikiLayout();

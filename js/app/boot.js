@@ -130,10 +130,10 @@ if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen,
 else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
 if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
 // the game's first launch goes straight into the FIRST MATCH's pick (js/ui/guide.js), and its end
-// lands on the title (titleUrl, js/ui/rooms.js). A boot that came for something else keeps the title:
+// lands on the hub (titleUrl, js/ui/rooms.js). A boot that came for something else keeps the hub:
 // a join, a party back from a match, the field, or a tool's ?seed=N or ?local=N
 if (PROFILE.firstRun() && !PRACTICE && !LOADED_AT_BOOT && !JOIN_AT_BOOT && state.mode === 'title' && state.menu.screen === 'menu' &&
-  !/[?&](seed|net|back|join|local)=/.test(location.search)) menuActivate(menuItems().indexOf('FIRST MATCH'));
+  !/[?&](seed|net|back|join|local)=/.test(location.search)) { beginParty('guide'); partyFind(); }
 // landing from a reload that whited out (a rematch, the field left): the white clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
@@ -184,9 +184,9 @@ window.DBG = {
   settings, perf, treeRare, cursorInfo,
   // the local profile: the store itself, the profile screen (js/ui/profile.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
-  PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
+  PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout,
   profileScrollBy, pfListLayout, pfSeatRects, historyNote, historyList, peopleNote, cardMine,
-  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
+  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
@@ -377,7 +377,7 @@ window.DBG = {
   // weatherOf(day) what a day rolls on this seed
   weather: (name) => { state.wxForce = name && WEATHERS[name] ? name : null; },
   get wx() { return weatherNow(); }, weatherOf,
-  startGame, beginIntro, beginLobby, lockIn, pressPlay, setAiLevel, DRAFT, draftAct, draftPoint, draftConfirm, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
+  startGame, beginIntro, beginLobby, lockIn, pressPlay, setAiLevel, DRAFT, draftAct, draftPoint, draftConfirm, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, hubLayout, roomHit, menuClick, menuKey, lobbyHit,
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without
