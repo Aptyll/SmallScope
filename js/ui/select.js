@@ -77,7 +77,7 @@ function posIcon(r, col) {
 }
 
 // ------------------------------------------------------------ top band
-// The headline (BAN A HERO!, PICK YOUR HERO!, PREPARE YOUR LOADOUT! once your
+// The headline (BAN A HERO!, PICK YOUR HERO!, GET READY! once your
 // pick is in and through the count), the bar under it draining toward the
 // middle, the seconds under that - gold while this screen still has to act.
 // Each side's bans sit in its own top corner, yours left: a vote standing
@@ -87,7 +87,7 @@ function selHeadline() {
   if (D.phase === 'ban') return tr('pick.ban');
   if (D.phase === 'pick' && D.lock[localId] < 0) return tr('pick.pick');
   if (D.phase === 'wait') return tr('pick.pick');
-  return tr('pick.loadout');
+  return tr('pick.ready');
 }
 function selClock() {
   const D = DRAFT, m = state.menu;
@@ -380,9 +380,9 @@ function drawSelChevron(r, d, hot) {
 // ------------------------------------------------------------ foot
 // The foot: the match bottom right - its size and its mode - and the confirm
 // plate under the grid.
-function selModeName() { return PARTY_MODES[NET.mode] || tr(PRACTICE ? 'pick.practice' : 'pick.quick'); }
+function selModeName() { return PARTY_MODES[NET.mode] || tr('pick.quick'); }
 function drawSelMode(L, a) {
-  // the size off the seats in the match, unless the mode's name says it (1V1)
+  // the size off the seats in the match
   const n = [0, 1].map((t) => players.filter((p) => p.active && p.team === t).length);
   const mode = selModeName(), size = n[0] + 'V' + n[1] === mode ? '' : n[0] + 'V' + n[1];
   const rx = VIEW_W - LOBBY_PAD;
@@ -397,10 +397,8 @@ function drawSelMode(L, a) {
 // hero you point at, so a new player reads a hero before locking it. It stands
 // where the 2x stage would when the grid leaves the stage no room.
 const BRIEF_WELL = 34, BRIEF_GAP = 3, BRIEF_SPLIT = 12; // an ability's well, the air between two, and between the words and the wells
-// under: the brief's ground even while the loadout's open picker stands on it (where its cards anchor, loadoutTip)
-function selBriefHero(L, under) {
+function selBriefHero(L) {
   if (DRAFT.phase !== 'pick' || DRAFT.lock[localId] >= 0 || L.stage) return -1;
-  if (!under && state.menu.loPick != null) return -1; // the loadout's open picker stands on this ground (loOptions, js/ui/loadout.js)
   const hi = state.menu.screenT >= 1 && state.menu.popT <= 0 && mouse.inside ? heroCellAt(L.heroes) : -1;
   const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
   return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;
@@ -411,8 +409,8 @@ function selBriefLine(c) {
   const style = ITEM_STYLES.find((o) => o.id === c.style).label;
   return { style, w: pixelTextWidth(style) + (c.role ? BRIEF_STYLE_GAP + pixelTextWidth(c.role) : 0) };
 }
-function selBrief(L, under) {
-  const h = selBriefHero(L, under);
+function selBrief(L) {
+  const h = selBriefHero(L);
   if (h < 0) return null;
   const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + L.pitch : L.grid.y;
   if (L.play.y - last < BRIEF_WELL + 8) return null; // no room under this grid

@@ -78,7 +78,7 @@ function laneAlong(L, tx, ty) {
 const laneSegs = [];
 let laneA = null, laneB = null;
 // signed distance (tiles) from the nearest side lane's ragged edge, negative
-// inside - 99 before layLanes, and on the practice field
+// inside - 99 before layLanes
 function sideLaneDist(fx, fy) {
   if (!laneA) return 99;
   const lat = segsLat(laneSegs, laneA, laneB, fx, fy);
@@ -90,7 +90,6 @@ function sideLaneDist(fx, fy) {
 // No rng(): no seed moves.
 function layLanes() {
   laneSegs.length = 0; laneA = laneB = null;
-  if (ARENA) return;
   for (const lane of [0, 2]) {
     const P = laneLine(lane).pts;
     for (let i = 0; i < P.length - 1; i += LANE_SEG) {

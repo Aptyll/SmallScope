@@ -38,7 +38,7 @@ const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
 const RAIL_TRACK = '#25282d';       // an hp bar's empty track
 // the roster: your side then the rival's, each by id, you first on yours.
-// Null unless the rival side has a body - the practice arena has no rail.
+// Null unless the rival side has a body.
 function railSides() {
   const mine = [], theirs = [];
   for (const p of players) { if (!p.active || p === player) continue; (p.team === player.team ? mine : theirs).push(p); }

@@ -103,7 +103,7 @@ function botAimed(p) {
 // A match is over when a new drop begins or the match clock runs backward:
 // its last summary joins `matches`, the session's history. The recorder keeps
 // its own clock (`t`), since the match clock stands still while the host is
-// down, after a win and in practice, and the bots don't.
+// down and after a win, and the bots don't.
 const BOTLOG_STEP = 0.1;       // s between recorder steps (a goal held shorter than this can be missed)
 const BOTLOG_SAMPLE = 1;       // s between position samples
 const BOTLOG_CAP = 60000;      // events + samples kept per match before the oldest go

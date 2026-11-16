@@ -55,12 +55,12 @@ function seekHosts(power, code, r) { const p = +(r.data && r.data.hs) || 0; retu
 function seekRivals() {
   const mine = roomCode();
   return state.menu.rooms.filter((r) => roomOk(r) && r.data.seek === NET.mode && r.data.state === 'open' &&
-    !+r.data.practice && seekKey(r) && seekKey(r) !== mine);
+    seekKey(r) && seekKey(r) !== mine);
 }
 // PLAY in RANKED: the party starts looking. False when it
 // cannot (no relay, no Steam): bots at once, as before
 function seekStart() {
-  if (NET.role !== 'host' || NET.mode === 'practice' || NET.mode === 'guide' || !roomCode() || !(NET.transport && NET.transport.open)) return false; // FIRST MATCH goes straight to bots
+  if (NET.role !== 'host' || NET.mode === 'guide' || !roomCode() || !(NET.transport && NET.transport.open)) return false; // FIRST MATCH goes straight to bots
   seekPower(); // timed now, at the press, not mid-look
   NET.seek = { t: 0, hold: MATCH_WAIT, rival: null, crossing: false };
   roomsFeedOpen();
@@ -105,7 +105,7 @@ function crossedIn() { let n = 0; for (const pr of NET.peers.values()) if (pr.cr
 // is seated, and only its people after it
 function crossAdmit(msg) {
   const s = NET.seek;
-  if (!s || s.crossing || NET.mode === 'practice' || state.mode !== 'title' || NET.phase !== 'room') return false;
+  if (!s || s.crossing || state.mode !== 'title' || NET.phase !== 'room') return false;
   if (!s.rival) { s.rival = { code: String(msg.party), n: Math.max(1, Math.min(5, msg.pn | 0)), t: 0 }; roomsFeedClose(); }
   return s.rival.code === String(msg.party);
 }
@@ -118,13 +118,13 @@ function seekCross(r) {
   const code = roomCode(), n = partySize();
   homeSave({ code, lead: true, mode: NET.mode, seats });
   if (NET.peers.size) NET.transport.send('*', { t: 'cross', room: r.room, code, n });
-  practiceGo(crossUrl(r.room, code, n));
+  pageGo(crossUrl(r.room, code, n));
 }
 // a guest told its party is crossing: after it
 function crossHeard(msg) {
   if (state.mode !== 'title' || !msg.code) return;
   homeSave({ code: String(msg.code), lead: false, mode: NET.mode, seats: {} });
-  practiceGo(crossUrl(String(msg.room), String(msg.code), msg.n | 0));
+  pageGo(crossUrl(String(msg.room), String(msg.code), msg.n | 0));
 }
 function crossUrl(room, code, n) {
   const steam = netSteam() ? '&transport=steam' : '';
@@ -143,7 +143,7 @@ function crossHomeUrl() {
   }
   return base + '&join=' + h.code + steam;
 }
-function crossHome() { if (!state.fade) practiceGo(crossHomeUrl()); }
+function crossHome() { if (!state.fade) pageGo(crossHomeUrl()); }
 // a guest whose host walked out or showed it out: home, if this page crossed;
 // a party of its own otherwise (updateTitle, js/ui/menu.js)
 function partyLost() {

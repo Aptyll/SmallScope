@@ -22,8 +22,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
   signal, so `drawWorkHint` shows no prompt over an `auto` target.
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
-  It is what reaches **the practice dummy** — the one thing not marked `auto` — and it still
-  works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
+  Everything in play is marked `auto`, so E only works a thing sooner if you insist. It resolves `workTarget(p)`: the tile that player is
   aiming at, if it holds an object marked `work` or a rival's building
   (bare ice is nothing); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
@@ -39,9 +38,8 @@ Whenever `workTarget()` is non-null, `near`, **and not something the hands take 
 (`autoWorks(t.o, player)` nulls it — and tools aren't blocked, a wind-up running or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
-verb. Since every tree and rival building is `auto`, the only prompt that shows in play
-is **HIT** over the practice dummy; the verb and the lift are still read off the `OBJECTS` entry
-(`verb`, `lift`: 33 for a pine, 28 for the dummy, 10–12 for the short ones),
+verb. Since every tree and rival building is `auto`, no prompt shows in play; the verb and the
+lift are still read off the `OBJECTS` entry (`verb`, `lift`: 33 for a pine, 10–12 for the short ones),
 scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,
 clearing the sprite and centred on the footprint — stays for a building that is ever not `auto`.
 A zipline in reach claims the cap first (`drawZipHint`); a merchant in reach adds its own SHOP cap (`drawShopHint`). The cap

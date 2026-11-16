@@ -206,11 +206,9 @@ function seatPos(e, si) {
 function beginDrop() {
   PROFILE.addMatch(); // the profile's matches: one per takeoff
   state.drop = { eagles: makeEagles() };
-  onevoneBegin(); // a 1V1 party's rules into the match (js/sim/onevone.js)
   const seats = [0, 0]; // next free wing seat per team, dealt in slot order - the first slot of each side sits at seat 0
   for (const p of players) {
     if (!p.active) continue;
-    loadoutStart(p); // the pre-game picks, made whole (js/sim/loadout.js)
     const e = state.drop.eagles[p.team];
     p.aboard = true; p.dropT = 0;
     p.seat = seats[p.team]++;
@@ -620,7 +618,7 @@ function hurtEagle(e, dmg, src, hx, hy) {
   const pct = Math.round(Math.max(0, e.hp) / e.maxHp * 100);
   evPush('roost', [e.team, pct, e.x, e.y]);
   roostWarnHere(e.team, pct, e.x, e.y);
-  if (e.hp <= 0) { if (PRACTICE) practiceBirdMend(e); else eagleFlee(e, src); } // nothing ends in practice (js/sim/practice.js)
+  if (e.hp <= 0) eagleFlee(e, src);
 }
 
 // a blow on a bird, as THIS screen hears it (from hitEagle, and from evPlay on

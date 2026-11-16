@@ -146,8 +146,8 @@ function tipAt(mx, my) {
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls) : null; }
     if (m.screen === 'lobby' && m.screenT >= 1) {
       const L = lobbyLayout(), b = selBriefHit(L); // the pick's brief: an ability's card (js/ui/select.js)
-      return b ? Object.assign(tipClassAb(b.i, b.h), { over: selBrief(L).wells[0] }) : loadoutTip(L); // ...standing over the wells, never on them
-    } // the picks' wells and picker (js/ui/loadout.js)
+      return b ? Object.assign(tipClassAb(b.i, b.h), { over: selBrief(L).wells[0] }) : null; // ...standing over the wells, never on them
+    }
     return null;
   }
   if (state.mode !== 'play') return null;
@@ -159,14 +159,10 @@ function tipAt(mx, my) {
   if (ci >= 0 && player.items[ci]) return tipItem(player.items[ci]);
   const rc = railHit(mx, my);
   if (rc) return tipRail(rc);
-  const ch = cheatHit(mx, my);
-  if (ch && ch.kind === 'cell') return tipCheat(ch.i);
-  if (ch && ch.kind === 'hero') return tipCheatHero(ch.h);
   const abb = abBuyHit(mx, my);
   if (abb >= 0) return tipClassAb(abb); // the buy plate describes the ability it upgrades
   const sh = stripHit(mx, my);
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
-  if (sh && sh.kind === 'trick') return tipTrick(trickOf(player, sh.i)); // a loadout trick (js/ui/loadout.js)
   if (sh && sh.kind === 'item') return player.items[sh.i] ? tipItem(player.items[sh.i]) : null; // an empty slot says nothing
   if (sh && sh.kind === 'port') return tipAttack(player); // the hero's face names the hero's own basic attack
   if (sh && sh.kind === 'stat') return tipStat(sh.key); // the stat panel's breakdown (js/ui/statpanel.js)

@@ -18,7 +18,7 @@ paint, stamina white (the palette is one block above `drawHealthBar` in
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
 your allies and yourself and red over rivals on your screen (your running damage total wears the same), and neutral gold (`BAR_NEUTRAL`, the WoW
-grammar) over wildlife, the practice dummy and anything handed no team (under a colour-blind
+grammar) over wildlife and anything handed no team (under a colour-blind
 palette a rival's bar wears a raised dark cap on its right end, `foeCue`). Health reads in **even
 segments**: N blocks of one width with a 1 px dark tick between (`hpSegCount`), so a `w`-wide bar
 splits only where `w + 1` divides by N, and every bar width is picked for that (`evenBarW` snaps a

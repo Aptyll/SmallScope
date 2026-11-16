@@ -1,7 +1,7 @@
 'use strict';
 // The frozen world: the tile grid and its objects, worldgen (rivers, ponds),
-// the road and the creek. The zipline, the camps and the
-// practice arena load right after it (js/sim/zipline.js, js/sim/camps.js, js/sim/practice.js).
+// the road and the creek. The zipline and the camps load right after it
+// (js/sim/zipline.js, js/sim/camps.js).
 // ------------------------------------------------------------ world
 const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water), 3 the road (placeRoad)
 const objects = new Array(WORLD * WORLD).fill(null);
@@ -15,7 +15,7 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // which tool E reaches for (`tool`) and which one a swing must already be
 // holding (`needs`, null = any), whether the hands go to it on their own the
 // moment it is in reach (`auto` - a tree, a snowdrop, a rival's eagle:
-// autoWork, js/sim/actions.js - the dummy waits for E), the verb the key prompt prints and how far
+// autoWork, js/sim/actions.js), the verb the key prompt prints and how far
 // above the tile it sits, and the colour each of the two maps paints it.
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
 // mm/map fields, and every site below asks that table first. Adding a scenery
@@ -78,44 +78,20 @@ const OBJECTS = {
   // opens the shop (merchNear, js/ui/shop.js). `sight`: px of fog its side
   // sees round it (sightSources, js/sim/fog.js).
   stall:    { solid: true,  w: 3, h: 2, sight: 176, mm: (o) => mmTeam(o) },
-  // the practice arena's target (the `practice arena` banner, js/sim/practice.js): any tool
-  // hits it, it never falls, and it mends itself between combos. E swings,
-  // every attack and the roll's tackle all land through hitDummy (js/sim/actions.js).
-  dummy:    { solid: true,  work: true, verb: 'HIT', lift: 28,
-              mm: [216, 178, 122] },
-  // The training field's dressing (practice arena only): inert scenery like
-  // the den - no `tool`, so E never offers them - drawn in the y-sorted pass.
-  // the parkour gate's flag - and, carrying a `team`, the two pennant poles
-  // at each of the road's mouths (placeRoad), which paint the maps in that
-  // side's ink the way a roosting eagle does
-  banner:   { solid: true,
-              mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
-              map: (o) => o.team === undefined ? null : chEagle(o) },
-  // the felled trunk across each forest road's far end (placeRoad): one
-  // piece per tile along the cross-diagonal, `seg` 0/1/2 the up-left end,
-  // the trunk, the down-right end. Solid and inert to E; its pixels are baked
-  // flat into the ground (paintLog under paintGroundTile, draw-world.js),
-  // never drawn in the y-sorted pass - a trunk on the ground is ground.
-  // `leap`: a deer's leap clears it (rideLeap, js/sim/wildlife.js)
-  log:      { solid: true,  leap: true, mm: [124, 94, 62] },
+  // the two pennant poles at each of the road's mouths (placeRoad), carrying
+  // a `team`: inert scenery drawn in the y-sorted pass, painting the maps in
+  // that side's ink the way a roosting eagle does
+  banner:   { solid: true, mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: (o) => chEagle(o) },
   // a fallen pine on the river's bank, a junction's landmark (jungleMarks,
   // js/sim/jungle.js): every tile it lies across carries the whole trunk's
   // line in world px (x0, y0 the root plate, x1, y1 the broken top), and its
-  // pixels are baked flat into the ground like the log's (paintTrunk)
+  // pixels are baked flat into the ground (paintTrunk)
   trunk:    { solid: true,  leap: true, mm: [124, 94, 62] },
   // a zipline's pylon (placeZips, the `zipline` banner, js/sim/zipline.js): solid, inert
   // to E, carrying its `team`. Its pixels are PYLON_SPRS in render()'s
   // object pass (js/draw/zipline.js); the cable itself is not an object at
   // all - it hangs between the pylons' points (zips) and is drawn by drawZips.
   pylon:    { solid: true,  mm: [150, 156, 170] },
-  // the parkour roll station (practice arena only): the die that rerolls the
-  // track. Inert to E's work verbs like the rack - holding E beside it opens
-  // the roll wheel (pkDieNear, the practice arena banner, js/sim/practice.js).
-  pkdie:    { solid: true,  mm: [242, 204, 100] },
-  // the archery range's bell (practice arena only): E beside it rings the
-  // timed round on and off. Inert to E's work verbs like the die - the press
-  // resolves through agBellNear (the practice arena banner, js/sim/practice.js).
-  agbell:   { solid: true,  mm: [216, 158, 74] },
   stump:    { solid: false, mm: [188, 200, 218] },
   // a roosting team eagle's hitbox tiles (placed by eagleCrash, js/sim/eagle.js):
   // solid to walkers and a work target for RIVAL E swings only - workTarget
@@ -143,7 +119,6 @@ const MM_TEAM_RED = [172, 68, 60], MM_TEAM_BLUE = [78, 128, 188];
 const mmTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? MM_TEAM_BLUE : MM_TEAM_RED; // STRUCTS' mm (structures.js)
 const MM_PUMP = [150, 156, 172]; // a gold pump nobody holds
 const mmPump = (o) => o.hold >= 0 ? (skin(o.hold) ? MM_TEAM_BLUE : MM_TEAM_RED) : MM_PUMP;
-const MM_BANNER = [214, 88, 76]; // the practice gate's own red
 
 // What stands on a tile, on each map: objMapColor is the `mm` colour the
 // minimap disc paints it (an [r, g, b]), objChart the CH_* class the
@@ -254,7 +229,7 @@ const BORDER_MIN = 30 * MAP_K, BORDER_MAX = 70 * MAP_K; // forest boundary depth
 // the diagonal is ROOST_R / sqrt 2 ~ 48 tiles in). The union only ever ADDS
 // trees: past the disc the border keeps every seed's own noise, and the arc
 // itself wobbles ROOST_WOBBLE on the fine noise so it never reads as a compass
-// stroke. Not under ARENA - the training field is its own collar.
+// stroke.
 const ROOST_R = 68 * MAP_K; // tiles from the corner
 const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 
@@ -271,7 +246,6 @@ function borderNoise(tx, ty) {
 }
 function borderDepth(tx, ty) {
   const d = warrenGrove(tx, ty, borderNoise(tx, ty));
-  if (ARENA) return d;
   const c = Math.min(Math.hypot(tx, WORLD - 1 - ty), Math.hypot(WORLD - 1 - tx, ty)); // to the nearer roost corner
   if (c >= ROOST_R + ROOST_WOBBLE) return d;
   const R = ROOST_R + (vnoise(tx / 9 + 40, ty / 9 + 40) - 0.5) * 2 * ROOST_WOBBLE;
@@ -295,7 +269,6 @@ const GROVE_IN = 3;       // tiles past the warren's centre the tongue reaches
 const GROVE_TAPER = 1.4;  // tiles of depth lost per tile either side of the clearing
 let groveSites = null;    // [{ tx, ty, e, side, r }] (e: the site's depth from its nearest edge, `side` which edge), once - CAMP_SITES is further down this file
 function warrenGrove(tx, ty, d) {
-  if (ARENA) return d;
   if (!groveSites) groveSites = campSites().filter((s) => CAMPS[s.key].treeline).map((s) => {
     const t = campTile(s.u, s.s), es = [t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty], e = Math.min(...es);
     return { tx: t.tx, ty: t.ty, e, side: es.indexOf(e), r: CAMPS[s.key].r };
@@ -312,8 +285,8 @@ function warrenGrove(tx, ty, d) {
   return d;
 }
 
-// swings to fell a pine, everywhere one is planted (the border, the practice
-// arena's forest, the regrown treeline): three at 0.34 s is a one-second tree,
+// swings to fell a pine, everywhere one is planted (the border, the
+// regrown treeline): three at 0.34 s is a one-second tree,
 // and what it pays is YIELD.treeFall, or treeRare on a gold pine (js/sim/core.js)
 const TREE_HP = 3;
 // per-tile roll for a gold pine (YIELD.treeRare on the fell, js/sim/core.js):
@@ -483,7 +456,6 @@ function roadEdgeAt(u, side) {
 // inside it. No ends: genWorld reads the line whole (the road as laid ends on
 // the perches - roadDist's `laid`)
 function roadMainDist(fx, fy) {
-  if (ARENA) return 99;
   const o = roadOffS(fx, fy);
   return Math.abs(o) - roadEdgeAt(roadAlong(fx, fy), o < 0 ? -1 : 1);
 }
@@ -535,7 +507,7 @@ function roadSpan() {
 // each gate's pillars across its sill (cisternApron, js/sim/cistern.js). Not genWorld's:
 // its carve rules ask the whole line, before the creek is in, so no seed's
 // ponds move
-function laneDist(fx, fy) { const d = roadDist(fx, fy, true); return ARENA ? d : Math.min(d, cisternApron(fx, fy)); }
+function laneDist(fx, fy) { return Math.min(roadDist(fx, fy, true), cisternApron(fx, fy)); }
 function onRoad(tx, ty) { return laneDist(tx, ty) < 0; }
 // where a side's bird roosts and where its road leaves home: the NEST is the
 // perch at the back of the side's base, on the centreline (basePerch,
@@ -551,7 +523,6 @@ function roadNest(team) {
   return (roadNestC[team] = { u, side: team === 0 ? -1 : 1, jx, jy, nx: n.tx, ny: n.ty, x: (jx + 0.5) * TILE, y: (jy + 0.5) * TILE });
 }
 function placeRoad() {
-  if (ARENA) return;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const i = idx(tx, ty);
     if (!onRoad(tx, ty)) {
@@ -730,7 +701,6 @@ const CQ = { d: 99, a: 0, n: 0 };
 function creekAt(fx, fy) {
   const q = CQ;
   q.d = 99;
-  if (ARENA) return 99;
   const p = creekP(fx, fy), w = roadOffS(fx, fy);
   if (Math.abs(p - creekBend(w)) - CREEK_REACH >= q.d) return q.d;
   const n = p - creekMid(w);
@@ -780,7 +750,6 @@ function orcaPool() {
 }
 // signed tiles from the rim (negative inside); 99 well clear of it
 function orcaLakeEdge(fx, fy) {
-  if (ARENA) return 99;
   const P = orcaPool(), dx = fx - P.tx, dy = fy - P.ty, a = Math.atan2(dy, dx);
   const d = Math.hypot(dx, dy) - ORCA_LAKE_R - (vnoise(Math.cos(a) * 1.8 + 31.7, Math.sin(a) * 1.8 + 5.3) - 0.5) * 2 * ORCA_LAKE_RAG;
   return d > 4 ? 99 : d;
@@ -791,7 +760,6 @@ function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
 // ice fells whatever grew on it (its banks keep their pines). Last, the
 // cistern stands round the middle (placeCistern, js/sim/cistern.js).
 function placeCreek() {
-  if (ARENA) { placeCistern(); return; } // ...which stands down in the practice arena
   creekBendsC = null; creekSpanC = null;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!creekIceAt(tx, ty)) continue;

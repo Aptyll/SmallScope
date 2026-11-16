@@ -208,19 +208,16 @@ function spawnMerchant(e) {
   return b;
 }
 // the one place a merchant body is made: the eagle's driver (spawnMerchant,
-// roost = its bird) or the training field's keeper (genPracticeWorld,
-// js/sim/practice.js; roost = null), who only minds its counter and keeps
-// to `post`
+// roost = its bird)
 function makeMerchant(team, at, roost) {
   const b = {
     merchant: true, bot: true, kind: 'merchant', team, owner: -1, home: null,
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
-    post: { x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE },
     roost, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
     bays: [], bayT: 0, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
     bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
     stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
-    hopT: roost ? MERCH_HOP_T : 0, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
+    hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
     atkAim: null, atkCd: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
@@ -293,8 +290,8 @@ function pitchStall(b, s) {
 const MERCH_BAY_ORDER = [1, 0, 2];
 // where the next bay goes: the first lane in MERCH_BAY_ORDER with no bay
 // standing that has a site, or null (the site carries its lane)
-// the lanes this match plays: all three, or the mid road alone in a 1V1 (js/sim/onevone.js)
-function merchLanes() { return state.onevone ? [1] : MERCH_BAY_ORDER; }
+// the lanes this match plays
+function merchLanes() { return MERCH_BAY_ORDER; }
 function merchNextBay(b) {
   for (const lane of merchLanes()) {
     if (b.bays.some((o) => o.lane === lane)) continue;
@@ -399,8 +396,6 @@ function updateMerchant(b, dt) {
     for (const r of robots) if (!r.dead && r !== b && Math.abs(r.x - cx) < 8 + PLAYER_R && Math.abs(r.y - cy) < 8 + PLAYER_R) return true;
     return false;
   };
-  // the training field's keeper (makeMerchant): no bird, no bays, no woods
-  if (!e) return keep(b.post.x, b.post.y);
   for (let i = b.avoids.length - 1; i >= 0; i--) if ((b.avoids[i].t -= dt) <= 0) b.avoids.splice(i, 1);
   // ---- raising a 3x2 site: fell what stands on it, then hammer it up ----
   // Shared by the stall and the bays. The woods on the footprint and a

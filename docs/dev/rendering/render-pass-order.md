@@ -9,22 +9,21 @@
    a dark under-ice silhouette at a deer's size, cut to the ice's own pixels so it never shows over the road it
    swims under, darkening as it comes up, gone while it is out) →
    ice-crack decals → ice breaks (`drawIceBreaks`, js/draw/icebreak.js);
-2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
-3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
+2. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
    bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
    grid moved - see [trampled snow](../gameplay/trampled-snow.md)) → footprints (walking prints, slide
    grooves and skate scratches share the one `footprints` array, branching on
    `f.k` - the crisp, short-lived detail over the trample);
-4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
+3. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
    it covers the orca's shadow and the cracks, and under everything that walks) → `drawDrift` (a
    blizzard day's low streaks, [the day's weather](drawing-a-thousand-of-something.md#the-days-weather)) → **the weather on the
    ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
    and cracks, fresh dust while it snows - [the wind's leavings](../world.md#the-winds-leavings));
-5. flat objects (stumps);
-6. `drawRecallGround` (each roost's reach: its floor lit where its bird heals, under a pale rim) → `drawPumpRings` → `drawCampLeashes` (an awake camp's leash ring, js/draw/marks.js) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
+4. flat objects (stumps);
+5. `drawRecallGround` (each roost's reach: its floor lit where its bird heals, under a pale rim) → `drawPumpRings` → `drawCampLeashes` (an awake camp's leash ring, js/draw/marks.js) → `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (the heroes'
    ground marks, `HERO_GROUND`, and every wind-up's telegraph);
-7. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
-   targets, sorted by feet Y; empty player slots draw as team-tinted
+6. `drawHitPuffs` (a big hit's snow clumps, under the bodies, js/draw/hitfx.js), then the **y-sorted `draws` array** (tall objects, every player, animals, robots,
+   sorted by feet Y; empty player slots draw as team-tinted
    silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
    the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
    its hole's waterline and cut at it - [the cistern](../code-map/sim/cistern.md)); a body under a big
@@ -33,27 +32,25 @@
    (`bodyOffView`, js/draw/passes.js: nothing it draws reaches that far from its feet), unless it wears a
    running damage total, and `playerUnseen` keeps what `drawPlayer` keeps besides pixels (the idle's
    record, the callout anchor);
-8. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
+7. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
-9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
-   `drawAgRings`;
-10. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
+8. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
-11. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
+9. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's sight line, bolt and spent bolt, js/draw/towers.js);
-12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
+10. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
     (js/draw/pops.js): the floaters (queued through `drawWorldText`, see
     [Text over the world](text-over-the-world.md)) and the farm's coins (plates,
     [gameplay.md](../gameplay/robots.md#farming));
-13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
+11. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](drawing-a-thousand-of-something.md#the-wind-field))
     → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
     exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cables, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
-14. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
+12. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](debug-overlays-hitboxes-and-routes.md));
-15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
+13. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
     the riders and every faller) → the zipline riders and a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
@@ -65,7 +62,7 @@ a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn c
 **`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](the-hud-corners/the-hover-tooltip.md)'s one answer for the frame) →
-`renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
+`renderUI` (skipped in `title` and `drop`) →
 `renderDropUI` (mode `drop` only: your arrow, keybind indicators) → `drawDropHeadline` (mode
 `play`, the landing's PROTECT YOUR EAGLE while your bird's wings settle, [the arrival](eagle-drop-mode-drop.md)) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
 the chart, because a ping wheel opens over it) → `renderSettings` → `renderTitle` (the main

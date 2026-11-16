@@ -9,8 +9,8 @@ out** the same from that step: the proof is below. Nothing a player reaches call
 `DBG.saveCapture`, `DBG.saveApply`, `DBG.saveHash` and `DBG.saveLoad` (js/app/boot.js).
 
 **How it works** (js/sim/save.js). There is one map, grown from `MAP_SEED` on every page, so a
-load is a fresh page on the same ground and match seed (the record names both: `world`, from
-`worldKind()`, and `seed`; `saveApply` throws on another, and `saveDevLoad` reloads onto
+load is a fresh page on the same ground and match seed (the record names the
+`seed`; `saveApply` throws on another, and `saveDevLoad` reloads onto
 `?seed=` the record's), and the save is what the match has done to it since. The streams'
 positions ride in the body.
 `saveBaseline` records the map as it grew, at boot, before anything moves (each tile's object
@@ -40,8 +40,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
 canvases are nobody's state and are dropped (a console warning names the path if one turns up).
 
 **The flow.** `DBG.saveLoad(rec)` (`saveDevLoad`) puts a record from `saveCapture` into
-`sessionStorage` (`softfall.load`) and reloads onto the same match seed and ground (`?seed=`, and
-the practice tool's or arena's flags); boot calls
+`sessionStorage` (`softfall.load`) and reloads onto the same match seed and ground (`?seed=`); boot calls
 `saveBootLoad` after the world stands and **before `prepGround`**, so the bake paints the saved
 map, then `saveBootEnter` once boot is done (the saved camera, the fade up from dark, the
 match's music; no HUD slide, whose ease would move the camera and pop the day's headline). A

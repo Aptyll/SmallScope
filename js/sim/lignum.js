@@ -178,7 +178,6 @@ function updateLignumAxes(dt) {
       continue;
     }
     if (w.d >= AXE_RANGE || isSolidTile(tx, ty)) {
-      if (PRACTICE) abHitDummies(w.x, w.y + BOW_Y, AXE_R + 4, w.dmg);
       burst(w.x, w.y, '#cfd8e8', 4, 30, 0.3, true);
       lignumAxes.splice(i, 1);
     }
@@ -272,7 +271,6 @@ function lignumTimber(p) {
       if (!q.dead) knockUp(q, up, p);
     }
     for (const st of structsNear(p, L.x0 + L.nx * s, L.y0 + L.ny * s, TIMBER_W)) if (!hit.has(st)) { hit.add(st); hurtStruct(st, dmg, p); }
-    if (PRACTICE) abHitDummies(L.x0 + L.nx * s, L.y0 + L.ny * s, TIMBER_W, dmg);
   }
   // the trunk on the snow: every open tile under its line is a wall for TIMBER_T
   const tiles = [];

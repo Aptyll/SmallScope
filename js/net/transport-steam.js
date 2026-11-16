@@ -179,7 +179,7 @@ function steamCode() {
 // The party lobby's feed of Steam lobbies, in the shape the relay's list
 // sends (wsRooms, js/net/transport-ws.js): { room: lobby id, n: members,
 // data: everything netHostRoom wrote (name, patch, state, humans, sides,
-// code, practice, seek) }, the numbers
+// code, seek) }, the numbers
 // parsed back out of Steam's string store. Polled while a code is being
 // looked for; close() stops it. Lobbies without a patch key are not this game's.
 function steamRooms(cb) {
@@ -199,7 +199,7 @@ function steamRooms(cb) {
         let sides = [0, 0]; try { sides = JSON.parse(d.sides || '[0,0]'); } catch (e) {}
         // every key the host wrote comes through (a party's `seek` among them,
         // js/ui/matchmaking.js), the numbers parsed back out of Steam's strings
-        rooms.push({ room: l.id, n: (l.members || []).length, data: Object.assign({}, d, { name: d.name || '', state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', practice: num(d.practice), seek: d.seek || '' }) });
+        rooms.push({ room: l.id, n: (l.members || []).length, data: Object.assign({}, d, { name: d.name || '', state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', seek: d.seek || '' }) });
       }
       if (!closed) cb(rooms, true);
     } catch (e) { if (!closed) cb([], false); }

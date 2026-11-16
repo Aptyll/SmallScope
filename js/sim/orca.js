@@ -77,7 +77,6 @@ function orcaPrey(p) { return !!p && p.active && !p.dead && !inAir(p) && !(p.zip
 function spawnOrca() {
   orcaWater = new Uint8Array(WORLD * WORLD);
   orcaHome = [];
-  if (ARENA) return;
   const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_RAG + 2);
   for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
     if (!inWorld(tx, ty) || !orcaLakeAt(tx, ty)) continue;

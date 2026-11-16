@@ -163,7 +163,7 @@ function guideHeadlineUp() {
   return !!e && e.state === 'down' && e.restT < HEADLINE_IN + HEADLINE_HOLD;
 }
 function guideOn() {
-  return NET.mode === 'guide' && !PRACTICE && !guide.off && state.mode === 'play' && !!state.drop &&
+  return NET.mode === 'guide' && !guide.off && state.mode === 'play' && !!state.drop &&
     !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp() && guideTour.t >= 0 && !guideTouring(); // the ride to their roost first; hudHome: never over a cinematic, the landing's or a bird driven off
 }
 function guideOpen(i) { guide.step = i; guide.t = 0; }
@@ -361,7 +361,7 @@ const GUIDE_DEATHS = {
   recall: { id: 'recall', word: 'RECALL', tip: 'LOW ON HEALTH? YOUR EAGLE TAKES YOU HOME TO HEAL', caps: () => [keyCap('recall')] },
 };
 function guideDeathLesson() {
-  if (NET.mode !== 'guide' || PRACTICE || guide.off || state.mode !== 'dead' || state.over !== 'respawning') return null;
+  if (NET.mode !== 'guide' || guide.off || state.mode !== 'dead' || state.over !== 'respawning') return null;
   const log = player.deathLog || [];
   let all = 0, tower = 0;
   for (const e of log) { all += e.d; if (e.k === 'world' && e.c === 'tower') tower += e.d; }
@@ -459,7 +459,7 @@ function guideTourAt(d) {
 function guideTouring() { return guideTour.t >= 0 && !guideTour.done; }
 // the camera's aim this frame while the ride runs (the play camera, js/sim/sim.js), else null
 function guideTourAim(dt) {
-  if (guideTour.done || NET.mode !== 'guide' || PRACTICE || guide.off || state.mode !== 'play' || !state.drop) return null;
+  if (guideTour.done || NET.mode !== 'guide' || guide.off || state.mode !== 'play' || !state.drop) return null;
   const e = state.drop.eagles[player.team], r = state.drop.eagles[1 - player.team];
   if (guideTour.t < 0) { // it waits for both birds down and your headline gone
     if (!e || !r || e.state !== 'down' || r.state !== 'down' || guideHeadlineUp() || player.aboard || inAir(player)) return null;

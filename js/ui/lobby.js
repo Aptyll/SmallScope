@@ -12,7 +12,7 @@
 //
 // It is an INSTRUMENT in the sense CLAUDE.md's show-don't-label rule carves
 // out: its whole job is comparing numbers between ten people, so it gets
-// row names and printed values the way the practice room's meters and the
+// row names and printed values the way the
 // merchant's price graphs do. Everything that is NOT a number still reads as
 // a shape - the side is a colour, a player is their face, your column is a
 // lit band in gold, and the best in each row wears its side's underline.

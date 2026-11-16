@@ -12,9 +12,9 @@ window.MEDIA = (function () {
   M.boot = function (o) {
     M.o = o = Object.assign({ k: 6, weather: 'calm', earR: 260, teamBlue: true }, o || {});
     D.freeze = true;
-    // a match flies its drop first; the practice field (o.practice) boots on the ground
-    if (!PRACTICE) D.beginDrop();
-    for (let i = 0; i < 60 * 90 && !PRACTICE; i++) {
+    // a match flies its drop first
+    D.beginDrop();
+    for (let i = 0; i < 60 * 90; i++) {
       update(DT);
       if (state.mode === 'play' && players.every((p) => !p.active || !inAir(p))) break;
     }
@@ -58,9 +58,9 @@ window.MEDIA = (function () {
   // snow falls and pines sway, every body, arrow, spark and word holds still
   M.speed = 1;
   M.still = function () {
-    const held = [particles, floaters, wordPops].map((a) => a.map((q) => Object.assign({}, q)));
+    const held = [particles, floaters].map((a) => a.map((q) => Object.assign({}, q)));
     updateFx(DT);
-    [particles, floaters, wordPops].forEach((a, i) => { a.length = 0; a.push(...held[i]); });
+    [particles, floaters].forEach((a, i) => { a.length = 0; a.push(...held[i]); });
   };
 
   // one frame: the scene writes inputs, the sim steps, the camera holds still

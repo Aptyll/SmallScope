@@ -129,7 +129,7 @@ function roomInvite() {
 }
 // A friend's party taken up while the game runs (their invite, Join Game on
 // them, their row's gold step, their card's JOIN): this page reloads onto
-// that lobby, from any menu, the party screen or the practice field - never
+// that lobby, from any menu or the party screen - never
 // out of a match or a hero select under way, where it would walk out on nine
 // others. A leader with friends brings them along (Noah's call, 2026-11-16):
 // each guest is told (`follow`) and follows FOLLOW_LAG behind, so the
@@ -138,7 +138,7 @@ function roomInvite() {
 // they cannot fit, the leader goes alone and the guests fall back to
 // parties of their own, as when any leader leaves.
 const FOLLOW_LAG = 1.2;    // s a guest's page takes to follow its leader across
-function partyFreeToGo() { return PRACTICE || (state.mode === 'title' && NET.phase === 'room' && !CROSS); }
+function partyFreeToGo() { return state.mode === 'title' && NET.phase === 'room' && !CROSS; }
 function steamJoinRequested(id) {
   if (!id || state.fade || (NET.transport && NET.transport.lobbyId === id)) { SFX.deny(); return; }
   if (!partyFreeToGo()) { if (state.mode === 'title') SFX.deny(); return; } // in a match the invite waits in Steam's chat
@@ -156,7 +156,7 @@ function followHeard(msg) {
   const id = String((msg && msg.lobby) || '');
   if (!/^\d+$/.test(id) || !partyFreeToGo() || state.fade) return;
   NET.rematch = { room: '', gone: true }; // the leader's lobby closing behind it is not a host walking out (netClientPoll)
-  practiceGo(location.pathname + '?join=' + id + '&transport=steam', FOLLOW_LAG);
+  pageGo(location.pathname + '?join=' + id + '&transport=steam', FOLLOW_LAG);
 }
 if (window.steamBridge && window.steamBridge.onEvent) window.steamBridge.onEvent((ev) => { if (ev && ev.t === 'joinRequested') steamJoinRequested(String(ev.lobby || '')); });
 

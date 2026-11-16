@@ -73,7 +73,7 @@ function keyLabel(k) {
 // settings.bindsClick), so a rebind on one never moves the other, and
 // binds() is whichever is live. CLICK's defaults are the genre's: QWER the
 // abilities (R the big one), A the attack-move, S the stop, 1-6 the item
-// slots, G the ping wheel, C the sheet. D and F the two tricks.
+// slots, G the ping wheel, C the sheet.
 //
 // A mouse's side button is a KEY here - 'Mouse4' (the back button) and 'Mouse5'
 // (forward) are names like 'Shift', pressed through keyPress by
@@ -96,9 +96,6 @@ const KEY_ACTIONS = [
   { id: 'item3', verb: 'ITEM 3', key: '7', ck: '3' }, { id: 'item4', verb: 'ITEM 4', key: '8', ck: '4' },
   { id: 'item5', verb: 'ITEM 5', key: '9', ck: '5' }, { id: 'item6', verb: 'ITEM 6', key: '0', ck: '6' },
   { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
-  // the loadout's two tricks (tryTrick, js/sim/loadout.js): League's D and F
-  // under CLICK; on WASD, where D walks, Q and F beside the hand
-  { id: 'trick1', verb: 'TRICK 1', key: 'q', ck: 'd' }, { id: 'trick2', verb: 'TRICK 2', key: 'f', ck: 'f' },
   // held, an ability's hover card opens every rank's numbers (tipFull,
   // js/ui/tooltip.js). Its own key, never the slide's Shift: holding it to
   // read a card must not move the hero
@@ -111,7 +108,6 @@ const KEY_ACTIONS = [
 const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
 const ITEM_KEYS = ['item1', 'item2', 'item3', 'item4', 'item5', 'item6']; // slot i's key is ITEM_KEYS[i]
-const TRICK_KEYS = ['trick1', 'trick2']; // trick i's key is TRICK_KEYS[i]
 const SCHEMES = ['wasd', 'click'];
 function schemeKey(a, scheme) { // the action's default on a scheme, or undefined
   return (scheme || settings.scheme) === 'click' ? a.ck : a.key;
@@ -297,9 +293,6 @@ function keyPress(e) {
   // an item slot's key uses what is in it (js/sim/items.js)
   const it = e.repeat ? -1 : ITEM_KEYS.findIndex((a) => keyIs(e, a));
   if (it >= 0) player.input.useItem = it;
-  // ...and a trick's key its trick (js/sim/loadout.js)
-  const tk = e.repeat ? -1 : TRICK_KEYS.findIndex((a) => keyIs(e, a));
-  if (tk >= 0) player.input.trick = tk;
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; ckClear(); }
   // The SHOP key: the counter of whichever merchant is in reach (merchNear,
@@ -313,15 +306,9 @@ function keyPress(e) {
     if (state.shop) closeShop();
     else { const mb = merchNear(player); SFX.unlock(); if (mb) openShop(mb); else SFX.deny(); }
   }
-  // The work key at a practice prop (the parkour die, the range bell): the
-  // press opens its wheel over it, the pointer picks, and RELEASING it takes
-  // - the right-click wheel's own hold-and-release grammar, moved onto the
-  // key. A real work target in
-  // reach keeps the key's day job over any of that furniture (the same rule
-  // that decides which prompt is showing); ordinary work is suppressed
-  // while any wheel is up, and while the counter is open
-  // (sampleHumanInput). Seated on the bird it does nothing: the crew leaps
-  // off on its own (updateDrop).
+  // The work key's own presses: off a zipline or a deer, onto a cable or a
+  // deer in reach. Seated on the bird it does nothing: the crew leaps off on
+  // its own (updateDrop).
   if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen && !state.shop &&
       !state.settingsOpen && !player.dead && !player.aboard) {
     // Riding a zipline, the key lets go of it - ahead of everything, since a
@@ -340,27 +327,6 @@ function keyPress(e) {
     // ...or the pointer on a cable out of reach: the same intent, and
     // the step walks the body there and clips on (zipWalkStart, js/sim/zipline.js)
     if (hoverZip()) { player.input.jump = true; return; }
-    const t = workTarget(player);
-    if (!t || !t.near) {
-      // the parkour die: holding the key beside it opens the roll wheel -
-      // the three difficulties
-      const pk = pkDieNear(player);
-      if (pk) { SFX.unlock(); state.wheel = { kind: 'pkdie', tx: pk.tx, ty: pk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
-      else {
-        // the range bell: holding the key beside it opens the difficulty
-        // wheel - easy, medium, hard - and releasing on a wedge rings the
-        // round in at that difficulty (the roll die's own grammar). Only
-        // while the range is idle: mid-round the bell is under the snow
-        // with the rest of the furniture, and the sink and rise are
-        // mid-ceremony.
-        const bl = agBellNear(player);
-        if (bl && agame.phase === 'off') { SFX.unlock(); state.wheel = { kind: 'agbell', tx: bl.tx, ty: bl.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
-      }
-    }
-    // ...and whichever of those wheels opened rolls out on one cue -
-    // one line at the end of the chain rather than one per branch, since the
-    // guard above means nothing was up when the press arrived
-    if (state.wheel) SFX.wheelUp();
   }
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the six item slots. HUD: the sim runs on
@@ -378,7 +344,6 @@ function keyPress(e) {
     // it is thought better of
     if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
     else if (state.wheel) state.wheel = null;
-    else if (cheatAimOff()) { /* the practice bar's armed aim, put down */ }
     else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
     else if (state.shop) closeShop();
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
@@ -400,26 +365,15 @@ pageListen(window, 'keyup', (e) => {
 function keyRelease(e) {
   // letting go of the ping key pings the pick (GO HERE on a tap), exactly
   // as the right button does
-  if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping') { resolveWheel(); state.wheel = null; return; }
-  // letting go of the work key with a wheel it held up (roll die or range
-  // bell) takes what the pointer is on (or cancels from the hub),
-  // exactly as releasing the right button does
-  if (keyIs(e, 'work') && state.wheel &&
-      (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) {
-    resolveWheel();
-    state.wheel = null;
-  }
+  if (keyIs(e, 'ping') && state.wheel && state.wheel.kind === 'ping') { resolveWheel(); state.wheel = null; }
 }
 // a key held while the window loses focus never sends its keyup: alt-tabbing
 // out would otherwise leave the scoreboard (or a walk direction) stuck on
 pageListen(window, 'blur', () => {
   for (const k in keys) keys[k] = false;
   state.rebind = null; // a cap left listening would eat the first key back
-  // an E-held wheel (roll die or range bell) is a held gesture too: its
-  // keyup is lost with the focus, so it closes (choosing nothing) instead of
-  // sticking open
-  if (state.wheel && (state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) state.wheel = null;
-  // ...and so is the ping wheel G holds, and a held right button's follow
+  // the ping wheel G holds is a held gesture: its keyup is lost with the
+  // focus, so it closes (choosing nothing); so does a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
 
@@ -465,10 +419,9 @@ function pointerPress(button) {
     if (state.mode === 'play' && shopRightClick(shopHit(mouse.x, mouse.y))) return; // at the counter: buy or sell what is under it (js/ui/shop.js)
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
-    if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen || overMinimap()) { openPingWheel(); return; } // over the chart or the disc: a ping where it points
     if (charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any point on the map is a place to ping
     openPingWheel();
     return;
@@ -484,9 +437,6 @@ function pointerPress(button) {
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
   if (voteClick()) return; // the surrender vote's YES / NO (js/ui/vote.js)
   if (guideClick(mouse.x, mouse.y)) return; // the FIRST MATCH's coach: its X (js/ui/guide.js)
-  // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
-  if (cheatClick(mouse.x, mouse.y)) return;
-  if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
   // The strip swallows every press over itself before the world ever sees
   // it. The character panel is asked first while it is up - the X closes,
   // and the slab eats every press. Everything else goes through hudPress.
@@ -619,8 +569,8 @@ function wasdStep(p, dt, mx, my) {
 // there by route - navTo, the bots' own walker, so the same feet round the
 // same trees - and holding it drags the goal under the pointer (the League
 // habit). On a tree, a hole or a rival building it is a walk into
-// reach and the swing; on a merchant or the practice furniture a walk into
-// reach and the thing opening; on the chart
+// reach and the swing; on a merchant a walk into
+// reach and the counter opening; on the chart
 // or the minimap a walk across the map; seated on the roost, the hop. On a
 // rival body it is a CHASE with a LOCK: the body walks into its weapon's
 // range by route, stands, and the attack strikes it (the `attack order`
@@ -641,7 +591,7 @@ const CK_ARRIVE = 5;      // px from a goal that counts as arrived
 const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
-//        | {kind:'use', what:'shop'|'pkdie'|'agbell', o, tx, ty}
+//        | {kind:'use', what:'shop', o, tx, ty}
 // lock: the unit the tool is on; arm: A pressed, the next left press lays the attack-move; follow: the
 // right button is down over open ground; mark: the last ring on the snow
 const ck = { order: null, lock: null, arm: false, follow: false, mark: null };
@@ -669,11 +619,8 @@ function merchUnder(wx, wy) {
 }
 function ckRightPress() {
   if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
-  // a wheel a walk opened (the die, the bell) stands
-  // until a press picks; the ping wheel is G's, and G's release pings -
-  // unless the action wheel stood it up, when this press picks too
-  if (state.wheel) { if (state.wheel.kind !== 'ping') { resolveWheel(); state.wheel = null; } return; }
-  if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
+  // the ping wheel is G's, and G's release pings
+  if (state.wheel) return;
   ck.arm = false;
   if (player.dead) return;
   const pt = ckPoint();
@@ -693,8 +640,6 @@ function ckRightPress() {
     if (t) { ckOrder({ kind: 'chase', t }, t.x, t.y + 2, 'foe'); ck.lock = t; return; }
     const m = merchUnder(wx, wy);
     if (m) { const c = counterPt(m); ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, c.x, c.y + 2, 'work'); return; }
-    const o = structOf(objAt(tx, ty));
-    if (o && (o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
     if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
   }
   ckOrder({ kind: 'move', x: wx, y: wy }, wx, wy, 'move');
@@ -736,24 +681,15 @@ function ckAcquire(p) {
   for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
   return best;
 }
-// a 'use' order: walk into the thing's reach, then open it - the counter as
-// a panel, the rest as the wheel the work key would hold (keyPress), left
-// standing for a right press to pick
+// a 'use' order: walk into the counter's reach, then open it
 function ckUse(p, o, walk, r) {
   if (state.wheel || state.shop) { ck.order = null; return; }
   const cx = o.tx * TILE + 8, cy = o.ty * TILE + 8;
   r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy;
-  const k = o.what;
-  const near = k === 'shop' ? (merchNear(p) === o.o ? o.o : null) : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
-  if (near) {
-    ck.order = null;
-    SFX.unlock();
-    if (k === 'shop') openShop(near);
-    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, seg: -1, ax: mouse.x, ay: mouse.y };
-    return;
-  }
-  const shopPt = k === 'shop' ? counterPt(o.o) : null;
-  if (walk(shopPt ? shopPt.x : cx, shopPt ? shopPt.y : cy, shopPt ? 0 : WORK_REACH) < 0) ck.order = null;
+  const near = merchNear(p) === o.o ? o.o : null;
+  if (near) { ck.order = null; SFX.unlock(); openShop(near); return; }
+  const shopPt = counterPt(o.o);
+  if (walk(shopPt.x, shopPt.y, 0) < 0) ck.order = null;
 }
 // one step of the scheme, for sampleHumanInput: what the orders and the
 // lock make of the walk, the aim, the fire and the work this step. fire
@@ -899,7 +835,6 @@ function sampleHumanInput(p, dt) {
     inp.atk = null;
     inp.useItem = -1;
     inp.ability = -1;
-    inp.trick = -1;
     inp.cmd = null;
     return;
   }
@@ -912,7 +847,6 @@ function sampleHumanInput(p, dt) {
     inp.dodge = false;
     inp.useItem = -1;
     inp.ability = -1;
-    inp.trick = -1;
     inp.cmd = null;
     // the one thing that works mid-air: WASD drifts the fall (updateDrop
     // reads it) - under CLICK, a landing spot ordered mid-air is what the

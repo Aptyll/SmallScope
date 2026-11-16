@@ -190,7 +190,6 @@ function updateNixShards(dt) {
       if (q || st) { s.hit = true; burst(s.x, s.y, '#bfe6f8', 8, 45, 0.4, true); sfxAt('hit', s.x, s.y); }
       if (s.hit || s.d >= s.len || isSolidTile(Math.floor(s.x / TILE), Math.floor((s.y + BOW_Y) / TILE))) {
         s.back = true;
-        if (PRACTICE && !s.hit) abHitDummies(s.x, s.y + BOW_Y, SHARD_R + 4, s.dmg);
       }
       continue;
     }

@@ -355,8 +355,8 @@ function endSkip() {
   return true;
 }
 
-// A lost match holds LOST_BEAT s on its one line (YOUR EAGLE WAS DRIVEN OFF,
-// or a 1V1's reason) over the dimmed world, with nothing to press, and then
+// A lost match holds LOST_BEAT s on its one line (YOUR EAGLE WAS DRIVEN OFF)
+// over the dimmed world, with nothing to press, and then
 // the defeat ceremony opens itself (renderDead), the way a win goes straight
 // to its own: there is no looping recap and no plank between the two.
 const LOST_BEAT = 2.4;
@@ -547,9 +547,8 @@ function renderDead(now) {
   // body fell. 3x, or 2x on a view too narrow to hold it (a 25-glyph line
   // is 297px at 3x).
   const gone = state.over === 'hostleft'; // the host walked out from under the match
-  const why = gone ? '' : onevoneWhy(); // a 1V1 says how it was lost (js/sim/onevone.js)
   if (!gone && state.deadTimer >= LOST_BEAT) { openDefeat(); renderDefeat(now); return; } // a loss's beat is over: the ceremony, from this frame
-  const t = gone ? tr('end.hostLeft') : why || tr('end.lost');
+  const t = gone ? tr('end.hostLeft') : tr('end.lost');
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);

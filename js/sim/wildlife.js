@@ -147,7 +147,6 @@ function makeAnimal(kind, x, y, fix) {
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
     rider: null,                         // a ridden deer: the player on its back (the `riding` banner)
-    tame: false,                         // a deer that stands for its rider and never bolts (the practice ride's, prDeerStep)
     route: null, leg: 0, way: 1, lost: null, // a valley deer: its side's line, the point it heads for, which way along it, and what it last ran from (deerRouteGoal)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     dead: false,
@@ -263,7 +262,7 @@ function spawnAnimals() {
 function updatePreyStock(dt) {
   for (const side of [0, 1]) {
     if (animals.some((a) => !a.dead && a.kind === 'deer' && a.route === side)) { deerBackT[side] = DEER_BACK; continue; }
-    const stray = animals.find((a) => !a.dead && a.kind === 'deer' && a.route == null && !a.tame);
+    const stray = animals.find((a) => !a.dead && a.kind === 'deer' && a.route == null);
     if (stray) { stray.route = side; stray.leg = deerLegNear(stray, side); stray.way = 1; continue; }
     deerBackT[side] -= dt;
     if (deerBackT[side] <= 0 && spawnDeer(side, true)) deerBackT[side] = DEER_BACK;
@@ -493,11 +492,10 @@ function updatePrey(a, dt) {
     const d = Math.hypot(p.x - a.x, p.y - a.y);
     if (d < sd) { sd = d; scare = p; }
   }
-  // a tame deer (the practice ride's, prDeerStep, js/sim/practice.js) never bolts from one
-  let seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
+  let seen = !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
   // whether it is hunting or not: neutral to a hero is not neutral to a deer
-  if (!rabbit && !a.tame) for (const m of animals) {
+  if (!rabbit) for (const m of animals) {
     if (m.dead || !isCampKind(m.kind)) continue;
     const d = Math.hypot(m.x - a.x, m.y - a.y);
     if (d < DEER_BEAST_SIGHT && (!seen || d < sd)) { seen = true; scare = m; sd = d; }
@@ -568,7 +566,7 @@ function updatePrey(a, dt) {
     // a shove (arrow or unit collision) still moves an idle animal
     if (coast > 0 || Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, (a.mvx * coast + a.kbx) * dt, (a.mvy * coast + a.kby) * dt, r);
     if (a.idleT <= 0) {
-      a.goal = a.tame ? null : preyWander(a); // ...and stays on its stand
+      a.goal = preyWander(a);
       if (!a.goal) a.idleT = rand(1.5, 3); // nibbling where it stands, or boxed in
     }
   }

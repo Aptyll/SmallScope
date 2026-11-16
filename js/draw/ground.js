@@ -3,7 +3,7 @@
 // reads), the prerendered ground canvas and its runtime repaints, the road,
 // the lakes' shores, the cast shadows (baked for the scenery, drawn per
 // frame for bodies), and the scenery bakes that ride on it (the pine's wind
-// frame, the practice dummy). First of the js/draw/ files: everything
+// frame). First of the js/draw/ files: everything
 // after it calls hash2.
 // ------------------------------------------------------------ ground prerender
 const groundCv = document.createElement('canvas');
@@ -146,15 +146,6 @@ function paintGroundTile(g, tx, ty) {
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
-      }
-      // the felled trunk across a forest road (placeRoad, world.js) lies flat
-      // on the ground, so it is ground: baked here over whatever the tile is.
-      // A piece's band spills past its tile's corners into the four tiles
-      // beside it (the trunk is wider than the diagonal it runs on), so a
-      // tile paints its neighbours' pieces too, shifted, and its own last.
-      for (let n = 0; n < 10; n += 2) {
-        const dx = LOG_NBR[n], dy = LOG_NBR[n + 1], lo = objAt(tx + dx, ty + dy);
-        if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
       }
       // a fallen pine on the bank (jungleMarks) reaches up to two tiles past the tiles it holds
       for (let dy = -2, seen = []; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
@@ -310,8 +301,7 @@ function rollIceStyle(tx, ty) {
 }
 // a tile that turned to ice after the bake takes the style of the lake it
 // joins (else its own roll) and sits on that lake's edge; one that left the
-// ice drops both. Its night mirror slot stays unset: practice, the one place
-// that lays ice at runtime, never leaves its morning (world.md)
+// ice drops both. 
 function relabelIce(tx, ty) {
   if (!lakeStyle) return;
   const i = idx(tx, ty);
@@ -326,8 +316,7 @@ function relabelIce(tx, ty) {
 }
 // label every lake (flood fill, rolled off its first tile in scan order) and
 // sweep its depth in from the edge. Runs once, before the bake. At runtime a
-// match only flips ice <-> hole (both lake), but the practice parkour's roll
-// lays new ice and lets old ice go back to snow: relabelIce keeps those up.
+// match only flips ice <-> hole (both lake); relabelIce keeps any other change up.
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
@@ -341,10 +330,8 @@ function bakeLakes() {
       if (isLake(x, y) && inside(x, y)) { first.push(idx(x, y)); styleOf.set(idx(x, y), s); }
     }
   };
-  if (!ARENA) {
-    seed(orcaPool(), Math.ceil(ORCA_LAKE_R + 2), orcaLakeAt, ORCA_ICE);
-    for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) if (isLake(tx, ty) && creekIceAt(tx, ty)) { first.push(idx(tx, ty)); styleOf.set(idx(tx, ty), CREEK_ICE_STYLE); }
-  }
+  seed(orcaPool(), Math.ceil(ORCA_LAKE_R + 2), orcaLakeAt, ORCA_ICE);
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) if (isLake(tx, ty) && creekIceAt(tx, ty)) { first.push(idx(tx, ty)); styleOf.set(idx(tx, ty), CREEK_ICE_STYLE); }
   for (let o = -first.length; o < N; o++) {
     const i = o < 0 ? first[-o - 1] : o;
     if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
@@ -1282,7 +1269,7 @@ let crownT = -1, crownD = -1, crownA = 0;
 function crownHour() {
   if (crownT !== state.time || crownD !== state.darkness) {
     crownT = state.time; crownD = state.darkness;
-    crownA = Math.min(1, Math.max(todWarmth() * CROWN_HOUR, ARENA ? 0 : state.darkness * CROWN_MOON));
+    crownA = Math.min(1, Math.max(todWarmth() * CROWN_HOUR, state.darkness * CROWN_MOON));
   }
   return crownA;
 }
@@ -1326,9 +1313,3 @@ function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) 
 // line (a pine on the tile below would bury it) - so a felled stand is not a
 // grid of one stump
 
-// The practice dummy (the `practice arena` banner, js/sim/practice.js), baked here
-// beside its draw rather than under js/sprites/. A big target you read across the arena:
-// a burlap sack head with stitched eyes under a snow cap, arms lashed to a
-// crossbar with rope, a sack torso wearing a painted red ring, straw leaking
-// out of the cinch, and a post into crossed skids in the drift. 26x42 - a
-// head taller than a player, drawn up off its one solid tile like a tree.

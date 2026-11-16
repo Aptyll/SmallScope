@@ -26,11 +26,8 @@ const WX_DIALS = ['snow', 'wind', 'gust', 'sweep', 'drift', 'frost'];
 // how often each weather comes up; the shares sum to 1
 const WX_ODDS = [['snow', 0.35], ['calm', 0.25], ['frost', 0.2], ['blizzard', 0.2]];
 const WX_FADE = 5; // s the dawn takes to turn one day's weather into the next
-// The day's weather by name. The practice arena keeps today's ordinary snow:
-// it has one fixed hour, and a blizzard over its instruments would change
-// what they measure.
+// The day's weather by name
 function weatherOf(day) {
-  if (PRACTICE) return 'snow';
   let h = hash2(day * 7 + 3, 0x3a7f), k = 0;
   while (k < WX_ODDS.length - 1 && h >= WX_ODDS[k][1]) h -= WX_ODDS[k++][1];
   return WX_ODDS[k][0];

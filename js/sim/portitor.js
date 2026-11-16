@@ -247,7 +247,6 @@ function crateLand(w) {
     slowUnit(q, CRATE_SLOW_T, CRATE_SLOW);
   }
   for (const st of structsNear(side, w.x, w.y, CRATE_R)) hurtStruct(st, w.dmg, src);
-  if (PRACTICE) abHitDummies(w.x, w.y, CRATE_R, w.dmg);
   for (const q of players) {
     if (q.team !== w.team || !unitAlive(q) || Math.hypot(q.x - w.x, q.y - w.y) > CRATE_R + PLAYER_R) continue;
     shieldUnit(q, Math.round(itemMend(src, q, w.shield)), CRATE_SHIELD_T);
@@ -286,7 +285,6 @@ function portRunHits(p, ab) {
     st.portRunHit = id;
     hurtStruct(st, dmg, p);
   }
-  if (PRACTICE) abHitDummies(p.x, p.y, PLOUGH_HIT, 0);
 }
 function portRunEnd(p, keep) {
   p.rushT = 0; p.dash = '';

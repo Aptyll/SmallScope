@@ -15,8 +15,7 @@
 // they were bought (`p.buys`: legendaries and boots, buyItem,
 // js/sim/items.js), whether its side won, and the patch it was played on.
 // Bots are left out: they buy their curated list (BOT_BUILDS), so counting
-// them would only echo the list back. Practice and 1V1 are not the 5v5's
-// meta, and are left out too.
+// them would only echo the list back.
 //
 // The shop reads it through buildsStats (one hero's pick and win rates) and
 // buildsRec (the RECOMMENDED tab's rows). While a hero has fewer than
@@ -67,7 +66,6 @@ function buildsHash(str) {
 // seats, the people's names, every hero and every build - so the host and each guest file the
 // same record under the same key.
 function buildsNote(won) {
-  if (PRACTICE || state.onevone) return 0;
   const winner = won ? player.team : 1 - player.team;
   const seats = players.filter((p) => p.active && isHuman(p) && p.buys && p.buys.length);
   if (!seats.length) return 0;

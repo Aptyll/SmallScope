@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.960';
+const PATCH_TXT = 'PATCH 0.961';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.961', 'NO MORE SUMMONER SPELLS: A HERO IS ITS FOUR ABILITIES AND ITS ITEMS, AND THE HERO PICK HAS NO CALLING OR TRICK ROW; THE OLD 1V1 AND PRACTICE TOOL CODE IS GONE.'],
   ['0.960', 'A DOWNED HERO SEES WHO DOWNED THEM, THE SHOP HAS ITS OWN KEY (B), A GOLD TRAIL LEADS NEW PLAYERS TO THEIR LANE, AND THE FIRST HERO PICK WAITS FOR YOU.'],
   ['0.959', 'ATTACKS WORK LIKE A MOBA NOW: CLICK A RIVAL AND YOUR HERO WALKS INTO RANGE, WINDS UP AND STRIKES ON ITS OWN, AND SHOTS FLY STRAIGHT TO THEIR TARGET; EVERY HERO HAS ITS OWN RANGE AND ATTACK SPEED.'],
   ['0.958', 'A NEW HOME SCREEN LIKE A GAME CLIENT: YOUR PROFILE AND MATCH HISTORY, A THREE SEAT PARTY WITH PLAY BESIDE IT AND ITS CHAT, A HERO\'S ABILITIES AND BUILD, YOUR FRIENDS AND THE LADDER, ALL ON ONE PAGE.'],
@@ -978,23 +979,6 @@ const PATCH_NOTES = [
 
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-// Out of the training arena, for a page with no party to go back to (a
-// guest, or a page that came up on ?practice=1 by hand): the reroll's
-// whiteout onto a bare URL, landing on a fresh title world. A leader goes
-// back to its party instead (toLobby, the ESC panel's LEAVE, js/ui/panels.js).
-function leavePractice() {
-  if (state.fade) return;
-  SFX.pickup();
-  SFX.music.stop(0.45);
-  state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
-    then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
-      location.href = location.pathname;
-    },
-  };
-}
 
 // ---- the gear: the ESC slab's pages before a match
 // a gear in the hub's YOU card, its bottom-right corner (js/ui/hub.js),

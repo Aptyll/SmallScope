@@ -584,7 +584,7 @@ const SET_TAB_Y = 24;      // navbar baseline, panel-local (the head's big title
 const SET_CONTENT_Y = 40;  // content window top
 const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit below)
 // The foot: a CLOSE button (the one way out that is a button - ESC still
-// closes it), and in a match or practice LEAVE
+// closes it), and in a match LEAVE
 // beside it; the title's slide-in has nothing to leave, so it hangs CLOSE alone
 const SET_FOOT_Y = SET_H - 19, SET_PLANK_W = 72, SET_PLANK_H = 13, SET_PLANK_GAP = 8;
 
@@ -785,11 +785,8 @@ function muteBtnRect() {
 }
 
 // The foot's buttons (drawFlatButton): CLOSE, and
-// in a match the way out beside it (the ESC panel is the one menu a match or
-// the arena has). In practice a party's leader goes back to its party
-// (toLobby) and anyone else takes leavePractice() (js/ui/menu.js), the
-// reroll's whiteout onto a bare URL, landing on a fresh title world; in a match it is toLobby() (js/screens.js), the
-// death screen's own way back to the title. Only the in-match slab hangs it:
+// in a match the way out beside it (the ESC panel is the one menu a match
+// has): toLobby() (js/screens.js), the death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
 // SURRENDER stands before LEAVE while your side may vote: it starts the
 // vote, or casts your yes in one already open (js/sim/surrender.js). Four planks
@@ -805,14 +802,13 @@ function footPlanks() {
 // LEAVE in a match asks first: its first press turns it red, LEAVE?, and it
 // stays asking until the second press leaves, any other press on the slab
 // calls it off, or the slab closes. No clock: a timed ask ran out under a
-// slow hand, and its second press only asked again. The practice field
-// leaves at once (nothing is lost there).
+// slow hand, and its second press only asked again.
 let leaveAsk = false;
 function leaveAsking() { return leaveAsk && !!state.settingsOpen; }
 function settingsLeave() {
-  if (!PRACTICE && !leaveAsking()) { leaveAsk = true; SFX.deny(); return; }
+  if (!leaveAsking()) { leaveAsk = true; SFX.deny(); return; }
   leaveAsk = false;
-  if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); // a party's leader back to its party
+  toLobby();
 }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)

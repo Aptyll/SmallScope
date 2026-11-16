@@ -263,8 +263,7 @@ const RAY_CV = (() => {
 // arrival and of the top of the day, and a beam that is always there stops
 // being a beam - so they are up for exactly two windows and dark the rest of
 // the time: the whole eagle ride and RAY_AFTER seconds past the landing, and a
-// ~15 s window around noon. Both ease in and out over RAY_WINDOW_FADE, and the
-// practice arena's clock never moves, so its training light never gets them.
+// ~15 s window around noon. Both ease in and out over RAY_WINDOW_FADE.
 function rayLight() {
   const drop = state.mode === 'drop' || player.aboard || player.dropT > 0 // the ride
     ? 1 : Math.min(1, state.rayT / RAY_WINDOW_FADE);
@@ -538,8 +537,7 @@ function todMix(t, out) {
   }
   return out;
 }
-// 0..1: how far into the midday window the clock is. The practice arena's
-// clock sits at 0, well outside it.
+// 0..1: how far into the midday window the clock is.
 function todNoon() {
   const n = (TOD_NOON_HALF - Math.abs(state.time - TOD_NOON)) / TOD_NOON_FADE;
   return Math.max(0, Math.min(1, n)) * (1 - state.darkness);
@@ -549,16 +547,12 @@ function todNoon() {
 // (the pines' crowns: crownHour, js/draw/ground.js)
 const todWarm = [0, 0, 0, 0, 0, 0];
 function todWarmth() {
-  if (ARENA) return 0;
   const g = todMix(Math.min(CYCLE - 1e-6, Math.max(0, state.time)), todWarm);
   return (510 - g[1] - g[2]) / 510;
 }
 
 const todRGB = [0, 0, 0, 0, 0, 0];
 function todGrade() {
-  // the practice arena keeps one fixed, neutral hour: its instruments
-  // compare laps, and a rose cast on one of them is a change in the room
-  if (ARENA) return;
   const g = todMix(Math.min(CYCLE - 1e-6, Math.max(0, state.time)), todRGB);
   if (g[0] + g[1] + g[2] < 762) {
     ctx.globalCompositeOperation = 'multiply';
@@ -1024,12 +1018,7 @@ function renderLighting(ox, oy, now) {
   if (day > 0.02) {
     // both halves of the day's dressing answer to the ESC panel's VIDEO page
     if (settings.vidRays) godRays(ox, oy, day);
-    // The training grounds keep the one fixed hour the rest of that room
-    // keeps (sim.js never advances its clock): the shafts stay, because they
-    // are a quality of the light, but a cloud shadow drifting over the
-    // dummy's meter or the parkour's ice would change what the instruments
-    // are measuring between one lap and the next.
-    if (!ARENA && settings.vidClouds) cloudShade(ox, oy, day * (1 - FROST_CLEAR * state.wx.frost));
+    if (settings.vidClouds) cloudShade(ox, oy, day * (1 - FROST_CLEAR * state.wx.frost));
   }
 
   // the hour: rose dawn, crisp midday, gold dusk (the hour banner above)

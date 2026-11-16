@@ -165,7 +165,6 @@ function leapLand(p, q) {
   const dmg = abDmg(p, 'leap', abRk(p, 'leap', 'dmg'));
   hurtUnit(q, dmg, nx, ny, p, { kb: 30, ab: 'leap' });
   if (!q.dead) { q.packBy = p.id; q.packUntil = state.elapsed + abRk(p, 'leap', 'mark'); }
-  if (PRACTICE) abHitDummies(q.x, q.y, 10, dmg);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx); p.slashHalf = 0.5; // the spear driven in
   burst(q.x, unitMidY(q), '#eef4fb', 8, 50, 0.4, true);
   sfxAt('hit', q.x, q.y);
@@ -218,7 +217,6 @@ function varroStrike(p) {
   faceToward(p, nx, ny, true);
   hurtUnit(q, dmg, nx, ny, p, { kb: last ? 40 : 10, ab: 'snap' });
   if (last && !q.dead) slowUnit(q, abRk(p, 'snap', 'slowT'), abRk(p, 'snap', 'slow'));
-  if (PRACTICE) abHitDummies(q.x, q.y, 10, dmg);
   p.slashT = SLASH_T; p.slashA = Math.atan2(ny, nx) + (last ? -0.3 : 0.3); p.slashHalf = 0.5;
   burst(q.x, unitMidY(q), last ? '#cfd8e8' : '#eef4fb', last ? 8 : 5, 45, 0.4, true);
   sfxAt('hit', q.x, q.y);

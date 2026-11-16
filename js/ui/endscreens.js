@@ -7,8 +7,7 @@
 // League's end board, short: the headline over the match, frozen and dimmed
 // underneath, and your side as a table - a row a player, its K/D/A, its
 // damage to rival heroes drawn as a BAR against the side's best (who carried
-// reads before any number does), its soldiers and its gold. A 1V1's table is
-// the duel: your row over your rival's. Your row is
+// reads before any number does), its soldiers and its gold. Your row is
 // outlined in the ending's accent. state.deadTimer - already ticking for the
 // death overlay - is the clock, and WIN_T names every beat, so the render
 // pass and the sound cues read one timeline and cannot drift apart. Any press
@@ -17,7 +16,6 @@ const WIN_T = {
   flash: 0.30,   // the white bloom off the winning frame
   dim: 0.50,     // the dim over the match has finished settling
   title: 0.30, letter: 0.06, land: 0.26, // VICTORY drops in a letter at a time
-  rule: 0.95,    // a 1V1's ending fades in under the headline (drawEndWhy)
   stats: 1.05, statStep: 0.12, roll: 0.5, // the table, a row a beat, its bar and numbers climbing
   menu: 2.30,    // LOBBY is up and the screen is live
 };
@@ -25,16 +23,6 @@ const WIN_SLIDE = 0.32; // LOBBY's slide, finishing exactly on WIN_T.menu
 const END_TABLE_W = 460; // px the table spans, the view allowing
 const END_ROW = 26;      // px a row
 const END_FACE = 22;     // px the face square at a row's head
-
-// a 1V1's ending under the headline, 2x, fading in at f 0..1: FIRST STRIKE,
-// 100 SOLDIERS or FIRST TOWER (onevoneWhy, js/sim/onevone.js); nothing in any other match
-function drawEndWhy(L, f, col, ink) {
-  const why = onevoneWhy();
-  if (!why || f <= 0) return;
-  ctx.globalAlpha = Math.min(1, f);
-  drawPixelTextOutline(ctx, why, Math.round(L.cx - pixelTextWidth(why, 2) / 2), L.ruleY + 6, col, ink, 2);
-  ctx.globalAlpha = 1;
-}
 
 // the composition, in the 270-tall frame everything else is authored in
 function winLayout() {
@@ -44,7 +32,6 @@ function winLayout() {
   return {
     toy, cx, w, x: cx - (w >> 1),
     titleY: toy + 16,   // VICTORY / DEFEAT, 4x - 20px tall
-    ruleY: toy + 34,    // the band under it a 1V1's ending sits in
     headY: toy + 54,    // the table's column glyphs
     rowY: toy + 72,     // its first row
     storyY: toy + 206,  // the three story lines (js/ui/story.js), 1x, under the table
@@ -85,7 +72,7 @@ const WIN_ICONS = {
 const WIN_ICON_PAL = { '.': null, g: '#f2cc6a', o: '#cfe0ff', h: '#ffd95c', s: '#a3a8b0' };
 const DEF_ICON_PAL = { '.': null, g: '#9fbde0', o: '#8fa8d8', h: '#cfe4f2', s: '#7d8590' };
 // the accent each ending is struck in: your row's outline and bar, the
-// headline, the 1V1 line and the story's words, and the glyphs' palette
+// headline and the story's words, and the glyphs' palette
 const WIN_ACCENT = { rule: '#c89a3c', txt: '#f2cc6a', icon: WIN_ICON_PAL };
 const DEF_ACCENT = { rule: '#4a5f96', txt: '#9fbde0', icon: DEF_ICON_PAL };
 
@@ -217,10 +204,9 @@ function endRowHit() {
   }
   return -1;
 }
-// the rest both endings share: the 1V1 line, the table, the story under it,
+// the rest both endings share: the table, the story under it,
 // and LOBBY sliding up to land exactly on T.menu
 function drawEndBody(L, ws, t, T, ac, now) {
-  drawEndWhy(L, (t - T.rule) / 0.4, ac.txt, SC_INK);
   drawEndTable(L, ws, t, T, ac);
   drawStoryLines(ws, t, L.storyY, T, ac); // the match story (js/ui/story.js)
   if (t > T.menu - WIN_SLIDE) {
@@ -259,7 +245,6 @@ function renderVictory(now) {
 const DEF_T = {
   dim: 0.45,      // the cold dim has finished settling
   title: 0.18, letter: 0.06, land: 0.34, // DEFEAT falls in a letter at a time
-  rule: 0.80,     // a 1V1's ending fades in under the headline (drawEndWhy)
   stats: 0.95, statStep: 0.12, roll: 0.5, // the table, a row a beat
   menu: 2.20,     // LOBBY is up and the screen is live
 };

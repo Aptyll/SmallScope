@@ -37,8 +37,6 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
 - **Defeat**: the same board in frost. A colder dim → **DEFEAT** *falling* in a letter at a time on
   an ease-**in** (it drops, it does not spring), flashing cold rather than white → the same table in
   `DEF_ACCENT` → the story → LOBBY.
-- **A 1V1** prints how it ended under either headline (`drawEndWhy`: FIRST STRIKE, 100 SOLDIERS
-  or FIRST TOWER, from `onevoneWhy`); nothing is written there in any other match.
 
 **The table** is a row a player of your side, you first and your row outlined in the ending's
 accent (`WIN_ACCENT` gold, `DEF_ACCENT` frost): the face, the hero's name (yours in the accent; a
@@ -61,7 +59,7 @@ class, look and the row's numbers per player, a mate who is down at the whistle 
 **The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOUR EAGLE
 WAS DRIVEN OFF** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
 to read and the match is still playing behind it, so it goes where an eye lands rather than over
-the body that fell (a 1V1 prints how it was lost in its place) — and nothing else: no second line, no plank and no recap, since the bird's
+the body that fell — and nothing else: no second line, no plank and no recap, since the bird's
 flight has just been watched live. It stands `LOST_BEAT` s and the defeat ceremony takes over, its dim deepening from
 this one's. That is the **loss's beat**; a guest whose host left mid-match (`state.over =
 'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY

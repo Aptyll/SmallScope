@@ -183,7 +183,6 @@ function sagittaCrank(p) {
     const qd = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     hurtUnit(q, abDmg(p, 'crank', CRANK_DMG), (q.x - p.x) / qd, (q.y - p.y) / qd, p, { kb: 20, slow: [slowT, CRANK_SLOW] });
   }
-  if (PRACTICE) abHitDummies(p.x, p.y, CRANK_R, CRANK_DMG);
   p.rushNX = -dx / d; p.rushNY = -dy / d;
   p.rushT = CRANK_D / CRANK_SPD;
   p.dash = 'crank';

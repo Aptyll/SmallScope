@@ -64,7 +64,7 @@ function paintArrowPx(px) {
 //   health  - the SIDE's paint (barCol): your own side's mark over allies and
 //             yourself, the rival's over everything of theirs - through
 //             skin(), so allies are blue and rivals red on your screen - and
-//             neutral gold (the WoW grammar) over wildlife, the dummy and
+//             neutral gold (the WoW grammar) over wildlife and
 //             anything else with no team. How full it is says the rest; the
 //             old green-amber-red drain spent the rival's colour on "hurt",
 //             and a hurt ally read as an enemy at a glance.
@@ -213,16 +213,6 @@ function drawTallies(k, subX, subY) {
     ctx.drawImage(img, Math.round((xpQueue[i + 1] - TALLY_GAP) * k) - img.width * s - subX, Math.round(xpQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
   }
   xpQueue.length = 0;
-  // ...and the words a hit says (wordPop, js/sim/core.js), over the totals: one
-  // beat bigger as they land, like a total taking a hit
-  for (const w of wordPops) {
-    const img = tallyImg(w.txt, BAR_NEUTRAL);
-    const s = Math.max(1, Math.round(k * (w.t < TALLY_POP ? TALLY_POP_SC : TALLY_SC)));
-    const u = w.t / WORD_POP_T;
-    ctx.globalAlpha = Math.min(1, 2 * (1 - u));
-    ctx.drawImage(img, Math.round((w.x - camX) * k - img.width * s / 2),
-      Math.round((w.y - camY - u * WORD_POP_RISE) * k - img.height * s / 2), img.width * s, img.height * s);
-  }
   ctx.globalAlpha = 1;
   tallyQueue.length = 0;
 }
@@ -428,10 +418,6 @@ statusIcon({ id: 'stun', rank: 40, on: (e) => e.stunT > 0, left: (e) => e.stunT,
 statusIcon({ id: 'root', rank: 50, on: (e) => e.rootT > 0, left: (e) => e.rootT, max: (e) => e.rootMax,
   ink: '#dfe6f2', lit: '#ffffff', deep: '#2e3446',
   px: ['..###..', '.#...#.', '.#...#.', '#######', '###x###', '###x###', '#######'] });
-// WEAKENED: its blows worth WEAK_MUL of themselves, the blade snapped (weakenUnit)
-statusIcon({ id: 'weak', rank: 70, on: (e) => e.weakT > 0, left: (e) => e.weakT, max: (e) => e.weakMax,
-  ink: '#eef2fa', lit: '#f2cc6a', deep: '#5e3a52',
-  px: ['......#', '.....##', '....##.', '...x#..', '..##...', '+++....', '.+.....'] });
 // SLOWED: the snail (slowUnit)
 statusIcon({ id: 'slow', rank: 80, on: (e) => e.slowT > 0 && e.slowMul < 1, left: (e) => e.slowT, max: (e) => e.slowMax,
   ink: '#e0d49a', lit: '#fff6cc', deep: '#5a5030',

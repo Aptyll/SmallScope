@@ -192,7 +192,6 @@ function castProg(p) { return p.castT > 0 && p.castMax > 0 ? 1 - p.castT / p.cas
 // ability leaves on a body. Called from updatePlayer once the player is alive.
 function updateAbilities(p, dt) {
   for (let i = 0; i < AB_KEYS; i++) if (p.abCd[i] > 0) p.abCd[i] = Math.max(0, p.abCd[i] - dt);
-  loadoutTick(p, dt); // the tricks' cooldowns and the calling's clocks (js/sim/loadout.js)
   // root / slow / net / mark / fire: the shared clock every kind of unit runs
   // (updateUnitStatus, js/sim/actions.js) - an animal and a bot age the
   // identical states off the identical timers
@@ -278,32 +277,15 @@ function dashStop(p) {
 }
 
 // what an area blow does to everything BUILT inside it: each rival building
-// once (structsNear) and, at practice, the dummy. The one call a ring-shaped
-// key makes after its sweep of the bodies, so no kit forgets the dummy.
+// once (structsNear). The one call a ring-shaped key makes after its sweep
+// of the bodies, so no kit forgets the buildings.
 function hurtBuilt(src, x, y, r, dmg) {
   for (const s of structsNear(src, x, y, r)) hurtStruct(s, dmg, src);
-  if (PRACTICE) abHitDummies(x, y, r, dmg);
 }
-// the same for a wedge swept from p's feet along angle a (structsInCone): the
-// wedge's far half is where a dummy stands to be hit
+// the same for a wedge swept from p's feet along angle a (structsInCone)
 function hurtBuiltCone(p, a, r, half, dmg) {
   for (const s of structsInCone(p, p.x, p.y, a, r, half)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
 }
-// the practice dummy takes area hits like everything else: any dummy tile
-// whose base is inside the circle rings the meter
-function abHitDummies(x, y, r, dmg) {
-  const tx0 = Math.floor((x - r) / TILE), tx1 = Math.floor((x + r) / TILE);
-  const ty0 = Math.floor((y - r) / TILE), ty1 = Math.floor((y + r) / TILE);
-  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-    if (!inWorld(tx, ty)) continue;
-    const o = objects[idx(tx, ty)];
-    if (o && o.type === 'dummy' && Math.hypot(tx * TILE + 8 - x, ty * TILE + 8 - y) <= r + 8) {
-      hitDummy(o, dmg, tx * TILE + 8, ty * TILE - 4);
-    }
-  }
-}
-
 // ---- the world tick ------------------------------------------------------
 // Everything the abilities left lying in the world, stepped once per sim
 // step from updatePlay: the flashes age, and each hero's own (HERO_TICK).

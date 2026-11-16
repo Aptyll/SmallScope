@@ -1,7 +1,6 @@
 'use strict';
 // The HUD that lives in world space: the radial wheel and runCmd, the tile
-// brackets and selection, the key prompts, and the work/die/bell/shop
-// hints.
+// brackets and selection, the key prompts, and the work and shop hints.
 // ------------------------------------------------------------ radial wheel
 // One geometry, any number of options: n wedges of exactly 2*PI/n, the first
 // centred straight up and the rest clockwise. Nothing is special-cased per
@@ -19,17 +18,9 @@ const WHEEL_GAP = 2;    // px of daylight between neighbouring wedges, measured 
 // camera follows the player. drawWheelStick() draws that travel 1:1 from the
 // hub, so the knob is visibly inside the wedge it has picked.
 
-function wheelOptions() {
-  const w = state.wheel;
-  // the ping wheel: the four pings, attack straight up (the `pings` banner,
-  // js/sim/pings.js) - the tap's GO HERE has no wedge
-  if (w.kind === 'ping') return PING_WHEEL.map((id) => ({ id }));
-  // the parkour die and the range bell: the three difficulties, easy
-  // straight up - picking one IS the roll (or the ring), so neither carries
-  // a separate go wedge
-  if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
-  return AG_WEDGES.map((id) => ({ id })); // 'agbell': one wedge per round (js/sim/practice.js)
-}
+// the ping wheel: the four pings, attack straight up (the `pings` banner,
+// js/sim/pings.js) - the tap's GO HERE has no wedge
+function wheelOptions() { return PING_WHEEL.map((id) => ({ id })); }
 
 // The whole geometry, in two lines: every wedge is span wide, and wedge i is
 // centred on wheelAng(i). The hover test, the wedge pixels and the icon ring
@@ -79,8 +70,6 @@ function resolveWheel() {
     if (k) player.input.cmd = { kind: 'ping', k, x: Math.round(w.wx), y: Math.round(w.wy) };
     return;
   }
-  if (L.seg < 0) return; // released in the hub = cancel
-  player.input.cmd = { kind: w.kind, tx: w.tx, ty: w.ty, id: L.opts[L.seg].id }; // 'pkdie' | 'agbell'
 }
 // THE TAP: a ping wheel draws nothing until the button has been held
 // PING_HOLD or the pointer has left the hub, so a tap is a GO HERE that
@@ -109,7 +98,7 @@ function cmdOk(c) {
     return false;
   }
   if (c.kind === 'ping') return cmdKey(PING_CALLS, c.k) && Number.isFinite(c.x) && Number.isFinite(c.y);
-  return c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat'; // the practice props check their own
+  return false;
 }
 
 // run a queued order for any player. Returns what came of it, for whoever
@@ -125,16 +114,10 @@ function runCmd(p, c) {
   // a ping: anywhere on the map, no reach, no contest - a mark for the side
   // and a hint to its bots (the `pings` banner, js/sim/pings.js)
   if (c.kind === 'ping') return pingCmd(p, c);
-  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/sim/practice.js)
-  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/sim/practice.js)
-  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/sim/practice.js, js/ui/cheats.js)
   return false;
 }
 
 // ------------------------------------------------------------ selection, hints & wheel
-// an aimed ghost's rim (the practice bar's drop): the
-// bright ink where it can go, the danger red where it cannot
-const GHOST_OK = '#f4f7ff', GHOST_NO = '#ff8a7a';
 // white corner brackets over the tile a wheel is open on
 function drawSelection(ox, oy, now) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || window.DBG.hideUI) return;
@@ -179,10 +162,7 @@ function drawWorkHint(ox, oy) {
   // what the hands take on their own (autoWorks: a tree, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
   if (t && t.o && autoWorks(t.o, player)) t = null;
-  
-  // no work target: the roll station or the range bell may still be in
-  // reach (the merchant answered above)
-  if (!t || !t.near) { drawPkHint(ox, oy); drawBellHint(ox, oy); return; }
+  if (!t || !t.near) return;
   const st = t.o && structOf(t.o);
   const isStruct = !!(st && STRUCTS[st.type]);
   const d = t.o && OBJECTS[t.o.type];
@@ -292,33 +272,6 @@ function drawRideHint(ox, oy) {
 }
 const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
-// The parkour die's prompt, PROXIMITY, not hover: an E ROLL cap over the
-// die while it is in reach (pkDieNear, js/sim/practice.js - the same
-// resolver the wheel-open press uses). Holding E opens the roll wheel, which
-// hides every hint including this one.
-function drawPkHint(ox, oy) {
-  if (pkAnim) return; // mid-sweep the station is busy - the tumbling die says so
-  const pk = pkDieNear(player);
-  if (!pk) return;
-  const verb = 'ROLL';
-  const totalW = promptW(verb, 'work');
-  drawKeyPrompt(Math.round((pk.tx + 0.5) * TILE - ox - totalW / 2), Math.round(pk.ty * TILE - oy - 28), verb, keyHeld('work'));
-}
-
-// The range bell's prompt, the die's own proximity grammar: an E RING cap
-// over the bell while it is in reach (agBellNear, js/sim/practice.js - the same
-// resolver the wheel-open press uses). Holding E opens the difficulty
-// wheel, which hides every hint including this one. Only while the range
-// is idle - mid-round the bell is under the snow.
-function drawBellHint(ox, oy) {
-  if (agame.phase !== 'off') return;
-  const bl = agBellNear(player);
-  if (!bl) return;
-  const verb = 'RING';
-  const totalW = promptW(verb, 'work');
-  drawKeyPrompt(Math.round((bl.tx + 0.5) * TILE - ox - totalW / 2), Math.round(bl.ty * TILE - oy - 30), verb, keyHeld('work'));
-}
-
 // 9x11 pixel mouse, the "click" key-cap. Only the LEFT button carries colour
 // (gold = the game's "active" accent, hot orange while pressed); the right
 // button is plain body so nothing suggests right-click.
@@ -408,34 +361,6 @@ function renderWheel(now) {
     if (w.kind === 'ping') {
       // the ping's glyph at twice its mark's size, in its own ink - lit gold under the pick
       drawPingGlyph(ctx, opt.id, ix, iy, 2, hovered ? '#ffd95c' : CALLS[opt.id].ink, '#191b1f');
-    } else if (w.kind === 'pkdie') {
-      // a difficulty wedge is that difficulty's DIE: the same coloured cube
-      // the station's die becomes when this wedge is picked, pip count on its
-      // face. The current track's one wears a gold frame.
-      const rix = Math.round(ix), riy = Math.round(iy);
-      const di = PK_DIFFS.indexOf(opt.id), C = PK_DIE_COL[di];
-      ctx.fillStyle = '#241a12'; ctx.fillRect(rix - 6, riy - 6, 12, 12);
-      ctx.fillStyle = C.body; ctx.fillRect(rix - 5, riy - 5, 10, 10);
-      ctx.fillStyle = C.lite; ctx.fillRect(rix - 5, riy - 5, 10, 1); ctx.fillRect(rix - 5, riy - 5, 1, 10);
-      ctx.fillStyle = C.dark; ctx.fillRect(rix + 4, riy - 4, 1, 9); ctx.fillRect(rix - 4, riy + 4, 9, 1);
-      ctx.fillStyle = '#1c2130';
-      for (const [ax2, ay2] of PK_PIP_AT[di]) ctx.fillRect(rix - 4 + ax2, riy - 4 + ay2, 2, 2);
-      if (parkour.diff === opt.id) {
-        ctx.fillStyle = '#ffd95c';
-        ctx.fillRect(rix - 7, riy - 7, 14, 1); ctx.fillRect(rix - 7, riy + 6, 14, 1);
-        ctx.fillRect(rix - 7, riy - 7, 1, 14); ctx.fillRect(rix + 6, riy - 7, 1, 14);
-      }
-    } else if (w.kind === 'agbell') {
-      // a wedge is a round, in its own mark with its best medal pinned to
-      // the corner (js/draw/practice.js). The last-rung round wears the gold
-      // frame - the bell itself never changes.
-      const rix = Math.round(ix), riy = Math.round(iy);
-      drawAgRoundWedge(opt.id, rix, riy);
-      if (agame.mode === opt.id) {
-        ctx.fillStyle = '#ffd95c';
-        ctx.fillRect(rix - 9, riy - 9, 18, 1); ctx.fillRect(rix - 9, riy + 8, 18, 1);
-        ctx.fillRect(rix - 9, riy - 9, 1, 18); ctx.fillRect(rix + 8, riy - 9, 1, 18);
-      }
     }
   }
 
@@ -449,12 +374,6 @@ function renderWheel(now) {
     if (w.kind === 'ping') {
       label = CALLS[opt.id].word();
       color = CALLS[opt.id].ink;
-    } else if (w.kind === 'pkdie') {
-      label = 'ROLL ' + opt.id.toUpperCase();
-      color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
-    } else if (w.kind === 'agbell') {
-      label = 'RING ' + AG_ROUNDS[opt.id].name;
-      color = '#ffd95c';
     }
   }
   // centred under the wheel, but never off the edge: the wheel sits over its

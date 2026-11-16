@@ -90,7 +90,6 @@ order, so the script tags still interleave them:
 | [js/sim/towers.js](../../js/sim/towers.js) | ~220 | shared scope, no `window.*` export | the road towers: three on every cable, the cut to the furthest standing, and the crossbow's mark, wind, loose and bolt |
 | [js/sim/pumps.js](../../js/sim/pumps.js) | ~170 | shared scope, no `window.*` export | the two neutral gold pumps: standing the mirrored pair at boot, the ring's capture and the pay to the holding side |
 | [js/sim/camps.js](../../js/sim/camps.js) | ~360 | shared scope, no `window.*` export | the camps at their fixed mirrored sites: standing them up, stocking them, the respawn clock |
-| [js/sim/practice.js](../../js/sim/practice.js) | ~1470 | shared scope, no `window.*` export | the practice tool: its map opening (both birds down), and its arena's training grounds: their world, the dummies, the archery track and bell, the parkour, the practice bar, the deer ride |
 | [js/sim/depth.js](../../js/sim/depth.js) | ~280 | shared scope, no `window.*` export | the snow's depth: the map's prevailing wind, the hand-placed brush patches (`layBrush`) and the lee pads (`layDrifts`, at boot after worldgen), `snowDepth`/`deepAt`/`brushOf` - the detail: [world](world.md#snow-depth) |
 | [js/sim/landmarks.js](../../js/sim/landmarks.js) | ~130 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), and their seeded placement |
 | [js/sim/nav.js](../../js/sim/nav.js) | ~390 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
@@ -136,7 +135,6 @@ order, so the script tags still interleave them:
 | [js/ai/bot-api.js](../../js/ai/bot-api.js) | ~510 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/baked/bot-lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim/sim.js](../../js/sim/sim.js) | ~1300 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
 | [js/sim/surrender.js](../../js/sim/surrender.js) | ~100 | shared scope, no `window.*` export | the surrender vote: when a side may vote, how bots side with the people, the clock and the cooldown, and the side called home on a pass |
-| [js/sim/onevone.js](../../js/sim/onevone.js) | ~45 | shared scope, no `window.*` export | the 1V1 queue's match: its rules written into `state.onevone` at the drop, and its end (first strike, ONEVONE_FARM soldiers, the first tower) sending the loser's bird home |
 | [js/sim/weather.js](../../js/sim/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/sim/shed.js](../../js/sim/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai/ai-callouts.js](../../js/ai/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's ping answers (ON IT), a player's pings riding the same list, a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |
@@ -145,12 +143,11 @@ order, so the script tags still interleave them:
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~1000 | shared scope, no `window.*` export | the match's authoritative state as one plain object (`snapBuild`/`snapApply`, refs packed to kind+id tokens by `pack`), its wire form (`snapBuildDelta`/`snapApplyDelta` against a shadow of the last send, `snapEncode`/`snapDecode` binary with a shared key dictionary) and the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`: render, send through the bytes, render again, count differing pixels) |
 | [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~120 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a dropped socket redialing with the same uid on a doubling wait (`wsBackoff`), and one that never reached a relay giving up (`NORELAY`) |
 | [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - every page born on the one map, so a joiner never reloads |
-| [js/draw/ground.js](../../js/draw/ground.js) | ~1300 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the scenery bakes (the pine's wind frame, the practice dummy) - first of the draw files, every other one calls `hash2` |
+| [js/draw/ground.js](../../js/draw/ground.js) | ~1300 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the scenery bakes (the pine's wind frame) - first of the draw files, every other one calls `hash2` |
 | [js/draw/paving.js](../../js/draw/paving.js) | ~330 | shared scope, no `window.*` export | the road's pixels: `paintRoadOverlay` (called by `paintGroundTile`), its flagstones, edge, lip and per-tile memo |
 | [js/draw/landmarks.js](../../js/draw/landmarks.js) | ~21 | shared scope, no `window.*` export | a landmark's pixels and cast shade |
 | [js/draw/lakes.js](../../js/draw/lakes.js) | ~510 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`) - the detail: [world](world.md#the-winds-leavings) |
 | [js/draw/trample.js](../../js/draw/trample.js) | ~370 | shared scope, no `window.*` export | the trampled snow: the packed/churned grid every body stamps, its refill, and the chunk canvases that draw it under the footprints |
-| [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/depth.js](../../js/draw/depth.js) | ~160 | shared scope, no `window.*` export | deep snow's pixels: `DEEP_PAL` (loaded before ground.js, whose `SNOW_INK` appends it), `deepTone` (per pixel, from `snowTile`) and the brush's reeds (`reedDraws`/`drawReed`, y-sorted in `drawSorted`) |
 | [js/draw/zipline.js](../../js/draw/zipline.js) | ~150 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` (the thing itself: the `zipline` banner, js/sim/zipline.js) |
 | [js/draw/icebreak.js](../../js/draw/icebreak.js) | ~190 | shared scope, no `window.*` export | an ice break's pixels: the warning cracks, the water, the plates, the crack band and the freeze back over (the thing itself: js/sim/icebreak.js) |
@@ -202,7 +199,6 @@ order, so the script tags still interleave them:
 | [js/ui/statpanel.js](../../js/ui/statpanel.js) | ~95 | shared scope, no `window.*` export | the stat panel left of the portrait: its cells and icons, its hit test, the hover breakdown (`tipStat`) |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |
-| [js/ui/cheats.js](../../js/ui/cheats.js) | ~480 | shared scope, no `window.*` export | the practice bar down the left edge (the practice field only): its buttons, the map's group, the way to the arena and back, aim ghost and tooltip card |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~270 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/guide.js](../../js/ui/guide.js) | ~225 | shared scope, no `window.*` export | the FIRST MATCH's coach (`GUIDE_STEPS`, `renderGuide`, `guideClick`) |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~120 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
@@ -275,10 +271,7 @@ tag `pre-split` keeps the one-file history.
 The local player profile — **one `name`** (every other player sees it), its lifetime `stats`
 (`wins` / `matches` / `gold` / `kills` / `deaths`), `hero` (the NAME of the hero last
 locked in, '' for none, where the champ select's grid opens next time; `profileHero()`, js/sim/player.js, turns it into a `CLASSES` index), `pos` (the draft position it asks
-for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), `bestLap`
-(`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
-(`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
-practice arena writes ([world.md](world.md#the-practice-tool)) — the
+for, a `POSITIONS` index or -1 any: `pos()`/`setPos()`), the
 old arsenal's `tech.seen` (which kinds this profile has held; nothing reads it now, and `tech.done` rides along unread) and the
 `settings` object — as one JSON blob under
 `softfall.profile`. It is the only file that touches `localStorage` (the CLAUDE.md rule):
@@ -414,7 +407,7 @@ organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 
 **A file that decides things does not also draw them.** Every one of the sim files - core,
-player, input, world, zipline, towers, camps, practice, nav, wildlife, structures, robots, actions, ai, sim, weather -
+player, input, world, zipline, towers, camps, nav, wildlife, structures, robots, actions, ai, sim, weather -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
 **js/ui/** (the HUD and the screens), so the folder is the boundary. canvas.js is the
 exception that proves it: it owns the buffers themselves.
@@ -546,7 +539,7 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   ([checklists](checklists.md#verifying-a-change)).
 - **`app/check-same.js`** — the refactor check (Playwright): this tree (uncommitted edits too) and
   another commit (`origin/main` by default, written out with `git archive`) served side by side
-  and played on the same match seeds and the practice tool, every seat a bot, the page frozen from its
+  and played on the same match seeds, every seat a bot, the page frozen from its
   first frame with `Math.random`, `performance.now` and `Date.now` faked. Every 10 s of match it
   compares `DBG.saveHash` and the canvas in six views; the base plays its first seed twice so a
   leak outside the seed reads as "cannot judge", not as a pass. On a sim difference it names the

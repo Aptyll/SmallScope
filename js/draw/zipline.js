@@ -2,8 +2,7 @@
 // The zipline's pixels (the `zipline` banner, js/sim/zipline.js, owns the thing
 // itself): a pylon's sprite in each side's colour, the cable pass that
 // hangs the line between the pylons over everything but the night, and the
-// rider's handle and rope. The pylon bakes here, beside its draw pass, the
-// way the practice dummy does (js/draw/ground.js) - never under
+// rider's handle and rope. The pylon bakes here, beside its draw pass - never under
 // js/sprites/. Two bakes, one per team skin, looked up by skin(o.team) like
 // every other team-coloured thing on the map.
 const PYLON_H = 40;

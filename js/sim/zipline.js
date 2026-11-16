@@ -50,7 +50,6 @@ const zips = [];           // [team] the mid road's, then the side lanes' -> { t
 function zipTile(u, s) { return { x: u + s / Math.SQRT2, y: WORLD - 1 - u + s / Math.SQRT2 }; }
 function placeZips() {
   zips.length = 0;
-  if (ARENA) return;
   const um = (WORLD - 1) / 2; // the map's middle, the same u for both sides: one fixed map, mirrored, so both cables stop ZIP_MID_GAP short of it
   for (const team of [0, 1]) {
     const side = roadNest(team).side, dirF = team === 0 ? 1 : -1; // dirF: u toward the centre

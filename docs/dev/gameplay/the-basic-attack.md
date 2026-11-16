@@ -95,8 +95,7 @@ and is what the rest of this section is about.
 
 **A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
 `shotContacts` (js/sim/sim.js, `the shot's sweep`) lists what the segment met in the order it met
-it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
-dummy, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
+it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
 the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the barracks'
 roof 6 px over its footprint stops a shot); a site still going up is its footprint alone — a target face,
 and every body whose hit disc it crossed (`sweepDisc`, and `sweepBox` for the building's box): the

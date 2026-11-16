@@ -200,7 +200,6 @@ function lungeStep(p, mv, dt) {
   if (mv.blockedX || mv.blockedY || p.rushT <= 0) bellaDashEnd(p);
 }
 function bellaDashEnd(p) {
-  if (PRACTICE && p.dash === 'lunge') abHitDummies(p.x, p.y, LUNGE_R + 6, abDmg(p, 'lunge', abRk(p, 'lunge', 'dmg')));
   const slip = p.dash === 'slip';
   p.rushT = 0;
   p.dash = '';

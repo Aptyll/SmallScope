@@ -167,7 +167,7 @@ function stepHawk(h, dt) {
     falcoMark(o, q);
     abFx.push({ kind: 'ring', x: q.x, y: q.y, r: 10, t: 0, col: '#f2cc6a', fx: 'rake', life: 0.4 }); // the rakes (drawn: AB_FX_LOOK.rake)
     sfxAt('hit', q.x, q.y);
-  } else if (PRACTICE) abHitDummies(h.x, h.y, TALON_R, h.dmg);
+  }
   h.back = true;
 }
 // cut down (HERO_MACHINE `fall`, robotDies): feathers, and he is without it a while
@@ -207,7 +207,6 @@ function updateFalcoKnives(dt) {
     if (q || st) { burst(k.x, k.y, '#c8d2e4', 5, 35, 0.3, true); sfxAt('hit', k.x, k.y); }
     const solid = isSolidTile(Math.floor(k.x / TILE), Math.floor(k.y / TILE));
     if (q || st || solid || k.d >= k.len) {
-      if (PRACTICE && !q && !st) abHitDummies(k.x, k.y, FAN_R + 4, k.dmg);
       falcoKnives.splice(i, 1);
     }
   }

@@ -5,7 +5,7 @@
 //   OVERVIEW       the most played hero large, four numbers under it
 //   MATCH HISTORY  op.gg's list: a summary, then a row a match - a header
 //                  line (result, length, mode, how long ago) over the body
-//                  (face and level, loadout, K/D/A with deaths in red, the
+//                  (face and level, K/D/A with deaths in red, the
 //                  kill share, CS a minute, gold, the build, both sides).
 //                  A press opens the row into the whole scoreboard.
 //   RANKED         a ladder of you and every person this screen has met, by rating
@@ -13,7 +13,7 @@
 // Someone else's profile shows what their card carries: their last matches
 // (no builds or sides, a card is short) and the heroes in them.
 
-const PF_MODE_KEYS = ['', 'ranked', 'quick', 'onevone'];
+const PF_MODE_KEYS = ['', 'ranked']; // the filter's tabs: ranked is the one mode (PF_MODE_TXT still names a cut mode's old record)
 const PF_MODE_TXT = { '': 'ALL', ranked: 'RANKED', quick: 'QUICKPLAY', onevone: '1V1', guide: 'FIRST MATCH' };
 const PF_WIN_BG = '#141a24', PF_LOSS_BG = '#1e1517';
 const PF_WIN_LINE = '#1f2838', PF_LOSS_LINE = '#2c1e22';
@@ -160,8 +160,7 @@ function drawOverview(L, now) {
     ['RECORD', (x) => { pfBox(x - 30, y + 22, 60, 6, pfRed()); pfBox(x - 30, y + 22, st.g ? Math.round(60 * st.w / st.g) : 0, 6, pfBlue()); }, st.w + 'W ' + (st.g - st.w) + 'L', st.g ? Math.round(100 * st.w / st.g) + '% WINS' : '', SC_LIT],
     ['BEST HERO', (x) => { if (best) pfFace(best.h, x - 14, y + 12, 28, 2, true); }, best ? best.h : '-', best ? Math.round(100 * best.w / best.n) + '% IN ' + best.n : '', SC_LIT],
   ];
-  if (!c) cells.push(['PRACTICE', null, PROFILE.bestLap() ? PROFILE.bestLap().toFixed(1) + 'S' : '-', 'BEST LAP', SC_LIT]);
-  const cw = Math.floor(B.w / cells.length); // three on someone else's, spread the same width as your four
+  const cw = Math.floor(B.w / cells.length);
   cells.forEach(([h, mark, v, sub, col], i) => {
     const cx = B.x + i * cw + (cw >> 1);
     pfTC(h, cx, y, SC_LBL);
@@ -223,16 +222,8 @@ function drawHistoryRow(row) {
   const by = row.y + 15, fx = x + 10;
   pfFace(mine.h, fx, by, 32, 2, true);
   if (mine.y) { pfBox(fx + 20, by + 24, 12, 8, SC_INK); pfTC(mine.y.lv, fx + 26, by + 26, SC_LIT); }
-  const lx = fx + 36;
-  if (!row.e.short) {
-    const lo = row.e.r.lo.split(',');
-    [['trick', lo[0], 0, 0], ['trick', lo[1], 0, 17], ['calling', lo[2], 17, 0]].forEach(([kind, id, ox, oy]) => {
-      const im = id && loIcon(kind, id);
-      if (im) ctx.drawImage(im, lx + ox, by + oy);
-    });
-  }
   // the score, deaths in red, and the ratio under it
-  const kx = row.e.short ? fx + 40 : lx + 40;
+  const kx = fx + 40;
   const parts = [[mine.k, SC_LIT], [' / ', SC_DIM], [mine.d, pfRed()], [' / ', SC_DIM], [mine.a, SC_LIT]];
   let tx = kx + 36 - (parts.reduce((s, [t]) => s + pixelTextWidth(String(t), 2), 0) >> 1);
   for (const [t, c] of parts) { pfT(t, tx, by + 6, c, 2); tx += pixelTextWidth(String(t), 2); }

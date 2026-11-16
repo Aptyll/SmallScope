@@ -30,50 +30,6 @@ const ROAD_COL_LIP = '#ffffff', ROAD_COL_LIP_SHD = '#b4c5dc'; // the lip facing 
 const ROAD_COL_LAP_SHD = '#7f8794';                    // the shade a drift lapping over the stones throws on them
 const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
-// The felled trunk across each forest road's far end (placeRoad, world.js):
-// one 16 px piece per tile along the cross-diagonal, running from the
-// tile's top-left corner to its bottom-right so the pieces meet corner to
-// corner in one line. `seg` 0 is the up-left end and 2 the down-right end,
-// each stopping short to show its sawn face and rings; 1 is the trunk. A
-// real trunk, eleven pixels across the diagonal: snow lies along its spine,
-// bark shows down the lower side with the odd knot, a dark rim holds it
-// against the packed earth like every other thing on the ground, and a soft
-// shadow falls off its lower flank.
-const LOG_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', face: '#c9a070', ring: '#7a5634', snow: '#f4f7ff', snowD: '#d8e4f2' };
-const LOG_NBR = [0, -1, -1, 0, 1, 0, 0, 1, 0, 0]; // dx, dy: the four neighbours whose piece can spill onto a tile, then its own last
-// ox/oy shift the piece's own frame: 0 for the tile it stands on, +-TILE
-// when a neighbour paints the part of it that spills over the tile edge
-function paintLog(g, seg, px, py, ox, oy) {
-  for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
-    const lx = x + ox, ly = y + oy;
-    const t = lx - ly, a = lx + ly; // across the trunk (0 on its spine, + toward the lower-right flank) and along it (0 at the piece's up-left corner)
-    const inEnd = (seg === 0 && a < 4) || (seg === 2 && a > 26); // past the sawn end: nothing
-    if (inEnd) continue;
-    // the ends round off: the band narrows over the last three pixels
-    const half = (seg === 0 && a < 7) ? 2 + (a - 4) : (seg === 2 && a > 23) ? 2 + (26 - a) : 5;
-    const h = hash2(seg * 16 + lx, ly); // this pixel's own roll, the same every bake
-    // the lower-side stubs of two lopped branches on the trunk piece
-    const stub = seg === 1 && (Math.abs(a - 9) <= 1 || Math.abs(a - 21) <= 1) && t >= 6 && t <= 8 + (Math.abs(a - 9) <= 1 ? 1 : 0);
-    if (stub) { penDot(g, t === 6 ? LOG_COL.mid : t === 7 ? LOG_COL.dark : LOG_COL.rim, px + x, py + y); continue; }
-    if ((t === 6 || t === 7) && Math.abs(t - 6) < half - 3) { // the shadow off the lower flank
-      penDot(g, 'rgba(40,60,100,0.22)', px + x, py + y);
-      continue;
-    }
-    if (t < -half || t > half) continue;
-    let c;
-    if ((seg === 0 && a <= 6) || (seg === 2 && a >= 24)) { // the sawn face, seen edge-on: pale wood under a dark rim
-      c = Math.abs(t) === half ? LOG_COL.rim : Math.abs(t) <= 1 ? LOG_COL.ring : LOG_COL.face;
-    } else if (Math.abs(t) === half) c = LOG_COL.rim;
-    else if (t <= -1) { // the top: snow lying in patches, bark where it has slid off
-      const snowy = vnoise(a / 5 + seg * 7, t + 3.3) > 0.42 - t * 0.06;
-      c = snowy ? (h < 0.18 ? LOG_COL.snowD : LOG_COL.snow) : (t === -4 ? LOG_COL.light : LOG_COL.mid);
-    } else if (t === 0) c = h < 0.5 ? LOG_COL.light : LOG_COL.snowD;
-    else if (t <= 2) c = h < 0.08 ? LOG_COL.rim : h < 0.35 ? LOG_COL.dark : LOG_COL.mid; // bark grain, a knot now and then
-    else c = h < 0.3 ? LOG_COL.mid : LOG_COL.dark;
-    penDot(g, c, px + x, py + y);
-  }
-  penFlush();
-}
 // a fallen pine, painted into one tile's px from the trunk's line (x0, y0 the
 // root plate, x1, y1 the broken top): bark under a snow cap on its upper
 // side, a root plate of earth standing up at its foot, a splintered top,
@@ -345,3 +301,54 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   penFlush();
 }
 
+// ---- the road's pennant poles ---------------------------------------------
+// A flag at each of the road's mouths (placeRoad, world.js): dark pole with a
+// gilt finial, and its side's coat streaming off it on the frame clock. The
+// cloth is a full rectangle (18 wide, 11 deep) with a swallowtail cut at the
+// fly end, waving column by column with folds shaded where the wave crests,
+// so it reads as heavy cloth rather than a pennant.
+function bannerCloth(o) {
+  const t = TEAMS[skin(o.team)];
+  return { dark: t.coatD, lit: t.coatL, mid: t.coat, hem: t.mark, seam: t.coatD };
+}
+function drawBanner(o, px, py, now) {
+  const bx = px + 4, top = py - 18;
+  const cl = bannerCloth(o);
+  ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(bx - 1, py + 14, 6, 2);
+  // the pole, snow at its foot
+  ctx.fillStyle = '#241a12'; ctx.fillRect(bx - 1, top - 2, 4, 36);
+  ctx.fillStyle = '#5c4226'; ctx.fillRect(bx, top - 1, 2, 34);
+  ctx.fillStyle = '#8a6142'; ctx.fillRect(bx, top - 1, 1, 34);
+  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(bx - 1, py + 12, 4, 2);
+  // the finial: a gilt ball on a collar
+  ctx.fillStyle = '#241a12'; ctx.fillRect(bx - 1, top - 5, 4, 3);
+  ctx.fillStyle = '#ffd95c'; ctx.fillRect(bx, top - 5, 2, 2);
+  ctx.fillStyle = '#fff3c4'; ctx.fillRect(bx, top - 5, 1, 1);
+  // the cloth, hung from the pole top, waving toward the fly
+  const W = 18, H = 11;
+  for (let i = 0; i < W; i++) {
+    const u = i / (W - 1);
+    const wave = Math.sin(now * 4.5 + i * 0.55 + o.ty) * u * 2.6;
+    const y0 = top + Math.round(wave);
+    // the swallowtail: the last few columns lose their middle rows
+    const notch = Math.max(0, i - (W - 5));
+    const gap = notch > 0 ? Math.min(H - 4, notch * 2) : 0;
+    const x = bx + 3 + i;
+    // fold shading rides the wave's slope: leaning columns catch the dark
+    const slope = Math.cos(now * 4.5 + i * 0.55 + o.ty) * u;
+    const cloth = slope < -0.35 ? cl.dark : slope > 0.45 ? cl.lit : cl.mid;
+    if (gap === 0) {
+      ctx.fillStyle = '#241a12'; ctx.fillRect(x, y0 - 1, 1, H + 2);
+      ctx.fillStyle = cloth; ctx.fillRect(x, y0, 1, H);
+      ctx.fillStyle = cl.hem; ctx.fillRect(x, y0, 1, 1); // the lit top hem
+      if (i === 0 || i === 7) { ctx.fillStyle = cl.seam; ctx.fillRect(x, y0 + 1, 1, H - 1); } // seam shadows
+    } else {
+      const arm = ((H - gap) >> 1) + 1;
+      ctx.fillStyle = '#241a12'; ctx.fillRect(x, y0 - 1, 1, arm + 1); ctx.fillRect(x, y0 + H - arm, 1, arm + 1);
+      ctx.fillStyle = cloth; ctx.fillRect(x, y0, 1, arm); ctx.fillRect(x, y0 + H - arm, 1, arm);
+      ctx.fillStyle = cl.hem; ctx.fillRect(x, y0, 1, 1);
+    }
+  }
+  ctx.fillStyle = '#ffd95c'; ctx.fillRect(bx + 2, top, 1, H); // the gilt hoist stripe
+  ctx.fillStyle = '#c89a3c'; ctx.fillRect(bx + 2, top + H - 2, 1, 2);
+}

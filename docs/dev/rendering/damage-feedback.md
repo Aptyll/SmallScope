@@ -1,8 +1,8 @@
 # Damage feedback
 
 Combat damage is **one running total per body**, never a number per hit. `tallyHit(u, amount)`
-(js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
-dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
+(js/sim/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot` and the building blows)
+adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
 `TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
 snapshot carry them and a client fades a total on the host's tick. A soldier wears its total only
 while a hero's blow is in it (`b.tallyBy`, `hurtRobot`): two waves meeting show bars, not sums. The total stands **`TALLY_GAP`
@@ -16,11 +16,7 @@ right after the world blit, as the world-1x outlined number scaled whole into de
 at any zoom and under the HUD. A body that **dies** loses its frame, so `queueTally` also keeps
 each body's last spot (`tallySpot`, world px) and `drawTallies` floats a dead body's total
 `TALLY_RISE` px up from there, fading over `TALLY_DEATH`. A one-shot never hung a frame, so
-`trackDowns` calls `tallyFall(p)` to seed the spot where the frame would have stood. A word an
-archery target says when it breaks (`wordPop`, js/sim/core.js, a staged scene's only) is stamped by
-the same `drawTallies` pass in the same ink, gold (`BAR_NEUTRAL`): `TALLY_POP_SC` for the
-`TALLY_POP` instant it lands, then `TALLY_SC`, rising `WORD_POP_RISE` px and fading over
-`WORD_POP_T`. A player who goes down gets no `NAME DOWN` in the air: the feed
+`trackDowns` calls `tallyFall(p)` to seed the spot where the frame would have stood. A player who goes down gets no `NAME DOWN` in the air: the feed
 says it and the fall shows it. Beasts, structures and props flash white on hit via `drawSpriteFlash`
 (0.8-alpha overlay); heroes, soldiers and a hero's machines never do (at night the wash reads as a pale
 block): their sparks, shove and bar tell the hit.

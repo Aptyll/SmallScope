@@ -174,7 +174,6 @@ function updateClivusRopes(dt) {
     if (st) { hurtStruct(st, w.dmg, o); clivusRopes.splice(i, 1); continue; }
     const tx = Math.floor(w.x / TILE), ty = Math.floor((w.y + BOW_Y) / TILE);
     if (w.d >= ROPE_RANGE || isSolidTile(tx, ty)) {
-      if (PRACTICE) abHitDummies(w.x, w.y + BOW_Y, ROPE_R + 4, w.dmg);
       burst(w.x, w.y, '#c8a874', 4, 30, 0.3, true);
       clivusRopes.splice(i, 1);
     }

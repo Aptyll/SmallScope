@@ -5,25 +5,13 @@
 // Tuning for one feature lives with that feature; see docs/dev/architecture.md.
 // ------------------------------------------------------------ constants
 const TILE = 16;
-// ?practice=1 boots the PRACTICE TOOL (the full story on the `Practice mode`
-// comment below): the match's own map, with the practice bar and nothing at
-// stake. ?practice=1&arena=1 boots its side room, the training ARENA (the
-// bell's rounds, the parkour, the deer ride) - parsed HERE, above WORLD,
-// because the arena is a small world: the training field plus a forest
-// collar for the ice parkour, against the match's 278. Everything downstream
-// sizes itself off WORLD (the ground arrays, the ground bake, both maps, the
-// camera clamps), so the match world is untouched. PRACTICE asks "is nothing
-// at stake" (the bar, no profile, no ending); ARENA asks "is this the small
-// field instead of the map" (no lanes, bases, creek or camps).
-const PRACTICE = /[?&]practice=1/.test(location.search);
-const ARENA = PRACTICE && /[?&]arena=1/.test(location.search);
 // MAP_K spreads the match's layout: every place in it (the bases, the lanes,
 // the camps, the brush, the jungle walls, the treeline's depth) is written at
 // the old 232-tile map's scale and multiplied by MAP_K where it is declared,
 // so the valley grows or shrinks on this one number while the bodies, the
 // roads' widths and the camps' clearings keep their size.
-const MAP_K = ARENA ? 1 : 1.2;
-const WORLD = ARENA ? 112 : 278; // tiles per side (match: 232 * MAP_K, about a 158-tile open interior); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
+const MAP_K = 1.2;
+const WORLD = 278; // tiles per side (232 * MAP_K, about a 158-tile open interior)
 let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
 let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
 // The frame the menus, the panels and the end screens were authored in: 270
@@ -81,27 +69,10 @@ function mulberry32(a) {
   r.s = a | 0;
   return r;
 }
-// Practice mode: ?practice=1 (the PRACTICE const above WORLD) boots the
-// PRACTICE TOOL on the match's own map (genWorld and the passes after it,
-// js/app/boot.js): both birds already down on their perches (practiceLand,
-// js/sim/practice.js), no title menu and no bots, the clock running as in a
-// match so the waves keep their beat. Its side room, the training ARENA
-// (the `practice arena` banner, js/sim/practice.js), has no eagles and its
-// clock pinned to early morning (sim.js never advances state.time under
-// ARENA). A host on one refuses a page on another (netHostHello's `world`).
-// Entered from the party's START (partyPractice, js/ui/rooms.js), left from
-// the ESC panel's LEAVE, crossed between with the bar's ARENA / MAP well -
-// all page reloads. A party plays it together: the leader's page hosts,
-// friends join on the spawn.
-
-// THE MAP: every match, every screen and the practice tool play on the one
+// THE MAP: every match and every screen play on the one
 // valley this grows (worldRng, and hash2/vnoise under every per-tile look).
 // It is a constant, never rolled and never sent: a page is born on the map.
 const MAP_SEED = 471;
-// which ground this page stands on: 0 the match's map, 1 the practice tool on
-// it, 2 the arena. A host and a joiner, and a save and the page it loads on,
-// must agree on it (netHostHello, saveApply)
-function worldKind() { return ARENA ? 2 : PRACTICE ? 1 : 0; }
 // SEED starts the MATCH's own stream: rng, fxRng, matchHash, the bots' sealed
 // random. Rolled when the page loads, so no two matches play out alike, and
 // never shown; ?seed=N pins it, which a tool uses to replay a bot match. It
@@ -157,7 +128,6 @@ const state = {
   // out of the match: the overlay's state. over: 'lost' | 'won' | null; view:
   // 'menu' (the planks) | 'spec' (following a living player); spec: that player's
   // id; sel + hover: the planks' keyboard pick and per-plank hover eases
-  onevone: null, // a 1V1 match's rules and its end (js/sim/onevone.js); null in any other match
   over: null, deadView: 'menu', spec: -1, deadSel: 0, deadHover: [0, 0],
   // the replay window over a respawn wait has been closed (endMatch reopens it)
   rpClosed: false,
@@ -167,9 +137,6 @@ const state = {
   // (endSnapshot(), the victory banner); defeatT is the loss summary's own
   // clock, started when that view opens rather than when the player went down
   end: null, defeatT: 0,
-  // the practice tool's world toggles (the practice bar's map group,
-  // cheatCmd js/sim/practice.js): the bays' waves march, the road towers shoot
-  prac: { waves: true, towers: true },
   firstBlood: false, // the match's first player kill has been called (callKill, the `calls` banner, js/sim/player.js)
   paused: false,
   mapOpen: false,
@@ -431,13 +398,6 @@ function tallyHit(u, amount) {
   u.tallyLast = n; // ...and this blow on its own: a big one draws its hit (js/draw/hitfx.js)
 }
 
-// A word that floats up off a hit (a staged target's `word`, hitPTarget,
-// js/sim/world.js): the running totals' ink and size in the neutral bar's gold,
-// rising WORD_POP_RISE px and fading out over the last half of WORD_POP_T
-// (aged in updateFx, js/sim/sim.js; drawn beside the totals, drawTallies)
-const WORD_POP_T = 1.6, WORD_POP_RISE = 14; // s it floats, and how far up
-const wordPops = []; // { x, y, txt, t }
-function wordPop(x, y, txt) { wordPops.push({ x, y, txt, t: 0 }); }
 
 // `grav` true is the usual toss (a kick up, then a 90 px/s/s fall); a NUMBER
 // is a fall that strength with no kick, for things that drift down rather

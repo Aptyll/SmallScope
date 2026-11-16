@@ -66,7 +66,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   `'skinPrev'`/`'skinNext'`, `'talk'`, `'map'`, `'ai'`, `'pickN'` or null). The screen runs the
   **draft** ([below](../rendering.md#lobby-draft), js/ui/draft.js); its pixels are js/ui/select.js.
   - **The top band** (`drawSelectTop`, `LOBBY_HEAD` tall): the **headline** (BAN A HERO!, PICK
-    YOUR HERO!, PREPARE YOUR LOADOUT! once your pick is in and through the count), a **timer
+    YOUR HERO!, GET READY! once your pick is in and through the count), a **timer
     bar** under it draining toward the middle, and the **seconds** under that — gold while you
     still have to act, and pointed at your own row by a gold arrow in the gutter. Each side's
     **bans** sit in its own top corner, yours left: a dim face while the vote stands, struck
@@ -195,12 +195,11 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
   line when open) and a search field that lists the people met whose name starts with what is
   typed; a press or Enter opens one.
 - **OVERVIEW**: the most played hero standing large over a dark field, weapon in hand and in the looks you wear (`drawOverviewModel`, the showcase's `drawPlayer` stage), then RANKED (the rating),
-  RECORD (a blue-over-red bar), BEST HERO (the best win rate over three games) and, on your own,
-  PRACTICE's best lap.
+  RECORD (a blue-over-red bar), BEST HERO (the best win rate over three games).
 - **MATCH HISTORY**: a summary (the last twenty's record, K/D/A and KDA, the three most played
   with their win rates) with the mode filter, then op.gg's row a match: a header line (VICTORY in
   blue or DEFEAT in red, the length, the mode, how long ago, the fold mark) over the face with its
-  level, the loadout, K/D/A with the deaths red and the ratio under it, the kill share, CS a
+  level, K/D/A with the deaths red and the ratio under it, the kill share, CS a
   minute, gold, the build in two rows of three, the damage against the match's best and both sides'
   faces and names. A press opens the row into the whole scoreboard; a person's name there opens
   their profile. The wheel scrolls.

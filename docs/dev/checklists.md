@@ -64,7 +64,7 @@ declare victory. The affordances:
     host throws away that share of its snapshot sends before the transport, which is the
     ack-keyed delta's proof.
   - **A match between two tabs**: serve the game, open `?net=host&room=R` in one tab and
-    `?net=client&room=R` in another (both on the match's map - the host refuses a practice or arena page);
+    `?net=client&room=R` in another (both on the match's map);
     the client takes the smaller side's first AI slot, or its own slot back after a reload. In
     the Claude browser pane a tab that never got a frame does not tick at all: drive a client
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
@@ -80,7 +80,7 @@ declare victory. The affordances:
     Playwright (`PLAYWRIGHT=<its folder>` if it is not on the require path).
   - **`node app/check-same.js`** — run it before merging a refactor, a split or a cleanup that
     should change nothing: it plays this tree and `origin/main` (or `node app/check-same.js <ref>`)
-    on the same match seeds (each varies the bot match, never the map) and the practice tool for 8 match minutes each (`--min`, `--seeds`) and
+    on the same match seeds (each varies the bot match, never the map) for 8 match minutes each (`--min`, `--seeds`) and
     compares the sim hash and six views of the frame every 10 s. Exit 0 is SAME; 1 names the first
     tick and the fields that parted (pixels only is a draw change); 2 is cannot judge (a page
     threw, the base played a seed twice and parted, or a match never moved). A refactor that
@@ -224,7 +224,7 @@ that preserve the described structure.
 **Adding an object type** — one `OBJECTS` entry in [js/sim/world.js](../../js/sim/world.js) is most of
 it: `solid` (does it block a walker), `work` (whether E reaches for it) and `ready` (whether it is worth
 reaching *right now* — a rock's regrowth, a snowdrop's rest), `auto` (the hands go to it on their own the moment it
-is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
+is in reach — `autoWork`; without it the thing waits for E, as only bare ice does; a
 rival building needs no flag — `autoWorks` asks `STRUCTS` and `ownsStruct`), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`

@@ -47,7 +47,7 @@ wings settle, **PROTECT YOUR EAGLE** comes up once under you (`drawDropHeadline`
 every screen shows it on the same beat; your side's paint at `HEADLINE_TEXT` (**four**) times the
 drop HUD's text scale, `VIEW_H * HEADLINE_Y`, on **no plate**: a `HEADLINE_RIM` 2 px dark rim
 carries it, baked opaque and faded as a canvas). It is the headline carve-out: the once the win
-condition is ever written down. The practice field boots with its birds down and shows none.
+condition is ever written down.
 
 **`state.drop` outlives the whole match** — it never goes null, because the roosts are the
 objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line

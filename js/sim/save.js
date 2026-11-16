@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 16;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen)
+const SAVE_V = 17;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen; 17: the loadout cut)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -65,7 +65,7 @@ const SAVE_ROOTS = [
   ['falcoKnives', ...saveArr(falcoKnives)], // FALCO's knives in flight (js/sim/falco.js; his hawk out rides `robots`)
   ['lignumAxes', ...saveArr(lignumAxes)], ['lignumLogs', ...saveArr(lignumLogs)], // LIGNUM's thrown axes and felled trunks (js/sim/lignum.js)
   ['clivusRopes', ...saveArr(clivusRopes)], ['clivusRings', ...saveArr(clivusRings)], // CLIVUS's ropes and rope rings (js/sim/clivus.js)
-  ['wordPops', ...saveArr(wordPops)], ['coinPops', ...saveArr(coinPops)], ['falls', ...saveArr(falls)], ['ptargets', ...saveArr(ptargets)], ['slashes', ...saveArr(slashes)],
+  ['coinPops', ...saveArr(coinPops)], ['falls', ...saveArr(falls)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
   ['orca', () => orca, (v) => { Object.assign(orca, ORCA_FRESH(), v); }], // the orca (js/sim/orca.js)
@@ -293,14 +293,13 @@ function saveCapture() {
   roots.ground = grd;
   const { body, dropped } = saveEncode(roots, touched);
   if (dropped.size) console.warn('save: dropped', [...dropped].slice(0, 12));
-  return { v: SAVE_V, world: worldKind(), seed: SEED, body };
+  return { v: SAVE_V, seed: SEED, body };
 }
 // the record back onto this page, whose valley must be the saved one's fresh
 // (the same ground and match seed, no step taken yet; the streams ride in the
 // body). Throws on a record of another, before touching anything.
 function saveApply(rec) {
   if (!rec || rec.v !== SAVE_V) throw new Error('save: version ' + (rec && rec.v));
-  if (rec.world !== worldKind()) throw new Error('save: another world');
   if (rec.seed !== SEED) throw new Error('save: another match'); // matchHash reads SEED
   const r = saveDecode(rec.body, objects);
   for (const [i, o] of r.tiles) objects[i] = o;
@@ -333,7 +332,7 @@ function saveHash() {
 // player reaches calls it.
 function saveDevLoad(rec) {
   try { sessionStorage.setItem('softfall.load', JSON.stringify(rec)); } catch (e) { return false; }
-  location.href = location.pathname + '?seed=' + SEED + (PRACTICE ? '&practice=1' + (ARENA ? '&arena=1' : '') : '');
+  location.href = location.pathname + '?seed=' + SEED;
   return true;
 }
 // boot's half (js/app/boot.js): true when a saved match was put back on this page
