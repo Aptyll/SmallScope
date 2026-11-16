@@ -8,7 +8,7 @@
 //   LANER    TOP and BOT hold their lane, walk to where its side's wave
 //            on that lane meets the rival one and stand just behind its own
 //            column - or, with no column of its own on the lane, wait at
-//            the lane's hold point (laneHold, js/sim/lanes.js) - in ambush in
+//            the lane's hold point (laneHold, js/sim/field.js) - in ambush in
 //            the nearest brush patch on its own side of that point when one
 //            is near (aiBrushWait); the fight there is rung 3's, and
 //            on a rival soldier its own soldiers are wearing down it holds
@@ -20,6 +20,13 @@
 //            (CAMP_HOLD) so it is there as the clock ends, and while the
 //            next den is further off in time than in walking, the jungler
 //            works what is near instead.
+// THE EARLY GAME: until AI_LANE_T every bot plays its position and nothing
+// else (aiLaning). The side's plan hands out no push, guard, stalker or
+// beast party (aiPlan, js/ai/ai-team.js), and a laner keeps within
+// AI_LANE_LEASH of its own lane (aiLaneKept): it fights a rival there or one
+// at arm's length, answers a friend's call there, and leaves the pumps to
+// the jungler. Its own bird under attack and a person's ping still come
+// first. After it the plan is free to send anyone anywhere: they roam.
 // Neither job reads anything a hand could not: the soldiers' health bars,
 // the den clocks every screen wears, and the damage its own last blow did.
 const AI_FARM_NEAR = 40; // px an own soldier with no mark yet must be from a rival one for the rival to count as being worn down
@@ -29,8 +36,11 @@ const AI_FARM_STAND = [40, 90]; // px a blade and a bow wait off a soldier they 
 const AI_FARM_BACK = 40; // px a laner stands behind its own column, toward its own bird
 const AI_BRUSH_R = 480; // px from a laner's hold point a brush patch's middle may be for it to wait in that instead...
 const AI_BRUSH_FWD = 96; // ...and px further from its own base than the hold point it may lie
+const AI_BRUSH_LANE = 4; // ...and tiles off its own lane's road at most (a brush deeper in is the jungle's)
 const AI_DEN_EARLY = 15; // s ahead of a den's clock a jungler sets off (time to walk in on top of the walk)
 const AI_POS_FILL = [0, 2, 1]; // POSITIONS a side's undrafted bots are dealt, in order: top, bot, jungle
+const AI_LANE_T = 360;   // s of match clock the early game lasts (aiLaning): when the profiles' pushes begin
+const AI_LANE_LEASH = 8; // tiles off its own lane's road a laner goes in the early game, after a rival or to a call
 
 // is foe a rival soldier p should leave alone until one blow finishes it?
 // It reads ahead by the blow's travel: the blows its own soldiers aimed at
@@ -90,6 +100,24 @@ function aiPosJob(T, p) { const r = T.pos[p.id]; return r === undefined ? null :
 // the lane p holds: its position's, else mid
 function aiLane(p) { const r = aiPos(p); return r >= 0 && POSITIONS[r].lane >= 0 ? POSITIONS[r].lane : 1; }
 
+// is it the early game, when every bot keeps to its position?
+function aiLaning() { return state.elapsed < AI_LANE_T; }
+// the lane p keeps to now, -1 none (past the early game, the jungler, a bot with no position)
+function aiLaneKept(p) {
+  if (!aiLaning()) return -1;
+  const r = aiPos(p);
+  return r >= 0 && POSITIONS[r].job === 'laner' ? POSITIONS[r].lane : -1;
+}
+// is the point (px) inside a laner's leash on lane `lane`: in either base, or
+// within AI_LANE_LEASH of the road on the lane's own half of the map (the top
+// lane's is above the middle, the bottom's below)
+function aiOnLane(lane, x, y) {
+  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  if (baseAt(tx, ty, 0) >= 0) return true;
+  if (lane === 0 ? ty > FIELD_C : ty < FIELD_C) return false;
+  return laneDist(tx, ty) < AI_LANE_LEASH;
+}
+
 // where a laner stands: behind its own soldier on its lane nearest a rival
 // one (the clash), or behind its own column's head with no clash yet; with
 // no column of its own on the lane, the lane's hold point
@@ -116,12 +144,14 @@ function aiLaneSpot(p) {
 
 // where a laner with nothing to farm waits instead of its hold point h: the
 // brush nearest h within AI_BRUSH_R that is no further out from its own base
-// than h (AI_BRUSH_FWD), so the wait is an ambush on its own ground, never a
-// walk forward; h itself with none
+// than h (AI_BRUSH_FWD) and touches its own lane (AI_BRUSH_LANE off the
+// road), so the wait is an ambush on its own ground and on its own lane,
+// never a walk forward or into the jungle; h itself with none
 function aiBrushWait(p, h) {
-  const c = basePerch(p.team), hx = c.x * TILE, hy = c.y * TILE;
+  const c = basePerch(p.team), hx = c.x * TILE, hy = c.y * TILE, lane = aiLane(p);
   const reach = Math.hypot(h.x - hx, h.y - hy) + AI_BRUSH_FWD;
-  return brushNear(h.x, h.y, AI_BRUSH_R, (x, y) => Math.hypot(x - hx, y - hy) <= reach) || h;
+  const ok = (x, y) => Math.hypot(x - hx, y - hy) <= reach && aiOnLane(lane, x, y) && laneDist(Math.floor(x / TILE), Math.floor(y / TILE)) < AI_BRUSH_LANE;
+  return brushNear(h.x, h.y, AI_BRUSH_R, ok) || h;
 }
 
 // where a jungler goes: its side's den with the pack up (walked into), or the
