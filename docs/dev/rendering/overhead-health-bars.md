@@ -117,8 +117,7 @@ than holding still over a wall that is rocking. Bar widths are kept even for the
 sprites are.
 
 **The whole stack hangs off one `hy`**, not off `py` directly (`drawPlayer`, js/draw/bodies.js).
-It lifts by the lift + 5 for a zipline rider, so the frame rises with the body and clears the
-handle, and by `MOUNT_BAR_ROWS` for a deer's rider, to hang the deer's bar under the stamina.
+It lifts with the body when the body lifts (a hero's `over` dash), so the frame rises with it.
 
 **The team ring is the frame's partner on the ground.** `drawHeroRing` (js/draw/bodies.js) lays one
 pixel rim round every hero's feet, after the shade and under the body, a little narrower than

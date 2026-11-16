@@ -48,7 +48,7 @@ function titleGround(x, y) {
   const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
   if (!inWorld(tx, ty)) return 'X';
   const i = idx(tx, ty);
-  if (objects[i] != null || cisternTouches(tx, ty)) return 'X';
+  if (objects[i] != null) return 'X';
   return ground[i] === 3 ? 'L' : ground[i] === 0 && !deepAt(x, y) ? 'S' : 'X';
 }
 // the one ground a world rect lies on, or 'X' when it is mixed or busy
@@ -118,7 +118,6 @@ function titleCast() {
     const b = new Player(100 + i, 'none', mine ? player.team : 1 - player.team);
     setClass(b, deal[i % deal.length]);
     if (i === 0) b.skins = player.skins; // your own look on your own hero
-    b.aboard = false;
     b.x = at.x + (mine ? sp[0] : -sp[0]); b.y = at.y + sp[1];
     b.dir = mine ? 'right' : 'left'; b.aimA = mine ? 0 : Math.PI;
     titleBodies.push(b);

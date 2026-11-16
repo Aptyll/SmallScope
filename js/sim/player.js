@@ -80,7 +80,7 @@ const DODGE_CD = 3.5;     // seconds to refill one charge
 const POSITIONS = [
   { id: 'top', name: 'TOP', lane: 0, job: 'laner' },
   { id: 'jungle', name: 'JUNGLE', lane: -1, job: 'jungler' },
-  { id: 'bot', name: 'BOT', lane: 2, job: 'laner' },
+  { id: 'bot', name: 'BOT', lane: 1, job: 'laner' },
 ];
 
 // Every player plays one of these HEROES, the way a League champion is the
@@ -685,7 +685,6 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
-    jump: false,         // edge-triggered: on/off a cable or a deer
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
@@ -764,10 +763,6 @@ class Player {
     this.healCutT = 0; this.healCut = 0; // FROSTBITE on this body: how long, and the share of a heal it takes (cutHeal, js/sim/actions.js)
     this.buys = [];                     // every finished item and pair of boots bought this match, in order: the build the match records (buildsNote, js/app/builds.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
-    this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
-    this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
-    this.dropAlt = 0;                   // px the step down started from: HOP_ALT off the roost
-    this.dropSc = 1;                    // the body's drawn scale as it left the seat, shrinking to 1 as it lands
     // bot brain (unused by a human player): current job, give-up timers and the
     // short blacklists that keep a bot from re-picking work it cannot reach
     this.ai = {
@@ -839,7 +834,7 @@ class Player {
     // Every state ANY unit can be under - stun, root, slow, the mark,
     // and fire - is written and cleared in one place for
     // all three kinds of unit (`status effects`, js/sim/actions.js), so a player,
-    // a deer and a bot wear the identical set.
+    // a beast and a bot wear the identical set.
     clearUnitStatus(this);
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0;
@@ -918,13 +913,6 @@ class Player {
     // the charge that last struck it, and BEDROLL's mend showing on it
     this.portRide = -1; this.portT = 0; this.portFastT = 0; this.portHomeId = -1; this.portRunN = 0;
     this.portBy = -1; this.portRunHit = -1; this.bedT = 0;
-    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
-    this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
-    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)
-    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, js/sim/zipline.js)
-    // the deer ridden (the `riding` banner, js/sim/wildlife.js), or null; the leap
-    // in the air (s left), how long it has been up, and the wait before the next
-    this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
@@ -984,7 +972,7 @@ function initPlayers(roster, local) {
 
 // who p is allowed to shoot: another live player on another team (this is the
 // one place the FFA/friendly-fire rule lives)
-function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
+function enemyOf(p, q) { return q !== p && q.active && !q.dead && (!PVP || q.team !== p.team); }
 // riding the eagle or falling from it: not in the world, nothing can touch it
 // The aim a drawn bow, a wound-up blade, a parry or a cast's telegraph points along, as an angle
 // from the bow's height. Input never crosses the wire, so a client knows
@@ -993,7 +981,6 @@ function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (
 // js/draw/bodies.js).
 function handAim(p) { return Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x); } // where the pointer is, from the hand: what every aimed key and cut swings along
 function aimHold(p) { p.aimA = handAim(p); }
-function inAir(p) { return p.aboard || p.dropT > 0; }
 
 // ---- facing --------------------------------------------------------------
 // The one way a body turns (faceToward). Near a diagonal the facing it
@@ -1052,8 +1039,8 @@ function resolveContests() {
   contests.clear();
 }
 
-const animals = []; // passive wildlife: rabbits and deer, spawned once at boot
-const structures = []; // every building: road towers, barracks, pumps, cisterns
+const animals = []; // the wild: rabbits and the camps' monsters (js/sim/wildlife.js)
+const structures = []; // every building: the lane towers and the pumps
 const robots = []; // the bots: wave soldiers and the merchants
 const arrows = []; // live bow shots: {x,y,vx,vy,t,life,dmg,pow}
 const ARROW_PX = []; // scratch x,y,colour triples for one rasterised arrow body (render only)
@@ -1131,7 +1118,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb, o) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', scrap: 'TAKEN APART FOR SCRAP', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE', orca: 'WENT TO THE ORCA', tower: 'TOOK A TOWER BOLT' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a burn doesn't get written up as a shot
 const KILL_VERB = { fire: 'BURNED' };
@@ -1168,9 +1155,6 @@ function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.
 // since nobody went down.
 function bodyOut(p) {
   p.dead = true;
-  p.zip = -1;   // the handle is let go of (the respawn's reset clears the rest)
-  p.zipWalk = false;
-  rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
   atkCancel(p);
   p.dodgeT = 0;
   p.vx = p.vy = 0;
@@ -1287,7 +1271,7 @@ const RESPAWN_OUT = 40;
 // the tile a body is set down on at its own roost: RESPAWN_OUT up the road
 // from the bird, that tile itself when it stands (r0 0: the ring-out search
 // alone took the tile above, which on a lane pointing up carried the body
-// past the roost ring, BOOM_R) - null while the bird is not down. The
+// past the roost ring, ROOST_R) - null while the bird is not down. The
 // carried-back hero and the recall (js/sim/recall.js) both land here.
 function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];

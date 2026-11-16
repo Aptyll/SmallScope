@@ -1,10 +1,9 @@
 'use strict';
 // The fog of war's rule: what a side can see. Each hero and wave soldier of
 // a side lights a circle round it, and so does every standing building of the
-// side's that has a `sight` (its STRUCTS or OBJECTS entry: the road towers, the bot
-// bays, the merchant's stall), its roosted bird (the perch), its merchant and
-// a narrow band along each of its own cables; solid stone (the cistern's
-// wall) stops a line of sight, pines never do; a body
+// side's that has a `sight` (its STRUCTS or OBJECTS entry: the road towers,
+// the merchant's stall), its roosted bird (the perch) and its merchant; pines
+// never stop a line of sight; a body
 // standing deep in the woods is hidden from the outside until one of the side
 // stands close, and a body in the brush (deep snow, js/sim/depth.js) until
 // one of the side stands in that patch or right at its rim. Rival bodies and every creature outside a side's sight are
@@ -20,26 +19,20 @@ const FOG_EYE_STEP = 8;  // px a hero's sight grows or shrinks by at a time (her
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
 const FOG_PERCH = 224;   // px the side's bird sees while it roosts on the perch
 const FOG_MERCH = 128;   // px the side's merchant sees, wherever it works
-const FOG_ZIP = 48;      // px each of a cable's eyes sees...
-const FOG_ZIP_STEP = 48; // ...and px between them along it: a band about 42 px either side of the cable
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
 const FOG_BRUSH_RIM = 1.5; // tiles outside a brush patch's rim a side's hero or soldier still sees into it
-const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so the wall's face shows
 
 // whether the fog is up: a match on the ground, never the title tour. DBG.fog = false lifts it for a debug look
 function fogUp() {
   return state.mode === 'play' && window.DBG.fog !== false;
 }
 
-// Every eye a side has, as { x, y, r, near, stone, open }: near for a body (a
-// hero or a soldier: what can walk up to the woods' edge and look in); stone
-// for the cistern within its reach, so a line from it traces only what could
-// stop it; open when it is not, so every line is clear (most eyes, in the
-// field - those cost nothing to trace)
+// Every eye a side has, as { x, y, r, near }: near for a body (a hero or a
+// soldier: what can walk up to the woods' edge and look in)
 function sightSources(team, out) {
   out.length = 0;
-  for (const p of players) if (p.team === team && p.active && !p.dead && !inAir(p)) out.push(sightEye(p.x, p.y, heroEyeR(p), true));
+  for (const p of players) if (p.team === team && p.active && !p.dead) out.push(sightEye(p.x, p.y, heroEyeR(p), true));
   for (const b of robots) {
     if (b.team !== team) continue;
     if (b.kind === 'soldier' && unitAlive(b)) out.push(sightEye(b.x, b.y, FOG_SOLDIER, true));
@@ -58,10 +51,6 @@ function sightSources(team, out) {
   }
   const e = state.drop && state.drop.eagles[team];
   if (e && e.state === 'down') out.push(sightEye(e.x, e.y, FOG_PERCH, false));
-  for (const z of zips) if (z && z.team === team) {
-    let was = null; // each cable eye names the one after it (`next`), so the drawn fog can join them into a band (js/draw/fog.js)
-    for (const q of zipEyes(z)) { const s = sightEye(q.x, q.y, FOG_ZIP, false); if (was) was.next = s; out.push(was = s); }
-  }
   return out;
 }
 // how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's
@@ -71,39 +60,7 @@ function heroEyeR(p) { return Math.round(FOG_HERO * heroSight(p) / FOG_EYE_STEP)
 function structCentre(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE }; }
 // a scenery object's middle (the stall): its footprint runs east and north of its anchor
 function objCentre(o) { const d = OBJECTS[o.type]; return { x: (o.tx + (d.w || 1) / 2) * TILE, y: (o.ty + 1 - (d.h || 1) / 2) * TILE }; }
-// the points along a cable its eyes stand at, every FOG_ZIP_STEP px from the
-// base to its end; kept per cable (a tower's fall lays a new, shorter one: towersSync)
-const fogZipPts = new WeakMap();
-function zipEyes(z) {
-  let pts = fogZipPts.get(z);
-  if (pts) return pts;
-  pts = [];
-  const n = Math.max(1, Math.ceil(z.len / FOG_ZIP_STEP));
-  for (let i = 0; i <= n; i++) { const q = zipPoint(z, z.len * i / n); pts.push({ x: q.x, y: q.y }); }
-  fogZipPts.set(z, pts);
-  return pts;
-}
-function sightEye(x, y, r, near) {
-  const stone = cisternDist(x, y) <= r + 1;
-  return { x, y, r, near, stone, open: !stone };
-}
-
-// How far a sight line from (x, y) along the unit vector (dx, dy) runs before
-// stone stops it, up to r: the cistern by its distance field (each step as
-// long as the nearest stone is far)
-function sightReach(x, y, dx, dy, r, stone) {
-  let t = r;
-  // the cistern: march by the distance to the nearest stone
-  if (stone && cistOn) {
-    let s = 0;
-    while (s < t) {
-      const d = cisternDist(x + dx * s, y + dy * s);
-      if (d < 0.5) { t = s; break; }
-      s += d === Infinity ? TILE : Math.max(1, d - 0.5);
-    }
-  }
-  return t;
-}
+function sightEye(x, y, r, near) { return { x, y, r, near }; }
 // the woods: a walkable tile with FOG_WOODS_N pines or more in the 5x5 round it
 function inWoods(x, y) {
   const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
@@ -159,8 +116,7 @@ function fogEyesOf(team) {
   if (fogTick[team] !== state.tick) { fogTick[team] = state.tick; fogSeen[team].clear(); sightSources(team, fogEyes[team]); }
   return fogEyes[team];
 }
-// whether `team` sees the point (x, y): inside an eye's reach with no stone
-// between, and not in the woods or the brush out of a near eye's reach
+// whether `team` sees the point (x, y): inside an eye's reach, and not in the woods or the brush out of a near eye's reach
 // (coverHide). What a body is asked through inSight; a puff or a number on
 // the wire, bare (`u` the body standing there, when it is one)
 function sightAt(team, x, y, u) {
@@ -170,9 +126,7 @@ function sightAt(team, x, y, u) {
   for (const s of srcs) {
     const dx = x - s.x, dy = y - s.y;
     if (dx > s.r || dx < -s.r || dy > s.r || dy < -s.r) continue; // (past its reach on one axis alone: most eyes, for most bodies)
-    const d = Math.hypot(dx, dy);
-    if (d > s.r) continue;
-    if (s.open || d < 1 || sightReach(s.x, s.y, dx / d, dy / d, d, s.stone) >= d) { seen = true; break; }
+    if (Math.hypot(dx, dy) <= s.r) { seen = true; break; }
   }
   return seen && !coverHide(srcs, x, y, u);
 }

@@ -236,10 +236,6 @@ need no edit — none of them names a type any more. An object *instance* carryi
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
 generically, the same rule buildings answer through `ownsStruct`.
 
-**Adding a story landmark** is none of that: one `LANDMARKS` entry in
-[js/sim/landmarks.js](../../js/sim/landmarks.js) and one grid in js/sprites/landmarks.js. A new placement
-rule is one more `LM_WHERE` function: [world.md](world.md#story-landmarks).
-
 What is still per-type and has to be written by hand: the sprite branch in the flat pass or the
 `draws` y-sort in `render()` (the draw *order* is one ordered function on purpose — see
 [rendering.md](rendering.md)), what a swing actually **does** to it in `hitObject()` (its
@@ -417,7 +413,7 @@ colours the whole building. `isSolidTile()` is generic (`!!STRUCTS[o.type] || ..
 construction, ownership and the wreck's pay already dispatch on `STRUCTS[o.type]` too, and a shot
 meets the grid's own opaque box (`structShotBox`, js/sim/sim.js), so taller art is a taller target
 for free. What the type does is its hooks: `tick` for its step (the gold pump's ring, `updatePump`,
-js/sim/pumps.js, or the barracks' waves, `barracksTick`), and `sprite`/`frame`/`over` for a draw of
+js/sim/pumps.js, or the tower's gun, `updateTower`, js/sim/towers.js), and `sprite`/`frame`/`over` for a draw of
 its own; `updateStructures()` and `drawStructObj()` call them and never name a type.
 
 **Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
@@ -427,21 +423,19 @@ its own; `updateStructures()` and `drawStructObj()` call them and never name a t
 shipwreck: { name,                // what the M map prints
              r, mark, icon,       // footprint radius in tiles; map ink; the glyph as [x,y,w,h] rects in a 7x7 box
              kind, pop, repop,    // the monster kind and how many; seconds after the last dies before all are back
-             props, spots,        // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on
-             woods }              // optional: the site is IN the border forest (the hog hut) - no path, no CAMP_EDGE
+             props, spots }       // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on
 ```
 
-A camp with no monster (the HOG HUT) is `kind: null, pop: 0`: nothing stocks it, its clock never
-runs, and what it offers is its `props` (the hog hut is scenery only since 0.531).
-
-The site is written **once, for the RED half**, in road coordinates (`u` along the diagonal, `s`
-off it) and mirrored for BLUE by `campSites()` — never write both halves by hand, and never a
-site under `CAMP_EDGE` tiles from the world's edge (`placeCamps` throws). Nothing rolls: a camp
+The site is written **once, for RED's top quarter**, in field tiles, with the kind for the top
+half (`top`) and its bottom-half twin (`bot`), and folded to the other three quarters by
+`campSites()` like the field itself (`fieldFour`) — never write the other quarters by hand. The
+site must be open ground in `fieldOpen` (js/sim/field.js); `placeCamps` clears nothing. Nothing
+rolls: a camp
 that wants variety takes it from `props`, not from `rng`. The abandoned mine, frozen fort,
 shipwreck and shop are meant to land here, and so is a rookery. Nothing in the maps or the HUD
 needs to learn about it. What *does* cost work: any **new object type** its `props` stamp (the
-checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
-wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
+checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the wolves
+or the stray robots — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
 card (its name and line as `beast.*` keys in js/app/text.js), its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
 overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
@@ -449,7 +443,7 @@ overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and 
 **Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
 give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/target rates — ice is
 the template; a ground that should walk like snow needs none, because only ice and holes are
-special-cased — [the road](world.md#the-road), `3`, is the live example of one that walks like
+special-cased — [the road](world.md#the-lanes), `3`, is the live example of one that walks like
 snow and is not snow), and
 if it is **open water** make `waterAt()` (world.js) say so — every walker, route, spawn and
 climb-out asks that and nothing else ([ice holes](world.md#ice-holes), `2`, are the live example);
@@ -496,13 +490,11 @@ already current, so it is safe to call from a state change that repeats.
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js) |
 | js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`TAKEDOWN_GOLD`, `KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed hero is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
-| js/sim/world.js | `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`), which reshapes the map |
-| js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`, the side mouths `BASE_SIDE_U`/`BASE_SIDE_S`, the bay spots `BASE_BAYS` and their clearing `BAY_CLEAR`), which reshape both roost corners |
-| js/sim/jungle.js | the jungle's pine walls (planted solid inside the lanes, with `JUNGLE_PATHS` and `JUNGLE_CLEARINGS` cut out for one quarter, mirrored; `JUNGLE_RAG`, `JUNGLE_ROAD_KEEP`, the corner slant `JUNGLE_ROUND_CUTS`/`JUNGLE_ROUND_THICK`, each corner's slant rolled once for it and its mirrors, `jungleRoundHome`; the shelf's stumps `JUNGLE_SHELF`, `JUNGLE_SHELF_SPREAD`, `JUNGLE_SHELF_KNOTS`/`JUNGLE_SHELF_KNOT`; the glades' `JUNGLE_GLADE_DEEP`/`JUNGLE_GLADE_REACH`/`JUNGLE_GLADE_HUG`, `JUNGLE_GLADE_KNOTS`, `JUNGLE_GLADE_CAMP`; a glade's knot shapes `JUNGLE_KNOT_SHAPES`, `JUNGLE_KNOT_LIE`, `JUNGLE_KNOT_GAP`) |
-| js/sim/lanes.js | the top and bot lanes (`LANE_HALF`, their fixed control points, `LANE_HW`/`LANE_RAG`) and their cables (`LANE_ZIP_*`) |
-| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint); the waves (`STRUCTS.barracks`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`/`hp`, `BARRACKS_ROLL`) |
-| js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SEEK`/`PUMP_SEEK_FAR`, `PUMP_ROAD`, `PUMP_STAND`/`PUMP_STAND_LONE`, `PUMP_CLEAR`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
-| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs a rebuild costs, when the first is due, the order the lanes get theirs, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/sim/field.js | the whole field: the lanes' loop (`LANE_HX`/`LANE_HY`/`LANE_R`, `LANE_HALF`, `ROAD_HALF`), the perches (`BASE_X`/`BASE_R`, `PLAZA_R`), the jungle (`JUNGLE_BOX`, `FIELD_WALLS`, `WALL_R`), the pits (`LAIR`, `LAIR_MOUTH`, `LAIR_POOL`), the pine border (`FIELD_EDGE`), the brush (`FIELD_BRUSH`), the march (`LANE_STEP`, `LANE_HOLD`): every one reshapes the map |
+| js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint) |
+| js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SPOT`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
+| js/sim/towers.js | the lane towers: range, turn, wind, reload and the bolt's damage (`TOWER_*`), and where they stand (`TOWER_SPOTS`) |
+| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); the waves (`WAVE`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`, `WAVE_ROLL`, `WAVE_OUT`); the merchant's stall (`MERCH_STALL`) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a melee soldier's last hit; a kind pays its `bounty` share), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll block |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |
@@ -579,7 +571,7 @@ Code that is dead **on purpose** is the next section.
   (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
   copy lives on Steam. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
-  still is staged through `DBG`: `beginDrop()`, `hideUI`, `step` to
+  still is staged through `DBG`: `beginMatch()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
 - **A record put back counts its lifetime stats again.** The profile's stats

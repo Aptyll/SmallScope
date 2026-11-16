@@ -5,11 +5,10 @@
 // strict = treat open water as a wall for players too (a shove must never
 // dunk someone; only their own movement can)
 function moveEntity(e, dx, dy, r, strict) {
-  // only players can enter open water - an ice hole or the creek (they fall
+  // only players can enter open water - an ice hole (they fall
   // in - see updatePlayer); animals and robots treat those tiles as walls
-  // (the cistern's stone is held to by the pixel below, cisternReach, not by its tiles)
-  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e, true) :
-    (tx, ty) => isSolidTile(tx, ty, e, true) || waterAt(tx, ty); // e: its own side's gates stand open
+  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e) :
+    (tx, ty) => isSolidTile(tx, ty, e) || waterAt(tx, ty); // e: its own side's gates stand open
   // ...and the open water of an ice break, by the pixel at the feet, on a
   // tile that is still ice (js/sim/icebreak.js) - never a step that starts in it,
   // so nothing standing in the water is pinned there
@@ -26,8 +25,7 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(nx, e.y)) hit = true;
-    const t = hit ? 0 : cisternReach(e.x, e.y, nx, e.y, r); // the cistern's stone: up to it, never into it
-    if (t === 1) e.x = nx; else { e.x += dx * t; blockedX = true; }
+    if (!hit) e.x = nx; else blockedX = true;
   }
   // Y axis
   if (dy !== 0) {
@@ -40,8 +38,7 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(e.x, ny)) hit = true;
-    const t = hit ? 0 : cisternReach(e.x, e.y, e.x, ny, r);
-    if (t === 1) e.y = ny; else { e.y += dy * t; blockedY = true; }
+    if (!hit) e.y = ny; else blockedY = true;
   }
   return { blockedX, blockedY };
 }
@@ -57,7 +54,7 @@ function moveEntity(e, dx, dy, r, strict) {
 // share is tried first, and whatever it cannot take, the pinner takes.
 // Momentum: a player moving into the contact loses only its *share* of the
 // normal velocity component per tick (tangential speed is untouched, so a
-// slide into a deer deflects along it rather than sticking), the rest of
+// slide into a bear deflects along it rather than sticking), the rest of
 // that component is handed to the other unit as knockback, and a lighter
 // unit gets a small bounce off a heavier one. Two relaxation passes settle
 // piles. Deterministic: fixed iteration order, no rng.
@@ -79,13 +76,13 @@ function moveEntity(e, dx, dy, r, strict) {
 // reach (a bear's is 28.8 px above or below, wider than the 22 px it starts a blow inside) would
 // slide a standing target out of every blow. Hard contact still holds them apart.
 // a camp monster's mass and radius are its MONSTER row (wildlife.js), read at call time
-const UNIT_MASS = { player: 3, deer: 2.2, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
+const UNIT_MASS = { player: 3, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
 const UNIT_BOUNCE = 0.3; // restitution for the lighter side of a contact
 const UNIT_SPACE = 1.6;     // a body's room: this x its hard radius (players 7.2, so 14.4 px between two)
 const UNIT_SPACE_TALL = 4 / 3; // ...and that much farther apart one above the other (19.2 px for two players)
 const UNIT_ROOM_RATE = 8;   // share of the room overlap closed per second (at most 43 px/s between two players; a walk is ~73)
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
-function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 8 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : heroMachine(e) ? heroMachine(e).r : 3; }
+function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : heroMachine(e) ? heroMachine(e).r : 3; }
 function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
 // a's share of a contact with b: none when it outranks b, all when b outranks it,
 // else split by mass (the lighter moves more)
@@ -96,12 +93,11 @@ function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
   // ...and a body another carries stands where its carrier does (HERO_HELD, js/sim/heroes.js)
-  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0 && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
+  for (const p of players) if (p.active && !p.dead && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
   // birds fly: they are the one unit nothing collides with
-  // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
-  // ...and a ridden deer is carried by its rider, who stands for both (js/sim/wildlife.js)
-  for (const a of animals) if (!a.dead && !a.rider) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead && !(b.zip >= 0) && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
+  // ...and a roll passes through everything but a bear (MONSTER.big)
+  for (const a of animals) if (!a.dead) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  for (const b of robots) if (!b.dead && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;
@@ -138,8 +134,8 @@ function separateUnits(dt) {
       if (Math.abs(dx) >= min || Math.abs(dy) >= min) continue; // (a gap on one axis alone is a gap)
       const a = us[i], b = us[j];
       // a live roll is not there for anything small: it passes straight
-      // through and rollSweep turns that contact into a hit instead. A deer
-      // is the one unit heavy enough to still stop it, and that stop is a tackle.
+      // through and rollSweep turns that contact into a hit instead. A bear
+      // is heavy enough to still stop it, and that stop is a tackle.
       if ((a.roll && b.small) || (b.roll && a.small)) continue;
       let d = Math.hypot(dx, dy);
       if (d >= min) continue;
@@ -242,11 +238,9 @@ const NAV_DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NAV_DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const NAV_COST = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
 const navToll = new Uint8Array(NAV_N); // per tile: extra steps a route pays to cross it (0: none)
-// e (optional): who walks it - its own side's gates stand open (isSolidTile);
-// a tile beside the cistern's stone with no room for a body at its middle is
-// off every route (cisternBlocks, js/sim/cistern.js)
+// e (optional): who walks it - its own side's gates stand open (isSolidTile)
 function walkable(tx, ty, e) {
-  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty) && !cisternBlocks(tx, ty);
+  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty);
 }
 function navH(tx, ty, gx, gy) {
   const dx = Math.abs(tx - gx), dy = Math.abs(ty - gy);
@@ -286,7 +280,7 @@ function findPath(sx, sy, gx, gy, reach, budget, e) {
     const g = navG[n];
     for (let k = 0; k < 8; k++) {
       const nx = tx + NAV_DX[k], ny = ty + NAV_DY[k];
-      if (!walkable(nx, ny, e) || cisternCuts(n, k)) continue; // (a fallen block lying across the step, js/sim/cistern.js)
+      if (!walkable(nx, ny, e)) continue;
       if (k >= 4 && !(walkable(tx + NAV_DX[k], ty, e) && walkable(tx, ty + NAV_DY[k], e))) continue;
       const m = idx(nx, ny);
       if (navDone[m] === navGen) continue;
@@ -318,7 +312,6 @@ function navLineClear(x0, y0, x1, y1, r, e, free) {
     const tx0 = Math.floor((x - r) / TILE), tx1 = Math.floor((x + r) / TILE);
     const ty0 = Math.floor((y - r) / TILE), ty1 = Math.floor((y + r) / TILE);
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty, e) || (free && navToll[idx(tx, ty)])) return false;
-    if (cisternCrowds(x, y, r)) return false; // the cistern's stone, by the px
   }
   return true;
 }

@@ -85,9 +85,7 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift' }, { id: 'work', verb: 'USE', key: 'e' },
-  // the merchant's counter has a key of its own, never the work key's: a
-  // stall stands under a zipline's first pylon, and one key for both opened
-  // the counter every time the rope was wanted
+  // the merchant's counter has a key of its own, never the work key's
   { id: 'shop', verb: 'SHOP', key: 'b', ck: 'b' },
   // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
   // used off its key - a potion drunk. On WASD they run on past the abilities'
@@ -265,13 +263,6 @@ function keyPress(e) {
   // mode, since a Short is filmed off the drop and the end screens too
   if (directorKey(e)) return;
   if (state.mode === 'title') { menuKey(e); return; }
-  if (state.mode === 'drop') {
-    // the map key raises the world map mid-flight, Esc puts it away; nothing
-    // else is asked of a rider until the bird is down
-    if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); return; }
-    if (e.key === 'Escape') { if (state.mapOpen) SFX.ui(false); state.mapOpen = false; return; }
-    return;
-  }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
   if (state.mode !== 'play') return;
   // the ESC slab has the arrows while it is up: they page and scroll it
@@ -298,35 +289,11 @@ function keyPress(e) {
   // The SHOP key: the counter of whichever merchant is in reach (merchNear,
   // js/ui/shop.js - the same resolver its cap over the counter reads,
   // drawShopHint, js/ui/wheel.js), either team's; the same key shuts it, as
-  // ESC does. Out of reach it is refused. Seated on the bird it does
-  // nothing: the merchant standing beside the roost must not open its
-  // counter under the crew's leap.
+  // ESC does. Out of reach it is refused.
   if (keyIs(e, 'shop') && !e.repeat && !state.wheel && !state.mapOpen &&
-      !state.settingsOpen && !player.dead && !player.aboard) {
+      !state.settingsOpen && !player.dead) {
     if (state.shop) closeShop();
     else { const mb = merchNear(player); SFX.unlock(); if (mb) openShop(mb); else SFX.deny(); }
-  }
-  // The work key's own presses: off a zipline or a deer, onto a cable or a
-  // deer in reach. Seated on the bird it does nothing: the crew leaps off on
-  // its own (updateDrop).
-  if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen && !state.shop &&
-      !state.settingsOpen && !player.dead && !player.aboard) {
-    // Riding a zipline, the key lets go of it - ahead of everything, since a
-    // rider passes the counter and every trunk at 220 px/s (zipToggle,
-    // world.js, through the hop intent the step reads for every player)
-    if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; } // ...and walking to it, the key calls the walk off
-    // ...and on deer-back it is the hop off, the same way (hopToggle, js/sim/wildlife.js)
-    if (player.mount) { player.input.jump = true; return; }
-    // a ZIPLINE overhead: under either side's cable the key clips
-    // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
-    // the trunk beside it is still chopped from one step further out
-    if (zipNear(player)) { player.input.jump = true; return; }
-    // ...then a wild deer in reach: up onto its back (rideNear, js/sim/wildlife.js -
-    // the cap over it says so, drawRideHint, js/ui/wheel.js)
-    if (rideNear(player)) { player.input.jump = true; return; }
-    // ...or the pointer on a cable out of reach: the same intent, and
-    // the step walks the body there and clips on (zipWalkStart, js/sim/zipline.js)
-    if (hoverZip()) { player.input.jump = true; return; }
   }
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the six item slots. HUD: the sim runs on
@@ -428,7 +395,6 @@ function pointerPress(button) {
   }
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
-  if (state.mode === 'drop') { SFX.unlock(); if (state.mapOpen && mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); if (profileUp()) profileClick(); else if (!voteClick()) deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
@@ -530,7 +496,7 @@ function atkPick(p, wx, wy) {
 function atkPress() {
   SFX.unlock();
   const p = player;
-  if (!p || p.dead || p.aboard) return;
+  if (!p || p.dead) return;
   const wx = mouseWX(), wy = mouseWY();
   const t = atkPick(p, wx, wy);
   if (!t) { if (!ckOn()) { ck.lock = null; ck.order = null; } return; }
@@ -547,7 +513,6 @@ function atkWalkTo(p, t, walk) {
 // chase the left press began walks the feet while no key does
 function wasdStep(p, dt, mx, my) {
   const r = { mx, my, aimX: mouseWX(), aimY: mouseWY(), atk: null, work: false };
-  if (p.aboard || p.dropT > 0) return r;
   if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
   if (ck.lock && !ckSees(p, ck.lock)) ck.lock = null;
   const t = ck.lock;
@@ -618,7 +583,7 @@ function merchUnder(wx, wy) {
   return o && o.type === 'stall' ? o : null;
 }
 function ckRightPress() {
-  if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
+  if (state.mode !== 'play' || state.settingsOpen) return;
   // the ping wheel is G's, and G's release pings
   if (state.wheel) return;
   ck.arm = false;
@@ -626,16 +591,8 @@ function ckRightPress() {
   const pt = ckPoint();
   if (!pt) return;
   const { wx, wy, tx, ty } = pt;
-  // riding in, and seated for the beat before the crew leaps, the press waits
-  if (state.mode === 'drop' || player.aboard) return;
-  // on a zipline the press lets go of it, and walking to one it calls the
-  // walk off; a press ON a drawn cable (zipUnder, js/sim/zipline.js - the
-  // strand the hover lights) clips on under it or walks there and clips on
-  // (a press anywhere else is the walk it always was)
-  if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
-  else if (zipUnder(wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
-  if (!pt.far && !player.aboard) {
+  if (!pt.far) {
     const t = unitUnder(player, wx, wy);
     if (t) { ckOrder({ kind: 'chase', t }, t.x, t.y + 2, 'foe'); ck.lock = t; return; }
     const m = merchUnder(wx, wy);
@@ -672,7 +629,7 @@ function ckSees(p, t) {
   return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R, p.team) : CK_LOCK_R);
 }
 // the nearest foe an attack-move takes: a rival player it can see, a rival
-// robot, or a camp's monster - never a deer, which is a hunt and not a fight
+// robot, or a camp's monster - never a rabbit, which is a hunt and not a fight
 function ckAcquire(p) {
   let best = null, bd = CK_ACQ_R;
   const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd && inSight(p.team, e)) { bd = d; best = e; } };
@@ -697,18 +654,7 @@ function ckUse(p, o, walk, r) {
 function ckStep(p, dt) {
   const inp = p.input;
   const r = { mx: 0, my: 0, aimX: mouseWX(), aimY: mouseWY(), atk: null, work: false };
-  // seated on the bird there is nothing to order: the crew leaps on its own
-  if (p.aboard) return r;
   if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
-  // falling off the roost: there is no route from mid-air (the seat is over
-  // the bird's own solid tiles, and navTo would hand the goal back as
-  // unreachable), so the walk keeps its goal for the landing and the fall
-  // drifts toward it, the way WASD drifts a fall
-  if (p.dropT > 0) {
-    const o = ck.order;
-    if (o && (o.kind === 'move' || o.kind === 'amove')) { const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy); if (d > CK_ARRIVE) { r.mx = dx / d; r.my = dy / d; } }
-    return r;
-  }
   // the held right button drags a walk's goal under the pointer
   if (ck.follow && ck.order && ck.order.kind === 'move' && !state.mapOpen && !overHud(mouse.x, mouse.y)) { ck.order.x = mouseWX(); ck.order.y = mouseWY(); }
   // the lock: dropped the moment the target is dead, gone or out of sight
@@ -848,14 +794,6 @@ function sampleHumanInput(p, dt) {
     inp.useItem = -1;
     inp.ability = -1;
     inp.cmd = null;
-    // the one thing that works mid-air: WASD drifts the fall (updateDrop
-    // reads it) - under CLICK, a landing spot ordered mid-air is what the
-    // fall drifts toward
-    if (state.mode === 'drop' && !state.paused) {
-      const o = ckOn() && ck.order && ck.order.kind === 'move' ? ck.order : null;
-      if (o) { const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy); if (d > CK_ARRIVE) { mx = dx / d; my = dy / d; } }
-      inp.mx = mx; inp.my = my;
-    }
     return;
   }
   inp.mx = mx; inp.my = my;

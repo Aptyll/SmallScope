@@ -150,7 +150,7 @@ function buyAbilityLv(p, i) {
 // second half (`recast`) takes the key again as that half.
 function tryAbility(p, i) {
   if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
-    p.dodgeT > 0 || p.castT > 0 || inAir(p) || p.zip >= 0) return; // a zipline's handle occupies the hands the way a cast does
+    p.dodgeT > 0 || p.castT > 0) return; // a zipline's handle occupies the hands the way a cast does
   const ab = abOf(p, i);
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already

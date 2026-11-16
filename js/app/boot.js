@@ -27,7 +27,7 @@ try { sessionStorage.removeItem(BOOT_RETRY_KEY); } catch (e) { }
 
 function startGame() {
   SFX.unlock();
-  beginDrop();
+  beginMatch();
 }
 
 PROFILE.load();   // the profile carries the settings, so it is read first
@@ -48,19 +48,11 @@ PROFILE.cloudSync(SETTINGS_LOCAL).then((got) => { if (got) applySettings(); });
 // the title track. Browsers refuse audio before a gesture, so SFX.music holds
 // this as pending and the first click or keypress starts it (see js/app/audio.js).
 SFX.music.play('intro', { in: 1.5 });
-genWorld();
-layLanes();       // the top and bot lanes: fixed cuts, registered first so the creek can end under them (js/sim/lanes.js)
-placeCreek();     // ...the frozen creek down the cross-diagonal, lane to lane, its bends, and the cistern round the middle (world.js, cistern.js)
-placeRoad();       // the diagonal lane, and the side lanes with it (world.js)
-placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
-placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
-placeTowers();     // ...and three road towers on each side's cable, which it is cut back to (js/sim/towers.js)
-layJungle();       // ...and the jungle: the field inside the lanes planted solid and its paths cut through, mirrored to all four quarters (js/sim/jungle.js)
-placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
-placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
-placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
-towerLandings();   // ...and, with every pine planted, each cable's run-out past its towers (js/sim/towers.js)
-spawnAnimals();
+genWorld();        // the field: lanes, walls, pits and woods from one distance (js/sim/field.js)
+placeTowers();     // ...two towers a lane a side (js/sim/towers.js)
+placeStalls();     // ...each side's merchant stall (js/sim/robots.js)
+placeCamps();      // ...the camps' props on their sites
+placePumps();      // ...and the two gold pumps in the jungle (js/sim/pumps.js)
 spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
 stockCamps();      // the monsters go in once the world is standing
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/sim/depth.js)
@@ -127,14 +119,17 @@ window.DBG = {
   orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
   // the camps: the live registry, the table behind it, where each site is,
   // what is where, restock by hand, and give a player a bear buff by hand (campBuff(p, t, 'alpha'))
-  camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff,
-  // the top and bot lanes (js/sim/lanes.js): a centreline, its distance, a march down one, and the hollows' gates and bay spots
-  laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
+  camps, CAMPS, CAMP_SITES, campSites, campAt, stockCamps, campBuff,
+  // the field (js/sim/field.js): a lane's centreline, a march down one, the
+  // distance to the nearest lane (as laid), and the four mirrored copies of a spot
+  laneLine, laneWaypoints, laneOut, laneDist, fieldFour,
+  // the soldier waves: their records, and s to the next one (js/sim/robots.js)
+  waves, waveBeat,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them
   snowDepth, deepAt, drifts, driftWind,
   // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
-  settings, perf, treeRare, cursorInfo,
+  settings, perf, cursorInfo,
   // the local profile: the store itself, the profile screen (js/ui/profile.js)
   // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
   PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout,
@@ -204,22 +199,17 @@ window.DBG = {
   tipRect: () => { if (!tipNow) return null; const s = tipSize(tipNow); return Object.assign(tipPos(s.w, s.h), s); },
   setNock: (t, p) => { (p || player).nockT = t; }, // a huge t parks a player's bow for a capture
   // the players: all six, the local one, and the teams table
-  players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
-  // the eagle drop: the live flight records, or fly the birds in from scratch
-  get drop() { return state.drop; }, beginDrop, landPlayer, hopOff, makeEagles, inAir,
+  players, MAX_PLAYERS, TEAMS, Player, contestRank,
+  // the match's start: the birds' records, or start a match from scratch
+  get drop() { return state.drop; }, beginMatch, makeEagles,
   // the two objectives: read them, chip one, or fell one outright without a siege
   get eagles() { return state.drop && state.drop.eagles; },
   // Perch's painter, every bird skin (js/sprites/perch.js); wear one with PROFILE.wear('bird', id)
   perch: SPRITES.perch,
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
-  // the road and the bases (js/sim/base.js)
-  pads, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the crash pads, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended on the perches), and where a bird lands
-  baseAt, baseCentre, basePerch, BASE_R, // the bases: whose hollow a tile is in, its centre, its perch, its radius
-  creekAt, creekIceAt, creekSpan, creekBends, waterAt, CQ, // the frozen creek: the distance to its banks (CQ holds where), whether a point is on its ice, where it starts and ends, the bends
-  cisternR, cisternDist, cisternReach, cisternTile, cisternBlocks, cisternTouches, // the cistern (js/sim/cistern.js): tiles from the crossing, px to its stone, how much of a step it lets a body take, and its three tile reads
-  zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (js/sim/zipline.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
-  landmarks, LANDMARKS, // the story landmarks (landmarks.js): every one stood, and the table
+  // the bases (js/sim/field.js): whose disc a tile is in, its perch, its radius
+  baseAt, basePerch, BASE_R, waterAt,
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),
   teamEagleDown,
@@ -310,9 +300,8 @@ window.DBG = {
   // inSight(team, u) is what that side sees, fogShown(u) what this screen draws
   fog: true, inSight, fogShown: (u) => fogShown(u),
   spawnAnimal: (kind, x, y) => { const a = makeAnimal(kind, x, y); animals.push(a); return a; },
-  // the level a spawn is dealt (the table's average), the two deer's lines
-  // and their restock (which a driver can call by hand to run one now)
-  animalLevel, updatePreyStock, spawnDeer, get deerRoutes() { return deerRoutes; },
+  // the level a spawn is dealt (the table's average)
+  animalLevel,
   // debug staging: place a construction site directly, no cost or validation
   buildStruct: (tx, ty, type) => createStruct(tx, ty, type, player, true), // anchor = top-left for a big footprint
   structOf, footprint,

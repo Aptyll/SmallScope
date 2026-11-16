@@ -1,27 +1,9 @@
 'use strict';
-// The bots: a soldier's body from the barracks' door to its wreck, the
-// eagle's merchant and a wave's soldiers, who share the body. Everything here
-// is sim.
+// The bots: the body a wave's soldier and each side's merchant share, the
+// merchant, the waves and the soldiers' march. Everything here is sim.
 // ------------------------------------------------------------ bots
-// A bot's body, rolled out of building sp's mouth: the barracks' soldier
-// (makeSoldier, which gives it its kind's health)
-function makeRobot(sp) {
-  const m = structMouth(sp);
-  let sx = m.x, sy = m.y;
-  if (isSolidTile(Math.floor(sx / TILE), Math.floor(sy / TILE))) {
-    // mouth blocked: the first free tile in the rings around the footprint
-    const w = structW(sp), h = structH(sp);
-    outer: for (let r = 1; r <= 3; r++) {
-      for (let dy = -r; dy < h + r; dy++) for (let dx = -r; dx < w + r; dx++) {
-        if (dx > -r && dx < w + r - 1 && dy > -r && dy < h + r - 1) continue;
-        if (!isSolidTile(sp.tx + dx, sp.ty + dy)) { sx = (sp.tx + dx) * TILE + 8; sy = (sp.ty + dy) * TILE + 8; break outer; }
-      }
-    }
-  }
-  return robotBody(sx, sy, 1, sp.team === undefined ? 0 : sp.team, sp.owner === undefined ? 0 : sp.owner, rng() * 2);
-}
-// The body every bot stands in, wherever it came from: a barracks' soldier
-// (makeRobot) or a hero's own machine (faberMachine, js/sim/faber.js)
+// The body every bot stands in, wherever it came from: a wave's soldier
+// (makeSoldier) or a hero's own machine (faberMachine, js/sim/faber.js)
 function robotBody(sx, sy, hp, team, owner, animT) {
   const b = {
     bot: true, // a machine, not wildlife: what isAnimalUnit (js/sim/actions.js) reads
@@ -30,12 +12,10 @@ function robotBody(sx, sy, hp, team, owner, animT) {
     tgt: null, atkCd: 0, nav: null,
     atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
     animT, flash: 0, kbx: 0, kby: 0, dead: false, moving: false,
-    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/sim/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a bot takes every state a player can be put under - snared, netted,
   // marked, alight - written by the same setters (`status effects`,
-  // js/sim/actions.js). A bot rolling out of the barracks is not a different
-  // rulebook.
+  // js/sim/actions.js). A soldier is not a different rulebook.
   clearUnitStatus(b);
   return b;
 }
@@ -120,13 +100,6 @@ function updateRobot(b, dt) {
     b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
     return;
   }
-  if (b.zip >= 0) {
-    // on the zipline's handle: the cable carries it (zipRide, js/sim/zipline.js), the
-    // brain waits for the end, and nothing is swung on the way
-    zipRide(b, dt);
-    b.moving = false; b.atkAim = null;
-    return;
-  }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
   const M = heroMachine(b);
   if (M) { M.step(b, dt); return; } // a hero's machine: its kind's brain (HERO_MACHINE, js/sim/heroes.js)
@@ -134,451 +107,187 @@ function updateRobot(b, dt) {
 }
 
 // ------------------------------------------------------------ merchant
-// Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
-// in flight (drawEagle, js/draw/eagle.js) - who climbs down the moment it roosts
-// and works HOME for its side, never toward the fight: it pitches its
-// market STALL beside the road's head (the shop players walk to), then fells the back
-// woods (the half of the roost facing away from the road) from
-// the roost outward, every pine and snag a log in its own stock (`wood`),
-// and raises the BOT BAYS (the barracks) on that cleared home ground - the
-// first three straight after the stall, a rebuild for MERCH_BAY_WOOD logs -
-// whose waves walk themselves out to the road and march it (the `soldiers`
-// banner below). It raises no walls and no guns. Its stall and its own body
-// are both counters (the `shop` banner, js/ui/shop.js): walk up to either
-// team's and E opens the shop.
+// Each side's MERCHANT keeps its market STALL beside its perch - the shop
+// players walk to (the `shop` banner, js/ui/shop.js). The stall stands from
+// boot (placeStalls), the same spot every match; the merchant is at its
+// counter from the first second of a match (spawnMerchants, at beginMatch)
+// and keeps to it, a stroll now and then, turning to whoever it serves. Its
+// stall and its own body are both counters: walk up to either team's and E
+// opens the shop.
 //
 // It is a unit in `robots` with `merchant: true`: the same separation and
 // draw pipelines a soldier rides, dispatched to updateMerchant/drawMerchant by
-// that flag (updateRobot's status/stun handling is shared). owner -1: it
-// pays nobody - its work is the eagle's, free like the
-// crater, the same for both sides.
+// that flag (updateRobot's status/stun handling is shared). owner -1.
 //
 // It CANNOT BE KILLED, and it has no hp at all rather than a large number:
 // unitAlive (js/sim/actions.js) answers false for a merchant, which takes it out
 // of every arrow, blow, sweep, tower mark and soldier's foe in one place.
 // Both sides trade at both counters, so neither side may shoot one, and
 // nothing may stand between a player and the shop they walked to.
-const MERCH_SPD = 64;        // px/s, a step under a hero's: quick enough that all three bays stand before the first wave
-const MERCH_SWING_T = 0.7;   // s per axe swing (a pine is 4 hp: ~3 s a tree)
-const MERCH_BUILD_T = 0.9;   // s the hammer's wind-up reads as (drawMerchant)
-const MERCH_BACK_R = 13;     // tiles from the roost the back woods' felling reaches
-const MERCH_BACK_ARC = Math.PI / 2; // rad off the road's axis a pine must sit to be the back woods': the half facing away from the road
-const MERCH_HOP_T = 0.55;    // s of the hop off the bird
-const MERCH_STALL_OUT = 6;   // tiles from the roost the stall's centre sits: just past the paved crater, its front onto the base's clearing
-const MERCH_STALL_ANG = 1.0; // rad either side of the road's axis it looks for a site: beside the road's head, never on it
-const MERCH_THINK = 0.35;    // s between job picks
-// the bot bays (STRUCTS.barracks): one per LANE, just inside that lane's
-// mouth of the hollow (baseBaySpot, js/sim/base.js), whose waves walk that
-// lane. As soon as its stall stands the merchant clears the mid road's
-// site - the footprint to the ground and a MERCH_BAY_RING ring round it to
-// stumps, so the door opens onto walkable ground and there is room to fight
-// at it - and raises its bay, then the top lane's and the bot lane's
-// (MERCH_BAY_ORDER), each lane's FIRST bay free. A lane's bay rebuilt after
-// a wreck costs MERCH_BAY_WOOD logs off the back woods, except in an empty
-// yard, so a side whose every bay was wrecked is never out of waves; a wreck
-// stalls the next raise MERCH_BAY_REBUILD.
-const MERCH_BAYS = 3;         // bays the merchant keeps standing: one per lane
-const MERCH_BAY_WOOD = 40;    // logs (pines and snags felled) a rebuilt bay costs: about two minutes of the back woods
-const MERCH_BAY_RING = 1;     // tiles of woods cleared round the footprint
-const MERCH_BAY_SWING = 0.17; // s per axe swing on the clearing - four times the back woods' pace, so all three bays stand before the first wave (STRUCTS.barracks `first`)
-const MERCH_BAY_REBUILD = 45; // s after a wreck before the next bay is raised
-const MERCH_BAY_HAMMER = 2.6; // s of hammering that sets the site
-
-// the nearest tile to (tx, ty) nothing stands on, spiralling out
-function freeTileNear(tx, ty, rMax) {
-  for (let r = 0; r <= rMax; r++) {
-    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-      const x = tx + dx, y = ty + dy;
-      if (inWorld(x, y) && !objAt(x, y) && !waterAt(x, y)) return { tx: x, ty: y };
+const MERCH_STALL = [6, 62];  // RED's stall: its 3x2 footprint's top-left tile, behind the perch on the top lane's side (inside the pine border, FIELD_EDGE) (BLUE's mirrored across the middle column)
+// set each side's stall on its spot: the anchor is the FRONT-left tile (the
+// row the y-sort reads), parts east and north of it. Boot, after genWorld
+const stalls = [null, null];
+function placeStalls() {
+  for (const team of [0, 1]) {
+    const tx = team === 0 ? MERCH_STALL[0] : WORLD - MERCH_STALL[0] - 3, ty = MERCH_STALL[1];
+    const o = placeObj(tx, ty + 1, 'stall', { team });
+    for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
+      if (!j && !k) continue;
+      objects[idx(tx + k, ty + 1 - j)] = { type: 'part', tx: tx + k, ty: ty + 1 - j, of: o, flash: 0, shake: 0 };
     }
+    stalls[team] = o;
   }
-  return null;
 }
-
-// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/sim/eagle.js)
-function spawnMerchant(e) {
-  const lx = e.laneDir.x, ly = e.laneDir.y; // the road's direction out: from the roost to its junction (eagleCrash)
-  const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
-  const at = freeTileNear(Math.floor(wx / TILE), Math.floor(wy / TILE), 6) || { tx: Math.floor(e.x / TILE), ty: Math.floor(e.y / TILE) };
-  const b = makeMerchant(e.team, at, e);
-  e.merchant = b;
-  burst(b.x, b.y - 4, '#f4f7ff', 10, 50, 0.5, true);
-  burst(b.x, b.y - 2, TEAMS[skin(e.team)].mark, 5, 40, 0.45);
-  return b;
+// where a merchant keeps to: a step in front of its stall's counter
+function merchPost(team) { const s = stalls[team]; return { x: (s.tx + 1.5) * TILE, y: (s.ty + 1) * TILE + 10 }; }
+// the match's two merchants, at their posts (beginMatch, js/sim/eagle.js)
+function spawnMerchants() {
+  for (const team of [0, 1]) {
+    const at = merchPost(team), e = state.drop.eagles[team];
+    e.merchant = makeMerchant(team, at, stalls[team]);
+  }
 }
-// the one place a merchant body is made: the eagle's driver (spawnMerchant,
-// roost = its bird)
-function makeMerchant(team, at, roost) {
+function makeMerchant(team, at, stall) {
   const b = {
     merchant: true, bot: true, kind: 'merchant', team, owner: -1, home: null,
-    x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
-    roost, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
-    bays: [], bayT: 0, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
-    bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
-    stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
-    hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
-    atkAim: null, atkCd: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
+    x: at.x, y: at.y, // no hp: nothing can hurt it (unitAlive)
+    stall, tgt: null, nav: null,
+    dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
+    atkAim: null, atkCd: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
   robots.push(b);
   return b;
 }
 
-// one axe swing on a pine or a snag; true when it came down (the
-// tile is emptied - the back woods get a stump back, a bay's footprint does
-// not) and a log in the merchant's stock if it was timber. Pays no gold,
-// like the crater and the lane.
-function merchFell(b, t) {
-  const px = t.tx * TILE + 8, py = t.ty * TILE + 8;
-  t.hp--; joltObj(t, 0.1, 0.22);
-  sfxAt('chop', px, py);
-  burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
-  if (t.hp > 0) return false;
-  fellScenery(t.tx, t.ty);
-  burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
-  burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 45, 0.5, true);
-  sfxAt('treeFall', px, py);
-  if (t.type === 'tree') b.wood++;
-  b.tgt = null;
-  return true;
-}
-// a bearing off the road's axis (0 = up the road, out of the base) as a world-space unit vector
-function merchBearing(e, ang) {
-  const lx = e.laneDir.x, ly = e.laneDir.y;
-  return { x: lx * Math.cos(ang) - ly * Math.sin(ang), y: ly * Math.cos(ang) + lx * Math.sin(ang), ang };
-}
-// where the stall goes: a 3x2 site (top-left, like a bay's) about
-// MERCH_STALL_OUT tiles from the roost at MERCH_STALL_ANG either side of the
-// road's axis - beside the road's head, where everybody lands and respawns,
-// and off the road and the crash pad (laneDist) so the way in is never
-// shut. Dry land holding nothing the axe cannot take; the nearer side wins.
-function merchStallSite(b) {
-  const e = b.roost;
-  const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
-    if (!inWorld(x, y) || waterAt(x, y) || ground[idx(x, y)] !== 0 || laneDist(x, y) < 0) return false;
-    const o = objAt(x, y);
-    return !o || merchFells(o) || o.type === 'stump';
-  });
-  let best = null, bd = 1e9;
-  for (const ang of [MERCH_STALL_ANG, -MERCH_STALL_ANG]) {
-    const d = merchBearing(e, ang);
-    const cx = e.x / TILE + d.x * MERCH_STALL_OUT - 1.5, cy = e.y / TILE + d.y * MERCH_STALL_OUT - 1;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
-      const dd = Math.hypot(tx - cx, ty - cy);
-      if (dd < bd && fits(tx, ty)) { bd = dd; best = { tx, ty }; }
-    }
-  }
-  return best;
-}
-// set the stall on its site: the anchor is the FRONT-left tile (the row the
-// y-sort reads, like the hut's), parts east and north of it; then the
-// ground under its shade is repainted (CASTERS.stall, js/draw/ground.js)
-function pitchStall(b, s) {
-  const o = placeObj(s.tx, s.ty + 1, 'stall', { team: b.team });
-  for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
-    if (!j && !k) continue;
-    const x = s.tx + k, y = s.ty + 1 - j;
-    setTile(idx(x, y), { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 });
-  }
-  for (let y = s.ty - 1; y <= s.ty + 4; y++) for (let x = s.tx - 1; x <= s.tx + 7; x += 2) if (inWorld(x, y)) repaintGround(x, y);
-  return o;
-}
-// the lanes in the order their first bays go up: the mid road's, then the
-// top's, then the bot's (baseBaySpot, js/sim/base.js)
-const MERCH_BAY_ORDER = [1, 0, 2];
-// where the next bay goes: the first lane in MERCH_BAY_ORDER with no bay
-// standing that has a site, or null (the site carries its lane)
-// the lanes this match plays
-function merchLanes() { return MERCH_BAY_ORDER; }
-function merchNextBay(b) {
-  for (const lane of merchLanes()) {
-    if (b.bays.some((o) => o.lane === lane)) continue;
-    const s = merchBaySite(b.team, lane);
-    if (s) return s;
-  }
-  return null;
-}
-// a bay's 3x2 anchor at lane `lane`'s spot inside its mouth - the nearest
-// placement to it whose footprint is dry land off the road holding nothing
-// the axe cannot take (a pine, a snag, a stump: never the bird's own
-// tiles or a building, another bay included)
-function merchBaySite(team, lane) {
-  const { cx, cy } = baseBaySite(team, lane);
-  const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
-    if (!inWorld(x, y) || ground[idx(x, y)] !== 0) return false;
-    const o = objAt(x, y);
-    return !o || merchFells(o) || o.type === 'stump';
-  });
-  let best = null, bd = 1e9;
-  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-    const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
-    const dd = Math.hypot(tx - cx, ty - cy);
-    if (dd < bd && fits(tx, ty)) { bd = dd; best = { tx, ty, lane }; }
-  }
-  return best;
-}
-// the first thing still standing on the site or in the ring round it,
-// nearest the merchant, that its swing will not reach this frame anyway
-// (a stump counts only on the footprint itself: the ring round it keeps
-// its stumps, walkable and a site like every other the merchant leaves)
-// what the merchant's axe takes off a site: a pine, never a jungle wall's (treeFells)
-function merchFells(o) { return laneFells(o) && treeFells(structOf(o)); }
-function merchOnBay(s, x, y) { return x >= s.tx && x < s.tx + 3 && y >= s.ty && y < s.ty + 2; }
-function merchBayBlocker(b, s) {
-  let best = null, bd = 1e9;
-  for (let y = s.ty - MERCH_BAY_RING; y < s.ty + 2 + MERCH_BAY_RING; y++) for (let x = s.tx - MERCH_BAY_RING; x < s.tx + 3 + MERCH_BAY_RING; x++) {
-    const o = structOf(objAt(x, y));
-    if (!o || !(merchFells(o) || (o.type === 'stump' && merchOnBay(s, x, y))) || b.avoids.some((a) => a.o === o)) continue;
-    const d = Math.hypot(x * TILE + 8 - b.x, y * TILE + 8 - b.y);
-    if (d < bd) { bd = d; best = o; }
-  }
-  return best;
-}
-// the next pine of the back woods: inside MERCH_BACK_R of the roost and at
-// least MERCH_BACK_ARC off the road's axis, with an open side to stand on,
-// the one nearest the ROOST first (the merchant's own distance breaks near
-// ties) - so the clearing grows out from home as one front instead of a
-// trail wherever it last stood
-function merchBackPine(b) {
-  const e = b.roost, lx = e.laneDir.x, ly = e.laneDir.y, R = Math.ceil(MERCH_BACK_R);
-  const ctx0 = Math.floor(e.x / TILE), cty0 = Math.floor(e.y / TILE);
-  let best = null, bs = Infinity;
-  for (let ty = cty0 - R; ty <= cty0 + R; ty++) for (let tx = ctx0 - R; tx <= ctx0 + R; tx++) {
-    const o = objAt(tx, ty);
-    if (!treeFells(o)) continue;
-    const px = tx * TILE + 8 - e.x, py = ty * TILE + 8 - e.y, dr = Math.hypot(px, py);
-    if (dr > MERCH_BACK_R * TILE) continue;
-    if (Math.abs(Math.atan2(px * -ly + py * lx, px * lx + py * ly)) < MERCH_BACK_ARC) continue;
-    if (b.avoids.some((a) => a.o === o)) continue;
-    if (isSolidTile(tx + 1, ty) && isSolidTile(tx - 1, ty) && isSolidTile(tx, ty + 1) && isSolidTile(tx, ty - 1)) continue;
-    const s = dr + 0.5 * Math.hypot(tx * TILE + 8 - b.x, ty * TILE + 8 - b.y);
-    if (s < bs) { bs = s; best = o; }
-  }
-  return best;
-}
-
-// the merchant's frame: hop, then a bay once one is due, then the back
-// woods, then keep to the roost. Every walk routes (navStep) and drops its
-// goal when the route fails.
+// the merchant's frame: serve whoever has its counter open, else keep to
+// its post - a short stroll now and then, back toward it once it has
+// drifted two tiles off
 function updateMerchant(b, dt) {
-  const e = b.roost;
-  if (b.hopT > 0) { b.hopT -= dt; if (b.hopT <= 0) { burst(b.x, b.y + 2, '#eef4fb', 8, 45, 0.45, true); sfxAt('land', b.x, b.y); } b.moving = false; return; }
-  let moving = false, mvx = 0, mvy = 0;
   const from = { x: b.x, y: b.y };
-  const walkToward = (px, py, reach) => {
-    const n = navStep(b, px, py, PLAYER_R, MERCH_SPD, dt, reach);
-    if (!n.ok) return -1;
-    moving = true;
-    return n.d;
-  };
-  const owner = players.find((p) => p.team === b.team) || player;
-  // ---- serving: a counter is OPEN on this body, so everything else waits --
+  let moving = false;
   // The shop IS this body and its reach is measured off it (the `shop`
   // banner, js/ui/shop.js), so a merchant that walked off mid-sale would shut
-  // its own counter in the customer's face. It drops the axe, stands where it
-  // is and turns to them; the bays and the felling are still there afterwards.
+  // its own counter in the customer's face: it stands and turns to them
   const cust = shopServing(b);
   if (cust) {
     b.moveT = 0;
-    b.workT = 0;
-    b.tgt = null; // the axe comes down: nothing is half-swung while it serves
     const cdx = cust.x - b.x, cdy = cust.y - b.y;
     b.dir = Math.abs(cdx) > Math.abs(cdy) ? (cdx > 0 ? 'right' : 'left') : (cdy > 0 ? 'down' : 'up');
     b.moving = false;
     b.animT = 0;
     return;
   }
-  const unitOn = (tx, ty) => { // a body on or beside the tile: setting a solid site there would entomb it
-    const cx = tx * TILE + 8, cy = ty * TILE + 8;
-    for (const q of players) if (q.active && !q.dead && !inAir(q) && Math.abs(q.x - cx) < 8 + PLAYER_R && Math.abs(q.y - cy) < 8 + PLAYER_R) return true;
-    for (const r of robots) if (!r.dead && r !== b && Math.abs(r.x - cx) < 8 + PLAYER_R && Math.abs(r.y - cy) < 8 + PLAYER_R) return true;
-    return false;
-  };
-  for (let i = b.avoids.length - 1; i >= 0; i--) if ((b.avoids[i].t -= dt) <= 0) b.avoids.splice(i, 1);
-  // ---- raising a 3x2 site: fell what stands on it, then hammer it up ----
-  // Shared by the stall and the bays. The woods on the footprint and a
-  // MERCH_BAY_RING round it are felled (no gold; the axe leaves a stump
-  // everywhere but the footprint), a stump on the footprint kicked out,
-  // then the site is hammered up from the tile below its middle - wholly
-  // off the footprint, or it goes up round the merchant and entombs it -
-  // and `set()` makes it. `fail(t)` is a walk that found no route.
-  const raise = (s, set, fail) => {
-    const o = merchBayBlocker(b, s);
-    if (o) {
-      const px = o.tx * TILE + 8, py = o.ty * TILE + 8;
-      if (Math.hypot(px - b.x, py - b.y) > 20) {
-        if (walkToward(px, py, 1) < 0) { b.avoids.push({ o, t: 12 }); fail(3); } // walled off: try again shortly
-        b.workT = 0;
-      } else {
-        b.tgt = o;
-        b.workT += dt;
-        if (b.workT >= MERCH_BAY_SWING) {
-          b.workT = 0;
-          if (o.type === 'stump') { setTile(idx(o.tx, o.ty), null); burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
-          else if (merchFell(b, o) && !merchOnBay(s, o.tx, o.ty)) setTile(idx(o.tx, o.ty), { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 });
-        }
-      }
-      return;
-    }
-    const mx = (s.tx + 1.5) * TILE, my = (s.ty + 2) * TILE + 8;
-    if (Math.hypot(mx - b.x, my - b.y) > 14 || b.y - PLAYER_R < (s.ty + 2) * TILE) {
-      if (walkToward(mx, my, 0) < 0) fail(6);
-      b.workT = 0;
-    } else if (footprint('barracks', s.tx, s.ty).some(([x, y]) => unitOn(x, y))) {
-      b.workT = 0; // somebody standing on the site: wait for them to step off
-    } else {
-      b.tgt = { type: 'stump', tx: s.tx + 1, ty: s.ty + 1 }; // the hammer's aim (drawMerchant reads the type for its timing)
-      b.workT += dt;
-      if (b.workT >= MERCH_BAY_HAMMER) {
-        b.workT = 0; b.tgt = null;
-        set();
-        burst(mx, my - 8, '#eef4fb', 10, 45, 0.45, true);
-        sfxAt('hammer', mx, my);
-      }
-    }
-  };
-  // ---- the stall: the first job off the bird ---------------------------
-  // The shop the players walk to (OBJECTS.stall, world.js): pitched beside
-  // the road's head, where everybody lands and respawns. It is never
-  // wrecked, so it goes up once; until it does, the merchant's own body is
-  // the only counter (it stays one after, too).
-  if (!b.stall && b.stallT > 0) b.stallT -= dt;
-  if (!b.stall && b.stallT <= 0) {
-    if (!b.stallSite) b.stallSite = merchStallSite(b);
-    const s = b.stallSite;
-    if (!s) b.stallT = 8; // nowhere to stand it right now: ask again
-    else {
-      raise(s, () => { b.stall = pitchStall(b, s); b.stallSite = null; }, (t) => { b.stallSite = null; b.stallT = t; });
-      return finish();
+  const post = merchPost(b.team);
+  if (b.moveT > 0) {
+    b.moveT -= dt;
+    moving = true;
+    const drag = unitMoveMul(b);
+    const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, PLAYER_R);
+    if (mv.blockedX || mv.blockedY) b.moveT = 0;
+  } else {
+    b.idleT -= dt;
+    if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, PLAYER_R);
+    if (b.idleT <= 0) {
+      let ang = rng() * Math.PI * 2;
+      if (Math.hypot(post.x - b.x, post.y - b.y) > 2 * TILE) ang = Math.atan2(post.y - b.y, post.x - b.x) + rand(-0.5, 0.5);
+      b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
+      b.moveT = rand(0.4, 1); b.idleT = rand(1.5, 3.5);
     }
   }
-  // ---- the bot bays: due from the moment the stall stands, one per lane
-  // in MERCH_BAY_ORDER, ahead of the felling whenever one is due - the
-  // waves are the match's clock. A lane's first bay is free; a rebuild
-  // waits for MERCH_BAY_WOOD logs unless the yard is empty. A wreck stalls
-  // the next one MERCH_BAY_REBUILD.
-  const standing = b.bays.filter((o) => structOf(objAt(o.tx, o.ty)) === o);
-  if (standing.length < b.bays.length) { b.bays = standing; b.bayT = Math.max(b.bayT, MERCH_BAY_REBUILD); }
-  const want = Math.min(MERCH_BAYS, merchLanes().length);
-  if (b.bays.length < want) b.bayT -= dt;
-  if (b.bays.length < want && b.bayT <= 0) {
-    if (!b.baySite) b.baySite = merchNextBay(b);
-    const s = b.baySite;
-    const free = s && (b.bayGift[s.lane] || !b.bays.length); // a lane's first, or an empty yard's
-    if (!s) b.bayT = 8; // nowhere to stand it right now: ask again
-    else if (free || b.wood >= MERCH_BAY_WOOD) {
-      raise(s, () => {
-        b.baySite = null;
-        if (!free) b.wood -= MERCH_BAY_WOOD;
-        b.bayGift[s.lane] = false;
-        const o = createStruct(s.tx, s.ty, 'barracks', owner, true); // the eagle's own: nobody pays gold
-        o.lane = s.lane; // whose road its waves walk (makeSoldier)
-        b.bays.push(o);
-      }, (t) => { if (t === 6) b.baySite = null; b.bayT = t; });
-      return finish();
-    }
-  }
-  // ---- the back woods: fell away from the road, a log a pine, no gold ----
-  // A pine the route failed on goes on the avoid list for a while, a LIST
-  // because one pick flips forever between two blocked trunks.
-  if (b.tgt && objects[idx(b.tgt.tx, b.tgt.ty)] !== b.tgt) b.tgt = null;
-  if (!b.tgt) {
-    b.thinkT -= dt;
-    if (b.thinkT <= 0) { b.thinkT = MERCH_THINK; b.tgt = merchBackPine(b); }
-  }
-  if (b.tgt) {
-    const t = b.tgt, px = t.tx * TILE + 8, py = t.ty * TILE + 8;
-    if (Math.hypot(px - b.x, py - b.y) > 20) {
-      if (walkToward(px, py, 1) < 0) { b.avoids.push({ o: t, t: 12 }); b.tgt = null; }
-      b.workT = 0;
-    } else {
-      b.workT += dt;
-      if (b.workT >= MERCH_SWING_T) {
-        b.workT = 0;
-        if (merchFell(b, t)) setTile(idx(t.tx, t.ty), { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 }); // the clearing leaves build sites
-      }
-    }
-    return finish();
-  }
-  // ---- done: keep to the mouth of the lane, a step or two either way ----
-  return keep(e.x + e.laneDir.x * (EAGLE_TILE_R + 1.6) * TILE, e.y + e.laneDir.y * (EAGLE_TILE_R + 1.6) * TILE);
+  const mvx = b.x - from.x, mvy = b.y - from.y;
+  if (moving && (Math.abs(mvx) > 0.01 || Math.abs(mvy) > 0.01)) b.dir = Math.abs(mvx) > Math.abs(mvy) ? (mvx > 0 ? 'right' : 'left') : (mvy > 0 ? 'down' : 'up');
+  b.animT += dt * (moving ? 8 : 0);
+  b.moving = moving;
+}
 
-  // idle near (postX, postY): a short stroll now and then, back toward it
-  // once it has drifted two tiles off
-  function keep(postX, postY) {
-    if (b.moveT > 0) {
-      b.moveT -= dt;
-      moving = true;
-      const drag = unitMoveMul(b);
-      const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, PLAYER_R);
-      if (mv.blockedX || mv.blockedY) b.moveT = 0;
-    } else {
-      b.idleT -= dt;
-      if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, PLAYER_R);
-      if (b.idleT <= 0) {
-        let ang = rng() * Math.PI * 2;
-        if (Math.hypot(postX - b.x, postY - b.y) > 2 * TILE) ang = Math.atan2(postY - b.y, postX - b.x) + rand(-0.5, 0.5);
-        b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
-        b.moveT = rand(0.4, 1); b.idleT = rand(1.5, 3.5);
-      }
+// ------------------------------------------------------------ waves
+// THE WAVES: each side sends a column of soldiers down each lane, out of its
+// own perch, on the match's beat - `first` seconds of match clock, then every
+// `waveT` - so every lane rolls out together. A wave is its `mix` of soldier
+// kinds (SOLDIER_TYPES, below) in door order - melee in front, ranged behind
+// - one more melee for every `grow` seconds of the match, and a SIEGE
+// soldier last on every n-th wave, n read off `siege` ([from s of match
+// clock, n]: every 3rd early, every 2nd from 15:00, every wave from 25:00,
+// League's). `cap` is the most soldiers a lane holds for a side, queued or
+// out: a side nobody fights back against does not fill the map, it waits for
+// its column to spend itself. A wave leaves its perch one soldier every
+// WAVE_ROLL, so it reads as a column, not a heap.
+const WAVE = { mix: ['melee', 'melee', 'melee', 'ranged', 'ranged', 'ranged'], siege: [[0, 3], [900, 2], [1500, 1]], first: 60, waveT: 30, grow: 180, cap: 16 };
+const WAVE_ROLL = 0.5;   // s between the soldiers of one wave leaving the perch
+const WAVE_OUT = 4;      // tiles along its lane from the perch a soldier steps out at: clear of the bird
+// per side, per lane: { team, lane, kinds (still to leave, in order), rollT }
+const waves = [];
+function wavesReset() {
+  waves.length = 0;
+  for (const team of [0, 1]) for (const lane of [0, 1]) waves.push({ team, lane, kinds: [], rollT: 0 });
+}
+// s to the next wave on the match's beat
+function waveBeat() {
+  const past = state.elapsed - WAVE.first;
+  return past < 0 ? -past : WAVE.waveT - (past % WAVE.waveT);
+}
+// the kinds of the wave a lane queues now, in door order, cut from the back
+// to what its lane's `cap` leaves room for
+function waveKinds(w) {
+  const n = Math.round((state.elapsed - WAVE.first) / WAVE.waveT) + 1;
+  let every = 0;
+  for (const [from, k] of WAVE.siege) if (state.elapsed >= from) every = k;
+  const extra = Math.floor(state.elapsed / WAVE.grow);
+  const at = WAVE.mix.lastIndexOf('melee') + 1; // the grown melee join the front rank
+  const kinds = WAVE.mix.slice(0, at).concat(Array(extra).fill('melee'), WAVE.mix.slice(at));
+  if (every && n % every === 0) kinds.push('siege');
+  let load = w.kinds.length;
+  for (const b of robots) if (b.kind === 'soldier' && b.team === w.team && b.lane === w.lane && !b.dead) load++;
+  return kinds.slice(0, Math.max(0, WAVE.cap - load));
+}
+// the sim's step for the waves: on the beat every lane queues its wave (a
+// side whose bird is gone sends none), and each queue leaves the perch one
+// soldier every WAVE_ROLL
+function updateWaves(dt) {
+  const prev = state.elapsed - dt, beat = state.elapsed >= WAVE.first && (prev < WAVE.first || Math.floor((prev - WAVE.first) / WAVE.waveT) < Math.floor((state.elapsed - WAVE.first) / WAVE.waveT));
+  for (const w of waves) {
+    const e = state.drop && state.drop.eagles[w.team];
+    if (!e || e.state !== 'down') { w.kinds.length = 0; continue; }
+    if (beat) w.kinds = w.kinds.concat(waveKinds(w));
+    w.rollT -= dt;
+    if (w.kinds.length && w.rollT <= 0) {
+      w.rollT = WAVE_ROLL;
+      const b = makeSoldier(w.team, w.lane, w.kinds.shift());
+      robots.push(b);
+      burst(b.x, b.y - 4, '#c3c9d3', 6, 35, 0.4, true);
+      burst(b.x, b.y + 2, '#e4e8ee', 5, 30, 0.45, true);
     }
-    return finish();
-  }
-
-  function finish() {
-    mvx = b.x - from.x; mvy = b.y - from.y;
-    if (moving && (Math.abs(mvx) > 0.01 || Math.abs(mvy) > 0.01)) {
-      b.dir = Math.abs(mvx) > Math.abs(mvy) ? (mvx > 0 ? 'right' : 'left') : (mvy > 0 ? 'down' : 'up');
-    } else if (b.tgt) { // face the work
-      const dx = b.tgt.tx * TILE + 8 - b.x, dy = b.tgt.ty * TILE + 8 - b.y;
-      b.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-    }
-    b.animT += dt * (moving ? 8 : 0);
-    b.moving = moving;
-    b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
-    b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
   }
 }
 
 // ------------------------------------------------------------ soldiers
-// The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
-// (the `merchant` banner above) rolls out a column of soldiers - a bot's
-// chassis in its side's paint (drawRobot) - that marches the ROAD
-// (placeRoad, world.js) to the rival bird and strikes it. A soldier is
-// allowed to FIGHT and nothing else: nobody owns it (owner -1), no tree
-// tempts it, and it lands its kind's blow (robotStrike; SOLDIER_TYPES) on any
-// rival unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE
-// (their barracks in its way), and then the bird itself, its kind's `eagle`
-// a blow through hurtEagle - which is why two waves
-// meeting on the road grind each other down until somebody breaks the tie.
-// It carries a bounty paid to the rival who lands its last hit (robotDies,
-// soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
-// like any other body. It marches its BAY'S LANE (b.lane). A mid soldier's
-// route is the road's waypoints from its own base's junction to the rival's
-// (roadWaypoints), straight through the cistern at the middle, then up the
-// rival's road to the roost; a top or bot soldier's is its own mouth, down its lane to the
-// rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
-// waypoint it cannot reach is skipped, not waited on, so a wave never stands
-// still on a blocked tile. On the march it rides its own side's ZIPLINE of its
-// lane out to the front (soldierBoard; never the rival's, which ends just past
-// a standing rival road tower) - hands on
-// the handle, so a soldier on the cable swings at nothing, and a rival who
-// meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
+// A wave's SOLDIER (the `waves` banner above) is a bot's chassis in its
+// side's paint (drawRobot) that marches its lane (b.lane) to the rival bird
+// and strikes it. It is allowed to FIGHT and nothing else: nobody owns it
+// (owner -1), and it lands its kind's blow (robotStrike; SOLDIER_TYPES) on
+// any rival unit inside SOLDIER_AGGRO, any rival building inside
+// SOLDIER_SIEGE, a rival tower from SOLDIER_TOWER_R, and then the bird
+// itself, its kind's `eagle` a blow through hurtEagle - which is why two
+// waves meeting on a lane grind each other down until somebody breaks the
+// tie. It carries a bounty paid to the rival who lands its last hit
+// (robotDies, soldierBounty in js/sim/farm.js), and it takes every hit,
+// state and gust like any other body. Its route is its lane's waypoints from
+// its own perch to the rival's (laneWaypoints, js/sim/field.js), then the
+// roost itself. A waypoint it cannot reach is skipped, not waited on, so a
+// wave never stands still on a blocked tile.
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the road's own stretch of it, so no column marches past one
 const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival heroes standing near (shareXp); a kind's `xp` scales it
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
-const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
-const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
 
-// THE KINDS of soldier a wave is made of, League's three (the barracks' `mix`
-// and `siege`, STRUCTS.barracks, js/sim/structures.js, say how many of each).
+// THE KINDS of soldier a wave is made of, League's three (WAVE's `mix` and
+// `siege`, above, say how many of each).
 // What a kind IS lives here, never in an `if`: its health at the start (`hp`,
-// and `grow` more for every barracks `grow` of the match), its blow (`dmg`
+// and `grow` more for every WAVE `grow` of the match), its blow (`dmg`
 // every `cd` s from `reach` px away; a building takes `struct` times it, the
 // rival bird `eagle` nerve), the shot that carries a blow from range (`shot`:
 // s in the air, 0 for an axe, and `look`, what flies: SOLDIER_SHOTS), its bounty as a share of SOLDIER_BOUNTY
@@ -596,89 +305,24 @@ const SOLDIER_TYPES = {
 function soldierType(b) { return SOLDIER_TYPES[b.type] || SOLDIER_TYPES.melee; }
 
 
-function makeSoldier(o, type) {
-  const b = makeRobot(o); // the barracks' roll-out geometry
+function makeSoldier(team, lane, type) {
+  const at = laneOut(team, lane, WAVE_OUT);
+  const b = robotBody(at.x, at.y, 1, team, -1, rng() * 2);
   b.kind = 'soldier';
   b.type = SOLDIER_TYPES[type] ? type : 'melee';
   // its kind's health, tougher every `grow`, like its bounty (soldierBounty,
   // js/sim/farm.js), so a hero's grown blow never makes every hit on one a last hit
   const T = soldierType(b);
-  b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / STRUCTS.barracks.grow);
+  b.hp = b.maxHp = T.hp + T.grow * Math.floor(state.elapsed / WAVE.grow);
   b.shot = null; // a blow in the air from range: { tg, t, dmg, x, y } (soldierShot)
-  b.faceL = (baseCentre(1 - b.team).tx + 0.5) * TILE < b.x; // facing left (updateSoldier turns it): toward the rival base first
-  b.owner = -1; // nobody's: no cargo, no payout but the bounty
-  b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
+  b.faceL = team === 1; // facing left (updateSoldier turns it): toward the rival base first
+  b.lane = lane; // the lane it marches: 0 the top, 1 the bottom
   b.wayI = 0;
-  b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
-  if (b.lane !== 1) { // a side lane: out of its mouth and down it (laneWaypoints, js/sim/lanes.js)
-    const g = baseGate(b.team, b.lane);
-    b.way = [{ x: (g.tx + 0.5) * TILE, y: (g.ty + 0.5) * TILE }].concat(laneWaypoints(b.team, b.lane));
-    return b;
-  }
-  // the mid road: own junction first (up the road out of the base), the road, the
-  // rival junction; the rival roost itself is read live (it may have flown)
-  const own = state.drop && state.drop.eagles[b.team], rival = state.drop && state.drop.eagles[1 - b.team];
-  b.way = [];
-  if (own && own.mouth) b.way.push({ x: own.mouth.x, y: own.mouth.y });
-  for (const w of roadWaypoints(b.team)) b.way.push(w);
-  if (rival && rival.mouth) b.way.push({ x: rival.mouth.x, y: rival.mouth.y });
+  b.way = laneWaypoints(team, lane); // the rival roost itself is read live
   return b;
 }
 
-// where the march ends: the rival bird, wherever it is
-function soldierGoal(b) {
-  const rival = state.drop && state.drop.eagles[1 - b.team];
-  return rival || (b.way.length ? b.way[b.way.length - 1] : null);
-}
-// the ride: a cable of its own lane within SOLDIER_ZIP_REACH of the soldier whose end nearer
-// the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
-// it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
-// walks to the mount (zipMount, js/sim/zipline.js - the point a player's walk and a
-// bot's stand on too). True while the cable has the soldier, walking or on
-function soldierBoard(b, walkToward) {
-  const g = soldierGoal(b);
-  if (!g) return false;
-  const here = Math.hypot(g.x - b.x, g.y - b.y);
-  for (const z of zips) {
-    // its own side's cable of its own lane: a column never rides off to another
-    // lane, and the rival's always ends just past a standing rival road tower
-    // (towersSync), so a ride in on it would skip that tower
-    if (!z || z.lane !== b.lane || z.team !== b.team) continue;
-    const n = zipNearest(z, b.x, b.y);
-    if (n.dist > SOLDIER_ZIP_REACH) continue;
-    const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];
-    const d0 = Math.hypot(g.x - p0.x, g.y - p0.y), d1 = Math.hypot(g.x - p1.x, g.y - p1.y);
-    if (Math.min(d0, d1) > here - SOLDIER_ZIP_GAIN) continue;
-    if (n.dist <= ZIP_GRAB) {
-      zipBoard(b, z, n.d, d1 < d0 ? 1 : -1);
-      b.rode = true;
-      b.moving = false;
-      return true;
-    }
-    const m = zipMount(z, n.d);
-    if (m && walkToward(m.x, m.y, 0) >= 0) return true;
-  }
-  return false;
-}
-// off the cable - at its end, or knocked off - the route is read again from
-// where the soldier now stands: the leg of it (waypoint to waypoint, the last
-// one on to the bird) it stands nearest is the leg it is on, and the
-// waypoint ending that leg is next. Never back down the route
-function soldierRejoin(b) {
-  b.rode = false;
-  const g = soldierGoal(b), pts = g ? b.way.concat([g]) : b.way;
-  let best = b.wayI, bd = Infinity;
-  for (let k = Math.max(1, b.wayI); k < pts.length; k++) {
-    const a = pts[k - 1], c = pts[k], lx = c.x - a.x, ly = c.y - a.y, L2 = lx * lx + ly * ly || 1;
-    const t = Math.max(0, Math.min(1, ((b.x - a.x) * lx + (b.y - a.y) * ly) / L2));
-    const d = Math.hypot(b.x - a.x - lx * t, b.y - a.y - ly * t);
-    if (d < bd) { bd = d; best = k; }
-  }
-  b.wayI = Math.max(b.wayI, Math.min(best, b.way.length));
-}
-
 function updateSoldier(b, dt) {
-  if (b.rode) soldierRejoin(b); // just off a zipline (the ride branch in updateRobot carries it while it is on)
   let moving = false;
   const walkToward = (px, py, reach) => {
     const n = navStep(b, px, py, 3, SOLDIER_SPD, dt, reach);
@@ -715,8 +359,8 @@ function updateSoldier(b, dt) {
       }
     }
   }
-  // 3. a rival building in its way: their barracks - and a rival ROAD TOWER from further off, since one holds
-  //    the road and a column that walked past it would leave it standing
+  // 3. a rival building in its way - and a rival TOWER from further off, since one holds
+  //    the lane and a column that walked past it would leave it standing
   //    (towerNear, js/sim/towers.js)
   if (!busy) {
     const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE) || towerNear(b.team, b.x, b.y - 1, SOLDIER_TOWER_R);
@@ -726,9 +370,7 @@ function updateSoldier(b, dt) {
       else { swing(pt, () => robotStrike(b, st, pt)); busy = true; }
     }
   }
-  // 4. the march: by a zipline that carries it closer, else the next
-  //    waypoint, then the roost through its lane
-  if (!busy) busy = soldierBoard(b, walkToward);
+  // 4. the march: the next waypoint down its lane, then the roost
   if (!busy) {
     if (b.wayI < b.way.length) {
       const w = b.way[b.wayI];
@@ -774,7 +416,7 @@ function enemyStructNear(team, x, y, r) {
 // One blow on its kind's flat cooldown. Nothing here scales with anything yet;
 // that is the balance pass.
 // Where a soldier aims. A body is a point a little above its feet; a building
-// is the nearest point on its FOOTPRINT, not its centre - the barracks is
+// is the nearest point on its FOOTPRINT, not its centre - a tower is
 // 3x2, and a soldier measuring to the middle of it could never reach its own
 // axe past the wall it is standing against.
 function foePoint(e, fx, fy) {
@@ -791,7 +433,7 @@ function foePoint(e, fx, fy) {
 function robotFoeUnit(b, range) {
   let best = null, bd = range;
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team === b.team) continue;
+    if (!q.active || q.dead || q.team === b.team) continue;
     const d = Math.hypot(q.x - b.x, q.y - 6 - b.y);
     if (d < bd && d <= seenAt(q, range)) { bd = d; best = q; }
   }

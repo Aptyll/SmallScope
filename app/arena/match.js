@@ -91,7 +91,7 @@ function playMatch(opts) {
   G.gainGold = function (p, n) { if (inRobot && p && L.players[p.id] === p) robotGold[p.id] += n; return gainGoldWas.apply(this, arguments); };
 
   // ---- the drop ---------------------------------------------------------------
-  G.beginDrop();
+  G.beginMatch();
   const T = L.TICK_DT;
   const maxTicks = Math.round(o.maxMin * 60 / T);
   const sampleTicks = Math.max(1, Math.round(o.sampleEvery / T));
@@ -145,14 +145,14 @@ function playMatch(opts) {
       else if (p.dmgOut > q.dmgOut || p.dmgIn > q.dmgIn) a = 'fight';
       else if (siege > q.siege) a = 'siege';
       else if (p.earned - q.earned - (robotGold[i] - q.robot) > passive) a = 'work';
-      else if (moved > TILE || p.aboard || G.inAir(p)) a = 'move';
+      else if (moved > TILE) a = 'move';
       else a = 'idle';
       if (a) act[i][a] += o.sampleEvery;
-      if (!p.dead && !p.aboard) dist[i] += moved;
+      if (!p.dead) dist[i] += moved;
       const th = p.ai && p.ai.thought;
       const goal = th && th.goal ? String(th.goal) : null;
       if (goal && !p.dead) goals[i][goal] = (goals[i][goal] || 0) + o.sampleEvery;
-      if (cellsMapped && p.active && !p.dead && !G.inAir(p)) {
+      if (cellsMapped && p.active && !p.dead) {
         const cx = Math.floor(p.x / TILE / CELL), cy = Math.floor(p.y / TILE / CELL);
         if (cx >= 0 && cy >= 0 && cx < CW && cy < CW) cellSeen[cy * CW + cx] = 1;
       }

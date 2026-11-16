@@ -1,14 +1,13 @@
 'use strict';
 // ------------------------------------------------------------ the orca
-// The orca's lake (orcaLakeAt, js/sim/world.js) has one thing living under it.
+// The orca's lake (orcaLakeAt, js/sim/field.js) has one thing living under it.
 // It cruises the disc as a shadow under the ice, like the lake's fish but
-// the size of a deer. A player who walks out onto ITS ice within
+// the size of a bear. A player who walks out onto ITS ice within
 // seenAt(p, ORCA_SIGHT) of it is locked: a countdown over their head runs
 // ORCA_LINE s (drawOrcaCount, js/draw/overhead.js; a knock in the ice on
 // every number) while the orca stalks them (orcaStalk): a glide past beside
 // them, a wide turn, then the run in under them, its heading always leading
-// its path. Off the orca's ice - onto the snow, a gate's sill, a zipline, a
-// deer's back is still the ice - and the hunt drops. If the line runs out on
+// its path. Off the orca's ice - onto the snow - and the hunt drops. If the line runs out on
 // the ice, the orca comes up:
 //   the strike   the ice cracks round where it will break (iceBreak's warn,
 //                ORCA_CRACK) and the one it is after is pinned (rootUnit);
@@ -70,14 +69,14 @@ function orcaClear(x, y) {
 function orcaIce(tx, ty) { return orcaTileIn(tx, ty) && ground[idx(tx, ty)] === 1 && !objects[idx(tx, ty)]; }
 function orcaOnIce(p) { return orcaTileIn(Math.floor(p.x / TILE), Math.floor(p.y / TILE)) && ground[idx(Math.floor(p.x / TILE), Math.floor(p.y / TILE))] === 1; }
 // can it have this one: on the ground, on its ice, not on a cable
-function orcaPrey(p) { return !!p && p.active && !p.dead && !inAir(p) && !(p.zip >= 0) && orcaOnIce(p); }
+function orcaPrey(p) { return !!p && p.active && !p.dead && orcaOnIce(p); }
 
 // boot, after the fish (js/app/boot.js): the disc's tiles, the routes' toll on
 // them, and the orca put in at the home tile the seed hashes to
 function spawnOrca() {
   orcaWater = new Uint8Array(WORLD * WORLD);
   orcaHome = [];
-  const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_RAG + 2);
+  const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + 2);
   for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
     if (!inWorld(tx, ty) || !orcaLakeAt(tx, ty)) continue;
     orcaWater[idx(tx, ty)] = 1;
@@ -126,7 +125,7 @@ function updateOrcaSpouts(dt) {
     if (s.t < ORCA_SPOUT_T) continue;
     orcaSpouts.splice(i, 1);
     for (const p of players) {
-      if (!p.active || p.dead || inAir(p)) continue;
+      if (!p.active || p.dead) continue;
       const dx = p.x - s.x, dy = p.y - s.y, d = Math.hypot(dx, dy);
       if (d < ORCA_SPOUT_HIT) damagePlayer(p, s.dmg, d ? dx / d : 0, d ? dy / d : 1, null, 'orca');
     }

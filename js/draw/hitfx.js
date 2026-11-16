@@ -100,7 +100,7 @@ function drawHitFx(ex, ey, now) {
     drawHitSpark(h, Math.round(u.x + n.x - h.nx * 6 - ex), Math.round(u.y + n.y - (u.alt || 0) - 6 - h.ny * 2 - ey), t);
   });
 }
-function hitShown(u, now) { return fogShown(u, now) && !(u instanceof Player && (!u.active || inAir(u) || u.zip >= 0)); }
+function hitShown(u, now) { return fogShown(u, now) && !(u instanceof Player && (!u.active)); }
 
 // a pixel list drawn with a 1 px rim round all of it (ink unless named), then its colours
 function hitInked(pts, rim) {

@@ -13,7 +13,7 @@ defineBot({
 
   think(obs) {
     const me = obs.me;
-    if (me.dead || me.aboard) { this.go = false; return { think: { goal: 'IDLE', why: 'DOWN' } }; }
+    if (me.dead) { this.go = false; return { think: { goal: 'IDLE', why: 'DOWN' } }; }
     const act = {};
     if (me.skillPts > 0) act.ability = me.abilities.reduce((b, a) => (a.lv < b.lv ? a : b)).key;
 

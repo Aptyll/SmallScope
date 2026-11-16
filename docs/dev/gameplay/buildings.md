@@ -1,16 +1,14 @@
 # Buildings
 
 **Nobody builds by hand.** Every building on the map is the map's own or the merchant's: the
-[road towers](../world.md#the-road) stand at boot (`placeTowers`, js/sim/towers.js), so do the
-two neutral **gold pumps** ([below](#the-gold-pumps)), each
-[merchant](robots.md#the-merchant) raises its side's **barracks** just inside its base's lane
-mouths. Player
+[road towers](../world.md#the-lanes) stand at boot (`placeTowers`, js/sim/towers.js), so do the
+two neutral **gold pumps** ([below](#the-gold-pumps)), and each side's soldiers walk out of its
+perch with no building at all. Player
 building (the T build list, walls, gates, turrets, bot bays and worker bots, and the E manage
 wheel) was cut in 0.525, and the fish net with food in 0.538.
 
 All the data lives in the `STRUCTS` table ([structures.js](../../../js/sim/structures.js)): the
-gold pump (`pump`, 4x2), the barracks (3x2, wearing the bay's grid through `art: 'spawner'`)
-and the road tower (3x2). Each entry is flat: a gold `cost` (none on the pump), `hp`, `buildT`
+gold pump (`pump`, 4x2) and the road tower (3x2). Each entry is flat: a gold `cost` (none on the pump), `hp`, `buildT`
 and its own stats. The cost is only what a wrecker is paid half of (`wreckPay`). What a type
 does is its entry's hooks, so the building sim never asks a type's name: `init(o)` (its state,
 from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it stands,
@@ -20,8 +18,8 @@ from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it 
 - **One constructor.** `createStruct(tx, ty, type, tier, p, building)` drops the anchor object
   through `placeObj`, stamped with `owner`/`team`, lays the `part` fillers over the rest of the
   footprint (`footprint(type, tx, ty)`), sets the type's own state and joins the `structures`
-  registry. With `building` it starts at 30% hp and rises over `buildT`; the merchant's barracks
-  and `DBG.buildStruct` use that, the towers stand finished. `removeStruct()` clears the whole
+  registry. With `building` it starts at 30% hp and rises over `buildT`; `DBG.buildStruct`
+  uses that, the towers stand finished. `removeStruct()` clears the whole
   footprint. A building is solid from the moment it is laid (`isSolidTile` reads any `STRUCTS`
   entry as solid, except a `water` one).
 - **Ownership**: a building wears its team's palette (`structSprite`), and `ownsStruct(o, p)` is
@@ -37,17 +35,8 @@ from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it 
   on that edge.
 - **Gold pump** (`pump`): the map's objective, [below](#the-gold-pumps). It is nobody's,
   so nothing can hurt it.
-- **Barracks** (`barracks`): the wave bay. It wears the bay's 3×2 grid under its own overlay
-  (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave clock on
-  the flank in the side's paint, the beacon amber while a column is leaving). On the match's beat
-  (`barracksBeat`: `first`, 60 s of match clock, then every `waveT`, 30 s, so every lane rolls out
-  together and a rebuilt bay falls into step) it queues a **wave** (`barracksWave`, into `barracksQueue`): its `mix` of kinds in door order (3 melee, then 3 ranged),
-  one more melee per `grow` (180 s) it has stood, and a **siege** soldier last on every n-th wave of
-  the match clock, n from `siege` (every 3rd, every 2nd from 15:00, every wave from 25:00), never more
-  than `cap` (16) of its side's soldiers on its **lane** at once, every bay's queue and column on
-  that lane counted (`barracksLaneLoad`). The queue leaves the door one every `BARRACKS_ROLL`
-  (0.5 s), so a wave reads as a column. Breaking one stalls the waves until the merchant rebuilds
-  it ([Soldiers](robots.md#soldiers-the-waves)).
+- **The waves** are no building: each side's columns walk straight out of its perch on the match's
+  beat ([Soldiers](robots.md#soldiers-the-waves)).
 - **Buildings take damage from everything a rival can throw, and only from the other team.**
   `hurtStruct(o, dmg, p, bot)` is the one blow: the flash, the shiver, the damage total,
   the wreck payout and the `<NAME> WRECKED A <TYPE>` feed line are one path and cannot
@@ -72,28 +61,23 @@ from `createStruct`), `built(o)` (a site finished), `tick(o, dt)` (each tick it 
 
   **`structsNear(src, x, y, r)` is the buildings half of `unitsNear`**: every rival building the
   circle touches, resolved to its anchor and listed once, so an **area** effect reaches a building
-  through one call, and a 3×2 barracks is caught by whichever of its six tiles the ring actually
+  through one call, and a 3×2 tower is caught by whichever of its six tiles the ring actually
   crosses. `structFoe(src, s)` is its `unitFoe`: never your own, never a neutral, and PVP has
   nothing to say about it, because a building is not a body.
 - **Every damaged building wears an hp bar** (`drawHealthBar`, centred on the sprite, `sy - 5`),
   drawn only once `hp < maxHp` so an untouched base stays clean, and never while `building`. The
-  barracks and the tower draw their own. Below 60% hp a building also picks up four crack marks
+  tower draws its own. Below 60% hp a building also picks up four crack marks
   placed as fractions of its sprite, so damage reads without the bar.
 - No structure emits light; an open snowdrop is the one thing on the map that does (see [Lighting](../rendering/light-and-weather.md)).
 
 ## The gold pumps
 
-Two **neutral gold pumps** stand at boot (`placePumps`, js/sim/pumps.js, after the landmarks and
-with no `rng()`), one beside the middle of the top lane and one beside the middle of the bot lane
-(`pumpLaneMid`, where each lane meets the creek's end at its corner, `LANE_MID_S` off the road), set off the road so a wave walks past. The
-spot is the nearest 4x2 footprint of plain snow to the top lane's middle (`pumpSeek`, inside
-`PUMP_SEEK` tiles) whose centre keeps `PUMP_ROAD` tiles off every road, clear of camps and the
-cistern, with no water in its ring, **and whose point mirror on the bot lane passes the same
-test** (`pumpSpotOk`, `pumpMirror`), so the pair is fair: each side has one pump a little nearer.
-A shape where no pair stands (the frozen isles' lake) takes the nearest spot on each lane alone,
-out to `PUMP_SEEK_FAR`, with `PUMP_STAND_LONE` of the ring standable. The pines in the
-ring are felled (`pumpStand`). The pump's `team` stays undefined: `structFoe` is false for it, so
-nothing hurts it, and `ownsStruct` is true, so E never swings at it.
+Two **neutral gold pumps** stand at boot (`placePumps`, js/sim/pumps.js, after the camps and
+with no `rng()`), one each side of the middle in the jungle by the base mouths (`PUMP_SPOT`, RED's,
+mirrored across the middle column for BLUE), so the pair is fair: each side has one pump a little
+nearer. The site is open ground in the field (js/sim/field.js), so nothing is cleared. The pump's
+`team` stays undefined: `structFoe` is false for it, so nothing hurts it, and `ownsStruct` is true,
+so E never swings at it.
 
 - **The ring.** A hero (a player, never a soldier) counts when `unitAlive` and within `PUMP_R`
   (4.5) tiles of the pump's centre (`pumpCount`). One side alone in the ring fills it toward

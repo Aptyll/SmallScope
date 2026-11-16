@@ -412,13 +412,12 @@
   // ------------------------------------------------------------------ music
   // One streamed element per track (they are minutes long - decoding them into
   // buffers would cost tens of MB), volume-faded by hand from tick(). `next`
-  // is the chain the eagle jump rides: JUMPING OFF EAGLE runs to its end and
+  // is the chain a match's start rides: JUMPING OFF EAGLE runs to its end and
   // hands straight over to FOXGLOVE DROP, which ends in silence.
   const MUS_DIR = 'audio/music/';
   const TRACKS = {
     intro: { f: 'Frozen North Run Intro.mp3', loop: true, vol: 1 },
     lobby: { f: 'Frozen North Run Class Selection.mp3', loop: true, vol: 1 },
-    eagle: { f: 'Flying On Eagle.mp3', loop: true, vol: 1 },
     jump: { f: 'Jumping Off Eagle.mp3', loop: false, vol: 1, next: 'foxglove' },
     foxglove: { f: 'Foxglove Drop.mp3', loop: false, vol: 0.85 },
     village: { f: 'Forest Village Loop.mp3', loop: true, vol: 0.9 },
@@ -722,12 +721,6 @@
     // shorter than hammer(), and widely jittered, because it repeats for as long
     // as the build takes and must never settle into a rhythm.
     building() { smp('hammer', { vol: 0.35, rate: 1.15, jitter: 0.22, dur: 0.3, gap: 0.2 }); },
-    // a body arriving out of the sky: the boot sample dropped an octave under a
-    // low thump, so a landing reads as weight and not as an arrow connecting
-    land() {
-      smp('step', { vol: 0.69, rate: 0.5, jitter: 0.05, lp: 1100, dur: 0.45, gap: 0 });
-      noise(0.22, 0.24, 420); tone(88, 0.2, 'triangle', 0.09, -22);
-    },
     deny() { tone(140, 0.12, 'square', 0.17, -30); },
     // knocking on solid ice: a glassy crack over a dull refusal
     iceKnock() { noise(0.06, 0.3, 3200); tone(1400, 0.08, 'triangle', 0.06, -700); tone(130, 0.12, 'square', 0.07, -25); },
@@ -743,13 +736,6 @@
     gust() {
       if (smp('whoosh', { vol: 0.73, rate: 0.55, jitter: 0.06, lp: 1600, dur: 0.9, ch: 'gust' })) return;
       noise(0.3, 0.32, 500); tone(120, 0.22, 'triangle', 0.09, -55);
-    },
-    // an eagle hitting the treeline: the timber sample dropped low with a
-    // synth blast wave stacked under it (layered on purpose, not a fallback)
-    boom() {
-      smp('timber', { vol: 0.86, rate: 0.55, jitter: 0.04 });
-      noise(0.5, 0.5, 320); noise(0.2, 0.4, 1100);
-      tone(58, 0.5, 'triangle', 0.2, -26); tone(40, 0.75, 'sine', 0.16, -10);
     },
     // NIGHT COMING DOWN, dawnChime's opposite number: the cold arriving over
     // a world that is about to be harder to see in. The two synth lines under

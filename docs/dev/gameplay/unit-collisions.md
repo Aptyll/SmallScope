@@ -61,7 +61,3 @@ in by itself and still goes in off the edge when it is knocked off. An
 player goes in exactly where it shows, and a strict move (a bot's own walk, a shove) and every
 other walker stop at its edge, unless the step starts in it.
 
-**The cistern's stone is held to the pixel.** Every body, every step (`moveEntity`), meets
-[the cistern](../code-map/sim/cistern.md)'s footprint by `cisternReach`: the circle round its feet is
-swept along the step and stops against the stone, so a roll, a rush, a reel or a shove ends at the
-wall, never inside it.

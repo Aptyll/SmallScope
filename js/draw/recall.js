@@ -2,7 +2,7 @@
 // The bird's feathers on a body (js/sim/recall.js): the recall's channel, the set-down
 // at its far end, and the mending at the roost.
 //
-// THE ROOST'S REACH (BOOM_R, js/sim/eagle.js: where the bird heals, smaller than its kerbed
+// THE ROOST'S REACH (ROOST_R, js/sim/eagle.js: where the bird heals, smaller than its kerbed
 // paving) is its floor lit faintly in the side's colour under one unbroken pale rim, drawn
 // flat under everything that walks (drawRecallGround, from drawFlatPass in js/draw/passes.js;
 // roostFloorArt, baked once per side and size). The mending also shows on the
@@ -105,7 +105,7 @@ function roostFloorArt(T, r) {
 }
 function drawRecallGround(ex, ey) {
   if (!state.drop) return;
-  const r = Math.round(BOOM_R * TILE);
+  const r = Math.round(ROOST_R * TILE);
   for (const e of state.drop.eagles) {
     if (e.state !== 'down') continue;
     const x = Math.round(e.x - ex), y = Math.round(e.y - ey);

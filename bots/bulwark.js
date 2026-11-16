@@ -18,7 +18,7 @@ defineBot({
 
   think(obs) {
     const me = obs.me;
-    if (me.dead || me.aboard || me.falling) return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } };
+    if (me.dead) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
     if (me.skillPts > 0) { const k = pickKey(me, me.attack === 'cut' ? [0, 2, 3, 1] : [1, 0, 2, 3]); if (k >= 0) act.cmd = { kind: 'ability', i: k }; }
@@ -50,7 +50,7 @@ defineBot({
     if (atSpur) { this.seenN = Math.max(atSpur, obs.time - this.seenT < 10 ? this.seenN : 0); this.seenT = obs.time; }
     const wiped = !atSpur && this.seenN >= 3 && obs.time - this.seenT > 6 && obs.time - this.seenT < 20;
     if (this.lead && !this.sally && bird && !struck && (wiped || (this.quietT > 45 && obs.time > 240))) {
-      const up = obs.allies.filter((a) => !a.dead && !a.aboard).length + 1;
+      const up = obs.allies.filter((a) => !a.dead).length + 1;
       if (up >= (wiped ? 4 : 5)) { this.sally = obs.time; this.seenN = 0; act.say = { sally: true }; }
     }
 

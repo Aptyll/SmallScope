@@ -1,8 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ pumps
-// THE GOLD PUMPS: two neutral map objectives, one beside the middle of the
-// top lane and one beside the middle of the bot lane, set off the road so a
-// wave walks past. Nobody owns one and nothing can hurt one (`team` stays
+// THE GOLD PUMPS: two neutral map objectives in the jungle, one each side of
+// the middle by its base mouth (PUMP_SPOT). Nobody owns one and nothing can hurt one (`team` stays
 // undefined: structFoe is false for it and ownsStruct true). A ring on the
 // snow round each is the whole interaction: heroes only (players, never a
 // soldier), standing in it with no rival hero inside, fill it to their side
@@ -19,87 +18,17 @@
 const PUMP_R = 4.5;       // tiles from the pump's centre a hero counts as in its ring
 const PUMP_CAP_T = 5;     // s one side alone in the ring takes to fill it
 const PUMP_FADE_T = 10;   // s an empty ring takes to lose a full fill's progress
-const PUMP_SEEK = 12;     // tiles from a lane's middle a mirrored pair's spot is looked for...
-const PUMP_SEEK_FAR = 20; // ...and a lone pump's, on a shape where no pair stands
-const PUMP_ROAD = 3.5;    // tiles the pump's centre keeps off any road edge, so the ring sits beside the lane, not on it
-const PUMP_STAND = 1;     // share of the ring's tiles a hero must be able to stand on: no water in a pair's...
-const PUMP_STAND_LONE = 0.8; // ...and a little at a lone pump's edge
-const PUMP_CLEAR = 1;     // tiles round the footprint the lane's pines give way
-
-// the two lanes' middles, in tiles: the creek crossing at the bend of each
-function pumpLaneMid(lane) {
-  const c = baseTile(0, (WORLD - 1) / 2, lane === 0 ? -LANE_MID_S : LANE_MID_S);
-  return { tx: c.tx, ty: c.ty };
-}
+const PUMP_SPOT = [48, 69];  // RED's pump: its 4x2 footprint's top-left tile, in the jungle's middle by the base mouth (BLUE's mirrored across the middle column)
 function pumpRingPx() { return PUMP_R * TILE; }
 
-// could a pump stand with its footprint's top-left at (ax, ay)? Every tile is
-// plain snow in the world (never ice, water, a ford, the cistern's stone, a
-// road or a camp), holding nothing the lane would not fell; its centre keeps
-// PUMP_ROAD off every road; and `stand` of its ring is ground a hero can stand on
-function pumpSpotOk(ax, ay, stand) {
-  const w = structW('pump'), h = structH('pump');
-  for (const [x, y] of footprint('pump', ax, ay)) {
-    if (!inWorld(x, y) || waterAt(x, y) || cisternTouches(x, y)) return false;
-    if (ground[idx(x, y)] !== 0 || roadDist(x, y, true) < 1) return false;
-    const o = objects[idx(x, y)];
-    if (o && !laneFells(o)) return false;
-    if (campAt((x + 0.5) * TILE, (y + 0.5) * TILE)) return false;
-  }
-  const cx = ax + w / 2, cy = ay + h / 2;
-  if (roadDist(cx - 0.5, cy - 0.5, true) < PUMP_ROAD) return false;
-  let n = 0, ok = 0;
-  const r = Math.ceil(PUMP_R);
-  for (let y = Math.floor(cy) - r; y <= Math.floor(cy) + r; y++) for (let x = Math.floor(cx) - r; x <= Math.floor(cx) + r; x++) {
-    if (Math.hypot(x + 0.5 - cx, y + 0.5 - cy) > PUMP_R) continue;
-    n++;
-    if (!inWorld(x, y) || waterAt(x, y) || cisternTouches(x, y)) continue;
-    const o = objects[idx(x, y)];
-    if (o && !laneFells(o) && !(x >= ax && x < ax + w && y >= ay && y < ay + h)) continue;
-    ok++;
-  }
-  return ok >= n * stand;
-}
-// the anchor whose footprint is the point mirror of (ax, ay)'s: the map is
-// laid point-symmetric about its middle, tile (x, y) to (W-1-x, W-1-y)
-function pumpMirror(ax, ay) { return [WORLD - structW('pump') - ax, WORLD - structH('pump') - ay]; }
-// the anchors within `reach` tiles of a lane's middle, nearest first (ties broken by a
-// fixed order, so a seed always picks the same spot)
-function pumpSeek(lane, reach) {
-  const m = pumpLaneMid(lane), w = structW('pump'), h = structH('pump'), offs = [];
-  for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (dx * dx + dy * dy <= reach * reach) offs.push([dx, dy]);
-  offs.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1] || a[1] - b[1] || a[0] - b[0]);
-  return offs.map(([dx, dy]) => [Math.round(m.tx - w / 2) + dx, Math.round(m.ty - h / 2) + dy]);
-}
-
-// Runs at boot after the landmarks (js/app/boot.js), outside genWorld and with
-// no rng(): no seed moves. The top lane's spot is the nearest one whose mirror
-// on the bot lane will stand too, so the pair is fair; a shape where no such
-// pair stands (the frozen isles' lake) takes the nearest spot on each lane
-// alone, further out, and a lane with none has no pump.
+// Runs at boot after the camps (js/app/boot.js): one pump each side of the
+// middle, mirrored, so the pair is fair
 function placePumps() {
-  let pair = null;
-  for (const [ax, ay] of pumpSeek(0, PUMP_SEEK)) {
-    if (!pumpSpotOk(ax, ay, PUMP_STAND)) continue;
-    const [bx, by] = pumpMirror(ax, ay);
-    if (pumpSpotOk(bx, by, PUMP_STAND)) { pair = [[ax, ay], [bx, by]]; break; }
+  const w = structW('pump');
+  for (const ax of [PUMP_SPOT[0], WORLD - PUMP_SPOT[0] - w]) {
+    for (const [x, y] of footprint('pump', ax, PUMP_SPOT[1])) objects[idx(x, y)] = null;
+    createStruct(ax, PUMP_SPOT[1], 'pump', { id: -1, team: undefined }, false);
   }
-  const spots = pair || [0, 2].map((lane) => pumpSeek(lane, PUMP_SEEK_FAR).find(([ax, ay]) => pumpSpotOk(ax, ay, PUMP_STAND_LONE)) || null);
-  spots.forEach((s, i) => { if (s) pumpStand(s[0], s[1], i === 0 ? 0 : 2); });
-}
-function pumpStand(ax, ay, lane) {
-  const w = structW('pump'), h = structH('pump');
-  // the footprint and its edge, and every tile of the ring, give way
-  for (let y = ay - PUMP_CLEAR; y < ay + h + PUMP_CLEAR + 1; y++) for (let x = ax - PUMP_CLEAR; x < ax + w + PUMP_CLEAR; x++) {
-    if (inWorld(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
-  }
-  const cx = ax + w / 2, cy = ay + h / 2, r = Math.ceil(PUMP_R);
-  for (let y = Math.floor(cy) - r; y <= Math.floor(cy) + r; y++) for (let x = Math.floor(cx) - r; x <= Math.floor(cx) + r; x++) {
-    if (inWorld(x, y) && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= PUMP_R && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
-  }
-  const o = createStruct(ax, ay, 'pump', { id: -1, team: undefined }, false);
-  o.lane = lane;
-  return o;
 }
 
 // the heroes of each side standing in o's ring: [red, blue]

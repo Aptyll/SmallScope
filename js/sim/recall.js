@@ -16,7 +16,7 @@
 // so a rival sees you leaving and can stop it.
 //
 // THE ROOST RING is the packed-earth disc the bird blew clear when it landed
-// (BOOM_R, js/sim/eagle.js), read off the bird where it sits, so it follows
+// (ROOST_R, js/sim/eagle.js), read off the bird where it sits, so it follows
 // the roost wherever a map puts it. Inside your OWN side's ring and out of a
 // fight, health comes back fast and the roll's charges refill fast; a rival
 // standing in it gets nothing. "Out of a fight" is the one clock the items
@@ -31,16 +31,15 @@ const RING_FX_T = 0.3;       // s between the green motes on a healing body
 function roostRing(p) {
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return null;
-  return Math.hypot(p.x - e.x, p.y - e.y) <= BOOM_R * TILE ? e : null;
+  return Math.hypot(p.x - e.x, p.y - e.y) <= ROOST_R * TILE ? e : null;
 }
 
 // why a channel cannot start now ('nobird', 'busy'), or null when it can - the
 // cmd's refusal, and what a bot asks before it stands still for one
 function recallBlocked(p) {
-  if (p.dead || inAir(p)) return 'busy';
+  if (p.dead) return 'busy';
   if (!roostTile(p)) return 'nobird';
-  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0 ||
-    p.zip >= 0 || p.zipWalk || p.mount) return 'busy';
+  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0) return 'busy';
   return null;
 }
 // the cmd: start the channel, or say why not (me.lastCmd for a bot)

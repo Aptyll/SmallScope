@@ -138,7 +138,7 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
   if (upTo === state.tick) return { body: without(() => D.saveCapture().body) };
   D.startGame();
   if (scene) {
-    for (let i = 0; i < 6000 && (state.mode !== 'play' || player.aboard); i++) step(1);
+    for (let i = 0; i < 6000 && state.mode !== 'play'; i++) step(1);
     rows.push({ tag: 'field', tick: state.tick, sim: simHash(), px: views() });
     const mark = (tag) => rows.push({ tag, tick: state.tick, sim: simHash(), px: { plain: shot() } });
     new Function('D', 'mark', 'step', scene)(D, mark, step);

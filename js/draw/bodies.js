@@ -16,8 +16,8 @@ function drawAnimal(a, ex, ey, now) {
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
-  drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js), on the ground under a leap
-  const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/sim/wildlife.js)
+  drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js)
+  const py = gy;
   const lit = spr.width <= 120 ? bodyLayerOpen(px + (spr.width >> 1), py + spr.height, (spr.width >> 1) + 4, spr.height + 4) : null; // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
@@ -34,10 +34,7 @@ function drawAnimal(a, ex, ey, now) {
   // roar is the one it lets pass behind it), never over the frame now
   // playing: a bar that rode the poses up and down would jump
   const fy = py + (spr.crown || 0);
-  // a ridden deer's bar is its rider's: one row under theirs, in their
-  // side's colour (drawPlayer), so the two read as one frame
-  if (a.rider) return;
-  const two = a.summon ? a.life / a.lifeMax : isCampKind(a.kind) ? a.threat : a.kind === 'rabbit' ? a.dodge : a.sprint; // a summon's: the hunt's time left
+  const two = a.summon ? a.life / a.lifeMax : isCampKind(a.kind) ? a.threat : a.dodge; // a summon's: the hunt's time left
   overheadPlate(() => drawBeastFrame(a.kind, px + spr.width / 2, px + (spr.width >> 1), fy, a, two, a, now));
 }
 
@@ -48,8 +45,7 @@ function drawAnimal(a, ex, ey, now) {
 // the same thing over either. The second bar is always worn: a wolf's
 // threat, bare track at rest and filling from the first flicker of
 // interest to the full bar it charges on (updateWolf, js/sim/wildlife.js); a
-// deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
-// each is one, spent on the run and on the dash. On its right, the status
+// rabbit's jink charge (updatePrey) in stamina white, spent on the dash. On its right, the status
 // plate while a control holds it (drawStatusPlate); over it, the noticed mark
 // unless it is stunned. The bar's width is the kind's
 // (beastFrame): BEAST_BAR_W, or a camp monster's own `frame` row - a bear's
@@ -57,7 +53,7 @@ function drawAnimal(a, ex, ey, now) {
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
 // centre column, `fy` the row the frame stands on; drawAnimal's in the
 // world and the wiki's cards (ui/wiki.js) are the same pixels.
-const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
+const BEAST_BAR_W = { rabbit: 8, wolf: 11, scrap: 11 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
 function drawBeastFrame(kind, cx, mid, fy, e, two, u, now) {
   const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);
@@ -108,8 +104,7 @@ function drawRobot(b, ex, ey, now) {
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
   const ax = SPRITES.robotAx[T.spr] || 6;
   const bx = Math.round(b.x - ex) - (left ? spr.width - ax : ax);
-  const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
-  const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
+  const by = Math.round(b.y + 4 - ey) - spr.height - bob; // tread bottom sits at b.y + 4
   // the ram (soldierRam): the body and its shadow shift, the bar holds still
   let rx = 0, ry = 0;
   if (b.atkAim && !T.shot) {
@@ -118,10 +113,9 @@ function drawRobot(b, ex, ey, now) {
     rx = Math.round(dx / d * n); ry = Math.round(dy / d * n);
   }
 
-  drawCastShade(spr, bx + rx, by + bob + zl + ry); // on the ground under the bob
+  drawCastShade(spr, bx + rx, by + bob + ry); // on the ground under the bob
 
   const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
-  if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   ctx.drawImage(spr, bx + rx, by + ry); // never washed white when struck, like a hero: its sparks, its shove and its bar tell the hit (hurtRobot)
   if (b.shot) drawSoldierShot(b, T, ex, ey, left);
 
@@ -190,22 +184,10 @@ function drawMerchant(b, ex, ey, now) {
   // 16 x 18: the feet land on the player's own foot row (b.y + 4), so the
   // extra two rows are height, and a walking robe bobs a pixel like a player
   const px = Math.round(b.x - 8 - ex), py = Math.round(b.y + 4 - ey) - spr.height;
-  const lift = (b.hopT > 0 ? Math.round(Math.sin(Math.min(1, b.hopT / MERCH_HOP_T) * Math.PI) * 10) : 0) +
-    (b.moving ? Math.floor(b.animT / 2) % 2 : 0);
-  drawCastShade(spr, px, py); // stays on the snow through a hop
+  const lift = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
+  drawCastShade(spr, px, py);
   const lit = bodyLayerOpen(px + 8, py + spr.height, 20, 40); // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py - lift, b.flash);
-  // the swing: a slow wind-up and a fast chop, aimed at the tile in hand
-  if (b.tgt && !b.moving && lift === 0) {
-    const tdx = b.tgt.tx * TILE + 8 - b.x, tdy = b.tgt.ty * TILE + 8 - b.y;
-    if (Math.hypot(tdx, tdy) <= 20) {
-      const total = b.tgt.type === 'stump' ? MERCH_BUILD_T : MERCH_SWING_T;
-      const prog = Math.min(1, b.workT / total);
-      const e = prog < 0.7 ? prog / 0.7 * 0.3 : 0.3 + (prog - 0.7) / 0.3 * 0.7;
-      const a = Math.atan2(tdy, tdx) - 1.6 * (1 - e);
-      drawTurned(Math.round(px + 8 + Math.cos(a) * 8), Math.round(py + 10 + Math.sin(a) * 8), a + Math.PI / 2, () => ctx.drawImage(SPRITES.itemAxe, -4, -4));
-    }
-  }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
   bodyLayerClose(lit);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
@@ -328,40 +310,6 @@ function rollFrame(prog) {
   return i;
 }
 
-const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under the stamina
-const MOUNT_BAR_COL = '#c98f52'; // that bar's fill: the deer's own coat tan, never the rider's colour
-// A deer's rider sits IN the deer (RIDE, js/sim/wildlife.js): the cell sinks
-// until its row `hip` meets the back at the seat column, which sits toward
-// the rump, and nothing of the body from that row down is drawn - the deer's
-// own back line is the rider's lower edge, so the legs are out of sight
-// behind the flank. `lift` seats it on the standing frame's back (the plate
-// rides that and holds still); `bob` follows the frame on show, so the body
-// rises and falls with the gallop.
-function riderSeat(p) {
-  const a = p.mount, R = RIDE[a.kind];
-  const still = SPRITES[a.kind][a.dir].idle[0], w = still.width;
-  const left = a.dir === 'left', col = left ? w - 1 - R.col : R.col;
-  const back = backRow(still, col);
-  return {
-    dx: col + (left ? 1 : 0) - (w >> 1), // the cell's middle columns on the seat, mirrored with the deer
-    lift: R.hip - 16 + still.height - back, // the cell's foot is p.y+4, the deer's frame's too
-    bob: backRow(clipFrame(SPRITES[a.kind][a.dir], a), col) - back,
-    hip: R.hip,
-  };
-}
-// the top of a frame's body at one column: the opaque run through the
-// frame's lower middle, walked up past the back (antlers above the gap are
-// not the back). Read once per frame and column, kept on the frame.
-function backRow(spr, col) {
-  const k = 'back' + col;
-  if (spr[k] === undefined) {
-    const d = SPR.pixelsOf(spr), at = (y) => d[(y * spr.width + col) * 4 + 3];
-    let y = Math.floor(spr.height * 0.6);
-    while (y > 0 && at(y - 1) > 0) y--;
-    spr[k] = y;
-  }
-  return spr[k];
-}
 // A body another hero carries (HERO_HELD, js/sim/heroes.js: PORTITOR's carry) sits up on
 // its carrier's back, drawn where the carrier stands now: HELD_LIFT rows up, a little
 // behind the carrier side-on, its legs hidden behind the carrier facing down and over its
@@ -390,7 +338,7 @@ const STUN_SWAY = [0, 1, 2, 1, 0, -1, -2, -1]; // px a stunned hero's body sways
 const STUN_SLUMP = 1;
 // upright, a body strides only while it covers ground on its own feet (see drawPlayer)
 function playerStrides(p) {
-  return p.moving && p.zip < 0 && !p.mount && !heroHeld(p) && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits, and a body another hero carries (HERO_HELD)
+  return p.moving && !heroHeld(p) && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a body another hero carries (HERO_HELD) does not
 }
 function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
@@ -398,40 +346,34 @@ function drawPlayer(p, ex, ey, now, stage) {
   let frame = 0;
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
-  // shift-slide and a push against a wall stand, and a zipline's rider hangs still
+  // shift-slide and a push against a wall stand
   const held = stage ? null : heldSeat(p); // ...and a carried body sits up on its carrier (heldSeat)
   const striding = !held && playerStrides(p);
   if (striding) frame = 1 + (Math.floor(p.animT) % 2);
-  // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
-  // is - the rope and handle over its head are the cable pass's (drawZips)
-  const zl = p.zip >= 0 ? ZIP_ALT : 0;
-  // a deer's rider: the body sits in the deer's back (riderSeat) and rides
-  // its leap (rideLift, js/sim/wildlife.js); the deer casts the shadow
-  const seat = p.mount ? riderSeat(p) : null;
-  const rl = rideLift(p) + (seat ? seat.lift : 0) + (held ? held.lift : 0);
+  const rl = held ? held.lift : 0;
   let spr = set[frame];
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
   if (running) spr = S[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
   // ...and standing still it breathes, its cloth a beat behind a stop or a turn (js/draw/idle.js)
   idleTick(p, striding, now);
-  if (frame === 0 && !seat && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now, S);
+  if (frame === 0 && p.fallT <= 0 && !(state.mode !== 'title' && abilityPose(p))) spr = idleFrame(p, now, S);
   const MB = SPRITES.motionBox;
-  const px = Math.round((held ? held.x : p.x) - 8 - ex) + (seat ? seat.dx : 0) + (held ? held.dx : 0);
-  const py = Math.round((held ? held.y : p.y) - 12 - ey) - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
+  const px = Math.round((held ? held.x : p.x) - 8 - ex) + (held ? held.dx : 0);
+  const py = Math.round((held ? held.y : p.y) - 12 - ey) - rl; // a carried body - held tool, marks, plate - sits up on its carrier
   // where the frame's top-left sits: any frame - the 16x16 cell, a larger
   // hero's, a wider run frame, the hoist - is centred on the cell with its
   // floor on the cell's floor
   const bx = px - ((spr.width - 16) >> 1);
   const by = py + 16 - spr.height;
-  // shadow (not while swimming in a hole, and not on a deer, which casts its own)
-  if (!stage && p.fallT <= 0 && !p.mount && !held) {
+  // shadow (not while swimming in a hole, and not carried: the carrier casts it)
+  if (!stage && p.fallT <= 0 && !held) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow
     if (p.dodgeT > 0) drawCastShade(S.roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
     else drawCastShade(spr, bx, by);
   }
-  if (!stage && p.fallT <= 0 && !zl && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
+  if (!stage && p.fallT <= 0 && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // the far half of the recall's feathers (js/draw/recall.js)
@@ -478,12 +420,11 @@ function drawPlayer(p, ex, ey, now, stage) {
     // body: the pose shifts / tilts the sprite itself (abilityPose,
     // js/sim/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
-    const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
     // a blade's blow moves the whole body, and the hands with it: back on the draw, in on the cut (attackLean)
     const lean = state.mode !== 'title' ? attackLean(p) : null, lx = lean ? lean.dx : 0, ly = lean ? lean.dy : 0;
     const dazed = p.stunT > 0 && state.mode !== 'title'; // stunned: the body slumps and sways wide and slow, off its own clock, so it reads dazed and not jitter
     const daze = dazed ? STUN_SWAY[Math.floor(p.stunT * 8) & 7] : 0;
-    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) - zl + bob + (dazed ? STUN_SLUMP : 0);
+    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) + (dazed ? STUN_SLUMP : 0);
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away or pointing up the screen,
     // in the hand otherwise. A body holding the shield or charging has no hand
@@ -491,15 +432,9 @@ function drawPlayer(p, ex, ey, now, stage) {
     // (heroStaffOf, js/draw/heroes.js), a blade is drawn back and then driven at
     // the aim (castBeat), and a key that is a shot holds the weapon on the aim
     // through its wind-up (castAims).
-    const held = p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+    const held = p.shieldT <= 0 && p.rushT <= 0;
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
-    if (held) drawHeldTool(p, px + lx, py + ly + bob, true);
-    // a rider's body stops at the deer's back: the rows from its hip down
-    // are the deer's (riderSeat); what the hands hold is not cut
-    if (seat) {
-      ctx.save();
-      ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
-    }
+    if (held) drawHeldTool(p, px + lx, py + ly, true);
     const a0 = ctx.globalAlpha; // the caller's fade (the pick screen's showcase fading in and out): the weapon keeps it too
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = a0 * 0.45;
     const fade = heroFade(p); if (fade < 1) ctx.globalAlpha = Math.min(ctx.globalAlpha, fade); // a hero hidden by its own kit, as its side sees it (HERO_FADE, js/draw/heroes.js)
@@ -515,9 +450,8 @@ function drawPlayer(p, ex, ey, now, stage) {
       ctx.drawImage(spr, sx, sy);
     }
     heroBodyFx(p, ax, ay, now, true); // ...or over it (his standard facing away)
-    if (seat) ctx.restore();
     ctx.globalAlpha = a0;
-    if (held) drawHeldTool(p, px + lx, py + ly + bob, false);
+    if (held) drawHeldTool(p, px + lx, py + ly, false);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/sim/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
@@ -528,7 +462,6 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.potT > 0) drawPotionHearts(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // a drink at work (js/draw/hitfx.js)
     if (p.lvT > 0) drawLevelUp(p, spr, sx, sy, Math.round(p.x - ex), Math.round(p.y - ey) + 5);
-    if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
   if (layer) litAdd(heroCv, heroAt.x, heroAt.y, HERO_LW >> 1, HERO_FOOT, BODY_REACH, BODY_REACH_UP);
@@ -542,8 +475,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (stage || state.mode === 'title' || endScreen()) return;
 
   // the whole stack hangs off one y
-  const hy = py - heroRise(p) - (zl ? zl + 5 : 0) - // a taller body lifts it; a rider's frame rises with it and clears the handle
-    (p.mount ? MOUNT_BAR_ROWS : 0) - // ...and a deer's rider stands the frame up off the head for the deer's row
+  const hy = py - heroRise(p) - // a taller body lifts it
     (heldCarrying(p) ? HELD_LIFT + HELD_STACK : 0); // ...and a carrier's stands over the stack of the body on its back (heldSeat)
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
@@ -615,16 +547,6 @@ function drawPlayer(p, ex, ey, now, stage) {
       }
       ctx.fillStyle = STAM_COL;
       ctx.fillRect(bx, by, Math.round(14 * frac), 2);
-    }
-    // a deer's rider: the deer's health one row under the stamina, sharing a
-    // frame row with it, in the deer's coat tan (MOUNT_BAR_COL) - in the
-    // side's colour it read as a second copy of the rider's own bar. The
-    // rider's bar above says the side the deer is on while ridden (unitFoe,
-    // js/sim/actions.js); the deer's damage total wears the tan too
-    if (p.mount) {
-      const cx = p.x - ex + FRAME_DX; // the column the rider's own bars hang off
-      drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
-      queueTally(p.mount, Math.round(cx - 7) + 15, Math.round(hy), MOUNT_BAR_COL); // where drawHealthBar puts a total
     }
     // the status plate: what has this body pinned, the mirror of the level
     // badge on the frame's other side (drawStatusPlate, js/draw/overhead.js),

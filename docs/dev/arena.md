@@ -43,7 +43,7 @@ fifteen-minute match is three to five minutes of one core.
 ## Is it the real game?
 
 Yes, by construction and by test. Nothing in the sim is copied or changed: `playMatch` calls the
-game's own `beginDrop` and `update(TICK_DT)`. Wrappers watch without changing anything (`die`
+game's own `beginMatch` and `update(TICK_DT)`. Wrappers watch without changing anything (`die`
 for the kill feed, `hurtEagle` for who last hit a bird, `updateRobot` and `gainGold` for the
 robots' gold).
 

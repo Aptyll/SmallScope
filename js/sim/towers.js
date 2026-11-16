@@ -1,15 +1,13 @@
 'use strict';
-// The road towers: three stone towers on each zipline, stood by the map at
-// boot, each with a great crossbow on its deck; and each cable cut back to
-// its furthest standing tower (drawn by js/draw/towers.js).
-// ------------------------------------------------------------ road towers
-// THE ROAD TOWERS (STRUCTS.tower, structures.js): placeTowers stands three on
-// every cable at boot (a side with a cable per lane gets three a lane) - the OUTER one on the cable's front end, the
-// MIDDLE and INNER ones on the pylons two thirds and a third of the way out (TOWER_AT) - after placeZips and before
-// anything else claims the shoulder, on pure reads like the cable's own
-// pylons, so genWorld and every seed's ground are untouched. A tower is the
-// map's, not a wallet's: `fixed` (nobody upgrades, repairs or pulls it
-// down), owner -1, never on the build wheel. It holds its stretch of road:
+// The towers: two stone towers on each lane a side, stood by the map at boot,
+// each with a great crossbow on its deck (drawn by js/draw/towers.js).
+// ------------------------------------------------------------ towers
+// THE TOWERS (STRUCTS.tower, structures.js): placeTowers stands four a side
+// at boot, two on each lane - the OUTER one on the lane's straight, the INNER
+// one on its bend by the perch (TOWER_SPOTS) - on the lane's centreline, so
+// the waves walk round its foot. A tower is the map's, not a wallet's:
+// `fixed` (nobody upgrades, repairs or pulls it down), owner -1, never on the
+// build wheel. It holds its stretch of lane:
 //
 // THE GUN is a crossbow on a turntable. It turns at TOWER_TRAVERSE onto its
 // mark, WINDS for TOWER_WIND once it is on it - the string coming back is the
@@ -28,15 +26,6 @@
 // A wave walking in under it soaks the bolts, so the heroes with it may hit
 // the tower freely; a hero alone under it is shot, and every bolt in a row
 // into the same hero hits harder (TOWER_HEAT).
-//
-// THE CABLE: each line runs from its bird only as far as its furthest
-// standing tower (o.zl is the line, o.zi its point) - the outer one while it stands, then the middle, then the inner one, then
-// no cable at all (towersSync). Losing a tower shortens your ride and
-// lengthens your walk to the fight. zips[line] is cut IN PLACE from the
-// whole line placeZips laid (zipWhole), so every reader of the cable -
-// the ride, the hover, the bots' worth, the soldiers' boarding, both maps,
-// the draw - reads the cut one and nothing else has to know.
-const TOWER_AT = [0.36, 0.68, 1]; // share of a side's cable, base -> front, the inner, middle and outer tower stand at
 const TOWER_RANGE = 112;        // px from the tower's foot a mark is taken and held inside
 const TOWER_TRAVERSE = 3.2;     // rad/s the gun turns
 const TOWER_LOCK = 0.2;         // rad: inside this of the mark's bearing, it winds
@@ -50,161 +39,25 @@ const TOWER_HEAT_MAX = 2;       // ...up to three times the first
 const TOWER_CALL_T = 1.2;       // s: a rival who hurt one of the side's heroes in the ring this recently is the mark
 const TOWER_GUN_Z = 80;         // px above the foot the gun stands: where a bolt leaves, for the spent bolt's lean
 const TOWER_PIN_T = 4;          // s a spent bolt stands in the snow
-const zipWhole = [];            // [line] -> that cable as placeZips laid it, uncut (a line is its index in zips)
+// RED's two on the top lane, as the 3x2 footprint's top-left tile: the outer
+// on the straight (its middle at field x 54.5, on the centreline), the inner
+// on the bend by the perch. The bottom lane's are these mirrored across the
+// middle row, BLUE's across the middle column (fieldFour), so all eight
+// stand on the lane's centreline. `lane`: which lane each holds (aiRally).
+const TOWER_SPOTS = [[53, 36], [11, 47]];
 
 // where a tower's ring is measured from: the middle of its foot
 function towerFoot(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 6 }; }
 
 function placeTowers() {
-  zipWhole.length = 0;
-  // every cable gets its own three: a side with a cable per lane gets three a lane
-  zips.forEach((z, L) => {
-    if (!z) return;
-    const w = zipWhole[L] = Object.assign({}, z, { pts: z.pts.slice(), cum: z.cum.slice() }); // every field the line carries (team, lane)
-    const n = z.pts.length - 1;
-    for (const f of TOWER_AT) {
-      const i = Math.max(1, Math.min(n, Math.round(n * f)));
-      const o = towerStand(z.team, z.pts[i]);
-      if (!o) continue;
-      o.zl = L; o.zi = i; // the cable and its point it holds: the line is cut here once it is the furthest standing
-      const c = structCenter(o);
-      w.pts[i] = { x: c.x, y: c.y - 4 }; // the cable ties into the tower's wall
-    }
-    w.cum = [0];
-    for (let i = 1; i < w.pts.length; i++) w.cum.push(w.cum[i - 1] + Math.hypot(w.pts[i].x - w.pts[i - 1].x, w.pts[i].y - w.pts[i - 1].y));
-    w.len = w.cum[w.cum.length - 1];
-  });
-  towersSync();
-}
-// THE RUN-OUT: a cable cut at a tower does not end in its wall - it runs on
-// through it, the way the line was going, to a landing on open snow past the
-// tower and a stake there, so the ride lets go clear of the stone and the
-// cable's speed carries the rider on toward the front. Laid once the whole
-// world stands (boot, after every pass that plants a pine), on pure reads.
-// For each tower on a line (o.zi): w.land[i], the point the ride ends on
-// (a body position), and w.stake[i], where the strand is staked into the snow
-// (drawn only: js/draw/zipline.js). A rider already past a tower when the
-// line is cut back to it comes down where it hangs (towersDrop), as before.
-const TOWER_LAND = 40;     // px past the tower's middle the landing is first looked for: clear of its 3x2 foot
-const TOWER_LAND_MAX = 120; // px past it the landing is looked for at most
-const TOWER_LAND_RUN = 24; // px ahead of the landing that must be open too: the hop-off's slide has room
-const TOWER_STAKE = 22;    // px past the landing the strand is staked into the snow
-const TOWER_LAND_BEND = [0, 0.35, -0.35, 0.6, -0.6, 0.85, -0.85]; // rad off the line's own way the run-out may bend, tried in turn
-function towerLandings() {
-  zipWhole.forEach((w, L) => {
-    if (!w) return;
-    w.land = []; w.stake = [];
-    for (const o of structures) {
-      if (o.type !== 'tower' || o.zl !== L) continue;
-      const i = o.zi, c = w.pts[i], nx = w.pts[i + 1] || null, pv = w.pts[i - 1];
-      // the way the line goes on: the next span, or the last span carried on past the front end
-      let dx = nx ? nx.x - c.x : c.x - pv.x, dy = nx ? nx.y - c.y : c.y - pv.y;
-      const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
-      const far = nx ? Math.min(TOWER_LAND_MAX, dl - TOWER_LAND_RUN) : TOWER_LAND_MAX;
-      // straight on first; where the line runs along a treeline (a side lane's
-      // outer verge) the run-out bends off it, a little more each try, to the
-      // open snow beside it
-      // a bend toward the map's middle is tried before one away from it, so
-      // the two sides' mirrored lines bend the same way
-      const C = WORLD * TILE / 2, sg = dx * (C - c.y) - dy * (C - c.x) < 0 ? -1 : 1;
-      for (const a0 of TOWER_LAND_BEND) {
-        const a = a0 * sg, ca = Math.cos(a), sa = Math.sin(a), ux = dx * ca - dy * sa, uy = dx * sa + dy * ca;
-        for (let t = TOWER_LAND; t <= far && !w.land[i]; t += 4) {
-          const x = c.x + ux * t, y = c.y + uy * t;
-          if (!towerLandOk(x, y) || !towerLandOk(x + ux * TOWER_LAND_RUN, y + uy * TOWER_LAND_RUN)) continue;
-          w.land[i] = { x, y };
-          w.stake[i] = { x: x + ux * TOWER_STAKE, y: y + uy * TOWER_STAKE };
-        }
-        if (w.land[i]) break;
-      }
-    }
-    if (zips[L]) zips[L].cut = -1; // cut again, with the run-outs
-  });
-  towersSync();
-}
-// a body standing at (x, y) is on open ground: its feet and the four corners of its round all walkable
-function towerLandOk(x, y) {
-  const fy = y + 4, r = PLAYER_R + 1;
-  if (cisternCrowds(x, y, PLAYER_R)) return false;
-  for (const [ox, oy] of [[0, 0], [-r, -r], [r, -r], [-r, r], [r, r]]) {
-    if (!walkable(Math.floor((x + ox) / TILE), Math.floor((fy + oy) / TILE))) return false;
-  }
-  return true;
-}
-// a tower on the cable's point `at` (a pylon's): the 3x2 footprint nearest
-// it (inside TOWER_SEEK tiles) whose every tile is in the world, clear of
-// the cistern's stone and holding nothing but the pylon or scenery the lane
-// fells - the pylon and the scenery give way. Plain snow first; only if no
-// footprint of snow is near does one take road tiles (never ice, water or a
-// ford). Null if none will stand.
-const TOWER_SEEK = 6;   // tiles from its pylon a tower's footprint is looked for
-const TOWER_CLEAR = 2;  // tiles round a tower (one more in front) the pines give way, so it stands in its own small clearing with its footing whole
-function towerStand(team, at) {
-  const tx0 = Math.floor(at.x / TILE), ty0 = Math.floor((at.y + 4) / TILE);
-  const w = structW('tower'), h = structH('tower'), offs = [];
-  for (let dy = -TOWER_SEEK; dy <= TOWER_SEEK; dy++) for (let dx = -TOWER_SEEK; dx <= TOWER_SEEK; dx++) offs.push([dx, dy]);
-  offs.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1] || a[1] - b[1] || a[0] - b[0]);
-  for (const road of [false, true]) for (const [dx, dy] of offs) {
-    const ax = tx0 + dx - (w >> 1), ay = ty0 + dy - (h - 1);
-    const tiles = footprint('tower', ax, ay);
-    const ok = tiles.every(([x, y]) => {
-      if (!inWorld(x, y) || waterAt(x, y) || cisternTouches(x, y)) return false;
-      const g = ground[idx(x, y)], o = objects[idx(x, y)];
-      return (g === 0 || (road && g === 3)) && (!o || o.type === 'pylon' || laneFells(o));
+  const w = structW('tower'), h = structH('tower');
+  for (const [ax, ay] of TOWER_SPOTS) {
+    fieldFour(ax, ay).forEach(([x, y], k) => {
+      const tx = k % 2 ? x - w : x, ty = k >= 2 ? y - h : y; // a mirrored corner is the far one of its footprint
+      for (const [fx, fy] of footprint('tower', tx, ty)) objects[idx(fx, fy)] = null;
+      const o = createStruct(tx, ty, 'tower', { id: -1, team: k % 2 }, false);
+      o.lane = k >= 2 ? 1 : 0;
     });
-    if (!ok) continue;
-    for (const [x, y] of tiles) objects[idx(x, y)] = null;
-    // the pylon it replaces gives way (the cable ties into the tower), and
-    // so does the lane's scenery round it, TOWER_CLEAR tiles out and more in
-    // front, so no pine stands over the tower's face
-    const pq = objects[idx(tx0, ty0)];
-    if (inWorld(tx0, ty0) && pq && pq.type === 'pylon') objects[idx(tx0, ty0)] = null;
-    const o = createStruct(ax, ay, 'tower', { id: -1, team }, false);
-    for (let y = ay - TOWER_CLEAR; y <= ay + h + TOWER_CLEAR; y++) for (let x = ax - TOWER_CLEAR; x < ax + w + TOWER_CLEAR; x++) {
-      if (towerKeeps(x, y) && objects[idx(x, y)] && laneFells(objects[idx(x, y)])) objects[idx(x, y)] = null;
-    }
-    return o;
-  }
-  return null;
-}
-// whether a tile lies in a tower's clearing: TOWER_CLEAR round its footprint,
-// one more in front. The woods planted after the towers stand (layJungle) keep off it too
-function towerKeeps(tx, ty) {
-  if (!inWorld(tx, ty)) return false;
-  for (const o of structures) {
-    if (o.type !== 'tower') continue;
-    if (tx >= o.tx - TOWER_CLEAR && tx < o.tx + structW(o) + TOWER_CLEAR && ty >= o.ty - TOWER_CLEAR && ty <= o.ty + structH(o) + TOWER_CLEAR) return true;
-  }
-  return false;
-}
-// THE CUT: each cable, from its bird to the furthest standing tower on it,
-// or none. Asked every step by the sim (updateStructures), on every
-// snapshot a client applies (snapApplyTiles) and every frame by the draw
-// (drawZips), since a client never steps the sim - the towers it reads come
-// over the wire with the tiles. In the sim's call
-// (`sim`), a rider past the new end comes down where it hangs (towersDrop).
-function towersSync(sim) {
-  zipWhole.forEach((w, L) => {
-    if (!w) return;
-    let far = -1;
-    for (const o of structures) if (o.type === 'tower' && o.zl === L && o.zi > far) far = o.zi;
-    const z = zips[L];
-    if (far < 0) { zips[L] = null; if (sim) towersDrop(L, -1); return; }
-    if (z && z.cut === far) return;
-    const pts = w.pts.slice(0, far + 1), cum = w.cum.slice(0, far + 1), land = w.land && w.land[far];
-    if (land) { pts.push(land); cum.push(w.cum[far] + Math.hypot(land.x - w.pts[far].x, land.y - w.pts[far].y)); } // on through the tower to its run-out (towerLandings)
-    const len = cum[cum.length - 1];
-    zips[L] = Object.assign({}, w, { pts, cum, len, cut: far, stake: land ? w.stake[far] : null });
-    if (sim) towersDrop(L, w.cum[far]); // past the tower the run-out need not lie on the old line
-  });
-}
-// a cable cut back under its riders: whoever hangs past the new end (all of
-// them when the cable is gone, len -1) comes down where they are, at rest,
-// instead of being carried back to the new end on the next step
-function towersDrop(L, len) {
-  for (const e of [...players, ...robots]) {
-    if (e.zip !== L || e.dead || inAir(e)) continue;
-    if (len < 0 || e.zipD > len) zipEnd(e, true);
   }
 }
 

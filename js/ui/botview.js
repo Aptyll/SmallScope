@@ -130,7 +130,7 @@ function botLogStep(dt) {
   const sample = BOTLOG.sampleT <= 0;
   if (sample) BOTLOG.sampleT += BOTLOG_SAMPLE;
   for (const p of players) {
-    if (!botIsBot(p) || inAir(p)) continue;
+    if (!botIsBot(p)) continue;
     const th = botThought(p);
     let tm = BOTLOG.time.get(p.id);
     if (!tm) BOTLOG.time.set(p.id, tm = {});
@@ -229,7 +229,7 @@ function botViewOk() { return NET.role === 'solo'; }
 function drawBotLines(ex, ey) {
   if (!botView || !botViewOk()) return;
   for (const p of players) {
-    if (!botIsBot(p) || p.dead || inAir(p)) continue;
+    if (!botIsBot(p) || p.dead) continue;
     const th = botThought(p);
     if (!Number.isFinite(th.x) || !Number.isFinite(th.y)) continue;
     const col = botGoalCol(th.goal);
@@ -247,7 +247,7 @@ function drawBotTags() {
   if (!botView || !botViewOk()) return;
   let hd = BOT_HOVER_R;
   for (const p of players) {
-    if (!botIsBot(p) || p.dead || inAir(p)) continue;
+    if (!botIsBot(p) || p.dead) continue;
     const sx = Math.round(wToSX(p.x)), sy = Math.round(wToSY(p.y));
     if (sx < -40 || sy < -20 || sx > VIEW_W + 40 || sy > VIEW_H + 40) continue;
     const d = Math.hypot(mouse.x - sx, mouse.y - sy);
@@ -448,7 +448,7 @@ function botLabPump() {
     if (!botIsBot(p)) continue;
     const th = botThought(p);
     bots.push({ id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, level: botLevel(p), cls: botCls(p), x: Math.round(p.x), y: Math.round(p.y),
-      hp: Math.round(p.hp), maxHp: Math.round(p.maxHp), dead: p.dead, air: inAir(p),
+      hp: Math.round(p.hp), maxHp: Math.round(p.maxHp), dead: p.dead,
       goal: th.goal, why: th.why, guess: th.guess, tx: th.x === null ? null : Math.round(th.x), ty: th.y === null ? null : Math.round(th.y),
       role: th.role, mood: th.mood, plan: th.plan, options: th.options, kills: p.kills, deaths: p.deaths, dmgOut: Math.round(p.dmgOut),
       time: BOTLOG.time.get(p.id) || {} });

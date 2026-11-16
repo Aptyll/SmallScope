@@ -239,8 +239,7 @@ const CHART_DARK = HUD_INK; // the minimap's own dark: every mark's rim on the c
 const CHART_INK_TXT = '#d4d7dc'; // the header's ink
 let chartBuiltAt = -1e9;
 
-function chartGround(i) { // a hole inks as open water, the frozen creek as ice
-  if (cisternTouches(i % WORLD, (i / WORLD) | 0)) return CH_STONE;
+function chartGround(i) { // a hole inks as open water
   const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW;
 }
 function buildWorldMapImg() {
@@ -378,10 +377,6 @@ function renderWorldMap(now) {
 
   const vp = viewPlayer();
   const mx = (x) => MAP_OX + Math.round((x / TILE) * MAP_S), my = (y) => MAP_OY + Math.round((y / TILE) * MAP_S);
-  // the ziplines under everything that moves: each side's cable pylon to
-  // pylon in its ink, the minimap's own line at the chart's scale
-  for (const z of zips) if (z) drawMapZip(ctx, z, mx, my, TEAMS[skin(z.team)].mark);
-
   // the landmarks (the road towers) over their own tiles, under the camps and every body
   drawMapStructs(ctx, (x, y) => [mx(x), my(y)], CHART_DARK, 2);
 
@@ -397,7 +392,7 @@ function renderWorldMap(now) {
     drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
   }
   for (const p of players) {
-    if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
+    if (p === vp || !p.active || p.dead || !fogShown(p, now)) continue;
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
   }
   // the eagles as bird diamonds in team colour: the two roosted objectives,

@@ -131,7 +131,7 @@ function faberCap(L, owner, max, off) {
 function faberWreck(b) {
   let best = null, bd = PART_NEAR;
   for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || CLASSES[q.cls].passive !== 'spareparts') continue;
+    if (!q.active || q.dead || CLASSES[q.cls].passive !== 'spareparts') continue;
     const d = Math.hypot(q.x - b.x, q.y - b.y);
     if (d <= bd) { bd = d; best = q; }
   }
@@ -144,7 +144,7 @@ function updateParts(dt) {
     const w = faberParts[i], p = faberSrc(w);
     w.t += dt;
     if (w.t >= PART_LIFE || !p) { faberParts.splice(i, 1); continue; }
-    if (p.dead || inAir(p) || Math.hypot(p.x - w.x, p.y - w.y) > PART_GRAB) continue;
+    if (p.dead || Math.hypot(p.x - w.x, p.y - w.y) > PART_GRAB) continue;
     for (let k = 0; k < 3; k++) if (p.abCd[k] > 0) p.abCd[k] = Math.max(0, p.abCd[k] - PART_CUT);
     burst(w.x, w.y - 2, '#f2cc6a', 6, 35, 0.35, true);
     sfxAt('pickup', w.x, w.y);

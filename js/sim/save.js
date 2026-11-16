@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 18;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen; 17: the loadout cut; 18: three a side)
+const SAVE_V = 19;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen; 17: the loadout cut; 18: three a side; 19: the two-lane field, the ride, ziplines and deer cut)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -47,6 +47,7 @@ const SAVE_ROOTS = [
   ['arrows', ...saveArr(arrows)],
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
   ['camps', ...saveArr(camps)],
+  ['waves', ...saveArr(waves)], // each lane's soldier waves (js/sim/robots.js)
   ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
   ['orcaSpouts', ...saveArr(orcaSpouts)], // the up orca's throws in the air (js/sim/orca.js)
@@ -72,7 +73,6 @@ const SAVE_ROOTS = [
   ['callouts', ...saveArr(callouts)], // the bot callouts (js/ai/ai-callouts.js)
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v[0]; callSaid[1] = v[1]; }],
   ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }],
-  ['wild', () => [deerBackT], (v) => { deerBackT = v[0]; }],
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
   ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
@@ -351,5 +351,5 @@ function saveBootEnter() {
   saveBootView();
   state.menu.screen = 'menu'; state.menu.panel = null;
   state.fade = { a: 1, to: 0, spd: 1 / 0.6, color: '#04060f', then: null };
-  SFX.music.play(player.aboard ? 'eagle' : 'jump', { in: 0.8 });
+  SFX.music.play('jump', { in: 0.8 });
 }

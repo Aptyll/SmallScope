@@ -18,8 +18,7 @@ function updateMinimap() {
     if (o) {
       const c = objMapColor(o) || MM_UNKNOWN;
       r = c[0]; g = c[1]; b = c[2];
-    } else if (cisternTouches(i % WORLD, (i / WORLD) | 0)) { r = 122; g = 131; b = 153; } // the cistern's stone, a rock's grey
-    else if (ground[i] === 2) { r = 58; g = 92; b = 128; } // open water: a hole
+    } else if (ground[i] === 2) { r = 58; g = 92; b = 128; } // open water: a hole
     else if (ground[i] === 1) { r = 124; g = 182; b = 222; } // ice: a clear blue, apart from the snow and the road (the chart's own)
     else if (ground[i] === 3) { r = 188; g = 168; b = 138; } // the road
     else { r = 205; g = 216; b = 232; } // snow
@@ -141,12 +140,6 @@ function renderMinimap(now) {
   mmViewCtx.globalCompositeOperation = 'destination-in';
   mmViewCtx.drawImage(mmMask(MM_R), 0, 0);
   ctx.drawImage(mmView, MM_CX - MM_R, MM_CY - MM_R);
-  // the ziplines, each a thread in its side's ink along the road's verge
-  // (the chart strokes the same lines): where the fast way out runs
-  const mmIn = (x, y) => Math.hypot(x + 0.5 - MM_CX, y + 0.5 - MM_CY) < MM_R - 1;
-  for (const z of zips) {
-    if (z) drawMapZip(ctx, z, (x) => MM_CX + (x / TILE - ptx) * s, (y) => MM_CY + (y / TILE - pty) * s, TEAMS[skin(z.team)].mark, mmIn);
-  }
   // the landmarks (the road towers) over their own tiles, under every body
   drawMapStructs(ctx, (x, y) => {
     const dx = (x / TILE - ptx) * s, dy = (y / TILE - pty) * s;
@@ -162,7 +155,7 @@ function renderMinimap(now) {
     drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, HUD_INK, 1, true, foeCue(r.team));
   }
   for (const p of players) {
-    if (p === vp || !p.active || p.dead || inAir(p) || !fogShown(p, now)) continue;
+    if (p === vp || !p.active || p.dead || !fogShown(p, now)) continue;
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
     drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, HUD_INK, 1, false, foeCue(p.team));

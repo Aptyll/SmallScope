@@ -63,7 +63,7 @@ function shedStep(dt) {
   if (state.wind < SHED_WIND) return;
   const crest = SHED_CREST * WIND_GUST_PEAK;
   for (const p of players) {
-    if (p.control === 'ai' || p.control === 'none' || !p.active || inAir(p)) continue;
+    if (p.control === 'ai' || p.control === 'none' || !p.active) continue;
     const cx = Math.floor(p.x / TILE), cy = Math.floor(p.y / TILE);
     // a fractional draw rolls for its last tile, so the rate holds at any step length
     let n = SHED_DRAWS * dt;

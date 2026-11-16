@@ -43,11 +43,11 @@ const wikiScroll = {};        // px scrolled per page id
 // the beast cards: kind, name, a line of what it does - every number in it read off the sim's own constants
 const WIKI_BEASTS = [
   { kind: 'rabbit', name: 'beast.rabbit',
-    line: () => tr('beast.rabbitLine', { sight: FLEE_SIGHT.rabbit, cd: RABBIT_DODGE_CD }) },
-  { kind: 'deer', name: 'beast.deer',
-    line: () => tr('beast.deerLine', { sight: FLEE_SIGHT.deer, t: DEER_SPRINT_T, sprint: DEER_SPRINT, run: PREY_RUN.deer }) },
+    line: () => tr('beast.rabbitLine', { sight: FLEE_SIGHT, cd: RABBIT_DODGE_CD }) },
   { kind: 'wolf', name: 'beast.wolf',
     line: () => tr('beast.wolfLine', { n: CAMPS.resource.pop, bite: MONSTER.wolf.bite, lv: MONSTER.wolf.lvBite, back: CAMPS.resource.repop }) },
+  { kind: 'scrap', name: 'beast.scrap',
+    line: () => tr('beast.scrapLine', { n: CAMPS.scrap.pop, bite: MONSTER.scrap.bite, lv: MONSTER.scrap.lvBite, back: CAMPS.scrap.repop }) },
   { kind: 'alpha', name: 'beast.alpha',
     line: () => tr('beast.alphaLine', { out: clockTxt(CAMPS.buff.first), back: clockTxt(CAMPS.buff.repop), lv: MONSTER.alpha.lv, bite: MONSTER.alpha.bite, lvBite: MONSTER.alpha.lvBite,
       gold: EPIC_TEAM_GOLD, t: CAMP_BUFF_EPIC_T, buff: MONSTER.alpha.buff, pct: Math.round(BLACK_STACK_DMG * 100), max: BLACK_STACK_MAX }) },
@@ -146,7 +146,7 @@ const WIKI_PAGES = [
     const b = [];
     b.push({ kind: 'line', h: 9, text: tr('wiki.beastsLine'), col: '#cfe0ff' });
     b.push({ kind: 'line', h: 9, text: tr('wiki.beastsLevel'), col: TIP_DIM });
-    b.push({ kind: 'legend', h: SPRITES.deer.right.idle[0].height + 26 }); // the deer under its frame, as a card's figure
+    b.push({ kind: 'legend', h: SPRITES.wolf.right.idle[0].height + 26 }); // a wolf under its frame, as a card's figure
     b.push({ kind: 'rule', h: 8 });
     // a card is as wide and as tall as its beast standing under its frame
     // (a bear is a 112 px frame), and its line wraps to what is left
@@ -460,19 +460,19 @@ function renderWiki(now, a) {
       for (let px = tx + pixelTextWidth(ab.name) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, y + 8, 1, 1);
       wrapText(ab.blurb, L.right - tx).forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'legend') {
-      // the frame, labelled: one deer, and a leader from each part of the
+      // the frame, labelled: one wolf, and a leader from each part of the
       // frame to what it is. Every beast on the page wears this same frame.
       // Each leader starts a clear pixel off the frame (the plate's left
       // edge, the mark's rim, the bar backing's right wall) and the three on
       // the right fan out - a column of their own each, label rows 10 px
       // apart - so no line crosses a plate, a bar or another line.
       const fx = L.left + 40, base = y + bl.h - 6;
-      const spr = SPRITES.deer.right.idle[0], py = base + 2 - spr.height;
-      drawWikiBeast(WIKI_BEASTS[1], fx, base, level, now);
-      wikiLeader(fx - 17, py - 6, fx - 27, py - 6, tr('tip.level'), '#f2cc6a');
+      const spr = SPRITES.wolf.right.idle[0], py = base + 2 - spr.height, half = beastFrame('wolf').w >> 1;
+      drawWikiBeast(WIKI_BEASTS.find((w) => w.kind === 'wolf'), fx, base, level, now);
+      wikiLeader(fx - half - 6, py - 6, fx - half - 16, py - 6, tr('tip.level'), '#f2cc6a');
       wikiLeader(fx + 4, py - 14, fx + 26, py - 22, tr('wiki.seesYou'), '#f4f7ff');
-      wikiLeader(fx + 11, py - 7, fx + 34, py - 12, tr('wiki.health'), BAR_NEUTRAL);
-      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, tr('wiki.stamina'), STAM_COL);
+      wikiLeader(fx + half, py - 7, fx + 34, py - 12, tr('wiki.health'), BAR_NEUTRAL);
+      wikiLeader(fx + half, py - 4, fx + 42, py - 2, tr('wiki.leash'), THREAT_COL);
     } else if (bl.kind === 'lore') {
       // a WORLD entry: its figures on their mound in the left column, feet a
       // fixed drop under the entry's top, its name in gold and its paragraph

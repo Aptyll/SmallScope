@@ -67,7 +67,7 @@ function pingCmd(p, c) {
 
 // the bots on p's side that hear a ping at (x, y)
 function pingSteer(p, k, x, y) {
-  const mates = players.filter((q) => q !== p && q.active && q.control === 'ai' && q.team === p.team && !q.dead && !inAir(q));
+  const mates = players.filter((q) => q !== p && q.active && q.control === 'ai' && q.team === p.team && !q.dead);
   if (k === 'danger') {
     for (const q of mates) {
       if (q.ai.ping && Math.hypot(q.ai.ping.x - x, q.ai.ping.y - y) < PING_DANGER_R) q.ai.ping = null; // a walk into it is called off

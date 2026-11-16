@@ -5,14 +5,9 @@ A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles, times any h
 (`FOG_SOLDIER`, 7), and its base and lanes see on their own (`sightSources`):
 
 - every standing building with a `sight` in its entry: road towers from their foot
-  (`STRUCTS.tower.sight`, 15 tiles, half again a hero's), bot bays (`STRUCTS.barracks.sight`, 11)
-  and the merchant's stall (`OBJECTS.stall.sight`, 11). One under construction or wrecked sees nothing.
-- the bird while it roosts on the perch (`FOG_PERCH`, 14) and the merchant wherever it works (`FOG_MERCH`, 8).
-- each of the side's own cables: a row of small eyes (`FOG_ZIP` every `FOG_ZIP_STEP` px, `zipEyes`),
-  a band about 2.5 tiles either side. A cable runs only to its furthest standing tower
-  (`towersSync`), so the band shrinks as towers fall. The drawn dim joins the row into a
-  straight-edged band (`fogBand`, js/draw/fog.js) that lies inside the circles; who is seen still asks the eyes.
-  Where any two edges cross, the mask rounds off the dark V between them (`fogJoin`, a smooth max over
+  (`STRUCTS.tower.sight`, 15 tiles, half again a hero's) and the merchant's stall (`OBJECTS.stall.sight`, 11). One under construction or wrecked sees nothing.
+- the bird while it roosts on the perch (`FOG_PERCH`, 14) and the merchant at its stall (`FOG_MERCH`, 8).
+- Where any two circles' edges cross, the mask rounds off the dark V between them (`fogJoin`, a smooth max over
   `FOG_JOIN` px): it lights at most a quarter of that of unseen ground, and shows no body there.
 - a hero's machine (`HERO_MACHINE` `sight`): FABER's machines, and FALCO's hawk while it is out
   on TALONS, which sees `TALON_SIGHT` round itself.
@@ -23,8 +18,7 @@ player, a rival bot and every creature outside the side's sight are not there fo
 the screen, the minimap or the M map, and not seen by its bots. Code: js/sim/fog.js (the rule),
 js/draw/fog.js (the picture).
 
-- **Stone cuts sight**: the cistern's stone (by its distance field, `cisternDist`). A sight line stops where it meets one
-  (`sightReach`); the screen keeps `FOG_FACE` px past that lit so the wall's face shows.
+- **Nothing cuts sight**: every eye is a plain circle.
 - **Pines cast no shadow. The woods are brush instead**: a body standing on a walkable tile with
   `FOG_WOODS_N` pines or more in the 5x5 round it is hidden from a side even inside its circles,
   until one of that side's heroes or soldiers stands within `FOG_BRUSH` px (`woodsHide`).

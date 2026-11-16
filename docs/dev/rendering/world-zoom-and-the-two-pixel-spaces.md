@@ -56,17 +56,16 @@ not stored as a float at all:
 - **The range is authored in rows of world on screen**, not in scale: `ZOOM_OUT_ROWS` (540, the
   whole clearing) and `ZOOM_IN_ROWS` (75, a face), and `ZOOM_MIN`/`ZOOM_MAX` are
   `TARGET_ROWS` over each (0.67 … 4.8 at 360 rows), so a taller frame neither hands out more
-  vision at max-out nor loses the face at max-in. `DROP_ZOOM` is `ZOOM_MIN`.
+  vision at max-out nor loses the face at max-in.
 - **A match opens at `ZOOM_REST` (2)**: every world pixel two canvas pixels, 180 rows of world on
   screen, so the 16 px art reads twice its old size by scale alone (no art was redrawn for it).
   `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3), and re-rungs it from `kWant` itself on
-  a resize, never from `zoomCur`, which a ride or a show may be holding elsewhere. The wheel still
+  a resize, never from `zoomCur`, which a show may be holding elsewhere. The wheel still
   steps out to `ZOOM_MIN`.
 - **The title holds `ZOOM_TITLE`** (`ZOOM_REST`: its ten heroes stand at the size they are played
   at, [main menu](main-menu-title.md)). **The shows hold `ZOOM_SHOW` (1)**, the framing they were
   composed at: the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then ease back to the wheel's
-  zoom. The ride itself runs `DROP_OPEN_ZOOM` → `DROP_ZOOM`, then `dropStoopZoom` walks it in to
-  the wheel's zoom through your bird's stoop, so the landing is never a cut.
+  zoom. A match opens straight on the wheel's zoom.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
   steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
   A display with fewer pixels to spend gets fewer, coarser rungs, which is the honest answer
@@ -90,8 +89,7 @@ clean — every rung is block-uniform at rest.
 Nothing in that path touches the canvas, so it never calls `fitCanvas()`/`relayout()`, and no
 overlay forces the zoom back to base — the fixed-size panels fit at any zoom.
 `applyZoom(0, true)` snaps instead of easing, which is
-what `beginDrop`/`landPlayer` use. The eagle ride forces `DROP_ZOOM` (the max-out view, `ZOOM_OUT_ROWS`
-of world) for as long as mode is `drop`, after its opening shot eases out to it from `DROP_OPEN_ZOOM`; landing returns to whatever the player had set.
+what `matchHandOver` uses.
 `DBG.setK(k, snap)` sets the rung directly, `DBG.setZoom(z, snap)` lands on the nearest rung,
 and `DBG.getZoom()` reports `k`, `devScale`, `exact` and the whole `rungs` ladder. The scroll
 wheel is zoom only (over the minimap it steps the disc's zoom instead).
@@ -122,7 +120,7 @@ spare world px on each axis the shift needs. The cost: a body the camera follows
 world grid while the screen slides under it, so it wanders within half a world px of the centre.
 
 **The air layer** removes that cost where it showed: the eagle the camera rides, and a player on a
-zipline. A bird in flight (`dropFlies`: fly, dive, flee), anyone falling from it and a player on a
+zipline. A bird in flight (`eagleAloft`: fly, dive, flee), anyone falling from it and a player on a
 cable's handle or over the pines on a hero's `over` dash (CLIVUS's vault; held out of the y-sorted pass in `airRiders`, so whoever that pass would not show
 stays hidden) draw into `airCv` (js/app/canvas.js) off the **exact** camera, and the layer is blitted
 over the world with no shift, so the body holds still on the screen while the ground slides under

@@ -17,11 +17,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   [Light and weather](light-and-weather.md). Sites: floaters (damage numbers, gold, `LEVEL n`),
   the overhead name tags, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
   Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
-  the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse. The one
-  exception is **a wing of riders** (`seatedName`: the riders seated on a bird; in flight only your own name rides it), queued
-  through `drawNameTag` - the same queue, marked as a tag: before stamping, `settleNameTags` keeps
-  the lowest tag on screen where it is and climbs any tag that would touch a placed one until it
-  clears (`TAG_GAP`, at most `TAG_CLIMB` climbs).
+  the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse.
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
   counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`

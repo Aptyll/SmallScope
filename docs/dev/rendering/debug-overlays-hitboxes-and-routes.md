@@ -12,9 +12,7 @@ screen's world is live and a spectated match is someone else's feet:
 | `2` | bodies (tile boxes, unit circles, projectile points) plus the route every walker is following |
 
 Colour carries the kind, so there is nothing to label: **cyan** a wall to everyone (`isSolidTile`,
-so a multi-tile building boxes each of its footprint tiles; the cistern's stone, held by the pixel,
-is its footprint's edge px instead, with a green ring round the feet of each body near it:
-`drawCisternHitbox`), **blue** open water — a wall to
+so a multi-tile building boxes each of its footprint tiles), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
 an arrow is tested against (on a standing building, the box of its drawn art — `structShotBox`, past the cyan footprint wherever the art stands past it), **gold** a projectile

@@ -12,8 +12,7 @@ your own marker cross it. Consequences worth knowing:
 
 - The replay ring keeps recording (`replayLive`) — the capture point is above the map's dim, so
   the banked frames are clean world frames. `replayShowing` still hides the *window* under the panel.
-- Dying with the map open is possible; `endMatch` clears `state.mapOpen`, and M only toggles in `play` and `drop` modes (mid-flight it is the ride's
-  wide read; `landPlayer` closes it at touchdown), so the chart cannot survive into the death
+- Dying with the map open is possible; `endMatch` clears `state.mapOpen`, and M only toggles in `play`, so the chart cannot survive into the death
   overlay.
 - The world keeps the zoom you were playing at. The slab is UI and fits the view whatever the
   zoom (`fitMapSlab`, js/app/canvas.js: the chart takes the rows the view gives it, 96 up to

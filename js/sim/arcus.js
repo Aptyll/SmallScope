@@ -162,7 +162,7 @@ function arcusDeal(p, e, dmg, o) {
 function arcusTick(p, dt) {
   if (p.arcT > 0 && (p.arcT -= dt) <= 0) p.arcN = 0;
   if (p.twinT > 0) p.twinT = Math.max(0, p.twinT - dt);
-  if (!p.active || p.dead || inAir(p)) return;
+  if (!p.active || p.dead) return;
   for (let i = arcusShafts.length - 1; i >= 0; i--) {
     const s = arcusShafts[i];
     if (s.owner !== p.id || s.team !== p.team || Math.hypot(s.x - p.x, s.y - p.y) > SHAFT_PICK_R) continue;

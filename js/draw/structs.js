@@ -64,7 +64,7 @@ function drawPumpRings(ex, ey) {
 
 // a building's still sprite: its own `sprite(o)` when its entry has one (a
 // pump wears its holder's paint, not an owner's), else its owner's team set,
-// under its type's name or the grid it wears (`art`: the barracks)
+// under its type's name or the grid it wears (`art`)
 function structSprite(o) {
   const S = STRUCTS[o.type];
   if (S.sprite) return S.sprite(o);

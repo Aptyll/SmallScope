@@ -213,7 +213,7 @@ function netInClean(m) {
   const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
-    work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
+    work: !!m.work, slide: !!m.slide, dodge: !!m.dodge,
     atk: netAtkIn(m.atk), // the mark as the host's own entity, or none
     ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
@@ -228,7 +228,7 @@ function netAtkIn(k) {
   return t && (atkIsStruct(t) || atkIsEagle(t) || players.includes(t) || robots.includes(t) || animals.includes(t)) ? t : null;
 }
 function netInEdges(i, m) {
-  i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
+  i.dodge = i.dodge || m.dodge;
   if (m.ability >= 0) i.ability = m.ability;
   if (m.useItem >= 0) i.useItem = m.useItem;
   if (m.cmd) i.cmd = m.cmd;
@@ -476,11 +476,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
+    i.dodge = false; i.ability = -1; i.useItem = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();
@@ -533,7 +533,7 @@ function netClientStep(dt) {
 // runs, so a client reads the same facts off its own body as the snapshots
 // move it: earned is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match starts at takeoff
-// (beginDrop's two, which a client never calls). A redial
+// (beginMatch's two, which a client never calls). A redial
 // keeps the baseline, so what was earned while the socket was down still counts.
 function netClientStats() {
   const me = player;
@@ -691,7 +691,7 @@ function netClientLerp() {
   ease(orca);
 }
 // which screen this state calls for, from the local player's own body: the
-// ride while aboard or falling, the death overlay while down, play otherwise,
+// death overlay while down, play otherwise,
 // and the match's end read from the host's verdict turned to our side
 function netClientMode() {
   const me = player;
@@ -704,24 +704,12 @@ function netClientMode() {
     return;
   }
   if (state.over === 'won' || state.over === 'lost') return;
-  // seated on a bird that has come down, or leaping off it: play begins on
-  // the roost, as the host's landAboard does - the leap is the landing's,
-  // never a return to the ride
-  if ((me.aboard || me.dropT > 0) && state.drop.eagles[me.team].state === 'down') {
-    if (state.mode === 'drop') { handOver(me); SFX.music.play('jump', { out: 0.1, in: 0.05 }); }
-    return;
-  }
-  if (me.aboard || me.dropT > 0) {
-    if (state.mode !== 'drop') { state.mode = 'drop'; state.menu.panel = null; state.menu.screen = 'menu'; applyZoom(0, true); }
-    return;
-  }
   if (me.dead) {
     if (state.mode !== 'dead') endMatch(me.eliminated ? 'lost' : 'respawning');
     return;
   }
-  if (state.mode === 'drop') { handOver(me); return; }
   if (state.mode === 'dead') { state.over = null; state.mode = 'play'; state.spec = -1; state.introFrom = { x: camX, y: camY }; state.intro = HUD_IN_T; state.introLen = HUD_IN_T; return; }
-  if (state.mode === 'title') { state.mode = 'play'; state.menu.panel = null; state.menu.screen = 'menu'; }
+  if (state.mode === 'title') matchHandOver(me);
 }
 
 // ------------------------------------------------------------ prediction
@@ -735,10 +723,9 @@ function netClientMode() {
 // where we were drawn is not snapped: it is carried as an offset the next
 // steps bleed off, so a correction reads as a nudge.
 // Only the walk is predicted: anything else that owns a body's motion (a
-// roll, a rush, the rope, a leap, the cable, the water, a stun, a ride, the
-// drop) or any harm is the host's alone, and while one of those holds the
+// roll, a rush, the rope, the water, a stun) or any harm is the host's alone, and while one of those holds the
 // body is eased like every other (netClientLerp).
-const PRED_FIELDS = ['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'sliding', 'slideT', 'moving', 'lastMx', 'lastMy', 'dir'];
+const PRED_FIELDS = ['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'sliding', 'slideT', 'moving', 'dir'];
 const PRED_KEEP = 120;   // inputs remembered: 2 s of steps. A replay that would reach past them is not tried
 const PRED_EASE = 0.1;   // s: the time constant a correction bleeds off over
 const PRED_SNAP = 48;    // px: a correction this big is a teleport, not a nudge - taken at once
@@ -746,12 +733,12 @@ const PRED = { on: false, hist: [], srv: null, ox: 0, oy: 0 };
 // may this body walk ahead of the host: on its feet, in play, nothing else
 // moving it. Read off the host's word, never off the prediction
 function netPredictable(p) {
-  return state.mode === 'play' && !p.dead && !inAir(p) && !p.mount && !p.zipWalk && p.zip < 0 &&
-    p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0 && p.leapT <= 0;
+  return state.mode === 'play' && !p.dead &&
+    p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0;
 }
 // one step of the walk, as updatePlayer takes it, on our own body
 function netPredictWalk(p, inp, dt) {
-  const hd = walkHeading(p, inp.mx, inp.my, false);
+  const hd = walkHeading(p, inp.mx, inp.my);
   kbDecay(p, dt);
   const slick = slickUnder(p), kit = kitOf(p);
   walkSlide(p, inp.slide, dt, slick, kit);

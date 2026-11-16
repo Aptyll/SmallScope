@@ -1,85 +1,13 @@
 'use strict';
-// The map's own buildings and what they roll out: the barracks bay and its
-// soldiers, the merchant's stall and fire. The
+// The map's own buildings and what walks out of the perch: the wave's
+// soldiers (and the scrap pile's strays), the merchant's stall and fire. The
 // gold pump and the road tower are each their own file, both baked
 // after this one (js/baked/pump.js, js/baked/tower.js) into the same
 // teamBuild sets.
 (() => {
-  const { bake, TEAM_SKINS } = SPR;
+  const { bake, bakeClips, mapClips, flipH, TEAM_SKINS } = SPR;
 
-  // ---------------------------------------------------------------- barracks bay
-  // The barracks' art (STRUCTS.barracks, art: 'spawner'): a 48x38 bot garage on a 3x2 tile footprint
-  // w/h), drawn with its snow skirt on the footprint's bottom edge. Steel
-  // plate walls under a full load of snow on the roof (humped, rimmed in the snow's own blue so it stands off the snow behind it, hanging over the eave in places) and a low mound of drift at the foot of the left wall, the side the map's prevailing wind blows from (driftWind, js/sim/depth.js),
-  // a team-painted lintel band (L/T/t) above a 20px-wide bay with a dark
-  // interior and a lit floor lip (doorway cols 14-33, rows 13-35, floor row 36), riveted flanks with a vent grille and a
-  // hazard stripe, the mouth open to the ground. One tier -
-  // bayTeamPal only paints the band.
-  const BAYPAL = {
-    '.': null,
-    'o': '#1c2130', // outline
-    'S': '#f4f7fc', // snow
-    's': '#dce5f0', // snow shade
-    'z': '#b9c9db', // snow edge / icicle
-    'Z': '#8fa6c4', // the roof load's and the drift's own rim, against the snow behind
-    'P': '#b9c1cd', // plate light
-    'p': '#98a1b0', // plate
-    'q': '#7d8696', // plate shade
-    'n': '#5b6473', // seam
-    'r': '#d3d9e2', // rivet
-    'g': '#3f4755', // grille slot
-    'k': '#2c3340', // bay wall
-    'K': '#1b202a', // bay deep
-    'f': '#3b4150', // bay floor
-    'F': '#6c7486', // floor lip
-    'y': '#e0b83f', // hazard yellow
-    'Y': '#2a2f3a', // hazard dark
-    'L': '#df7358', // team light
-    'T': '#c9524e', // team
-    't': '#96393f', // team dark
-    'w': '#c9dcee', // snow skirt
-  };
-  const bay = [
-    '.............ZZZZZZZ...............ZZZZZZZ......',
-    '.....ZZZZZZZZSSSSSSSZZZZ.....ZZZZZZSSSSSSSZZ....',
-    '..ZZZSSSSSSSSSSSSSSSSSSSZZZZZSSSSSSSSSSSSSSSZZ..',
-    '.ZSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsssssssssssssssZ.',
-    '.ZssssssssssssssssssssssssssssssssssssssssssssZ.',
-    '.ZoooosssoooooooossooooooossooooosooooosssooooZ.',
-    '..opLLzszLLLLLLLLzzLLLLLLLszLLLLLzLLLLLzszLLpo..',
-    '..opTTTzTTTTTTTTTTTTTTTTTTzTTTTTTTTTTTTTzTTTpo..',
-    '..opTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTpo..',
-    '..opTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTpo..',
-    '..opttttttttttttttttttttttttttttttttttttttttpo..',
-    '..onnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnno..',
-    '..oPPPPPPPPPPooooooooooooooooooooooPPPPPPPPPPo..',
-    '..orpppppppproKKKKKKKKKKKKKKKKKKKKorqqqqqqqqro..',
-    '..oppppppppppoKKKKKKKKKKKKKKKKKKKKoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppggggggppokkkkkkKkkkkkkKkkkkkkoqqggggggqqo..',
-    '..oppnnnnnnppokkkkkkKkkkkkkKkkkkkkoqqnnnnnnqqo..',
-    '..oppggggggppokkkkkkKkkkkkkKkkkkkkoqqggggggqqo..',
-    '..oppnnnnnnppokkkkkkKkkkkkkKkkkkkkoqqnnnnnnqqo..',
-    '..oppggggggppokkkkkkKkkkkkkKkkkkkkoqqggggggqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..opnnnnnnnnpokkkkkkKkkkkkkKkkkkkkoqnnnnnnnnqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oppppppppppokkkkkkKkkkkkkKkkkkkkoqqqqqqqqqqo..',
-    '..oyyYYyyYYyyokkkkkkKkkkkkkKkkkkkkoyyYYyyYYyyo..',
-    '..oyYYyyYYyyYokkkkkkKkkkkkkKkkkkkkoyYYyyYYyyYo..',
-    '..oYYyyYYyyYYoKKKKKKKKKKKKKKKKKKKKoYYyyYYyyYYo..',
-    '..oYyyYYyyYYyoFFFFFFFFFFFFFFFFFFFFoYyyYYyyYYyo..',
-    '..ZZZZpppppppoffffffffffffffffffffoqqqqqqqqqqo..',
-    '.ZSSSSZZpppprofffffffffffffffffffforqqqqqqqqro..',
-    'ZSSSSsssZooooffffffffffffffffffffffooooooooooo..',
-    'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..',
-  ];
-
+  // ---------------------------------------------------------------- soldiers
   // Soldier: a boxy chassis sitting straight on one full-width tread, stub
   // arms at the sides, no face. One 12x10 grid, two frames (the tread notches
   // shift so it rolls); drawRobot() bobs the whole sprite so body and tread
@@ -234,18 +162,22 @@
     l: '#f2cc6a', L: '#fff2b0' };
   const stallPal = (t) => Object.assign({}, STALLPAL, { y: t.coat, Y: t.coatL, t: t.coatD });
 
-  const bayTeamPal = (t) => Object.assign({}, BAYPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamRobotPal = (t) => Object.assign({}, BOTPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamBuild = [], teamRobots = [];
   SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
     teamBuild[i] = {
-      spawner: bake(bay, bayTeamPal(t)),
       stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
     };
     teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];
   }));
 
+  // THE SCRAP PILE's stray robots (CAMPS.scrap, js/sim/camps.js): PLACEHOLDER
+  // art, a wave's chassis in a rusted no-side paint, until their own look is drawn
+  const SCRAPPAL = Object.assign({}, BOTPAL, { L: '#c98a52', T: '#9a5f36', t: '#6b3f24' });
+  const scrapSet = bakeClips({ idle: [botA], run: [botA, botB] }, SCRAPPAL);
+
   Object.assign(SPRITES, {
+    scrap: { right: scrapSet, left: mapClips(scrapSet, flipH) },
     teamBuild: teamBuild,
     robotTeam: teamRobots,
     robot: teamRobots[0],

@@ -343,7 +343,7 @@
     stats() { return profile.stats; },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
-    addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)
+    addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginMatch)
     addKill() { this.stats().kills++; scheduleSave(); },    // a rival the local player downed (die, js/sim/player.js)
     addDeath() { this.stats().deaths++; scheduleSave(); },  // the local player downed
 

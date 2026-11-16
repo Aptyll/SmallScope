@@ -46,7 +46,7 @@ function sightFirst(p, x0, y0, nx, ny, L, now) {
     const t = (u.x - x0) * nx + (u.y - 6 - y0) * ny;
     if (t > 8 && t < bt && Math.abs((u.x - x0) * ny - (u.y - 6 - y0) * nx) < SG_SIGHT_R) { bt = t; best = u; }
   };
-  for (const u of players) if (u.active && !inAir(u)) look(u);
+  for (const u of players) if (u.active) look(u);
   for (const u of animals) look(u);
   for (const u of robots) look(u);
   return best;

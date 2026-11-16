@@ -17,7 +17,7 @@ defineBot({
 
   think(obs) {
     const me = obs.me;
-    if (me.dead || me.aboard) return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } };
+    if (me.dead) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
 
     // a free skill point: spend it on the lowest key (ability on a key with a

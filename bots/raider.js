@@ -15,7 +15,7 @@ defineBot({
   think(obs) {
     const me = obs.me;
     this.n++;
-    if (me.dead || me.aboard || me.falling) { this.waitT = me.dead ? 8 : 0; return { think: { goal: 'IDLE', why: me.dead ? 'DOWN' : 'RIDING' } }; }
+    if (me.dead) { this.waitT = 8; return { think: { goal: 'IDLE', why: 'DOWN' } }; }
     const act = {};
     const dist = (o) => Math.hypot(o.x - me.x, o.y - me.y);
 
@@ -56,7 +56,7 @@ defineBot({
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     if (this.waitT > 0 && own) {
       this.waitT -= 0.1;
-      const buddy = obs.allies.some((a) => !a.dead && !a.aboard && Math.hypot(a.x - me.x, a.y - me.y) < 140);
+      const buddy = obs.allies.some((a) => !a.dead && Math.hypot(a.x - me.x, a.y - me.y) < 140);
       if (!buddy) {
         const m = own.mouth || own;
         act.goTo = { x: m.x, y: m.y };

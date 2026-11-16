@@ -119,7 +119,7 @@ function aiLaneSpot(p) {
 // than h (AI_BRUSH_FWD), so the wait is an ambush on its own ground, never a
 // walk forward; h itself with none
 function aiBrushWait(p, h) {
-  const c = baseCentre(p.team), hx = (c.tx + 0.5) * TILE, hy = (c.ty + 0.5) * TILE;
+  const c = basePerch(p.team), hx = c.x * TILE, hy = c.y * TILE;
   const reach = Math.hypot(h.x - hx, h.y - hy) + AI_BRUSH_FWD;
   return brushNear(h.x, h.y, AI_BRUSH_R, (x, y) => Math.hypot(x - hx, y - hy) <= reach) || h;
 }
@@ -142,11 +142,11 @@ function aiDenSpot(p) {
     const left = campLeft(C, p.team);
     if (!left && campEmpty(C, p.team)) continue; // found empty, time unknown: not worth the walk
     if (!left) { if (d < ud) { ud = d; up = { x: cx, y: cy, d, wait: false }; } continue; }
-    const t = Math.max(left, aiWalkT(p, d));
+    const t = Math.max(left, d / statOf(p, 'ms'));
     if (t < nt) { nt = t; next = { x: cx, y: cy, d, wait: true, left }; }
   }
   if (up) return up;
-  if (!next || next.left - aiWalkT(p, next.d) > AI_DEN_EARLY) return null;
+  if (!next || next.left - next.d / statOf(p, 'ms') > AI_DEN_EARLY) return null;
   // outside the den's ground, on p's side of it: standing in it holds the clock
   const ux = p.x - next.x, uy = p.y - next.y, d = Math.hypot(ux, uy) || 1;
   return { x: next.x + ux / d * (CAMP_HOLD + 16), y: next.y + uy / d * (CAMP_HOLD + 16), wait: true, d };

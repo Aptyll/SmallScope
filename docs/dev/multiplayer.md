@@ -5,9 +5,9 @@ fills, and a human on another screen ([Online play](#online-play)) — is a `Pla
 all run the same code. Read this before adding an ability, an input, or anything a player can do
 to the world.
 
-## The ten players
+## The six players
 
-`MAX_PLAYERS` (10) players are created once at boot by `initPlayers()`. Each player is one of:
+`MAX_PLAYERS` (6) players are created once at boot by `initPlayers()`. Each player is one of:
 
 - `control: 'human'` — driven by this screen's keyboard and mouse. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
@@ -41,9 +41,8 @@ dodge charges, slide state, swing state, held tool, i-frames, footprint cadence 
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
 wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
 [architecture.md](architecture.md#profilejs)), `skins` (the look its person wears on each hero,
-[Classes](#classes)), `spawn` (the tile it landed
-on from the eagle), `aboard`/`dropT`
-(the eagle ride, see [Eagle drop](rendering/eagle-drop-mode-drop.md)), its own `gold` wallet and
+[Classes](#classes)), `spawn` (the tile it starts
+on, out from its perch: [where players start](#where-players-start)), its own `gold` wallet and
 `potions`/`potT` (the stack and the running drink, [Heals](gameplay/heals.md)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `earned` (the match's gold earned), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
@@ -68,11 +67,6 @@ atk           the attack's MARK: a rival body, a rival building or the rival
 work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered (read at the top of updatePlay's player loop,
-              before the air skips the body): on the ground the zipline's: clip on under any side's cable,
-              let go while riding, or - out of reach with the aim on a
-              cable as drawn - the walk there that clips on (zipToggle,
-              js/sim/world.js; E sets it there)
 useItem       edge-triggered, -1 or an item slot (0-5): that slot's key or a click
               on its well - drinks a health potion (useItem, js/sim/items.js;
               see Heals in gameplay.md)
@@ -192,12 +186,7 @@ bot fills, once per step from `sampleHumanInput`.
 - **A right press on open ground walks there by route** (`navTo`, the bots' own walker, so the
   same feet go round the same trees); a route that fails drops the order, per the pathfinding
   rule. Holding the button drags the goal under the pointer (`ck.follow`). A right press on the
-  chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
-  it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
-  jump, with the same rule the jump key has. Riding a zipline it lets go; standing under either
-  side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on,
-  or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
-  any order of your own; a press anywhere else is the walk it always was).
+  chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). 
 - **On a tree, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant it is a walk
   into reach and the counter opening as a panel (`ckUse`).
@@ -377,8 +366,7 @@ A team colour drives both **characters** and **buildings**:
 - `SPRITES.teamBuild[team][type][tier]` — the tier material (wood → stone → gold) with the iron
   fittings and glow repainted in team colour, so tier still reads as tier. `structSprite(o)` is the
   lookup; it falls back to team 0 for an object with no `team`.
-- `SPRITES.robotTeam[team]` — soldiers wear their side's colour, and the barracks is one
-  palette per team (`bayTeamPal`: its lintel band).
+- `SPRITES.robotTeam[team]` — soldiers wear their side's colour.
 
 Structures carry `owner` (player id) and `team`, set by `createStruct()`. Ownership is the
 **team's**: `ownsStruct(o, p)` (`o.team === p.team`, or no team at all) keeps E from swinging at
@@ -402,8 +390,7 @@ rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, sr
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
 shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
 FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
-line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
-riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
+line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it.
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
@@ -426,7 +413,7 @@ branch (the roost tiles are `eagle` objects, a rival-only work target — `workT
 treeline while every camera pans to watch (`state.eagleCine`, the driven-off ceremony), and
 `EAGLE_CINE_T` later `eagleFleeResolve` takes the whole owning side out of the match (see
 [Death and respawn](gameplay/death-and-respawn.md) and the eagle-drop section in
-[rendering.md](rendering/eagle-drop-mode-drop.md)). Friendly arrows pass over it; a friendly
+[rendering.md](rendering/the-perch.md)). Friendly arrows pass over it; a friendly
 swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes it rear
 (wings spread for `GUST_WIND_T` — the telegraph) and **gust**, throwing every rival in
 `GUST_BLAST_R` into a `GUST_STUN` tumble with no damage — the trigger resolves through
@@ -588,8 +575,8 @@ its own clock). A relentless side **never gives ground**: a bow crowded under 50
 circles in instead of backing off, a blocked line is routed in through the open at any range, a
 camp on it is fought where it stands, and it keeps no guard; after its
 `push.t` **everyone** goes (`push.n` 99) — and goes as a **pack**: off the rival's lane the
-pushers rally at their own zipline's end, the last fast ground before the fight, until `AI_PACK`
-(5) of the side's living bots are within `AI_PACK_R` (200 px) of it, then each is committed
+pushers rally at the middle of the lane the side pushes (`aiRally`, js/ai/ai-team.js) until `AI_PACK`
+(3) of the side's living bots are within `AI_PACK_R` (200 px) of it, then each is committed
 (`ai.packGo`, cleared only by a death or a recall) and goes on however the others fare, so a
 respawn rides straight back to the rally and the roost is hit by a wave of them every time
 rather than one body at a time into the guns. On the push it **charges**: only what closes to
@@ -795,15 +782,13 @@ The ladder:
    soldier within 1.5 × `AI_WAVE_R` of it, nor more than 2 × `AI_WAVE_R` further from the rival
    bird than the pusher is) rather than ahead of it alone, closing to `AI_WAVE_R`
    of it and going on from there; with no column out it **regroups**: the side's pushers meet at
-   the same rally as a relentless pack (their zipline's end) until `AI_REGROUP` (2) are there,
+   the same rally as a relentless pack (`aiRally`) until `AI_REGROUP` (2) are there,
    or one has waited `AI_REGROUP_T` (15 s), then go on committed (`ai.packGo`). On the way a
    pusher leaves the rival wave to its own: a rival soldier is fought only inside `AI_SIEGE_R`,
    unless its own bird is threatened and it is near home. (A relentless
    side skips the column and waits for its whole pack instead — the profile, above.)
-   The walk is `aiToRoost`: the roost sits at the back of its [base](world.md#the-bases)'s
-   hollow, at the end of the road, so off the road the route is road → `aiLaneGate` (`AI_GATE` px
-   up the road from the junction, toward the field) → junction (`e.mouth`) → the road through the
-   hollow → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
+   The walk is `aiToRoost`: straight for the bird on its [perch](world.md#the-bases), on a bigger
+   pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
    way in, a rival
@@ -849,7 +834,7 @@ The ladder:
 
 **The two birds.** `aiSituation()` (the `the two birds` sub-banner) is what every bot knows
 about the objective, both sides of it, all match — read once per sim step (cached on
-`state.tick`) and shared by all ten players: for each roosting bird its position, its nerve as a
+`state.tick`) and shared by all six players: for each roosting bird its position, its nerve as a
 fraction of `EAGLE_HP`, how long since it was last hit, and who is **at** it inside `AI_ROOST_R`
 (240 px) — `defenders` (its own side) and `attackers` (rivals, each resolved through `seenAt` —
 plus a rival **wave** at the roost counted at half
@@ -863,18 +848,7 @@ map's eagle marks and the bird's nerve bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
 ([gameplay.md](gameplay/pathfinding.md)) — it routes around trees, buildings and water,
-and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
-the zipline** ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)) the way a hand does, through the same hop
-intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
-any cable (the best of them: a side has one down each lane), riding to the point nearest the goal and walking the rest beat the feet by
-`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/sim/zipline.js — the nearest point of
-the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
-the cable toward the exit while it rides (the goal re-read every think, so a rider called home
-mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
-A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
-never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
-rides past an enemy holding the handle (roost to the map's centre is about 12.5 s by the cable against
-23 s on foot). The -1, not a
+and returns **-1 when there is no route** (or the bot has been pinned for a while). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
@@ -885,7 +859,7 @@ extend the ladder — a goal that is never dropped is a bot that stands still fo
 **Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser (a seed varies the match's stream on the one map), one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[1]` (NORMAL) for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
-`sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
+`sampleHumanInput`, `DBG.beginMatch()`, then step the sim at its own `TICK_DT` (1/60 —
 `DBG.step(dt, n)` runs `n` steps and one render; the bots' strafe and work clocks count ticks, so
 any other `dt` plays a different bot) in a loop until
 `teamInMatch` fails for a side (`state.elapsed` pauses while
@@ -983,14 +957,9 @@ what the rest of the code needs to know is this:
 
 ## Where players start
 
-Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()`. Each
-bird flies a short fixed line in over its own corner (`EAGLE_FLIGHT_T`, 2.5 s), RED's the
-bottom-left and BLUE's the top-right, and roosts on its [base](world.md#the-bases)'s perch with
-the whole side on its back. The whole crew, bots and humans alike, leaps off together a beat
-after the impact ([the arrival](rendering/eagle-drop-mode-drop.md)), with no key to press. Each rider's `spawn` comes
-from `landPlayer()`, the nearest open tile to where its leap came down, and that tile is what the
-bot brain treats as "home". There are no spawn pockets, no starter rings, and no guaranteed
-resources near a landing. `ringPts` (six points on a ring
-`SPAWN_D` tiles from the centre — `RING_N` is frozen at 6, decoupled from the player count) is the
-old camp ring, kept only because river spokes and the keep-clear rules in `genWorld()` are built
-on it.
+Out from their own perch: `beginMatch()` (js/sim/eagle.js) stands every active player on the
+nearest open tile `RESPAWN_OUT` px out from its side's perch toward the field (`e.laneDir`),
+spread `START_SPREAD` px apart across the line, and that tile (`spawn`) is what the bot brain
+treats as "home". There is no flight in, no landing and no key to press; the match is `play` from
+the first frame ([the perch](rendering/the-perch.md)). There are no spawn pockets, no starter
+rings, and no guaranteed resources near a start.

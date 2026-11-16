@@ -45,12 +45,6 @@ frames LOADED, LOOSED, WINDING, WOUND) and the deck's front parapet (`towerFront
 paint is `k`/`K`/`e`/`E` (fit, coatD, coat, coatL), baked inside `SPR.onTeams`. `drawTowerTop`
 (js/draw/towers.js) lays the gun and the parapet; the bolt in flight is `towerBolt[heading]`.
 
-The **barracks** wears the bay grid (`STRUCTS.barracks.art` is `'spawner'`): a single-tier 48×38
-grid (`bay`, `BAYPAL`) on a 3×2 tile footprint — steel plates under a humped load of snow that hangs over the eave, a drift against the left (windward) wall, a
-team-painted lintel band (`L`/`T`/`t` via `bayTeamPal`), riveted flanks with a grille and hazard
-stripe, and a 20-px dark doorway (cols 14–33, rows 13–35, floor row 36 — `drawBarracksOverlay` in
-js/draw/overhead.js clips to it), baked as `teamBuild[team].spawner`.
-
 A soldier is one 12×10 grid on `BOTPAL` (`botA`/`botB`: a faceless boxy chassis with
 stub arms sitting on a single full-width tread, the two frames differing only in the tread
 notches). The body chars `L`/`T`/`t` are the team paint (`teamRobotPal` → `coatL`/`coat`/`coatD`),
@@ -541,7 +535,7 @@ rounding thresholds at different heights, so 21 of the 24 frames are distinct pi
 
 Every frame being the same tree, each atlas row holds **forty-eight**: the 24 again, mirrored, with
 the tile's `hash2` sending half the forest into them. `TPAL` above it stays: it still dresses the
-`stumps` a felled pine leaves (three cuts, picked by `stumpLook`, js/draw/footings.js, each standing up to `STUMP_SCATTER` px off its tile's middle so a felled stand has no grid; round a roost also a stump drifted under, two broken trunks lying, some not drawn (`STUMP_GONE`), and none under the roost's paving, `STUMP_LAIN`/`STUMP_BURIED`/`STUMP_THIN`; a knot of felled pines on a lane's shelf or in a glade leaves at most one trunk lying, `cut` 2).
+`stumps` a felled pine leaves (three cuts, picked by `stumpLook`, js/draw/footings.js, each standing up to `STUMP_SCATTER` px off its tile's middle so a felled stand has no grid; none stands on the 3v3 field, where no pine falls).
 
 **No pine draws in `TSPAL` as is: it is the source of twelve palettes** (`treePals`), one atlas row
 each for each height (row = size × 12 + variant × 4 + tone), filtered in OKLCH at bake time rather than drawn. The drawn pine

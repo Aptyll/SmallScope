@@ -10,7 +10,7 @@ defineBot({
 
   think(obs) {
     const me = obs.me;
-    if (me.dead || me.aboard) return { think: { goal: 'IDLE', why: 'DOWN' } };
+    if (me.dead) return { think: { goal: 'IDLE', why: 'DOWN' } };
     const act = {};
     if (me.skillPts > 0) act.ability = me.abilities.reduce((b, a) => (a.lv < b.lv ? a : b)).key;
     else if (obs.shop && me.items.includes(null)) { const can = obs.shop.filter((s) => !s.stack && s.price <= me.gold).sort((a, b) => b.price - a.price); if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id }; }

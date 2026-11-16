@@ -11,7 +11,7 @@ Every hero is the same seven League-style numbers, all in js/sim/stats.js (`STAT
 | ARMOR | `armor` | `damagePlayer` cuts every hit to `100 / (100 + armor)`, never under 1 (`armorTaken`, which sees 30% less of it against a PIERCE striker, `itemPierce`; `armorRaw` its inverse, for `orcaLethal`) | 24, +2.9 | 9, +1.6 |
 | ABILITY POWER | `ap` | each ability adds `ap ×` its entry's `ap` ratio (`abAp`/`abDmg`, js/sim/abilities.js) | 0 | 0 |
 | COOLDOWN SPEED | `haste` | `abCdOf` runs `100 / (100 + haste)` as long (`hasteMul`) | 0 | 0 |
-| MOVE SPEED | `ms` | the walk in px/s (`updatePlayer`, `aiWalkT`) | 72 | 67 |
+| MOVE SPEED | `ms` | the walk in px/s (`updatePlayer`) | 72 | 67 |
 
 The base and growth sit in each hero's `CLASSES` entry (`base`, `grow`); attack speed's base is
 the attack row's own `as` (`classAs`), and its growth and bonuses are fractions. Items

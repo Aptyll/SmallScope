@@ -8,16 +8,11 @@ window.MEDIA = (function () {
   const D = window.DBG, DT = 1 / 60;
   const M = { frame: 0, t: 0, cam: null, draw: true, marks: {}, ev: [], hits: [], tracks: {}, data: {} };
 
-  // the drop flown out, everyone landed, the local input cut off, the HUD gone
+  // the match started, the local input cut off, the HUD gone
   M.boot = function (o) {
     M.o = o = Object.assign({ k: 6, weather: 'calm', earR: 260, teamBlue: true }, o || {});
     D.freeze = true;
-    // a match flies its drop first
-    D.beginDrop();
-    for (let i = 0; i < 60 * 90; i++) {
-      update(DT);
-      if (state.mode === 'play' && players.every((p) => !p.active || !inAir(p))) break;
-    }
+    D.beginMatch();
     // nothing on this machine steers a body, aims a line or works on its own
     sampleHumanInput = function () {}; drawAimLine = function () {};
     autoWork = function () {}; drawWorkHint = function () {};

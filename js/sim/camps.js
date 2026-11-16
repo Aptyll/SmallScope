@@ -7,14 +7,13 @@
 // camp comes for whoever did (updateCampMonster, wildlife.js). One entry in
 // CAMPS is one kind of camp - what stands there, what lives there, what the
 // kill is worth and the glyph the maps mark it with - and CAMP_SITES is
-// where each one goes, in the road's own coordinates, so the layout is
-// symmetric by construction: every site is written once for the RED half
-// and mirrored for BLUE (campSites), and nothing rolls. Terrain still comes
-// from the seed; a camp's footprint is cleared out of whatever grew there.
+// where each one goes, in the field's own quarter (js/sim/field.js), folded
+// to the other three like the field itself (campSites), so the layout is
+// symmetric by construction and nothing rolls.
 //
 //   name        what the M map prints (the minimap shows the glyph alone)
-//   r           footprint radius in tiles: the clearing, the props, and how
-//               close you must be to be "here" (campAt)
+//   r           footprint radius in tiles: how close you must be to be
+//               "here" (campAt), and where the leash is measured from
 //   mark/icon   map ink, and a glyph as rects in a 7x7 box (drawCampIcon)
 //   kind/pop    the monster kind (ANIMAL_HP etc., wildlife.js) and how many
 //   repop       seconds after the LAST one dies before the whole camp is
@@ -23,54 +22,43 @@
 //               and the orca: the timed objectives); none means it stands from the start
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
-//   plan        a camp DRAWN, not scattered (the treeline camps): rows of
-//               characters from the back of the clearing (into the woods) to
-//               its front (out in the field), centre at the middle of the
-//               middle row, turned to face the field from whichever edge the
-//               site is nearest (campFrame) - so the mirrored site gets the
-//               mirrored drawing. It replaces clearCamp, props and spots:
-//                 -  left as the seed grew it    .  cleared snow
-//                 T  a pine, the clearing's wall f  a snowdrop clump
-//                 r  a monster's spot
-//   woods       the site is IN the border forest, not the open valley:
-//               placeCamps checks it is
-//   treeline    the site is ON the border forest's edge, in the band between
-//               the shallowest and the deepest treeline any seed grows, and
-//               the border is grown out round it (warrenGrove) so its
-//               clearing is cut out of the pines on every seed (no CAMP_EDGE,
-//               see placeCamps)
-//   pool        the camp is the ORCA'S POOL: its clearing is a round frozen
-//               pond (orcaLakeAt, js/sim/world.js) laid after the clearing
-//               (layOrcaPool), and what lives there is the orca under the ice
-//               (js/sim/orca.js) until its camp monster, the orca up in its
-//               hole, is out (`first`)
+//   pool        the camp is the ORCA'S POOL: its pit is a frozen pond
+//               (orcaLakeAt, js/sim/field.js), and what lives there is the
+//               orca under the ice (js/sim/orca.js) until its camp monster,
+//               the orca up in its hole, is out (`first`)
 //
-// resource: the pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
-// buff:     the black bear, the one bear: first out at 5:00, the whole team paid and
-//           given the BLACK BUFF for the kill, and the side's black bears count up
-//           (state.bearStacks, wildlife.js); it keeps its clearing on the downstream bend
-// orca:     the orca's pool on the upstream bend, the top side of the middle
-// hut:      no monster - a hut buried in the treeline, scenery since its
-//           chests went (0.531)
-// meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
-//           ring of pines, open to the field at one mouth, three rabbits in
-//           the middle, three snowdrops at the back that each shield the
-//           picker's whole company and then rest on their own cooldown
-//           (OBJECTS.snowdrop), and the whole clearing filled to the trees
-//           with deep snow (layMeadowDrifts, depth.js), brush the rabbits
-//           never leave. The only rabbits on the map; one
-//           warren each side, halfway out along the treeline
+// resource: the wolf pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
+// scrap:    a stray robot pack, the bottom half's farm as the wolves are the top's
+// buff:     the black bear in its den below the bottom lane: first out at 5:00,
+//           the whole team paid and given the BLACK BUFF for the kill, and the
+//           side's black bears count up (state.bearStacks, wildlife.js)
+// orca:     the orca's pool in its pit above the top lane
+// meadow:   the WARREN: three rabbits in a round pool of deep snow (layMeadowDrifts,
+//           depth.js), brush the rabbits never leave, and snowdrops that each
+//           shield the picker's whole company and then rest on their own
+//           cooldown (OBJECTS.snowdrop). The only rabbits on the map; one
+//           warren each side, by its base mouth
 const CAMPS = {
+  // the stray robots' pack: PLACEHOLDER art (a wave's chassis in a rusted
+  // no-side paint, SPRITES.scrap) until their own look is drawn
+  scrap: {
+    name: 'SCRAP PILE',
+    r: 4, mark: '#c9b48c',
+    icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
+    kind: 'scrap', pop: 3, repop: 75,
+    props: [],
+    spots: [[-2, -1], [2, -1], [0, 1]],
+  },
   resource: {
     name: 'WOLF DEN',
     r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
-    kind: 'wolf', pop: 4, repop: 75, // about one lap of a side's two dens: a jungle route on the clock
-    props: [[0, 0, 'den']],
-    spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
+    kind: 'wolf', pop: 3, repop: 75, // about one lap of a side's camps: a jungle route on the clock
+    props: [[0, -1, 'den']],
+    spots: [[-2, 0], [3, 0], [1, 1]],
   },
   buff: {
-    name: 'BLACK BEAR BEND',
+    name: 'BLACK BEAR DEN',
     r: 4, mark: '#c2a6ff',
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300, first: 300, // first out at 5:00, then 5:00 after each kill
@@ -79,202 +67,81 @@ const CAMPS = {
   },
   orca: {
     name: "ORCA'S POOL",
-    r: ORCA_LAKE_R + 1, mark: '#7fd4ff', pool: true, // the clearing is the pond and a tile of shore
+    r: 6, mark: '#7fd4ff', pool: true, // the pit's pond and a tile of shore
     icon: [[3, 0, 1, 1], [3, 1, 2, 1], [3, 2, 3, 1], [0, 3, 7, 1], [1, 4, 5, 1], [0, 5, 7, 1]], // a fin over the water
     kind: 'orca', pop: 1, repop: 360, first: 1200, // up at 20:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
     props: [],
     spots: [],
   },
-  hut: {
-    name: 'HOG HUT',
-    r: 4, mark: '#c9925a', woods: true,
-    icon: [[3, 0, 1, 1], [2, 1, 3, 1], [1, 2, 5, 1], [0, 3, 7, 1], [1, 4, 5, 1], [1, 5, 2, 2], [4, 5, 2, 2]], // a hut
-    kind: null, pop: 0, repop: 0,
-    props: [[0, 0, 'hut']],
-    spots: [],
-  },
   meadow: {
     name: 'SNOWDROP WARREN',
-    r: 6, mark: '#e8eef8', treeline: true,
+    r: 4, mark: '#e8eef8',
     icon: [[1, 0, 1, 3], [4, 0, 1, 3], [1, 3, 4, 3], [0, 4, 1, 2], [5, 4, 1, 2], [2, 6, 2, 1]], // a rabbit's head
     kind: 'rabbit', pop: 3, repop: 40,
-    props: [],
-    spots: [],
-    // the back row is the woods, the front the open field: a round clearing
-    // in a ring of pines with one mouth out to the field, three snowdrops at
-    // the back, the rabbits' spots in the middle, and the clearing filled to
-    // the trees with deep snow (MEADOW_POOL)
-    plan: [
-      '------TTTTTTTTT------',
-      '----TTTTTTTTTTTTT----',
-      '---TTTTT.....TTTTT---',
-      '---TTT....f....TTT---',
-      '--TTT..f.....f..TTT--',
-      '--TTT...........TTT--',
-      '-TTT.............TTT-',
-      '-TTT.............TTT-',
-      '-TTT.............TTT-',
-      '-TTT....r...r....TTT-',
-      '-TTT.............TTT-',
-      '--TTT.....r.....TTT--',
-      '--TTT...........TTT--',
-      '---TTT.........TTT---',
-      '---TTTTT.....TTTTT---',
-      '----TTTT.....TTTT----',
-      '------TT.....TT------',
-    ],
+    props: [[-2, -3, 'snowdrop', 0], [2, -3, 'snowdrop', 1], [0, 3, 'snowdrop', 2]],
+    spots: [[-2, 0], [2, 0], [0, 1]],
   },
 };
-// Where the camps are, for the RED half of the map (u < WORLD / 2), in the
-// road's coordinates (roadAlong / roadOffS): `u` tiles along the diagonal
-// from RED's corner, `s` tiles off the centreline, + toward the bottom-right
-// half. campSites() mirrors each across the map's middle (u -> WORLD-1-u,
-// same s) for BLUE, so both teams walk the same distance to the same camp -
-// and a site ON the middle (u = (WORLD-1)/2) is its own mirror and placed
-// once: a contested spot is reached at equal reach from either roost. Every site
-// sits at least CAMP_EDGE tiles from the world's edge, past the deepest
-// treeline the border noise grows (BORDER_MAX, 70), and clear of the road by
-// more than the pack's ground. A `woods` camp is the exception, and the
-// other way round: its whole clearing (r + 2) must sit inside BORDER_MIN,
-// the shallowest treeline any seed grows, so it is buried in pines on every
-// seed and reached with an axe.
-const CAMP_EDGE = 72 * MAP_K;
+// Where the camps are, as tiles in RED's top quarter of the field (tx, ty:
+// the camp's middle tile). campSites() folds each to the other quarters like
+// the field (fieldFour): `top` a camp whose bottom-half twin is `bot`'s kind
+// (the wolves up top, the robots below), and a site on the middle row or
+// column is its own twin there. The orca and the bear are each one camp:
+// the orca's pit above the top lane, the bear's den below the bottom one.
 const CAMP_SITES = [
-  { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
-  { key: 'resource', u: 90, s: 25 },
-  // the two contested spots on the mirror line, facing each other across the
-  // road: the orca's pool top-left, the black bear bottom-right
-  { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the black bear, bottom-right of the middle, on the mirror line
-  { key: 'orca', u: (WORLD - 1) / 2, s: -40 }, // the orca's pool, top-left of the middle, on the mirror line
-  // the hog huts, 20 tiles in from the world's edge, deep in the border woods
-  { key: 'hut', u: 100.5, s: -114 },   // by the top-left corner, on the left edge
-  { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge
-  { key: 'hut', u: 63, s: -61 },       // halfway up the left edge
-  // the warrens, halfway out from each roost along the left-hand treeline
-  { key: 'meadow', u: 99.5, s: -44.5 },
-].map((c) => ({ key: c.key, u: c.u === (WORLD - 1) / 2 ? c.u : c.u * MAP_K, s: c.s * MAP_K })); // MAP_K spreads every site but the middle's
-function campTile(u, s) {
-  return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };
-}
+  { top: 'resource', bot: 'scrap', tx: 41, ty: 48 }, // the hall: under the lane wall, by its door
+  { top: 'resource', bot: 'scrap', tx: 60, ty: 57 }, // the side camp, in the hollow's foot by the middle
+  { top: 'meadow', bot: 'meadow', tx: 35, ty: 69 },  // the warren, inside the base mouth
+  { top: 'orca', bot: null, tx: 69, ty: 25 },        // the orca's pit, above the top lane
+  { top: null, bot: 'buff', tx: 69, ty: 25 },        // the bear's den, below the bottom lane
+];
 function campSites() {
   const out = [];
-  for (const c of CAMP_SITES) {
-    out.push({ key: c.key, u: c.u, s: c.s });
-    if (Math.abs(c.u - (WORLD - 1) / 2) > 0.01) out.push({ key: c.key, u: WORLD - 1 - c.u, s: c.s });
-  }
+  for (const c of CAMP_SITES) fieldFour(c.tx, c.ty).forEach(([x, y], k) => {
+    const key = k >= 2 ? c.bot : c.top, tx = k % 2 ? x - 1 : x, ty = k >= 2 ? y - 1 : y; // a tile's twin is WORLD - 1 - it
+    if (!key || (k % 2 && tx - c.tx <= 1) || (k >= 2 && ty - c.ty <= 1)) return; // on the middle column or row: its own twin
+    out.push({ key, tx, ty, fx: k % 2 ? -1 : 1, fy: k >= 2 ? -1 : 1 }); // fx/fy: its props and spots mirrored with it
+  });
   return out;
 }
 
 // where the maps stamp a camp's glyph, in tile coordinates: its site
 function campMark(C) { return { tx: C.tx, ty: C.ty }; }
 // whether tile coordinates (tx, ty) are within `pad` tiles of a camp's
-// ground: its round clearing, or a drawn camp's whole drawing (CAMPS' `plan`, turned to its site). Every
-// keep-out and the camp's own reach (campAt, the leash) ask this, so nothing a later pass stands
-// up (a rock, a landmark, a drift) lands inside a drawing.
+// ground, its round footprint: the camp's own reach (campAt, the leash) asks this
 function campNear(C, tx, ty, pad) {
-  const P = C.spec.plan;
-  if (P) {
-    const F = campFrame(C), dx = tx - C.tx, dy = ty - C.ty, a = dx * F.ax + dy * F.ay, o = dx * F.ox + dy * F.oy;
-    const back = P.length >> 1, mid = P[0].length >> 1;
-    return Math.abs(a) <= mid + pad && o >= -back - pad && o <= P.length - 1 - back + pad;
-  }
   return Math.hypot(tx - C.tx, ty - C.ty) <= C.r + pad;
 }
 
-// A treeline camp's own axes, in tile steps: `o` OUT from the edge its site is
-// nearest into the field, `a` ALONG that edge - always `o` with its x and y
-// swapped, so the two mirrored warrens (whose sites swap tx and ty) get axes
-// that swap too, and anything laid out in (a, o) comes out each other's
-// mirror image. `hand` is -1 where the pair is a mirror of (x, y): a curved
-// shape laid in this frame bends the other way there (layMeadowDrifts).
-function campFrame(C) {
-  const es = [C.tx, C.ty, WORLD - 1 - C.tx, WORLD - 1 - C.ty], side = es.indexOf(Math.min(...es));
-  const o = [[1, 0], [0, 1], [-1, 0], [0, -1]][side], a = [o[1], o[0]];
-  return { ax: a[0], ay: a[1], ox: o[0], oy: o[1], hand: a[0] * o[1] - a[1] * o[0] };
-}
-// (a, o) in a camp's frame to tile coordinates
-function campLocal(C, F, a, o) { return { tx: C.tx + F.ax * a + F.ox * o, ty: C.ty + F.ay * a + F.oy * o }; }
-// A drawn camp (CAMPS' `plan`) onto the ground: every character is one
-// tile, so the clearing, its wall of pines, its props and its monsters'
-// spots are the drawing on every seed. Pines plant the way the border's do.
-function layCampPlan(C) {
-  const P = C.spec.plan, F = campFrame(C), back = P.length >> 1, mid = P[0].length >> 1;
-  C.spots = [];
-  let k = 0;
-  P.forEach((row, r) => {
-    for (let c = 0; c < row.length; c++) {
-      const ch = row[c], t = campLocal(C, F, c - mid, r - back);
-      if (ch === '-' || !inWorld(t.tx, t.ty)) continue;
-      const i = idx(t.tx, t.ty);
-      if (ground[i] === 1) ground[i] = 0;
-      objects[i] = null;
-      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, rare: treeRare(t.tx, t.ty), wall: true }); // the camp's drawn pines hold like the jungle's walls (treeFells, world.js)
-      else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, readyAt: 0 });
-      else if (ch === 'r') C.spots.push([t.tx - C.tx, t.ty - C.ty]);
-    }
-  });
-}
-
-// the ground a camp stands on: everything inside r + 2 of the centre is
-// cleared - a pine, a rock goes, ice becomes snow - so a camp is the
-// same clearing on every seed, and what the props then stamp is the same too
-function clearCamp(C) {
-  const R = C.r + 2;
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    if (dx * dx + dy * dy > R * R) continue;
-    const x = C.tx + dx, y = C.ty + dy;
-    if (!inWorld(x, y)) continue;
-    const i = idx(x, y);
-    objects[i] = null;               // only worldgen's scenery stands here yet
-    if (ground[i] === 1) ground[i] = 0;
-  }
-}
-
-// worldgen's last pass: stand every camp up at its site and stamp its props
+// stand every camp up at its site and stamp its props: boot, after genWorld.
+// The field leaves every site open ground, so nothing is cleared
 function placeCamps() {
   for (const site of campSites()) {
     const spec = CAMPS[site.key];
-    const t = campTile(site.u, site.s);
-    const edge = Math.min(t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty);
-    const bad = spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4
-      : spec.treeline ? edge - spec.r - 2 < BORDER_MIN || edge > CAMP_EDGE : edge < CAMP_EDGE;
-    if (bad) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : spec.treeline ? ' not on the treeline' : ' too near the edge'));
-    const C = { key: site.key, spec, name: spec.name, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop, seen: [0, 0], look: [-1, -1] };
+    const C = { key: site.key, spec, name: spec.name, tx: site.tx, ty: site.ty, fx: site.fx, fy: site.fy, r: spec.r, repopT: spec.repop, seen: [0, 0], look: [-1, -1] };
     camps.push(C);
-    if (spec.plan) layCampPlan(C);
-    else clearCamp(C);
-    if (spec.pool) layOrcaPool(C);
     for (const [dx, dy, type, variant] of spec.props) {
       const extra = type === 'snowdrop' ? { variant, readyAt: 0 } : {};
-      if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: its clock is drawn off it (drawCampClock)
-      const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
+      if (type === 'den') extra.site = C; // the den knows its camp: its clock is drawn off it (drawCampClock)
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a
       // building does: east of the anchor, and north of it, so the anchor stays
-      // the footprint's front row
-      for (let j = 0; j < (OBJECTS[type].h || 1); j++) for (let k = 0; k < (OBJECTS[type].w || 1); k++) {
+      // the footprint's front row - mirrored, its anchor is the far end
+      const w = OBJECTS[type].w || 1, ax = C.tx + (C.fx > 0 ? dx : -dx - (w - 1)), ay = C.ty + dy * C.fy;
+      const o = placeObj(ax, ay, type, extra);
+      for (let j = 0; j < (OBJECTS[type].h || 1); j++) for (let k = 0; k < w; k++) {
         if (!j && !k) continue;
-        const x = C.tx + dx + k, y = C.ty + dy - j;
+        const x = ax + k, y = ay - j;
         objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
       }
     }
   }
 }
 
-// the orca's pool: every tile of the disc (orcaLakeAt) inside the cleared
-// ground turned to ice, so the pond is the same on every seed
-function layOrcaPool(C) {
-  const R = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_RAG + 1);
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const x = C.tx + dx, y = C.ty + dy;
-    if (inWorld(x, y) && orcaLakeAt(x, y)) { objects[idx(x, y)] = null; ground[idx(x, y)] = 1; }
-  }
-}
-
 // one monster into its slot - the slot's own tile, or the nearest free one
 function spawnCampMonster(C, i) {
-  const spots = C.spots || C.spec.spots; // a drawn camp's spots are its plan's, turned to the site (layCampPlan)
+  const spots = C.spec.spots;
   const [dx, dy] = !spots.length ? [0, 0] : spots[i % spots.length];
-  let tx = C.tx + dx, ty = C.ty + dy;
+  let tx = C.tx + dx * C.fx, ty = C.ty + dy * C.fy;
   if (objAt(tx, ty)) {
     let found = null;
     for (let r = 1; r <= C.r && !found; r++) for (let oy = -r; oy <= r && !found; oy++) for (let ox = -r; ox <= r && !found; ox++) {
@@ -328,7 +195,7 @@ function updateCamps(dt) {
     C.repopT = Math.max(0, C.repopT - dt);
     if (C.repopT > 0) continue;
     const px = (C.tx + 0.5) * TILE, py = (C.ty + 0.5) * TILE;
-    if (players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - px, p.y - py) < CAMP_HOLD)) continue;
+    if (players.some((p) => p.active && !p.dead && Math.hypot(p.x - px, p.y - py) < CAMP_HOLD)) continue;
     for (let i = 0; i < C.spec.pop; i++) spawnCampMonster(C, i);
     C.repopT = C.spec.repop;
   }

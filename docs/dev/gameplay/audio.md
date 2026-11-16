@@ -186,8 +186,7 @@ victory, the lobby) can never be undone by a release arriving after it. The
 | --- | --- | --- |
 | `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
 | `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the hero pop-up keeps it | yes |
-| `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
-| `jump` — JUMPING OFF EAGLE | `landAboard()` at the crash with the local player aboard (a client: `netClientMode`) | no → `foxglove` |
+| `jump` — JUMPING OFF EAGLE | `matchHandOver()` as the match starts (`beginMatch`; a client: `netClientMode`) | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |
 | `village` — FOREST VILLAGE LOOP | `openShop()`, as a **hold**; `closeShop()` releases it | yes |
 | `wiki` — WHISPERING WOODS | `beginWiki()`, as an ordinary **play**; `leaveWiki()` puts `intro` back | yes |

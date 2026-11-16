@@ -5,13 +5,9 @@
 // Tuning for one feature lives with that feature; see docs/dev/architecture.md.
 // ------------------------------------------------------------ constants
 const TILE = 16;
-// MAP_K spreads the match's layout: every place in it (the bases, the lanes,
-// the camps, the brush, the jungle walls, the treeline's depth) is written at
-// the old 232-tile map's scale and multiplied by MAP_K where it is declared,
-// so the valley grows or shrinks on this one number while the bodies, the
-// roads' widths and the camps' clearings keep their size.
-const MAP_K = 1.2;
-const WORLD = 278; // tiles per side (232 * MAP_K, about a 158-tile open interior)
+// the field is square and mirrored left to right: its whole layout is
+// js/sim/field.js, written in tiles against this one number
+const WORLD = 140; // tiles per side
 let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
 let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
 // The frame the menus, the panels and the end screens were authored in: 270
@@ -42,14 +38,14 @@ const CYCLE = DAY_LEN + NIGHT_LEN;
 // a swing is work, the fell is the pay - because a per-swing coin on a one-second
 // pine was the firehose that had every bot at the level cap by two minutes.
 const YIELD = {
-  // A pine is side income, never the farm: most fell for nothing and one in four
-  // (the `rare` roll, TREE_RARE_CHANCE in js/sim/world.js) holds a little gold, so
-  // chaining pines nonstop earns about a third of one lane's soldier last hits.
-  treeHit: 0,   treeFall: 0,            // 3 hp tree (TREE_HP, js/sim/world.js): the fell itself pays nothing...
+  // A pine is side income, never the farm: most fell for nothing and a `rare`
+  // one holds a little gold. Every pine on the 3v3 field is a wall pine that
+  // never falls (treeFells, js/sim/world.js), so this pays only a pine that can.
+  treeHit: 0,   treeFall: 0,            // the fell itself pays nothing...
   treeRare: 14,                         // ...and a gold pine pays this on the fell
   rabbit: { coins: 2, each: 35 },       // 70 gold, but it bolts
-  deer:   { coins: 3, each: 40, xp: 40 }, // 120 gold, the big mobile target
   wolf:   { coins: 2, each: 55, xp: 15 }, // 110 gold, a den's four (440): the jungle's farm, a soldier's last hit apiece, and it bites back once woken
+  scrap:  { coins: 2, each: 55, xp: 15 }, // the stray robots: a wolf's pay
   orca:   { coins: 8, each: 110, xp: 300 }, // the orca's pay: 880 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   alpha:  { coins: 6, each: 105, xp: 150 }, // the black bear's pay: 630 gold to the killer, and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 28 },       // 56 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
@@ -121,8 +117,8 @@ const state = {
   // running on now, eased toward the day's row at dawn; wxForce is DBG's pin
   wx: { name: null, from: null, k: 1, snow: 1, wind: 1, gust: 1, sweep: 1, drift: 0, frost: 0 },
   wxForce: null,
-  // seconds of sun shafts still owed after the eagle drop (landPlayer sets it,
-  // updateFx counts it down, rayLight reads it - js/draw-world.js)
+  // seconds of sun shafts still owed at a match's start (matchHandOver sets it,
+  // updateFx counts it down, rayLight reads it - js/draw/light.js)
   rayT: 0,
   deadTimer: 0,
   // out of the match: the overlay's state. over: 'lost' | 'won' | null; view:
@@ -198,10 +194,10 @@ const state = {
     // before any party screen has run
     roomsT: 0, rooms: [], seek: null, joining: false, code: '', codeOn: false, codeShake: 0,
     pop: null, popT: 0, grow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
-  intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
+  intro: 0,            // seconds left of the menu -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
-  drop: null,          // the eagle while it is in the air: see makeEagles() / beginDrop()
+  drop: null,          // the match's two eagles, { eagles }, from beginMatch on; null on the title (js/sim/eagle.js)
   fade: null,          // screen fade: { a, to, spd, color, then }
 };
 

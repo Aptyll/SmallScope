@@ -308,7 +308,7 @@ function drawAbilityGround(ex, ey, now) {
   // the whole wind-up to not be
   heroGround(ex, ey, now); // the heroes' marks under it all: ARMATOS's standards (HERO_GROUND, js/sim/heroes.js)
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p) || p.castT <= 0) continue;
+    if (!p.active || p.dead || p.castT <= 0) continue;
     const ab = abOf(p, p.castAb);
     if (!ab) continue;
     const closing = castProg(p);

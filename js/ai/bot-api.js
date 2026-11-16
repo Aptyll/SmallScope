@@ -65,14 +65,14 @@ function botSeen(p, q) {
   // what the side's minimap would show (the loop in renderMinimap): near any
   // of the side
   for (const a of players) {
-    if (a.team !== p.team || !a.active || a.dead || inAir(a)) continue;
+    if (a.team !== p.team || !a.active || a.dead) continue;
     if (Math.hypot(q.x - a.x, q.y - a.y) < seenAt(q, BOT_OBS_R, p.team)) return true;
   }
   return false;
 }
 function botNearSide(p, x, y) {
   for (const a of players) {
-    if (a.team !== p.team || !a.active || a.dead || inAir(a)) continue;
+    if (a.team !== p.team || !a.active || a.dead) continue;
     if (Math.hypot(x - a.x, y - a.y) < BOT_OBS_R) return true;
   }
   return false;
@@ -96,7 +96,6 @@ function botObserve(p) {
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
     level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
-    aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's blow or a missile (js/sim/attack.js)
     range: attackOf(p).range, attackReady: p.nockT <= 0, // px it strikes from (to the mark's edge), and whether the next is due
@@ -113,8 +112,8 @@ function botObserve(p) {
     if (q === p || !q.active) continue;
     if (q.team === p.team) {
       allies.push({ id: q.id, x: botR(q.x), y: botR(q.y), hp: botR(q.hp), maxHp: q.maxHp, cls: CLASSES[q.cls].name, attack: attackOf(q).cut ? 'cut' : 'shot',
-        dead: q.dead, respawnT: botR(q.respawnT), aboard: inAir(q), bot: q.control === 'ai' });
-    } else if (!q.dead && !inAir(q) && botSeen(p, q)) {
+        dead: q.dead, respawnT: botR(q.respawnT), bot: q.control === 'ai' });
+    } else if (!q.dead && botSeen(p, q)) {
       enemies.push({ id: q.id, x: botR(q.x), y: botR(q.y), vx: botR(q.vx), vy: botR(q.vy), hp: botR(q.hp), maxHp: q.maxHp,
         cls: CLASSES[q.cls].name, attack: attackOf(q).cut ? 'cut' : 'shot' });
     }
@@ -132,7 +131,7 @@ function botObserve(p) {
   const eagles = [];
   if (state.drop) for (const e of state.drop.eagles) {
     eagles.push({ team: e.team, x: botR(e.x), y: botR(e.y), state: e.state, hp: botR(e.hp), maxHp: e.maxHp, hitT: botR(e.hitT),
-      mouth: e.mouth ? { x: botR(e.mouth.x), y: botR(e.mouth.y) } : null });
+      mouth: { x: botR(e.x + e.laneDir.x * BASE_R * TILE), y: botR(e.y + e.laneDir.y * BASE_R * TILE) } }); // the base's front, where its lanes leave for the field
   }
   const structs = [];
   for (const o of structures) {
@@ -222,7 +221,7 @@ const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.ma
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, attack: botAtkId(a.attack), work: !!a.work, slide: !!a.slide,
-    goTo: null, dodge: !!a.dodge, jump: !!a.jump,
+    goTo: null, dodge: !!a.dodge,
     ability: -1, useItem: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
@@ -375,7 +374,7 @@ function botStep(p, dt) {
   inp.atk = botAtkRef(p, a.attack); inp.work = a.work; inp.slide = a.slide;
   if (r.edge) {
     r.edge = false;
-    inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
+    inp.dodge = inp.dodge || a.dodge;
     if (a.ability >= 0) inp.ability = a.ability;
     if (a.useItem >= 0) inp.useItem = a.useItem;
     if (a.cmd) inp.cmd = a.cmd;

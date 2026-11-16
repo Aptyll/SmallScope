@@ -64,29 +64,8 @@ function aiRead(p, dt) {
     inp.mx = n.dx; inp.my = n.dy;
     return n.d;
   };
-  // every walk the ladder orders: by the zipline when the cable is worth it
-  // (the ride, above), else the feet. Riding, it holds the stick along the
-  // cable toward the exit nearest the goal and lets go there; on the ground,
-  // a worthwhile ride is a walk to the mount and the hop under the cable.
-  // Returns the straight-line distance to the goal either way, so a rung
-  // reads progress, or walkTo's -1 for a goal with no way to it at all.
-  const steerTo = (x, y, reach, budget) => {
-    if (p.zip >= 0) {
-      const z = zips[p.zip], d1 = zipNearest(z, x, y).d;
-      ai.zipUsed = true;
-      if (Math.abs(d1 - p.zipD) <= ZIP_AI_OFF) inp.jump = true; // the exit: let go (zipToggle, next step)
-      else { const q = zipPoint(z, p.zipD), s = d1 > p.zipD ? 1 : -1; inp.mx = q.tx * s; inp.my = q.ty * s; }
-      return Math.hypot(x - p.x, y - p.y);
-    }
-    const w = aiZipWorth(p, x, y);
-    if (w) {
-      const nr = zipNear(p);
-      if (nr && nr.z === w.z) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
-      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (js/sim/zipline.js)
-      if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
-    }
-    return walkTo(x, y, reach, budget);
-  };
+  // every walk the ladder orders (a rung reads progress off its distance)
+  const steerTo = walkTo;
   const aimAt = (x, y) => { inp.aimX = x; inp.aimY = y; };
 
   ai.thinkT -= dt;
@@ -233,7 +212,6 @@ function aiFight(k) {
     const foe = engage;
     const d = foeD;
     aiNote(p, 'FIGHT', foe === mark ? 'YOU AGAIN' : siege ? 'AT THEIR BIRD' : foe === fq ? 'FOCUS FIRE' : caller ? 'HELPING ' + caller.name.slice(0, 11) : 'IN SIGHT', foe);
-    if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const aim = skillAim(p, prof, foe, dt); // its read of them, led, with its wobble
     aimAt(aim.x, aim.y);
     // a key winding up at somewhere that is not them (a row's `botAim`: AURA's step away,
@@ -320,7 +298,6 @@ function aiCampFight(k) {
   //    length, a bow to ~90 px with the line open
   if (wolf) {
     aiNote(p, bj && wolf === bj.fight ? 'HUNT' : 'WOLF', bj && wolf === bj.fight ? (wolf.kind === 'orca' ? 'THE ORCA' : 'THE BEAR') : wolf.target === p ? 'ON ME' : 'HELPING', wolf);
-    if (p.zip >= 0) inp.jump = true; // off the zipline first
     // a beast that never walks (the orca in its hole) is measured to its hide,
     // not its middle (unitRadius): it never closes, so the bot must, and the
     // melee cone already reaches for that hide. A walking beast comes to the
@@ -429,13 +406,12 @@ function aiDefendRung(k) {
 function aiHomeRung(k) {
   const { p, inp, ai, steerTo, aimAt, guardE } = k;
   // 5b''. a guard is a proactive defender, never a sentry: for AI_PATROL_OUT
-  //       of every AI_PATROL_T it walks out past the base's junction and up
-  //       the road to see who is coming (what it sees is the side's, aiLook -
+  //       of every AI_PATROL_T it walks out of the plaza and along a lane
+  //       to see who is coming (what it sees is the side's, aiLook -
   //       the brace reads it); the rest of the time it works what is near
   //       the bird (the rungs below).
-  if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
-    const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
-    const pt = roadPoint(u);
+  if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT) {
+    const pt = laneOut(guardE.team, p.id % 2, AI_PATROL_D);
     aiNote(p, 'GUARD', 'PATROL', pt);
     if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.atk = null; ai.tgt = null; return true; }
   }
@@ -484,8 +460,8 @@ function aiPushRung(k) {
       if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; }
     }
     // a relentless side hits as a PACK, never a trickle: off the rival's
-    // lane, its pushers rally at their own cable's end - the last fast
-    // ground before the fight - until AI_PACK of the side's living bots are
+    // plaza, its pushers rally at the middle of the lane the side pushes
+    // (aiRally, js/ai/ai-team.js) - the last open ground before the fight - until AI_PACK of the side's living bots are
     // together there (or as many as are living), then go on as one. A
     // respawn rides straight back to the rally, so a wave of them lands on
     // the roost every time rather than one body at a time into the guns.
@@ -499,24 +475,22 @@ function aiPushRung(k) {
     // AI_REGROUP_T, so a push is never held hostage by a bot that went home.
     // A column on the road is grouping enough: walking with the wave skips it.
     if ((prof.relentless || !head) && !rush && !aiInLane(p, e) && !ai.packGo) {
-      const z = zips[p.team], end = z ? z.pts[z.pts.length - 1] : null;
-      if (end) {
-        let alive = 0, here = 0;
-        for (const q of players) {
-          if (!q.active || q.dead || inAir(q) || q.team !== p.team || q.control !== 'ai') continue;
-          if (!prof.relentless && q !== p && aiRole(q) !== 'pusher') continue;
-          alive++;
-          if (Math.hypot(q.x - end.x, q.y - end.y) < AI_PACK_R) here++;
-        }
-        const dEnd = Math.hypot(end.x - p.x, end.y - p.y);
-        const need = Math.min(prof.relentless ? AI_PACK : AI_REGROUP, alive);
-        if (dEnd <= AI_PACK_R) ai.packT += dt; else ai.packT = 0;
-        if (here >= need || (!prof.relentless && ai.packT > AI_REGROUP_T)) ai.packGo = true;
-        else {
-          aiNote(p, 'REGROUP', 'PACK ' + here + '/' + need, end);
-          if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } }
-          else { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } // at the rally: wait for the side
-        }
+      const end = aiRally(p.team);
+      let alive = 0, here = 0;
+      for (const q of players) {
+        if (!q.active || q.dead || q.team !== p.team || q.control !== 'ai') continue;
+        if (!prof.relentless && q !== p && aiRole(q) !== 'pusher') continue;
+        alive++;
+        if (Math.hypot(q.x - end.x, q.y - end.y) < AI_PACK_R) here++;
+      }
+      const dEnd = Math.hypot(end.x - p.x, end.y - p.y);
+      const need = Math.min(prof.relentless ? AI_PACK : AI_REGROUP, alive);
+      if (dEnd <= AI_PACK_R) ai.packT += dt; else ai.packT = 0;
+      if (here >= need || (!prof.relentless && ai.packT > AI_REGROUP_T)) ai.packGo = true;
+      else {
+        aiNote(p, 'REGROUP', 'PACK ' + here + '/' + need, end);
+        if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } }
+        else { aimAt(e.x, e.y); inp.atk = null; ai.tgt = null; return true; } // at the rally: wait for the side
       }
     }
     if (!aiInLane(p, e) && !tur) {
@@ -578,26 +552,26 @@ function aiHelpRung(k) {
 
 // 5e'. THE GOLD PUMPS (js/sim/pumps.js): a pump its side does not hold, or
 //      holds with a rival hero in the ring, is walked to and stood in until
-//      it is the side's. Its lane's laner goes from anywhere; anyone else
-//      free (not pushing, defending, on guard or under a ping)
+//      it is the side's. The side's jungler goes from anywhere (the pumps
+//      stand in the jungle); anyone else free (not pushing, defending, on guard or under a ping)
 //      only from within AI_PUMP_NEAR, and no more than AI_PUMP_N of a side
 //      at one pump. A rival in the ring is rung 3's the moment it is seen,
 //      so taking a held pump is a fight at it. No rng(): the stream is as it was.
-const AI_PUMP_NEAR = 30 * TILE; // px from a pump a bot that is not its lane's laner will go for it
+const AI_PUMP_NEAR = 30 * TILE; // px from a pump a bot that is not its side's jungler will go for it
 const AI_PUMP_N = 2;            // bots of a side going for one pump at once
 const AI_PUMP_IN = 0.6;         // share of the ring's radius out from the pump a bot stands
 function aiPumpRung(k) {
   const { p, inp, ai, role, steerTo, aimAt, pushE, defend, guardE, order } = k;
   ai.pump = -1; // the pump it is going for, by its tile, for its side's count
   if (pushE || defend || guardE || order || role === 'pusher') return false;
-  const lane = role === 'laner' ? aiLane(p) : -1;
+  const r = aiPos(p), jungler = r >= 0 && POSITIONS[r].job === 'jungler';
   let best = null, bd = Infinity;
   for (const o of structures) {
     if (o.type !== 'pump') continue;
     const n = pumpCount(o);
     if (o.hold === p.team && !n[1 - p.team]) continue; // its side's, and nobody taking it
     const c = structCenter(o), d = Math.hypot(c.x - p.x, c.y - p.y);
-    if (o.lane !== lane && d > AI_PUMP_NEAR) continue;
+    if (!jungler && d > AI_PUMP_NEAR) continue;
     const key = idx(o.tx, o.ty);
     let going = 0;
     for (const q of players) if (q !== p && q.team === p.team && q.ai && q.ai.pump === key && !q.dead) going++;
