@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ESC MENU: the hub\'s graphite look', '0.969'],
     ['SHOP: UNDO takes back your last buy or sale', '0.968'],
     ['SHOP: three big recommended items, each with why', '0.967'],
     ['SOLDIERS: a thrown snowball flies all the way and splats', '0.966'],

@@ -96,20 +96,23 @@ storage, so the next launch opens the same way, and F11 or Alt+Enter flips it th
 document's Fullscreen API, which needs the row's click. The row reads the state live
 (`fullscreenOn`), and the resize that follows refits the canvas like any resize.
 
-**The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
-night ground, never see-through) headed like the patch notes: its name big and gold with no rule
-under it (`drawSlabHead`). A toggle is a switch (gold track, knob
-right when on), and the row under the pointer lifts as a band with its name white.
+**The panel is a hub panel** (since 0.969; it was a navy slab under a big gold title): `bakeFlatSlab`
+lays the Graphite page's plate (`SC_*`, js/ui/lobby.js) in a one-pixel edge inside an ink outline,
+square-cornered and never see-through, with the hub's 20 px head (`SET_HEAD`): the panel's name small
+on the left (`drawSlabHead`), its pages on the right, one edge line under it. Gold is only for what is
+in force: a slider's fill, a toggle's track, a choice's word, the open page's hairline. A toggle is a
+switch (gold track, knob right when on), and the row under the pointer lifts as a band with its name
+white.
 
-**The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
+**The panel is tabbed.** A navbar in the head splits the rows into four pages — GAME
 (top bar size, minimap size, bottom bar size, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
-inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
-outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
-(`SET_W`/`SET_H`, canvas.js), and 226 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
+inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 23..176) when its rows
+outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×200
+(`SET_W`/`SET_H`, canvas.js), and 200 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
-overflows, and the open page's name wears gold with a 1 px gold line under the word alone
+overflows, and the open page's name is white with a 1 px gold line under the word alone
 (`drawNavCell`, the CONTROLS sub-navbar the same) while the others sit dim until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. The tables hold text keys (`set.*`,
@@ -156,7 +159,7 @@ is every frame the screen offers. Last sits **COLOUR BLIND**, the team palettes
 PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its palette's chip.
 
 **The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
-flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
+flat buttons (`drawFlatButton`, the hub's foot plates, their edge and word pale under the pointer, LEAVE? red): **CLOSE** — the one way out that is a
 button; ESC still folds the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match (the ESC
 slab is the one menu a match has, so its exit lives there; the title's slide-in has nothing to

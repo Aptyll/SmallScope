@@ -361,9 +361,9 @@ function fitMapSlab() {
   PANEL_W = MAP_W + MAP_SIDE * 2; PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 }
 
-// 226 rows fits under the 240-row floor fitCanvas() keeps - the bake is
+// 200 rows fits under the 240-row floor fitCanvas() keeps - the bake is
 // once, so it never grows
-const SET_W = 320, SET_H = 226;
+const SET_W = 320, SET_H = 200;
 let SET_X = Math.round((VIEW_W - SET_W) / 2);       // relayout() recenters these
 let SET_Y = Math.round((VIEW_H - SET_H) / 2);
 let SL_X = SET_X + 130;

@@ -212,45 +212,41 @@ let dragSlider = null;
 const setPanelCv = document.createElement('canvas');
 setPanelCv.width = SET_W; setPanelCv.height = SET_H;
 
-// The flat slab the ESC settings panel stands
-// on: solid, never see-through - an ink silhouette, one quiet steel line and a
-// flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)
-// at a menu's volume. No mottling, bevel or corner crystals: the head
-// (drawSlabHead) and the rows carry it, the patch notes' look on a plate.
-const SLAB_INK = '#05070f', SLAB_EDGE = '#34437a', SLAB_BG = '#0d1229';
+// The ESC settings panel is a HUB PANEL (hubPanel, js/ui/hub.js) at a
+// menu's size: the Graphite page's plate (SC_*, js/ui/lobby.js) in a one-pixel
+// edge, square-cornered, inside an ink outline so it stands on the world as
+// one solid shape; never see-through. The head is the hub's: a 20 px row with
+// the panel's name small on the left, its pages as words on the right, and
+// one edge line under it. No big title, no bevel: the rows carry it, gold
+// only for what is in force.
+const SET_HEAD = 20;
 function bakeFlatSlab(g, w, h) {
-  const cham = (x, y, ww, hh) => {
-    g.fillRect(x + 2, y, ww - 4, hh);
-    g.fillRect(x, y + 2, ww, hh - 4);
-    g.fillRect(x + 1, y + 1, ww - 2, hh - 2);
-  };
-  g.fillStyle = SLAB_INK; cham(0, 0, w, h);
-  g.fillStyle = SLAB_EDGE; cham(1, 1, w - 2, h - 2);
-  g.fillStyle = SLAB_BG; cham(2, 2, w - 4, h - 4);
+  g.fillStyle = SC_INK; g.fillRect(0, 0, w, h);
+  g.fillStyle = SC_EDGE; g.fillRect(1, 1, w - 2, h - 2);
+  g.fillStyle = SC_PLATE; g.fillRect(2, 2, w - 4, h - 4);
+  g.fillStyle = SC_EDGE; g.fillRect(2, SET_HEAD, w - 4, 1);
 }
-// the slab's head: its name big and gold, as the patch notes head their
-// screen (renderNotes, js/ui/menu.js), with no rule under it
+// the slab's head: its name, small, where a hub panel names itself
 function drawSlabHead(title, y) {
-  const tw = pixelTextWidth(title, 2);
-  drawPixelTextShadow(ctx, title, Math.round(SET_X + (SET_W - tw) / 2), y + 6, '#ffd95c', '#3c2a1e', 2);
+  drawPixelText(ctx, title, SET_X + 9, y + 8, SC_LBL);
 }
-// a navbar cell: its word centred in the cell, the open one gold with a
-// hairline under the word alone (never the whole cell), the rest dim until hovered
+// a navbar cell: its word, the open one white with a gold hairline under the
+// word alone (never the whole cell), the rest dim and pale under the pointer -
+// the hub's page words (scoreWord, js/ui/lobby.js)
 function drawNavCell(t, active, hot) {
   const tw = pixelTextWidth(t.label), tx = Math.round(t.x + (t.w - tw) / 2);
-  drawPixelTextShadow(ctx, t.label, tx, t.y, active ? '#ffd95c' : hot ? '#cfe0ff' : '#7a8bb8', 'rgba(8,12,28,0.9)');
-  if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(tx, t.y + 8, tw, 1); }
+  drawPixelText(ctx, t.label, tx, t.y, active ? SC_LIT : hot ? SC_TXT : SC_DIM);
+  if (active) { ctx.fillStyle = SC_GOLD; ctx.fillRect(tx, t.y + 8, tw, 1); }
   return tx + tw;
 }
-// a flat button on the slab's foot: the slab's own line round a raised
-// ground, the line and the word going gold under the pointer
+// a foot button: the hub's foot plate (hubPlate), its edge and word going
+// pale under the pointer
 // bad: the plank asks before it does something that cannot be taken back (LEAVE's second press), in red
 function drawFlatButton(r, label, hv, bad) {
   const hot = hv > 0.5;
-  ctx.fillStyle = SLAB_INK; chamRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = bad ? '#c84a4a' : hot ? '#c89a3c' : SLAB_EDGE; chamRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  ctx.fillStyle = bad ? '#3a1418' : hot ? '#1c2656' : '#141c3c'; chamRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
-  drawPixelText(ctx, label, Math.round(r.x + (r.w - pixelTextWidth(label)) / 2), r.y + ((r.h - 5) >> 1), bad ? '#ff9a9a' : hot ? '#ffd95c' : '#cfe0ff');
+  ctx.fillStyle = bad ? HUB_LOSS : hot ? SC_LBL : SC_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = bad ? HUB_LOSS_BG : hot ? SC_HOT : SC_ROW_B; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  drawPixelText(ctx, label, Math.round(r.x + (r.w - pixelTextWidth(label)) / 2), r.y + ((r.h - 5) >> 1), bad ? HUB_LOSS : hot ? SC_LIT : SC_TXT);
 }
 
 // The panel is TABBED: a navbar under the title splits the rows into pages,
@@ -345,8 +341,8 @@ function vidPreset() {
 let setTab = 'game';                                        // the open page
 let setDrop = null;  // the dropdown row whose list hangs open, or null
 const setScroll = { game: 0, video: 0, audio: 0, controls: 0 }; // px scrolled per page
-const SET_TAB_Y = 24;      // navbar baseline, panel-local (the head's big title sits above)
-const SET_CONTENT_Y = 40;  // content window top
+const SET_TAB_Y = 8;       // the navbar's words, panel-local: in the head row, right of the name
+const SET_CONTENT_Y = SET_HEAD + 3; // content window top, under the head's line
 const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit below)
 // The foot: a CLOSE button (the one way out that is a button - ESC still
 // closes it), and in a match LEAVE
@@ -367,9 +363,14 @@ const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 // an option's word: a key from the table, or a bare number (FPS CAP's 30, 60...) as itself
 function optWord(l) { return /^\d+$/.test(l) ? l : tr(l); }
 function settingsLayout() {
-  const n = SET_TABS.length, cw = Math.floor((SET_W - 24) / n);
-  const tabs = SET_TABS.map((t, i) => ({ id: t.id, label: tr(t.label),
-    x: SET_X + 12 + i * cw, y: SET_Y + SET_TAB_Y, w: cw, h: 9 }));
+  // the navbar: each page's word in a cell its width and 6 px either side,
+  // the run right-aligned in the head (the panel's name holds the left)
+  const tabs = [];
+  let tx = SET_X + SET_W - 4;
+  for (let i = SET_TABS.length - 1; i >= 0; i--) {
+    const t = SET_TABS[i], label = tr(t.label), w = pixelTextWidth(label) + 12;
+    tx -= w; tabs.unshift({ id: t.id, label, x: tx, y: SET_Y + SET_TAB_Y, w, h: 9 });
+  }
   const tab = SET_TABS.find(t => t.id === setTab) || SET_TABS[0];
   const clipY0 = SET_Y + SET_CONTENT_Y, clipY1 = SET_Y + SET_CONTENT_B;
   const rows = [];
@@ -492,9 +493,9 @@ function keyRowsLayout() {
     const dx = Math.max(30, rows.reduce((m, r) => Math.max(m, r.w), 0) + 4); // the verbs line up past the widest run
     let y = KEY_ROWS_Y;
     for (const r of rows) {
-      if (r.fixed) words.push({ x: x0, y: y + 3, t: r.fixed, col: '#ffd95c' });
+      if (r.fixed) words.push({ x: x0, y: y + 3, t: r.fixed, col: SC_GOLD });
       else { let x = x0; for (const q of r.runs) { caps.push({ act: q.act, x, y, w: q.w, h: 10, lab: q.lab }); x += q.w + 2; } }
-      words.push({ x: x0 + dx, y: y + 3, t: r.verb, col: '#7a8bb8' });
+      words.push({ x: x0 + dx, y: y + 3, t: r.verb, col: SC_LBL });
       y += KEY_ROW_H;
     }
   }
@@ -506,7 +507,7 @@ function drawKeyRows(ox, oy, hit, now) {
   const K = keyRowsLayout();
   for (const w of K.words) drawPixelText(ctx, w.t, ox + w.x, oy + w.y, w.col);
   for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
-  drawPixelText(ctx, tr('set.reset'), ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
+  drawPixelText(ctx, tr('set.reset'), ox + K.reset.x, oy + K.reset.y, bindsDefault() ? SC_EDGE : hit === 'keyreset' ? SC_LIT : SC_DIM);
 }
 function applySliderDrag() {
   const t = Math.max(0, Math.min(1, (mouse.x - SL_X) / SL_W));
@@ -684,19 +685,19 @@ function settingsMouseDown() {
 // crisp sizes, the stops where its pixels draw perfectly even. stop: where
 // the knob can go no further (a widget's cap); the track past it is sunk
 function drawSliderRow(y, t, txt, dim, ticks, stop) {
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X - 1, y + 1, SL_W + 2, 5);
+  ctx.fillStyle = SC_INK; ctx.fillRect(SL_X - 1, y + 1, SL_W + 2, 5);
   const room = stop == null ? SL_W : Math.round(stop * SL_W);
-  ctx.fillStyle = '#2c3a68'; ctx.fillRect(SL_X, y + 2, room, 3);
-  if (room < SL_W) { ctx.fillStyle = '#161e3e'; ctx.fillRect(SL_X + room, y + 2, SL_W - room, 3); }
-  ctx.fillStyle = dim ? '#4a5480' : '#ffd95c'; ctx.fillRect(SL_X, y + 2, Math.round(t * SL_W), 3);
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(SL_X, y + 2, room, 3);
+  if (room < SL_W) { ctx.fillStyle = SC_ROW_B; ctx.fillRect(SL_X + room, y + 2, SL_W - room, 3); }
+  ctx.fillStyle = dim ? SC_DIM : SC_GOLD; ctx.fillRect(SL_X, y + 2, Math.round(t * SL_W), 3);
   if (ticks) {
-    ctx.fillStyle = '#4a5480';
+    ctx.fillStyle = SC_DIM;
     for (const k of ticks) ctx.fillRect(SL_X + Math.round(k * SL_W), y + 6, 1, 2);
   }
   const kx = SL_X + Math.round(t * SL_W);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(kx - 2, y - 1, 5, 9);
-  ctx.fillStyle = dim ? '#7a8bb8' : '#f4f7ff'; ctx.fillRect(kx - 1, y, 3, 7);
-  drawPixelTextShadow(ctx, txt, SL_X + SL_W + 9, y, dim ? '#5a6690' : '#9fb6d8', 'rgba(8,12,28,0.9)');
+  ctx.fillStyle = SC_INK; ctx.fillRect(kx - 2, y - 1, 5, 9);
+  ctx.fillStyle = dim ? SC_LBL : SC_LIT; ctx.fillRect(kx - 1, y, 3, 7);
+  drawPixelText(ctx, txt, SL_X + SL_W + 9, y, dim ? SC_DIM : SC_TXT);
 }
 
 // The mute control is a speaker, not a labelled toggle: a cone with two waves
@@ -704,16 +705,16 @@ function drawSliderRow(y, t, txt, dim, ticks, stop) {
 function drawMuteBtn(hot) {
   const b = muteBtnRect();
   const on = !SFX.isMuted();
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(b.x, b.y, b.w, b.h);
-  ctx.fillStyle = hot ? '#1f2b5c' : '#121a3a'; ctx.fillRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+  ctx.fillStyle = hot ? SC_LBL : SC_EDGE; ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.fillStyle = hot ? SC_HOT : SC_ROW_B; ctx.fillRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
   const x = b.x + 1, y = b.y + 1; // the 7x7 glyph field
-  ctx.fillStyle = on ? '#ffd95c' : '#7a8bb8';
+  ctx.fillStyle = on ? SC_GOLD : SC_DIM;
   ctx.fillRect(x, y + 2, 1, 3); ctx.fillRect(x + 1, y + 1, 1, 5); ctx.fillRect(x + 2, y, 1, 7);
   if (on) {
     ctx.fillRect(x + 4, y + 2, 1, 3);
     ctx.fillRect(x + 6, y + 1, 1, 5);
   } else {
-    ctx.fillStyle = '#ff6a5a';
+    ctx.fillStyle = HUB_LOSS;
     ctx.fillRect(x + 4, y + 2, 1, 1); ctx.fillRect(x + 5, y + 3, 1, 1); ctx.fillRect(x + 6, y + 4, 1, 1);
     ctx.fillRect(x + 6, y + 2, 1, 1); ctx.fillRect(x + 4, y + 4, 1, 1);
   }
@@ -724,7 +725,7 @@ function drawMuteBtn(hot) {
 // each one paints
 function drawPalChip(id, x, y) {
   const pal = SPRITES.teamPalettes[id];
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, 13, 7);
+  ctx.fillStyle = SC_INK; ctx.fillRect(x, y, 13, 7);
   ctx.fillStyle = pal[1].mark; ctx.fillRect(x + 1, y + 1, 5, 5);
   ctx.fillStyle = pal[0].mark; ctx.fillRect(x + 7, y + 1, 5, 5);
 }
@@ -735,39 +736,38 @@ function drawPalChip(id, x, y) {
 // steel edge lights under the pointer and while the list is open.
 const DROP_TXT_X = 19, DROP_ROW_H = 11;
 function drawDropCaret(x, y, up) {
-  ctx.fillStyle = '#9fb6d8';
+  ctx.fillStyle = SC_LBL;
   for (let i = 0; i < 3; i++) ctx.fillRect(x + i, y + (up ? 2 - i : i), 5 - i * 2, 1);
 }
 function drawDropBox(r, y, hot, open) {
   const b = r.box, top = b.y + (y - r.y);
-  ctx.fillStyle = hot || open ? '#7f93bf' : '#0a0e23'; ctx.fillRect(b.x - 1, top - 1, b.w + 2, b.h + 2);
-  ctx.fillStyle = hot && !open ? '#1f2b5c' : '#121a3a'; ctx.fillRect(b.x, top, b.w, b.h);
+  ctx.fillStyle = hot || open ? SC_LBL : SC_EDGE; ctx.fillRect(b.x - 1, top - 1, b.w + 2, b.h + 2);
+  ctx.fillStyle = hot && !open ? SC_HOT : SC_ROW_B; ctx.fillRect(b.x, top, b.w, b.h);
   const cur = r.opts.find(o => o.id === r.val()) || r.opts[0];
   drawPalChip(cur.id, b.x + 2, top + 2);
-  drawPixelText(ctx, cur.label, b.x + DROP_TXT_X, y, '#f4f7ff');
+  drawPixelText(ctx, cur.label, b.x + DROP_TXT_X, y, SC_LIT);
   drawDropCaret(b.x + b.w - 8, top + 4, open);
 }
 function drawDropList(r, scroll, hit) {
   const o0 = r.opts[0], top = o0.y - scroll, h = r.opts.length * DROP_ROW_H;
-  ctx.fillStyle = '#7f93bf'; ctx.fillRect(o0.x - 1, top, o0.w + 2, h + 1);
-  ctx.fillStyle = '#121a3a'; ctx.fillRect(o0.x, top, o0.w, h);
+  ctx.fillStyle = SC_LBL; ctx.fillRect(o0.x - 1, top, o0.w + 2, h + 1);
+  ctx.fillStyle = SC_ROW_B; ctx.fillRect(o0.x, top, o0.w, h);
   const cur = r.val();
   for (const o of r.opts) {
     const y = o.y - scroll, hot = hit === 'd:' + r.id + ':' + o.id;
-    if (hot) { ctx.fillStyle = '#1f2b5c'; ctx.fillRect(o.x, y, o.w, o.h); }
+    if (hot) { ctx.fillStyle = SC_HOT; ctx.fillRect(o.x, y, o.w, o.h); }
     drawPalChip(o.id, o.x + 2, y + 2);
-    drawPixelText(ctx, o.label, o.x + DROP_TXT_X, y + 3, cur === o.id ? '#ffd95c' : hot ? '#f4f7ff' : '#9fb6d8');
+    drawPixelText(ctx, o.label, o.x + DROP_TXT_X, y + 3, cur === o.id ? SC_GOLD : hot ? SC_LIT : SC_TXT);
   }
 }
 
 // a toggle is a switch: a gold track with its knob right when on, a dark
 // one with its knob left when off, the state's word beside it
 function drawToggleRow(y, on, onTxt, offTxt) {
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X, y - 1, 15, 9);
-  ctx.fillStyle = on ? '#8a6a24' : '#1c2750'; ctx.fillRect(SL_X + 1, y, 13, 7);
-  ctx.fillStyle = on ? '#ffd95c' : '#7a8bb8'; ctx.fillRect(SL_X + (on ? 8 : 2), y + 1, 5, 5);
-  drawPixelTextShadow(ctx, on ? (onTxt || tr('set.on')) : (offTxt || tr('set.off')), SL_X + 20, y,
-    on ? '#cfe0ff' : '#7a8bb8', 'rgba(8,12,28,0.9)');
+  ctx.fillStyle = SC_INK; ctx.fillRect(SL_X, y - 1, 15, 9);
+  ctx.fillStyle = on ? '#7a5a1e' : SC_HOT; ctx.fillRect(SL_X + 1, y, 13, 7);
+  ctx.fillStyle = on ? SC_GOLD : SC_DIM; ctx.fillRect(SL_X + (on ? 8 : 2), y + 1, 5, 5);
+  drawPixelText(ctx, on ? (onTxt || tr('set.on')) : (offTxt || tr('set.off')), SL_X + 20, y, on ? SC_TXT : SC_DIM);
 }
 
 // one slider row's live half, by row id - the labels come off the row table
@@ -791,7 +791,7 @@ function renderSettings(now, opts) {
   if (dragSlider && mouse.down) applySliderDrag();
   const slide = opts && opts.slide ? Math.round(opts.slide) : 0;
   if (!opts || !opts.bare) {
-    ctx.fillStyle = 'rgba(6,10,24,0.6)';
+    ctx.fillStyle = 'rgba(8,9,11,0.62)'; // the M map's dim: graphite, not night blue
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     // live minimap preview while resizing
     renderMinimap(now);
@@ -805,8 +805,6 @@ function renderSettings(now, opts) {
   // the navbar: the open page's name in gold over a gold underline, the rest
   // dim until hovered - the underline is the whole "you are here"
   for (const t of L.tabs) drawNavCell(t, t.id === setTab, hit === 'tab:' + t.id);
-  ctx.fillStyle = '#2c3a68';
-  ctx.fillRect(SET_X + 10, L.clipY0 - 3, SET_W - 20, 1);
   // the open page, clipped to the content window and shifted by its scroll
   ctx.save();
   ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0, SET_W - 4, L.clipY1 - L.clipY0); ctx.clip();
@@ -825,15 +823,15 @@ function renderSettings(now, opts) {
       if (y < L.clipY0 - 12 || y > L.clipY1 + 4) continue;
       // the row under the pointer lifts as a whole: a band behind it, its name white
       const on = hit && !setDrop && (hit === r.id || hit.startsWith('c:' + r.id + ':') || hit === 'drop:' + r.id) || setDrop === r.id;
-      if (on) { ctx.fillStyle = '#161e40'; ctx.fillRect(SET_X + 8, y - 3, SET_W - 16, 13); }
-      drawPixelText(ctx, r.label, SET_X + 14, y, on ? '#f4f7ff' : '#cfe0ff');
+      if (on) { ctx.fillStyle = SC_HOT; ctx.fillRect(SET_X + 4, y - 3, SET_W - 8, 13); }
+      drawPixelText(ctx, r.label, SET_X + 10, y, on ? SC_LIT : SC_LBL);
       if (r.kind === 'slider') drawSliderById(r.id, y, r.id === 'vol' || r.id === 'music' || r.id === 'sfx' ? off : false);
       else if (r.kind === 'toggle') drawToggleRow(y, toggleVal(r.id), r.on, r.off);
       else if (r.kind === 'choice') {
         const cur = r.val ? r.val() : null; // the word in force wears gold; a hand-picked mix golds none
         for (const o of r.opts) {
-          const col = cur === o.id ? '#ffd95c' : hit === 'c:' + r.id + ':' + o.id ? '#f4f7ff' : '#7a8bb8';
-          drawPixelTextShadow(ctx, o.label, o.x, y, col, 'rgba(8,12,28,0.9)');
+          const col = cur === o.id ? SC_GOLD : hit === 'c:' + r.id + ':' + o.id ? SC_LIT : SC_DIM;
+          drawPixelText(ctx, o.label, o.x, y, col);
         }
       } else if (r.kind === 'drop') drawDropBox(r, y, hit === 'drop:' + r.id, setDrop === r.id);
     }
@@ -846,10 +844,10 @@ function renderSettings(now, opts) {
   // position IS the affordance - grab the wheel, not a widget
   if (L.maxScroll > 0) {
     const x = SET_X + SET_W - 8, h = L.clipY1 - L.clipY0;
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, L.clipY0, 3, h);
+    ctx.fillStyle = SC_ROW_B; ctx.fillRect(x, L.clipY0, 3, h);
     const th = Math.max(8, Math.round(h * h / (h + L.maxScroll)));
     const ty = L.clipY0 + Math.round((h - th) * (L.scroll / L.maxScroll));
-    ctx.fillStyle = '#4a5480'; ctx.fillRect(x + 1, ty, 1, th);
+    ctx.fillStyle = SC_DIM; ctx.fillRect(x + 1, ty, 1, th);
   }
   // the foot: CLOSE, and in a match the exit beside it, as flat buttons
   for (const l of footPlanks()) drawFlatButton(l, l.label, hit === l.id ? 1 : 0, l.id === 'leave' && leaveAsking());
