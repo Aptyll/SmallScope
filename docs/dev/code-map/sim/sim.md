@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the frame sim: momentum, day/night, timers; the camera, and its cut to a body set down far away | `update`, `updatePlay`, `CAM_CUT`/`camVp` | `update` |
+| the frame sim: momentum, day/night, timers; the camera, its cut to a body set down far away, and the follow a FREE camera skips (`camStep`, js/app/canvas.js) | `update`, `updatePlay`, `CAM_CUT`/`camVp` | `update` |
 | the wildlife's step of the frame: the animals, the orca, the camps' clocks, the meadow's stock | `updateWildlife` (below `updatePlay`, which calls it) | `passive income` |
 | one player's step off its input, and the walk inside it - the heading, the knockback's decay, the ice underfoot, the slide, the surface model, the world's edge - which a client also runs on its own body ahead of the host (`netPredictWalk`, net.js); and the step's named stretches, run in this order: the intents (stun, the edge-triggered presses, an item slot's `useItem`), what owns the velocity (the water, the roll, the rush, the leap, the cable, else the walk), the plunge into open water, the dodge charges and the stamina ghost, the marks left in the snow, the hands (swing, work), the tool's draw and loose | `updatePlayer`, `walkHeading`, `kbDecay`, `iceUnder`, `slickUnder` (the ice the walk glides on: not the orca's pool), `walkSlide`, `walkStep`, `clampWorld`; `playerIntents`, `playerMove`, `playerPlunge`, `playerStamina`, `playerTrails`, `playerSwing`, `playerAttack` | `the player's step` |
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |

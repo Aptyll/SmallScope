@@ -1,45 +1,28 @@
 # Replay: the last four seconds
 
-The `replay` banner keeps a rolling four seconds of the world and plays it back while you
-are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
+The `replay` banner keeps a rolling four seconds of the world and plays it back on **pause**
+and off the defeat screen's **REPLAY**, in one of two shapes (`rpFull()`/`rpRect()`). A **death
+plays none**: a respawn wait is the live match ([Death and respawn](../gameplay/death-and-respawn.md)),
+because a recording of you still standing under a respawn count read as if the death never
+happened.
 
-- **The recap**, on a **death** (a respawn wait, once `deadReady()` — half a
-  second — has landed; never a lost match, whose bird's flight was just watched live and whose
-  screen is the defeat's): the **whole frame**, the way a goal replays. The countdown reads
-  over it; the spectate strip waits
-  underneath (`renderDead` returns early while `replayFull()`). A close box sits inside the
-  frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
-  gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
-  action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons - but for
-  a death's first `RP_HOLD` s (`replayHeld`) only ESC and the close box do, so the clicks and the
-  dodge a fight was mashing never put the recap away unseen. `state.rpClosed`
-  remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending is no death and never
-  opens it, so the guest sees THE HOST LEFT and LOBBY at once. A lost match does not open it by
-  itself either: its defeat screen carries a **REPLAY** word (`deadItems`, `state.rpAgain`) that
-  plays the same full frame over that screen, without the death recap (`recapLive`: it is the
-  bird leaving, not a death to explain), until the same keys or any click put it away.
-  In the frame's top-left corner sits **the death recap** (`drawRecap`, js/ui/recap.js): a ring
-  of all the damage split by kind (`RC_KIND`: basic attacks, abilities, the rest) with the total in
-  it, then up to `RC_ROWS` hitters, biggest first, each a face (the hitter's portrait, the world's
-  figure, or `?` for a rival the side did not see), its total over a bar split by kind, and the
-  icons of what it hit with. The killing blow's face wears the gold rim. Its `-` button folds the
-  lines away and `>` opens them out (names, and a number under each icon); `recap.view` keeps the
-  choice for the session. Under the pointer a face names the hitter, an icon its ability and damage,
-  and the ring its kinds. It reads `player.deathLog`, which `die()` hands over from the body's
-  `hurtLog` (`recapNote`, js/sim/player.js: the last `RECAP_T` s of blows, written as the side saw
-  them, so nothing on it is anything the dead player could not have known).
+- **The full frame**, off the defeat screen's **REPLAY** word (`deadItems`, `state.rpAgain`): the
+  whole view, the way a goal replays, over that screen. A close box sits inside the frame's
+  top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights gold under
+  the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc` action), and
+  `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as `replayClose()`, as `deadClick` takes any
+  click. A `'hostleft'` ending offers no REPLAY, so the guest sees THE HOST LEFT and LOBBY at once.
 - **The window**, on **pause**: the **bottom-left corner** at `RP_W`×`RP_H` (160×90), under the
   pause planks.
 
 Never over [the end screens](the-end-screens.md).
 It records pixels, not state, so it costs nothing to keep and re-renders nothing to play.
 
-**Where each draws.** The recap draws in the game canvas: the capture is the **world layer**
+**Where each draws.** The full frame draws in the game canvas: the capture is the **world layer**
 (`worldCv`, one px per world px, before the blit scales it), and each frame keeps the device
 px per world px it was blitted at live (`rpFK`). Drawn back from the same top-left corner at that
 same scale, nearest-neighbour, every world px lands on the same k×k block of device px it had
-live, so the recap is **pixel for pixel at any resting zoom**, zoomed in or not. Only a view wider
+live, so the full frame is **pixel for pixel at any resting zoom**, zoomed in or not. Only a view wider
 than the cap (`RP_CAP_W`×`RP_CAP_H`, 640×360 world px, i.e. zoomed out past the default) is
 reduced. The snowfall and the vignettes draw after the blit and the HUD after the capture, so
 none of them is in it. The corner window cannot do that: 160×90 *game* px hold a sixteenth of the view,
@@ -51,7 +34,7 @@ fullscreen toggle, and which `renderReplay` calls again whenever the rect it lai
 is not the one `rpRect()` now returns. The game canvas draws only the plate, the frost rim, the
 playhead and a low-res copy underneath, which keeps the window legible in a plain
 `canvas.toDataURL()` capture (`POST /shot`) and is covered exactly by the overlay on screen. The
-recap hides the overlay outright (`rpOverlay(false)`), which is why its close box and prompt can
+full frame hides the overlay outright (`rpOverlay(false)`), which is why its close box and prompt can
 sit *inside* the frame.
 
 Fullscreen here is the browser's (F11) or the VIDEO page's DISPLAY row (`setFullscreen`), which
@@ -63,10 +46,10 @@ whatever element goes fullscreen.
 (one `Math.min(0.05, …)` delta feeds both the capture cadence and the playhead). While
 `replayLive()` — mode `play`, the local player alive, and no overlay freezing the sim, i.e. exactly
 the condition `update()` steps on, and on through the local player's own
-[fall](going-down.md) (`goingDown`) so the recap ends on it — it blits the finished world layer into
+[fall](going-down.md) (`goingDown`) — it blits the finished world layer into
 slot `rpHead` of one atlas canvas every `1/RP_FPS` s and wraps. `RP_SECS` 4 × `RP_FPS` 30 = `RP_N`
-120 slots, `RP_COLS` 12 across; `RP_RATE` 1 plays it back in real time. `replayShowing()` holds the
-recap back until the fall is over.
+120 slots, `RP_COLS` 12 across; `RP_RATE` 1 plays it back in real time. `replayShowing()` holds any
+playback back until the fall is over.
 
 **Capture resolution is the world's.** `rpTarget()` is the world view (`WV_W`×`WV_H`) in world
 px, reduced only past the memory cap and never an upscale, plus the device px each captured px
@@ -83,7 +66,7 @@ changes sharpness mid-loop instead of jumping size or losing its history.
 
 **Memory** is `RP_CAP_W * RP_CAP_H * 4 * RP_N` at the ceiling — 110 MB, and the ring only grows to
 what a given window actually captures (a small window stays near 12 MB). This is the price of a
-recap that comes back pixel for pixel: it is the biggest allocation in the game, twice the 55 MB
+frame that comes back pixel for pixel: it is the biggest allocation in the game, twice the 55 MB
 baked ground. `RP_CAP_*`, `RP_FPS` and `RP_SECS` are the knobs.
 
 **Per-frame cost while alive** is one `drawImage` at `RP_FPS`, straight off the finished world
@@ -100,6 +83,20 @@ and mirrors `state.fade` onto its `opacity` — otherwise the replay would sit t
 LOBBY fade-out.
 
 `DBG.replay` exposes `{ cv, frames, showing(), full(), shot, slot, bytes, W, H, fps, rate, ov }` —
-`cv` is the whole filmstrip, `full()` says the recap owns the frame, and `shot`/`slot`/`bytes`
+`cv` is the whole filmstrip, `full()` says the full frame is up, and `shot`/`slot`/`bytes`
 report the live capture size, slot size and atlas cost, so a headless driver can check the
-resolution without playing to a death; `DBG.replayClose()` puts the recap away.
+resolution without playing to a death; `DBG.replayClose()` puts the full frame away.
+
+## The death recap
+
+Through a respawn wait, in the top-left corner over the live match (`drawRecap`, js/ui/recap.js,
+from `renderDead`; `recapLive` says when): a ring of all the damage split by kind (`RC_KIND`:
+basic attacks, abilities, the rest) with the total in it, then up to `RC_ROWS` hitters, biggest
+first, each a face (the hitter's portrait, the world's figure, or `?` for a rival the side did not
+see), its total over a bar split by kind, and the icons of what it hit with. The killing blow's
+face wears the gold rim. Its `-` button folds the lines away and `>` opens them out (names, and a
+number under each icon); `recap.view` keeps the choice for the session. Under the pointer a face
+names the hitter, an icon its ability and damage, and the ring its kinds. It reads
+`player.deathLog`, which `die()` hands over from the body's `hurtLog` (`recapNote`,
+js/sim/player.js: the last `RECAP_T` s of blows, written as the side saw them, so nothing on it is
+anything the dead player could not have known).

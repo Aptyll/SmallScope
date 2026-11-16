@@ -129,10 +129,19 @@ function mendBinds() {
   const mend = (map, scheme) => {
     const s = map && typeof map === 'object' ? map : {};
     const out = {}, used = {};
-    for (const a of schemeActs(scheme)) {
+    // the saved binds first, then the defaults round them: an action newer
+    // than the save never takes a key the player put on another action -
+    // it waits unbound for a key of its own instead (the CONTROLS page)
+    const acts = schemeActs(scheme);
+    for (const a of acts) {
       const k = s[a.id] !== undefined ? s[a.id] : a.was && s[a.was];
-      out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : schemeKey(a, scheme);
-      used[out[a.id]] = true;
+      if (typeof k === 'string' && k && !keyReserved(k) && !used[k]) { out[a.id] = k; used[k] = true; }
+    }
+    for (const a of acts) {
+      if (out[a.id]) continue;
+      const k = schemeKey(a, scheme);
+      out[a.id] = used[k] ? '' : k;
+      used[k] = true;
     }
     return out;
   };
@@ -171,6 +180,7 @@ function keyCap(a) {
     const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(binds()[d]));
     return l.every((s) => s.length === 1) ? l.join('') : l.join('/');
   }
+  if (binds()[a] === '') return '-'; // on the scheme, waiting for a key of its own (mendBinds)
   return binds()[a] ? keyLabel(binds()[a]) : 'RMB';
 }
 // ...and its short form for a well's corner, where two or three characters fit

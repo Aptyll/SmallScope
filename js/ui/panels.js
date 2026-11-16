@@ -468,14 +468,14 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'ctl.move' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
       ['ctl.click', 'ctl.fire'], 'dodge', 'slide', 'work', ['ctl.rmb', 'ctl.ping']],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'shop', 'recall', 'char', 'details'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'shop', 'recall', 'char', 'details', 'camLock', 'camCentre'],
     ['map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info'], ['ctl.dot', 'ctl.hitbox']],
   ],
   click: [
     [['ctl.rmb', 'ctl.moveAct'], ['ctl.holdRmb', 'ctl.follow'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
       ['ctl.click', 'ctl.fire'], 'amove', 'stop', 'dodge', 'slide'],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'ping', 'shop', 'char', 'recall', 'details'],
-    [ 'map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info']],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'ping', 'shop', 'char', 'recall', 'details', 'camLock'],
+    [ 'map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info'], 'camCentre'],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;

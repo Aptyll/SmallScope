@@ -326,7 +326,7 @@ function renderMinimap(now) {
 // flips it, as the camLock key does.
 const MM_LOCK = 11;  // the plate's square
 const MM_LOCK_ART = { shut: ['.###.', '#...#', '#...#', '#####', '##.##', '#####', '#####'],
-  open: ['.###.', '....#', '....#', '#####', '##.##', '#####', '#####'] };
+  open: ['.###.', '#...#', '#....', '#####', '##.##', '#####', '#####'] }; // open: the shackle's right leg clear of the body
 function mmLockRect() { const r = mmFrameRect(); return { x: r.x - MM_LOCK - 2, y: r.y, w: MM_LOCK, h: MM_LOCK }; }
 function mmLockHit() { return camLive() && mouse.inside && overRect(mmLockRect(), 1); }
 function drawMmLock() {
