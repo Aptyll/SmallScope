@@ -479,12 +479,13 @@ function drawNavCell(t, active, hot) {
 }
 // a flat button on the slab's foot: the slab's own line round a raised
 // ground, the line and the word going gold under the pointer
-function drawFlatButton(r, label, hv) {
+// bad: the plank asks before it does something that cannot be taken back (LEAVE's second press), in red
+function drawFlatButton(r, label, hv, bad) {
   const hot = hv > 0.5;
   ctx.fillStyle = SLAB_INK; chamRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = hot ? '#c89a3c' : SLAB_EDGE; chamRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  ctx.fillStyle = hot ? '#1c2656' : '#141c3c'; chamRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
-  drawPixelText(ctx, label, Math.round(r.x + (r.w - pixelTextWidth(label)) / 2), r.y + ((r.h - 5) >> 1), hot ? '#ffd95c' : '#cfe0ff');
+  ctx.fillStyle = bad ? '#c84a4a' : hot ? '#c89a3c' : SLAB_EDGE; chamRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = bad ? '#3a1418' : hot ? '#1c2656' : '#141c3c'; chamRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
+  drawPixelText(ctx, label, Math.round(r.x + (r.w - pixelTextWidth(label)) / 2), r.y + ((r.h - 5) >> 1), bad ? '#ff9a9a' : hot ? '#ffd95c' : '#cfe0ff');
 }
 
 // The panel is TABBED: a navbar under the title splits the rows into pages,
@@ -798,13 +799,23 @@ function footPlanks() {
     ...(voteCanStart(player) || voteOpenFor(player) ? ['surrender'] : []), 'leave'];
   const n = ids.length, y = SET_Y + SET_FOOT_Y, pw = n > 3 ? SET_PLANK_W - 8 : SET_PLANK_W;
   const x0 = SET_X + Math.round((SET_W - (pw * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const word = { close: 'set.close', surrender: 'set.surrender', leave: 'set.leave' };
+  const word = { close: 'set.close', surrender: 'set.surrender', leave: leaveAsking() ? 'set.leaveSure' : 'set.leave' };
   return ids.map((id, i) => ({ id, label: tr(word[id]), x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
+}
+// LEAVE in a match asks first: its first press turns it red and asks again
+// for LEAVE_ASK_T s, its second leaves. The practice field leaves at once (nothing is lost there).
+const LEAVE_ASK_T = 3;
+let leaveAskAt = -1; // the page clock (s) of the first press, -1 none
+function leaveAsking() { return leaveAskAt >= 0 && performance.now() / 1000 - leaveAskAt < LEAVE_ASK_T; }
+function settingsLeave() {
+  if (!PRACTICE && !leaveAsking()) { leaveAskAt = performance.now() / 1000; SFX.deny(); return; }
+  leaveAskAt = -1;
+  if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); // a party's leader back to its party
 }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)
 function settingsClose() {
-  setDrop = null;
+  setDrop = null; leaveAskAt = -1;
   if (state.settingsOpen) { state.settingsOpen = false; dragSlider = null; state.rebind = null; saveSettings(); SFX.pickup(); }
   else closeMenuPanel();
 }
@@ -889,7 +900,7 @@ function settingsMouseDown() {
   }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
-  if (hit === 'leave') { if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); return; } // a party's leader back to its party
+  if (hit === 'leave') { settingsLeave(); return; }
   if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
@@ -1077,7 +1088,7 @@ function renderSettings(now, opts) {
     ctx.fillStyle = '#4a5480'; ctx.fillRect(x + 1, ty, 1, th);
   }
   // the foot: CLOSE, and in a match the exit beside it, as flat buttons
-  for (const l of footPlanks()) drawFlatButton(l, l.label, hit === l.id ? 1 : 0);
+  for (const l of footPlanks()) drawFlatButton(l, l.label, hit === l.id ? 1 : 0, l.id === 'leave' && leaveAsking());
   if (slide) ctx.restore();
   // live preview of the widget whose size knob is in hand - the minimap
   // slider's grammar. Only during the drag, and drawn last: the strip's home

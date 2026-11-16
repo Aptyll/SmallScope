@@ -124,8 +124,93 @@ function drawHeroRow(cells, a) {
       if (D.fx > 0) { ctx.globalAlpha = a * D.fx * 2; ctx.fillStyle = '#f4f7ff'; ctx.fillRect(c.x, c.y, c.w, c.h); }
     } else if (taken) { ctx.fillStyle = mark; ctx.fillRect(c.x + 1, c.y + c.h - 4, c.w - 2, 3); }
     ctx.globalAlpha = a * (out ? 0.5 : 1);
+    if (!banned) ctx.drawImage(styleIcon(CLASSES[i].style), c.x + c.w - STYLE_CHIP - 1, c.y + c.h - STYLE_CHIP - (taken ? 4 : 1)); // what it is for, over your side's bar
+    if (!out && heroStarterLit(i)) drawStarterMark(c.x + 5, c.y + 5, 3);
     const nm = h.name;
     drawPixelText(ctx, nm, c.x + ((c.w - pixelTextWidth(nm)) >> 1), c.y + c.h + 3, picked ? SEL_GOLD : over ? SC_LIT : SC_LBL, 1);
   }
   ctx.globalAlpha = 1;
+}
+
+// ------------------------------------------------------------ hero styles
+// What a hero is for (its CLASSES `style`, one of ITEM_STYLES) as a 7 px
+// emblem in its own colour on an ink chip at the foot of its face: a shield,
+// crossed blades, a dagger, an arrow, a spark, a plus. Someone new reads the
+// grid's shape at a glance; the word is the brief's, under the grid
+// (drawSelBrief, js/ui/select.js). A `starter` wears a gold diamond in its
+// top corner while the profile is new (the title's FIRST MATCH wears the same).
+const STYLE7 = {
+  tank: { col: '#9fc0e8', px: [
+    '#######',
+    '#######',
+    '#######',
+    '#######',
+    '.#####.',
+    '..###..',
+    '...#...'] },
+  bruiser: { col: '#f0a860', px: [
+    '#.....#',
+    '.#...#.',
+    '..#.#..',
+    '...#...',
+    '..#.#..',
+    '##...##',
+    '##...##'] },
+  assassin: { col: '#e88a9a', px: [
+    '.....##',
+    '....###',
+    '...###.',
+    '..###..',
+    '#.##...',
+    '.##....',
+    '#.#....'] },
+  marksman: { col: '#f2d36a', px: [
+    '...####',
+    '.....##',
+    '....#.#',
+    '...#..#',
+    '..#....',
+    '##.....',
+    '##.....'] },
+  mage: { col: '#c3a0ff', px: [
+    '...#...',
+    '...#...',
+    '..###..',
+    '#######',
+    '..###..',
+    '...#...',
+    '...#...'] },
+  support: { col: '#8fe08a', px: [
+    '..###..',
+    '..###..',
+    '#######',
+    '#######',
+    '#######',
+    '..###..',
+    '..###..'] },
+};
+const STYLE_CHIP = 9; // the chip's side: the 7 px emblem and a px of ink round it
+const styleCache = new Map();
+function styleIcon(style) {
+  let cv = styleCache.get(style);
+  if (!cv) {
+    const S = STYLE7[style];
+    cv = document.createElement('canvas');
+    cv.width = cv.height = STYLE_CHIP;
+    const g = cv.getContext('2d');
+    g.fillStyle = SC_INK; g.fillRect(0, 0, STYLE_CHIP, STYLE_CHIP);
+    g.fillStyle = S.col;
+    S.px.forEach((row, y) => { for (let x = 0; x < 7; x++) if (row[x] === '#') g.fillRect(x + 1, y + 1, 1, 1); });
+    styleCache.set(style, cv);
+  }
+  return cv;
+}
+// the starters are lit for a profile that has not seen a match through, and in any FIRST MATCH
+function heroStarterLit(i) { return !!CLASSES[i].starter && (NET.mode === 'guide' || !PROFILE.guided()); }
+// a gold diamond of radius r centred on (x, y), on an ink rim
+function drawStarterMark(x, y, r) {
+  for (const [rr, c] of [[r + 1, SC_INK], [r, SEL_GOLD]]) {
+    ctx.fillStyle = c;
+    for (let d = -rr; d <= rr; d++) { const w = rr - Math.abs(d); ctx.fillRect(x - w, y + d, w * 2 + 1, 1); }
+  }
 }

@@ -488,9 +488,17 @@ const REMATCH_WAIT = 180; // s a guest back from a match keeps trying the party'
 const REMATCH_RETRY = 1;  // s between those tries
 let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the last match
 
+// this page's address with the party's and the match's words taken off: it boots onto the title
+function titleUrl() {
+  const q = new URLSearchParams(location.search);
+  for (const k of ['back', 'net', 'room', 'code', 'join', 'lobby']) q.delete(k);
+  const t = q.toString();
+  return location.pathname + (t ? '?' + t : '');
+}
 function rematchUrl() {
   if (homeParty) return crossHomeUrl(); // a party that crossed over for this match goes back to its own (js/ui/matchmaking.js)
   if (!NET.mode) return null; // a page that never opened a party: the title, as it was
+  if (NET.mode === 'guide' && NET.isHost && !NET.peers.size) return titleUrl(); // a FIRST MATCH alone ends on the title, where the modes are
   const base = location.pathname + '?back=1', steam = netSteam() ? '&transport=steam' : '';
   const code = roomCode();
   if (NET.isHost) {

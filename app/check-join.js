@@ -24,6 +24,10 @@ const JOIN_WAIT = 15;          // s a guest has to be welcomed
 const PARTY_PATHS = ['steam-party', 'steam-match', 'relay-match'];
 const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS);
 
+// a profile already saved, so a page is not a first launch (which goes straight into the FIRST MATCH, js/app/boot.js)
+function savedProfile(c) {
+  return c.addInitScript(() => { try { if (!localStorage.getItem('softfall.profile')) localStorage.setItem('softfall.profile', JSON.stringify({ v: 4, guided: true })); } catch (e) { } });
+}
 function loadPlaywright() {
   const tries = [process.env.PLAYWRIGHT, 'playwright', '/opt/node22/lib/node_modules/playwright'].filter(Boolean);
   for (const t of tries) { try { return require(t); } catch (e) { } }
@@ -99,6 +103,7 @@ async function runPath(browser, kind) {
   const mk = async (tag, uid) => {
     const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     // one build record of its own (js/app/builds.js), so the join's swap can be seen to carry it both ways
+    await savedProfile(c);
     await c.addInitScript((m) => { try { if (!localStorage.getItem('softfall.builds')) localStorage.setItem('softfall.builds', JSON.stringify([{ m, s: 1, v: '0.100', h: 'ARMATOS', w: 1, q: 1, t: 20, b: ['bearskin'] }])); } catch (e) { } }, uid.slice(-8));
     const pg = await c.newPage();
     if (steam) await S.attach(pg, uid, tag);
@@ -180,6 +185,7 @@ async function runParty(browser, kind) {
     const mine = [];
     for (let j = 0; j < spec[pi]; j++, k++) {
       const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      await savedProfile(c);
       const pg = await c.newPage(), tag = 'P' + k;
       if (steam) await S.attach(pg, String(76561190000000010n + BigInt(k)), tag);
       pg.on('pageerror', (e) => errs.push(tag + ': ' + e.message));
