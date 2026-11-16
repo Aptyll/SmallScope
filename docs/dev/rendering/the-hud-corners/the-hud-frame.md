@@ -7,7 +7,7 @@ solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphit
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
 strip, the rail and the tooltips share it;
-the M map and the minimap wear it too (0.459), and the shop (0.484); the menus are still navy. The outline holds the plate apart from bright
+the M map and the minimap wear it too (0.459), and the shop (0.484); the ESC settings panel wears the hub's Graphite since 0.966. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
