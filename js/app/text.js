@@ -94,6 +94,7 @@ const TEXT = {
   'recap.eagle': 'EAGLE',
   'recap.roll': 'ROLL',
   'recap.burn': 'BURN',
+  'recap.downedBy': 'DOWNED BY',
 
   // ---- the TAB scoreboard (js/ui/panels.js)
   'board.kda': 'K/D/A',

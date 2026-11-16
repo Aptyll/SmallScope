@@ -86,8 +86,8 @@ function rcWorldFig(c, team) {
 }
 // a square well and what stands in it, centred and clipped: the HUD
 // portrait's dusk behind a hero's face (drawPortrait, js/ui/hud-draw.js)
-function rcFace(x, y, f, gold, team) {
-  const s = RC_FACE, e = f.e;
+function rcFace(x, y, f, gold, team, size) {
+  const s = size || RC_FACE, e = f.e;
   ctx.fillStyle = SC_INK; ctx.fillRect(x, y, s, s);
   ctx.fillStyle = gold ? '#c89a3c' : SC_EDGE; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
   const ix = x + 2, iy = y + 2, is = s - 4;
@@ -99,7 +99,7 @@ function rcFace(x, y, f, gold, team) {
     const fig = e.s === 0 ? null : rcWorldFig(e.c, team);
     // a tall figure shows its upper body: a tower's stone, a bear's head
     if (fig) ctx.drawImage(fig, ix + ((is - fig.width) >> 1), fig.height <= is ? iy + ((is - fig.height) >> 1) : iy - Math.round(Math.min(fig.height * 0.3, fig.height - is)));
-    else drawPixelText(ctx, '?', ix + ((is - 5) >> 1), iy + ((is - 10) >> 1), SC_LBL, 2);
+    else { const k = is > RC_FACE ? 3 : 2; drawPixelText(ctx, '?', ix + ((is - 5 * k / 2) >> 1), iy + ((is - 5 * k) >> 1), SC_LBL, k); }
   }
   ctx.restore();
 }
@@ -277,4 +277,32 @@ function drawRecap() {
   if (H.ring) rcTag(RC_KINDS.filter((k) => R.split[k] > 0).map((k) => [tr(RC_KIND[k].word) + ' ' + Math.round(R.split[k]), RC_KIND[k].col]), L.ring.y);
   else if (H.face) rcTag([[rcWho(H.face.e), rcWhoCol(H.face.e)]], H.y);
   else if (H.hit) rcTag([[rcWhat(H.hit.e), SC_LIT], [String(Math.round(H.hit.d)), RC_KIND[H.hit.kind].col]], H.y);
+}
+
+// ---- downed by -------------------------------------------------------------------
+// The death's headline, under the respawn count for the whole wait, over the
+// replay and the ally view alike (drawRespawnLine, js/ui/screens.js): DOWNED BY,
+// the face of the blow that put you down (the gold rim its line wears on the
+// plate), its name in its side's colour, and what it hit with. The replay can
+// be put away; this stays, so no death goes unexplained.
+const DB_FACE = 26;  // the face's square, rim included
+const DB_PAD = 5;    // px inside the plate
+// the killing blow: the record's last entry (recapNote, js/sim/player.js)
+function recapKill(log) { return log && log.length ? log[log.length - 1] : null; }
+function drawDownedBy(y) {
+  if (state.over !== 'respawning') return;
+  const e = recapKill(player.deathLog);
+  if (!e) return;
+  const head = tr('recap.downedBy'), who = rcWho(e), icon = rcIcon(e);
+  const tw = Math.max(pixelTextWidth(head, 1), pixelTextWidth(who, 2));
+  const w = DB_PAD + DB_FACE + 6 + tw + (icon ? 8 + RC_ICON : 0) + DB_PAD, h = DB_FACE + DB_PAD * 2;
+  const x = (VIEW_W - w) >> 1;
+  ctx.fillStyle = SC_INK; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+  ctx.fillStyle = SC_BG; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, w, 1);
+  rcFace(x + DB_PAD, y + DB_PAD, { e }, true, player.team, DB_FACE);
+  const tx = x + DB_PAD + DB_FACE + 6;
+  drawPixelText(ctx, head, tx, y + DB_PAD + 3, SC_LBL, 1);
+  drawPixelText(ctx, who, tx, y + DB_PAD + 12, e.by >= 0 ? rcWhoCol(e) : SC_LIT, 2);
+  if (icon) rcDrawIcon(icon, x + w - DB_PAD - RC_ICON, y + ((h - RC_ICON) >> 1));
 }

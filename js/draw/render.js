@@ -441,10 +441,8 @@ function cursorInfo() {
   // and the click agree; a merchant is not a mark)
   if (unitUnder(player, wx, wy)) return ret('hunt', busy);
   // something E can work: lock ring (ice-blue over bare ice), dim out of
-  // reach. Nothing at a counter: inside a merchant's reach E is the shop's
-  // (keyPress, js/app/input.js), and a ring there would promise a swing the key
-  // no longer makes.
-  const wt = merchNear(player) ? null : workTarget(player);
+  // reach (the counter has its own key, so a merchant in reach takes nothing from E)
+  const wt = workTarget(player);
   if (wt) return ret(wt.o ? 'lock' : 'ice', busy || !wt.near);
   return ret('idle', busy);
 }

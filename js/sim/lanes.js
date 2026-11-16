@@ -149,3 +149,24 @@ function laneHold(team, lane) {
   const p = laneAt(L, a + (mid - a) * LANE_HOLD);
   return { x: (p.x + 0.5) * TILE, y: (p.y + 0.5) * TILE };
 }
+// the walk to that spot along the ground: the side's own road from its
+// mouth to laneHold, in px, a point about every `step` px (the FIRST
+// MATCH's LANE lesson draws it: drawGuideTrail, js/ui/guide.js)
+function laneHoldRoute(team, lane, step) {
+  const pts = [];
+  let at;
+  if (lane === 1) {
+    const u = roadNest(team).u, u1 = u + ((WORLD - 1) / 2 - u) * LANE_HOLD;
+    at = (k) => roadPoint(u + (u1 - u) * k);
+  } else {
+    const L = laneLine(lane), g = baseGate(team, lane), a = laneAlong(L, g.tx, g.ty), mid = L.at[L.at.length - 1] / 2;
+    const a1 = a + (mid - a) * LANE_HOLD;
+    at = (k) => { const p = laneAt(L, a + (a1 - a) * k); return { x: (p.x + 0.5) * TILE, y: (p.y + 0.5) * TILE }; };
+  }
+  // the road's own length, to cut it into even steps
+  let len = 0, prev = at(0);
+  for (let k = 1; k <= 64; k++) { const q = at(k / 64); len += Math.hypot(q.x - prev.x, q.y - prev.y); prev = q; }
+  const n = Math.max(1, Math.round(len / step));
+  for (let k = 0; k <= n; k++) pts.push(at(k / n));
+  return pts;
+}

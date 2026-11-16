@@ -700,13 +700,13 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'ctl.move' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
       ['ctl.click', 'ctl.fire'], 'dodge', 'slide', 'work', ['ctl.rmb', 'ctl.ping']],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'recall', 'char', 'details'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'shop', 'recall', 'char', 'details'],
     ['map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info'], ['ctl.dot', 'ctl.hitbox']],
   ],
   click: [
     [['ctl.rmb', 'ctl.moveAct'], ['ctl.holdRmb', 'ctl.follow'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ctl.abilities' },
       ['ctl.click', 'ctl.fire'], 'amove', 'stop', 'dodge', 'slide'],
-    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'ping', 'char', 'recall', 'details'],
+    [{ acts: ['item1', 'item2', 'item3'], verb: 'ctl.items' }, { acts: ['item4', 'item5', 'item6'], verb: 'ctl.items' }, 'ping', 'shop', 'char', 'recall', 'details'],
     [ 'map', 'board', 'mute', 'pause', ['ctl.esc', 'ctl.settings'], ['ctl.scroll', 'ctl.zoom'], ['ctl.f3', 'ctl.info']],
   ],
 };
@@ -802,20 +802,22 @@ function footPlanks() {
   const word = { close: 'set.close', surrender: 'set.surrender', leave: leaveAsking() ? 'set.leaveSure' : 'set.leave' };
   return ids.map((id, i) => ({ id, label: tr(word[id]), x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
-// LEAVE in a match asks first: its first press turns it red and asks again
-// for LEAVE_ASK_T s, its second leaves. The practice field leaves at once (nothing is lost there).
-const LEAVE_ASK_T = 3;
-let leaveAskAt = -1; // the page clock (s) of the first press, -1 none
-function leaveAsking() { return leaveAskAt >= 0 && performance.now() / 1000 - leaveAskAt < LEAVE_ASK_T; }
+// LEAVE in a match asks first: its first press turns it red, LEAVE?, and it
+// stays asking until the second press leaves, any other press on the slab
+// calls it off, or the slab closes. No clock: a timed ask ran out under a
+// slow hand, and its second press only asked again. The practice field
+// leaves at once (nothing is lost there).
+let leaveAsk = false;
+function leaveAsking() { return leaveAsk && !!state.settingsOpen; }
 function settingsLeave() {
-  if (!PRACTICE && !leaveAsking()) { leaveAskAt = performance.now() / 1000; SFX.deny(); return; }
-  leaveAskAt = -1;
+  if (!PRACTICE && !leaveAsking()) { leaveAsk = true; SFX.deny(); return; }
+  leaveAsk = false;
   if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); // a party's leader back to its party
 }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)
 function settingsClose() {
-  setDrop = null; leaveAskAt = -1;
+  setDrop = null; leaveAsk = false;
   if (state.settingsOpen) { state.settingsOpen = false; dragSlider = null; state.rebind = null; saveSettings(); SFX.pickup(); }
   else closeMenuPanel();
 }
@@ -871,6 +873,7 @@ function settingsHit() {
 function settingsMouseDown() {
   SFX.unlock();
   const hit = settingsHit();
+  if (hit !== 'leave') leaveAsk = false; // LEAVE? stands only for the press that answers it
   // a listening cap: any press but its own calls it off first
   if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
   // an open list: a click on an entry picks it, any click anywhere folds it

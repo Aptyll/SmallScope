@@ -11,7 +11,9 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons. `state.rpClosed`
+  `replayClose()`, as `deadClick` takes any click that is not on the recap's fold buttons - but for
+  a death's first `RP_HOLD` s (`replayHeld`) only ESC and the close box do, so the clicks and the
+  dodge a fight was mashing never put the recap away unseen. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death; a `'hostleft'` ending is no death and never
   opens it, so the guest sees THE HOST LEFT and LOBBY at once. A lost match does not open it by
   itself either: its defeat screen carries a **REPLAY** word (`deadItems`, `state.rpAgain`) that

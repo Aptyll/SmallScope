@@ -30,7 +30,9 @@ to a dim under one line for `'lost'` (the match is decided for everyone), which 
 at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
 [fall](../rendering/going-down.md) is over) (`state.deadView = 'spec'`, `specNext` keeping to
 the side's own through `specOk`, the only spectating there is), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
-the live countdown, and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
+the live countdown, with **DOWNED BY** under it for the whole wait (`drawDownedBy`, js/ui/recap.js: the
+killing blow's face, gold-rimmed, its name in its side's colour and what it hit with, or `?` for a rival
+the side did not see), and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
 after, the player choosing when. A `'lost'` dim has no plank and no replay: after `LOST_BEAT` s (or a press) it opens
 [the defeat screen](../rendering/the-end-screens.md), the loss's own summary, the way a win goes

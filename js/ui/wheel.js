@@ -168,10 +168,10 @@ function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || window.DBG.hideUI) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
-  // a MERCHANT in reach owns the key outright (keyPress, js/app/input.js), so its
-  // cap is the one that shows - trunk under the aim or not
-  if (drawShopHint(ox, oy)) return;
-  // ...then a zipline overhead, the key's next claim (keyPress again)
+  // a MERCHANT in reach: its counter's own key (the SHOP action, keyPress, js/app/input.js),
+  // shown beside whatever the work key would take
+  drawShopHint(ox, oy);
+  // a zipline overhead, the work key's first claim (keyPress again)
   if (drawZipHint(ox, oy)) return;
   // ...then a deer in reach (keyPress again)
   if (drawRideHint(ox, oy)) return;
@@ -260,16 +260,23 @@ function promptW(verb, action) {
   return pixelTextWidth(keyCap(action)) + 6 + 3 + pixelTextWidth(verb);
 }
 
-// The zipline's prompt: a bare cap, no verb, over the cable at the body's own
-// column while it stands under either side's line (zipNear, js/sim/zipline.js - the
-// resolver keyPress clips on with). The cable overhead is the whole
-// affordance; the cap only says which key takes it.
+// The zipline's prompt: a cap over the cable at the body's own column while
+// it stands under either side's line (zipNear, js/sim/zipline.js - the
+// resolver keyPress clips on with), and beside it the lane the cable runs
+// down, as the pick's position emblem (posIcon, js/ui/select.js): every
+// cable looks alike from under it, and the emblem says top, mid or bot.
+const ZIP_LANE_POS = [0, 2, 3]; // a cable's lane -> its POSITIONS emblem (TOP, MID, BOT)
 function drawZipHint(ox, oy) {
   const near = zipNear(player);
   if (!near) return false;
-  const w = promptW('', 'work');
-  const y = Math.round(player.y + 4 - zipLift(near.z, near.d) - oy - 19); // clear of the cable, and of the name tag stamped over the world (drawWorldText)
-  drawKeyPrompt(Math.round(player.x - ox - w / 2), Math.max(1, Math.min(WV_H - 11, y)), '', keyHeld('work'));
+  const icon = posIcon(ZIP_LANE_POS[near.z.lane], '#f4f7ff');
+  const w = promptW('', 'work') + 2 + icon.width + 2;
+  const x = Math.round(player.x - ox - w / 2);
+  const y = Math.max(1, Math.min(WV_H - 11, Math.round(player.y + 4 - zipLift(near.z, near.d) - oy - 19))); // clear of the cable, and of the name tag stamped over the world (drawWorldText)
+  drawKeyPrompt(x, y, '', keyHeld('work'));
+  const ix = x + promptW('', 'work') - 1;
+  ctx.fillStyle = '#121418'; ctx.fillRect(ix, y - 1, icon.width + 2, icon.height + 1);
+  ctx.drawImage(icon, ix + 1, y - 1);
   return true;
 }
 
@@ -315,20 +322,18 @@ function drawBellHint(ox, oy) {
 // 9x11 pixel mouse, the "click" key-cap. Only the LEFT button carries colour
 // (gold = the game's "active" accent, hot orange while pressed); the right
 // button is plain body so nothing suggests right-click.
-// The merchant's prompt, the die's own proximity grammar one body over: an
-// E SHOP cap over whichever merchant is in reach (merchNear, js/ui/shop.js -
-// the same resolver the press uses), either team's. It hides while the
-// counter is up, the way every hint hides under a wheel. Returns whether it
-// drew: the merchant owns E in that bubble, so a cap here is the whole
-// answer and drawWorkHint stops on it.
+// The merchant's prompt, the die's own proximity grammar one body over: a
+// SHOP cap (its own key, never the work key's) over whichever merchant is in
+// reach (merchNear, js/ui/shop.js - the same resolver the press uses), either
+// team's. It hides while the counter is up, the way every hint hides under a wheel.
 function drawShopHint(ox, oy) {
   if (state.shop) return false;
   const b = merchNear(player);
   if (!b) return false;
   const verb = 'SHOP';
-  const totalW = promptW(verb, 'work');
+  const totalW = promptW(verb, 'shop');
   const pt = counterPt(b), lift = b.merchant ? 44 : 50; // a stall's cap clears its awning
-  drawKeyPrompt(Math.round(pt.x - ox - totalW / 2), Math.round(pt.y - lift - oy), verb, keyHeld('work'));
+  drawKeyPrompt(Math.round(pt.x - ox - totalW / 2), Math.round(pt.y - lift - oy), verb, keyHeld('shop'), 'shop');
   return true;
 }
 

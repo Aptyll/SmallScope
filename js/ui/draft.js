@@ -22,7 +22,6 @@
 // ends on the title, and its result is the class each player flies out with.
 const DRAFT_BAN_T = 15;        // s: the ban phase
 const DRAFT_PICK_T = 30;       // s: the blind pick, everyone at once (ends early once every seat has locked)
-const DRAFT_PICK_FIRST_T = 60; // s: ...and a FIRST MATCH's, time to read a hero or two (the brief, js/ui/select.js)
 const DRAFT_BAN_MANY = 15;     // heroes at which every seat bans one; under it each team bans one
 const DRAFT_KEEP = 3;          // heroes the bans always leave pickable
 const DRAFT_RANGED = 2;        // a bot's side wants about this many heroes at range
@@ -38,7 +37,9 @@ const DRAFT = {
   role: [],                    // per seat: its POSITIONS index (your side's; a rival's is -1 on a guest)
   fx: 0,                       // s: the flash as a phase turns
 };
-function draftPickT() { return NET.mode === 'guide' ? DRAFT_PICK_FIRST_T : DRAFT_PICK_T; }
+// the pick's clock: a FIRST MATCH has none - someone new reads a hero or two (the brief, js/ui/select.js)
+// and the pick waits for their LOCK IN; it is the one screen nobody else is waiting on (bots only)
+function draftPickT() { return NET.mode === 'guide' ? Infinity : DRAFT_PICK_T; }
 function draftOpen() { return DRAFT.phase === 'ban' || DRAFT.phase === 'pick'; }
 function draftHiding() { return draftOpen() || DRAFT.phase === 'wait'; }
 function heroRanged(h) { return !!CLASSES[h].attack.shot; }
@@ -259,7 +260,7 @@ function draftAct(slot, k, h, id) {
 function draftMsg(team) {
   const D = DRAFT, open = D.phase === 'done';
   const seen = (i) => open || players[i].team === team;
-  return { t: 'draft', ph: D.phase, tl: D.t, n: D.nBan, banned: D.banned,
+  return { t: 'draft', ph: D.phase, tl: isFinite(D.t) ? D.t : -1, n: D.nBan, banned: D.banned, // tl -1: an untimed pick (draftPickT)
     role: D.role.map((r, i) => players[i].team === team ? r : -1),
     load: players.map((p, i) => players[i].team === team && isHuman(p) && p.loadout && p.loadout.calling ? loadoutStr(p.loadout) : ''), // a person's picks, your side's only
     hover: D.hover.map((h, i) => seen(i) ? h : -1),
@@ -272,7 +273,7 @@ function draftSend() {
 }
 function draftIn(msg) {
   const D = DRAFT, was = D.phase;
-  D.phase = String(msg.ph); D.t = +msg.tl || 0; D.nBan = msg.n | 0;
+  D.phase = String(msg.ph); D.t = msg.tl < 0 ? Infinity : +msg.tl || 0; D.nBan = msg.n | 0;
   D.banned = msg.banned || []; D.hover = msg.hover || []; D.lock = msg.lock || []; D.lead = msg.lead || [[], []]; D.role = msg.role || [];
   if (Array.isArray(msg.load)) msg.load.forEach((s, i) => { const q = players[i]; if (q && q !== player && typeof s === 'string') q.loadout = s ? loadoutParse(s) : { tricks: [null, null], calling: null }; });
   if (D.phase === was) return;

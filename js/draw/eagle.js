@@ -226,7 +226,7 @@ function drawPerchBar(e, sx, bottom, now) {
     for (let k = 1; k < PERCH_BAR_SEGS; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
     const txt = String(Math.max(0, Math.ceil(e.hp))); // the pool's number, 1x outlined, centred in the bar
     drawWorldText(txt, centreTextX(sx, txt, 1), by + 1, '#f4f7ff', 1);
-  });
+  }, true); // under every body's plate: a hero standing beneath keeps its name
 }
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap

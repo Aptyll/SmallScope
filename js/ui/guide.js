@@ -121,7 +121,7 @@ const GUIDE_STEPS = [
     done: (g) => Math.hypot(player.x - g.x0, player.y - g.y0) > GUIDE_MOVE_PX },
   // SHOP holds the card until the first buy, its arrow on the counter wherever you walk: a fight in front of you is the one thing ahead of it
   { id: 'shop', word: 'SHOP', tip: 'WALK TO YOUR MERCHANT AND BUY AN ITEM',
-    caps: () => [keyCap('work')],
+    caps: () => [keyCap('shop')],
     begin: (g) => { g.spent = player.goldSpent; },
     done: (g) => player.goldSpent > g.spent,
     at: guideCounter },
@@ -178,14 +178,15 @@ function guideNext() {
 function updateGuide(now) {
   const dt = Math.max(0, Math.min(0.1, now - guide.last));
   guide.last = now;
-  if (!guideOn()) return;
-  if (guide.step < 0) { for (const s of GUIDE_STEPS) if (s.begin) s.begin(guide); guideOpen(0); }
-  // every cast, by the cooldown starting on a key
+  // every cast, by the cooldown starting on a key: sampled every frame, card up or not, so a
+  // sample left over from before a ride or a death never hides the next cast behind it
   for (let i = 0; i < 4; i++) {
     const c = player.abCd[i] || 0;
-    if (c > guide.cd[i] + 0.05) guide.casts++;
+    if (c > guide.cd[i] + 0.05 && guide.step >= 0) guide.casts++;
     guide.cd[i] = c;
   }
+  if (!guideOn()) return;
+  if (guide.step < 0) { for (const s of GUIDE_STEPS) if (s.begin) s.begin(guide); guideOpen(0); }
   if (guide.flash > 0) {
     guide.flash -= dt;
     if (guide.flash <= 0) {
@@ -295,6 +296,52 @@ function drawGuideArrow(now, at) {
     }
   }
 }
+// LANE's trail: gold dots from your feet to your own lane's road, then down
+// it to the spot its laner waits at (laneHoldRoute, js/sim/lanes.js), a
+// pulse running down them the way you go. An arrow points across the trees;
+// the dots follow the road. They keep off the top bar, the strip and your own frame.
+const GUIDE_TRAIL_GAP = 14; // px of road between two dots
+const GUIDE_TRAIL_N = 40;   // dots ahead of you at most
+const GUIDE_TRAIL_RUN = 7;  // dots between two pulses
+const guideTrail = { key: '', pts: null };
+function guideTrailPts() {
+  const l = guideLaneOf();
+  if (l < 0) return null;
+  const key = player.team + ':' + l;
+  if (guideTrail.key !== key) {
+    const R = laneHoldRoute(player.team, l, GUIDE_TRAIL_GAP), out = [R[0]];
+    let carry = 0;
+    for (let i = 1; i < R.length; i++) { // even steps along the polyline
+      const a = R[i - 1], b = R[i], d = Math.hypot(b.x - a.x, b.y - a.y);
+      let t = GUIDE_TRAIL_GAP - carry;
+      for (; t <= d; t += GUIDE_TRAIL_GAP) out.push({ x: a.x + (b.x - a.x) * t / d, y: a.y + (b.y - a.y) * t / d });
+      carry = d - (t - GUIDE_TRAIL_GAP);
+    }
+    guideTrail.key = key; guideTrail.pts = out;
+  }
+  return guideTrail.pts;
+}
+function drawGuideTrail(now) {
+  const P = guideTrailPts();
+  if (!P) return;
+  // the dot nearest you that still has road ahead of it, and a straight leg of dots from your feet to it
+  let b = 0, bd = Infinity;
+  for (let i = 0; i < P.length - 1; i++) { const d = Math.hypot(P[i].x - player.x, P[i].y - player.y); if (d < bd) { bd = d; b = i; } }
+  const dots = [], leg = Math.floor(bd / GUIDE_TRAIL_GAP);
+  for (let k = 1; k <= leg; k++) dots.push({ x: player.x + (P[b].x - player.x) * k / (leg + 1), y: player.y + (P[b].y - player.y) * k / (leg + 1) });
+  for (let i = b; i < P.length && dots.length < GUIDE_TRAIL_N; i++) dots.push(P[i]);
+  const run = Math.floor(now * 10) % GUIDE_TRAIL_RUN;
+  const top = railBottom() + 4, foot = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - 4;
+  const px = wToSX(player.x), py = wToSY(player.y);
+  dots.forEach((q, n) => {
+    const sx = Math.round(wToSX(q.x)), sy = Math.round(wToSY(q.y));
+    if (sx < 3 || sx >= VIEW_W - 3 || sy < top || sy >= foot) return;
+    if (Math.abs(sx - px) < 16 && sy > py - 64 && sy < py + 8) return; // your body and the frame over it
+    const lit = n % GUIDE_TRAIL_RUN === run; // the pulse runs away from you
+    ctx.fillStyle = GUIDE_INK; ctx.fillRect(sx - 3, sy - 3, 6, 6);
+    ctx.fillStyle = lit ? GUIDE_TXT : GUIDE_GOLD; ctx.fillRect(sx - 2, sy - 2, 4, 4);
+  });
+}
 // the edge chevron pointing right and pointing down-right; the other six are these turned
 const GUIDE_EDGE_ARROW = [
   ['#......', '###....', '#####..', '#######', '#####..', '###....', '#......'],
@@ -331,6 +378,7 @@ function renderGuide(now) {
   updateGuide(now);
   const s = guideShown();
   if (!s) return;
+  if (s.id === 'lane' && !guide.flash) drawGuideTrail(now); // the road to your lane, dot by dot
   const at = !guide.flash && s.at ? s.at() : null;
   if (at) drawGuideArrow(now, at);
   drawGuideCard(now, s, guide.flash > 0, guide.step, true);

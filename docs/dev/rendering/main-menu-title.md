@@ -160,7 +160,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   side's positions reach a guest in the `draft` message, the rivals' never.
 
   When the pick ends every seat's hero is set (`setClass`) and the **countdown** starts
-  (`draftCount`): `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
+  (`draftCount`): `menu.countT` runs `COUNT_T` (10) seconds; a gold ring bursts out from the figure's feet across
   the snow (`menu.lockFx` over `LOCK_FX_T`), the showcase takes the middle, and the top band's
   seconds count it down in gold,
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
