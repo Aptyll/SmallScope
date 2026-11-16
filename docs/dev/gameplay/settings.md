@@ -242,21 +242,34 @@ eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-
 
 **The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js);
 the title's FIRST MATCH goes straight to the hero pick, its draft has no ban phase (`draftBansPerTeam`) and its pick clock is `DRAFT_PICK_FIRST_T` (`draftPickT`).
+The game's very first launch (`PROFILE.firstRun`: no profile was saved before this boot) skips the title and opens that pick
+at once (js/app/boot.js), unless the boot came for something else (a join, a party back, the field, a tool's `?seed=N` or `?local=N`).
+A FIRST MATCH played alone ends on the title, by LEAVE or by its result (`titleUrl`, the way `rematchUrl` sends it, js/ui/rooms.js);
+with friends in the party it goes back to the party like any match. In the pick the starters (`starter` in `CLASSES`) wear a gold
+diamond while the profile is new or the mode is FIRST MATCH (`heroStarterLit`), and every face wears its `style` emblem (`styleIcon`, js/ui/heroes.js).
+
+Before the first lesson the camera shows the goal (`guideTourAim`, the play camera's branch in js/sim/sim.js): once
+both birds are down and your landing's headline is gone, it rides your lane from your eagle to theirs (`guideTourPath`; the
+middle road for MID or the jungle) over `GUIDE_TOUR_GO`, zoomed out to the shows' framing, holds `GUIDE_TOUR_HOLD` on their bird
+under **DRIVE OFF THEIR EAGLE** in their paint (`guideTourDraw`, `drawHeadline`, js/draw/eagle.js), and the follow camera glides
+home. Walking `GUIDE_TOUR_STOP` cuts it short.
+
 The coach is this screen's UI only: it reads the local player and never writes the sim, so every screen
-in a FIRST MATCH party coaches its own player. The card is down with the rest of the HUD while a bird driven off has the camera (`hudHome`, js/ui/strip.js). One flat graphite card stands centred over the hud strip's
-buy plates, drawn `GUIDE_K` view px to each of its own so a first look finds it: the key caps of the live scheme (`keyCap`) and one word, a gold count where a lesson has one, a
+in a FIRST MATCH party coaches its own player. The card is down with the rest of the HUD while a bird driven off has the camera (`hudHome`, js/ui/strip.js). One flat graphite card sits centred on the hud strip's
+buy plates (`GUIDE_LIFT` over them), its head row drawn `GUIDE_K` view px to each of its own so a first look finds it: the key caps of the live scheme (`keyCap`) or an emblem, and one word, a gold count where a lesson has one, a
 dim X that turns the coach off for good (`guideClick`, which also sets `PROFILE.setGuided`), and a row of
-pips over it, one per lesson. One line of detail stands open under it for a lesson's first `GUIDE_TIP_T` seconds, then folds away; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again. A
+pips over it, one per lesson. One line of detail at the view's 1x stands open under the word for a lesson's first `GUIDE_TIP_T` seconds, then folds away; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again. A
 lesson's whole meaning is its `GUIDE_STEPS` row: MOVE (walk `GUIDE_MOVE_PX` off the landing), SHOP (any
-buy; a gold arrow over your side's stall or merchant, and at the open counter over BUY while the pick can be bought: `renderGuideShop`), ABILITIES (two casts; a key a point would learn
+buy; it holds the card until then, with a gold arrow over your side's stall or merchant wherever you walk, and at the open counter over BUY while the pick can be bought: `renderGuideShop`), LANE (your position's emblem, `posIcon`, and an arrow over where your lane's laner waits, `laneHold`; done within `GUIDE_LANE_PX` of it, or with the fight in front of you; the jungle has no lane and skips it), ABILITIES (two casts; a key a point would learn
 pulses gold), LAST HIT (three), RECALL (shown once the purse holds `GUIDE_RECALL_GOLD` or health is
 under half; done standing in the roost ring), TOWER (a rival tower falls; the arrow over the nearest)
-and THEIR EAGLE, which stays to the end. The card shows the first lesson not yet learned whose place is at
-hand (`guideNext`): SHOP steps aside past `GUIDE_SHOP_PX` from your counter (`guideShopNear`), so out in the
-lane the next lesson teaches, and comes back within `GUIDE_SHOP_BACK` of it; its pip stays dark until it is learned. The shown lesson is judged before the card changes, and RECALL (`away`) is learned in the ring even after SHOP has taken the card. A lesson whose moment has come is shown ahead of its turn (`now`): RECALL the instant your health is under `GUIDE_HURT` away from home (`guideHurt`), until it is back over `GUIDE_HURT_OUT`. Every
+and THEIR EAGLE, which stays to the end. LANE, ABILITIES and LAST HIT carry the seconds until the first wave leaves the barracks, in gold (`guideClock`, `guideWave`).
+The card shows the first lesson not yet learned (`guideNext`), unless one's moment has come, which is shown ahead of its turn (`now`): LAST HIT while a rival soldier of your lane is on the screen (`guideFightUp`), RECALL the instant your health is under `GUIDE_HURT` past `GUIDE_HOME_PX` from home (`guideHurt`), until it is back over `GUIDE_HURT_OUT`. The shown lesson is judged before the card changes, and RECALL (`away`) is learned in the ring even after SHOP has taken the card. Every
 lesson's count starts as the coach does, so one done before its turn shows learned the moment its card comes up.
-An arrow off screen is a 2x chevron on the view's edge. While a respawn clock runs the card stands in the same place with the lesson of that death (`guideDeathLesson`, read off `player.deathLog`): TOWER when a tower dealt `GUIDE_DEATH_TOWER` of the blows, else RECALL; its line of detail stays open and it wears no X. A
+An arrow off screen is a 2x chevron on the view's edge, kept under the top bar and over the card. While a respawn clock runs the card stands in the same place with the lesson of that death (`guideDeathLesson`, read off `player.deathLog`): TOWER when a tower dealt `GUIDE_DEATH_TOWER` of the blows, else RECALL; its line of detail stays open and it wears no X. A
 finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once every
 lesson but the last is learned, the X is pressed, or any match reaches its result.
+
+LEAVE in any match asks first (`settingsLeave`): its first press turns the plank red and reads LEAVE? for `LEAVE_ASK_T` s, the second leaves. The practice field leaves at once.
 
 RANKED is open from the first boot, with no matches to play first.

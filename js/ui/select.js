@@ -405,13 +405,19 @@ function selBriefHero(L, under) {
   const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
   return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;
 }
+// the line under the brief's name: the hero's style word (ITEM_STYLES' label) and its title
+const BRIEF_STYLE_GAP = 6;
+function selBriefLine(c) {
+  const style = ITEM_STYLES.find((o) => o.id === c.style).label;
+  return { style, w: pixelTextWidth(style) + (c.role ? BRIEF_STYLE_GAP + pixelTextWidth(c.role) : 0) };
+}
 function selBrief(L, under) {
   const h = selBriefHero(L, under);
   if (h < 0) return null;
   const last = L.heroes.length ? L.heroes[L.heroes.length - 1].y + L.pitch : L.grid.y;
   if (L.play.y - last < BRIEF_WELL + 8) return null; // no room under this grid
   const c = CLASSES[h], n = CLASS_AB[h].length;
-  const tw = Math.max(pixelTextWidth(c.name, 2), pixelTextWidth(c.role || ''));
+  const tw = Math.max(pixelTextWidth(c.name, 2), selBriefLine(c).w);
   const ww = n * BRIEF_WELL + (n - 1) * BRIEF_GAP;
   const x = L.cx - ((tw + BRIEF_SPLIT + ww) >> 1), y = last + ((L.play.y - last - BRIEF_WELL) >> 1);
   const wells = [];
@@ -431,7 +437,9 @@ function drawSelBrief(L, a) {
   const c = CLASSES[B.h], hit = selBriefHit(L);
   ctx.globalAlpha = a;
   drawPixelTextShadow(ctx, c.name, B.x + B.tw - pixelTextWidth(c.name, 2), B.y + 6, SC_LIT, SC_INK, 2);
-  if (c.role) drawPixelText(ctx, c.role, B.x + B.tw - pixelTextWidth(c.role), B.y + 21, SC_LBL);
+  const line = selBriefLine(c), lx = B.x + B.tw - line.w; // under the name: what it is for in its own colour, then its title
+  drawPixelText(ctx, line.style, lx, B.y + 21, STYLE7[c.style].col);
+  if (c.role) drawPixelText(ctx, c.role, lx + pixelTextWidth(line.style) + BRIEF_STYLE_GAP, B.y + 21, SC_LBL);
   for (const w of B.wells) {
     const hot = hit && hit.i === w.i;
     ctx.fillStyle = hot ? SEL_GOLD : SC_EDGE; ctx.fillRect(w.x, w.y, w.w, w.h);

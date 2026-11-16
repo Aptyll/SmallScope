@@ -397,32 +397,38 @@ function drawDropBind(act, verb, x, y, col, ts, centre) {
 // own roost, every match, while its wings settle (HEADLINE_IN, HEADLINE_HOLD
 // off the bird's own restT, so a client shows it on the same beat). The
 // headline carve-out: a match has exactly one win condition, and this is the
-// once it is ever written down. Verb first, nothing under it, in your side's
+// once it is ever written down (and once more in a FIRST MATCH, over their roost). Verb first, nothing under it, in your side's
 // paint at HEADLINE_TEXT times the drop HUD's text scale, on no plate - a
 // dark rim carries it over the pines. Baked opaque and faded as a canvas: an
 // outline stamped under globalAlpha goes blotchy (the CLAUDE.md text rule).
-let headCv = null, headCvKey = '';
 function drawDropHeadline() {
   const e = state.drop && state.drop.eagles[player.team];
   if (PRACTICE || !e || e.state !== 'down' || window.DBG.hideUI || endScreen()) return; // the practice field boots with its birds down: no arrival
   const t = e.restT - HEADLINE_IN;
-  const a = Math.min(1, t / 0.25, Math.max(0, (HEADLINE_HOLD - t) / 0.4));
+  drawHeadline('PROTECT YOUR EAGLE', player.team, Math.min(1, t / 0.25, Math.max(0, (HEADLINE_HOLD - t) / 0.4)));
+}
+// a headline in a side's paint at alpha a, where the landing's stands (the
+// FIRST MATCH's ride to their roost writes its one line the same way,
+// guideTourDraw, js/ui/guide.js). Baked per text, side and scale.
+const headCvs = new Map();
+function drawHeadline(text, team, a) {
   if (a <= 0) return;
   const ts = VIEW_H >= 500 ? 2 : 1; // the drop HUD's own text scale (renderDropUI)
-  const key = player.team + ':' + ts;
-  if (!headCv || headCvKey !== key) {
-    const t1 = 'PROTECT YOUR EAGLE', hs = HEADLINE_TEXT * ts, rim = HEADLINE_RIM;
-    headCv = document.createElement('canvas');
-    headCv.width = pixelTextWidth(t1, hs) + rim * 2;
-    headCv.height = 5 * hs + rim * 2;
-    const c2 = headCv.getContext('2d');
+  const key = text + ':' + skin(team) + ':' + ts;
+  let cv = headCvs.get(key);
+  if (!cv) {
+    const hs = HEADLINE_TEXT * ts, rim = HEADLINE_RIM;
+    cv = document.createElement('canvas');
+    cv.width = pixelTextWidth(text, hs) + rim * 2;
+    cv.height = 5 * hs + rim * 2;
+    const c2 = cv.getContext('2d');
     for (let dy = -rim; dy <= rim; dy++) for (let dx = -rim; dx <= rim; dx++) {
-      if (dx || dy) drawPixelText(c2, t1, rim + dx, rim + dy, '#0f1632', hs);
+      if (dx || dy) drawPixelText(c2, text, rim + dx, rim + dy, '#0f1632', hs);
     }
-    drawPixelText(c2, t1, rim, rim, TEAMS[skin(player.team)].mark, hs);
-    headCvKey = key;
+    drawPixelText(c2, text, rim, rim, TEAMS[skin(team)].mark, hs);
+    headCvs.set(key, cv);
   }
-  ctx.globalAlpha = a;
-  ctx.drawImage(headCv, Math.round((VIEW_W - headCv.width) / 2), Math.round(VIEW_H * HEADLINE_Y));
+  ctx.globalAlpha = Math.min(1, a);
+  ctx.drawImage(cv, Math.round((VIEW_W - cv.width) / 2), Math.round(VIEW_H * HEADLINE_Y));
   ctx.globalAlpha = 1;
 }

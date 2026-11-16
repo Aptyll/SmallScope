@@ -129,6 +129,11 @@ if (PRACTICE) {
 if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
 else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
 if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
+// the game's first launch goes straight into the FIRST MATCH's pick (js/ui/guide.js), and its end
+// lands on the title (titleUrl, js/ui/rooms.js). A boot that came for something else keeps the title:
+// a join, a party back from a match, the field, or a tool's ?seed=N or ?local=N
+if (PROFILE.firstRun() && !PRACTICE && !LOADED_AT_BOOT && !JOIN_AT_BOOT && state.mode === 'title' && state.menu.screen === 'menu' &&
+  !/[?&](seed|net|back|join|local)=/.test(location.search)) menuActivate(menuItems().indexOf('FIRST MATCH'));
 // landing from a reload that whited out (a rematch, the field left): the white clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {

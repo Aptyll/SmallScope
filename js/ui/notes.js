@@ -580,6 +580,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['FIRST MATCH: shows the goal, walks you to your lane, starters and roles in the pick', '0.952'],
     ['MOUSE: moves at your desktop\'s own speed, the cursor no longer trails your hand', '0.951'],
     ['VIDEO: FULLSCREEN or WINDOWED, and UI SIZE; settings and keys follow you on Steam Cloud', '0.950'],
     ['A FOUNDER\'S GOLD FEATHER AND A RANKED SHIELD, FLINT TO CRYSTAL, ON PROFILES AND PARTY SEATS', '0.945'],

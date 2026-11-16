@@ -5,8 +5,9 @@
 // to do: move, shop, abilities, last hits, recall, a tower, their eagle. The
 // card is the key caps and one word, readable in a second; the DETAILS key (or ABILITY
 // DETAILS on ALWAYS) opens one line of detail under it. A gold arrow stands
-// over what a step is about (your merchant, their tower, their eagle). The
-// dim X turns the coach off for good.
+// over what a step is about (your merchant, your lane, their tower, their
+// eagle), and until the first wave leaves its card carries the seconds to it.
+// The card sits on the hud strip's buy plates. The dim X turns the coach off for good.
 //
 // It is this screen's UI and nothing else: it reads the local player and
 // the world, never writes the sim, so every screen in a FIRST MATCH party
@@ -18,10 +19,11 @@ const GUIDE_FLASH = 0.7;       // s a finished step's card holds, gold, before t
 const GUIDE_TIP_T = 7;         // s a lesson's line of detail stands open before it folds away
 const GUIDE_HURT = 0.5, GUIDE_HURT_OUT = 0.75; // the share of your health under which RECALL is taught at once, and over which it steps back
 const GUIDE_HOME_T = 1.5;      // s RECALL's card shows before standing at home counts
-const GUIDE_SHOP_PX = 400;     // px from your counter past which SHOP steps aside: out in the lane the next lesson teaches
-const GUIDE_SHOP_BACK = 300;   // px from it within which SHOP comes back: the give between the two keeps a hero on the line from flipping cards
-const GUIDE_LIFT = 8;          // px between the card's foot and the strip's buy plates
-const GUIDE_H = 16, GUIDE_TIP_H = 10, GUIDE_PAD = 4;
+const GUIDE_HOME_PX = 400;     // px from your counter past which you are away from home (RECALL's moment)
+const GUIDE_LANE_PX = 48;      // px from your lane's waiting spot that counts as there
+const GUIDE_LIFT = 2;          // px between the card's foot and the strip's buy plates: it sits on the hud
+const GUIDE_H = 16, GUIDE_PAD = 4;
+const GUIDE_TIP_H = 9;         // the line of detail's band, in view px: it reads at the hud's own 1x, so the card stays low
 const GUIDE_RAIL_AIR = 8;      // px of air between the top bar and an edge arrow under it
 const GUIDE_K = 2;             // the card is drawn this many view px to one of its own: big enough that a first look finds it
 const GUIDE_INK = '#07080a', GUIDE_EDGE = '#2f3238', GUIDE_BG = '#16181c';
@@ -36,17 +38,31 @@ function guideCounter() {
   if (stallUp(b.stall)) { const c = counterPt(b.stall); return { x: c.x, y: c.y - 48 }; } // over its awning
   return { x: b.x, y: b.y - 34 }; // over its name
 }
-// SHOP is taught where the shop is: within a short walk of your counter
-function guideShopNear() {
-  const c = guideCounter();
-  const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'shop';
-  return !!c && Math.hypot(c.x - player.x, c.y - player.y) < (up ? GUIDE_SHOP_PX : GUIDE_SHOP_BACK);
+// the lane your position holds (POSITIONS, js/sim/player.js): -1 in the jungle, which has none
+function guideLaneOf() { const pos = POSITIONS[player.position]; return pos ? pos.lane : 1; }
+// LANE's spot: where your lane's laner waits for the first wave (laneHold, js/sim/lanes.js)
+function guideLaneSpot() { const l = guideLaneOf(); return l < 0 ? null : laneHold(player.team, l); }
+function guideAtLane() {
+  const h = guideLaneSpot();
+  return !h || Math.hypot(h.x - player.x, h.y - player.y) < GUIDE_LANE_PX || guideFightUp();
 }
+// a rival soldier of your lane on the screen: the fight is in front of you and LAST HIT takes the card
+function guideFightUp() {
+  const lane = Math.max(0, guideLaneOf());
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || b.lane !== lane || b.team === player.team || !unitAlive(b) || !inSight(player.team, b)) continue;
+    const sx = wToSX(b.x), sy = wToSY(b.y);
+    if (sx >= 0 && sx < VIEW_W && sy >= 0 && sy < VIEW_H) return true;
+  }
+  return false;
+}
+// s until the first wave leaves the barracks (barracksBeat, js/sim/structures.js); 0 once it has
+function guideWave() { return state.elapsed < STRUCTS.barracks.first ? Math.ceil(barracksBeat(STRUCTS.barracks)) : 0; }
 // RECALL's moment: hurt and away from home. It takes the card ahead of its turn under GUIDE_HURT of
 // your health and keeps it until GUIDE_HURT_OUT, so a hero at the line does not flip cards
 function guideHurt() {
   const up = guide.step >= 0 && GUIDE_STEPS[guide.step].id === 'recall';
-  const c = guideCounter(), far = c ? Math.hypot(c.x - player.x, c.y - player.y) > GUIDE_SHOP_PX : !roostRing(player); // home is a real walk away
+  const c = guideCounter(), far = c ? Math.hypot(c.x - player.x, c.y - player.y) > GUIDE_HOME_PX : !roostRing(player); // home is a real walk away
   return far && player.hp < player.maxHp * (up ? GUIDE_HURT_OUT : GUIDE_HURT);
 }
 function guideRivalTowers() { return structures.filter((o) => o.type === 'tower' && o.team !== player.team); }
@@ -66,7 +82,7 @@ function guideNearTower() {
 // With no soldier out yet it is the spot up your lane where they will meet,
 // until that spot is on the screen.
 function guideSoldier() {
-  const pos = POSITIONS[player.position], lane = pos && pos.lane >= 0 ? pos.lane : 1;
+  const lane = guideLaneOf() >= 0 ? guideLaneOf() : 1;
   const home = state.drop && state.drop.eagles[player.team];
   let rival = null, rd = Infinity, own = null, od = -1;
   for (const b of robots) {
@@ -89,10 +105,10 @@ function guideSoldier() {
   return { x: t.x, y: t.y - 24 };
 }
 
-// One row per lesson, in order. caps: the key faces shown; word: the one
-// word; tip: the DETAILS line; need/count: a number to reach; ready: the step
-// waits (no card) until it is true; here: false while its place is far away,
-// and the next lesson teaches meanwhile; begin: noted as the coach starts, so
+// One row per lesson, in order. caps: the key faces shown; icon: an emblem
+// before the word; word: the one word; tip: the DETAILS line; need/count: a
+// number to reach; clock: it carries the seconds to the first wave; ready: the step
+// waits (no card) until it is true; begin: noted as the coach starts, so
 // a lesson done before its turn shows learned the moment its card comes up;
 // now: true in the moment that calls for it, when it is shown ahead of its turn;
 // done: it is learned; away: it is learned with its card down too (RECALL:
@@ -103,20 +119,25 @@ const GUIDE_STEPS = [
     caps: () => [keyCap('move')],
     begin: (g) => { g.x0 = player.x; g.y0 = player.y; },
     done: (g) => Math.hypot(player.x - g.x0, player.y - g.y0) > GUIDE_MOVE_PX },
+  // SHOP holds the card until the first buy, its arrow on the counter wherever you walk: a fight in front of you is the one thing ahead of it
   { id: 'shop', word: 'SHOP', tip: 'WALK TO YOUR MERCHANT AND BUY AN ITEM',
     caps: () => [keyCap('work')],
     begin: (g) => { g.spent = player.goldSpent; },
     done: (g) => player.goldSpent > g.spent,
-    here: guideShopNear, at: guideCounter },
+    at: guideCounter },
+  { id: 'lane', word: 'LANE', tip: 'YOUR SOLDIERS MEET THEIRS HERE',
+    caps: () => [], icon: () => player.position >= 0 ? posIcon(player.position, GUIDE_TXT) : null,
+    done: guideAtLane, clock: true,
+    at: () => { const h = guideLaneSpot(); return h && { x: h.x, y: h.y - 10 }; } },
   { id: 'ability', word: 'ABILITIES', tip: 'A POINT EACH LEVEL: PRESS ONCE TO LEARN, AGAIN TO CAST',
     caps: () => ['ab1', 'ab2', 'ab3', 'ab4'].map((a) => keyCap(a)),
     begin: (g) => { g.casts = 0; },
-    need: 2, count: (g) => g.casts },
+    need: 2, count: (g) => g.casts, clock: true },
   { id: 'farm', word: 'LAST HIT', tip: 'THE FINAL BLOW ON A SOLDIER PAYS GOLD',
     caps: () => [guideAttackCap()],
     begin: (g) => { g.farm0 = player.farm; },
-    need: 3, count: (g) => player.farm - g.farm0,
-    at: guideSoldier },
+    need: 3, count: (g) => player.farm - g.farm0, clock: true,
+    now: guideFightUp, at: guideSoldier },
   { id: 'recall', word: 'RECALL', tip: 'STAND STILL: YOUR EAGLE TAKES YOU HOME AND THE RING HEALS YOU',
     caps: () => [keyCap('recall')],
     ready: () => player.gold >= GUIDE_RECALL_GOLD || player.hp < player.maxHp / 2,
@@ -143,17 +164,14 @@ function guideHeadlineUp() {
 }
 function guideOn() {
   return NET.mode === 'guide' && !PRACTICE && !guide.off && state.mode === 'play' && !!state.drop &&
-    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp(); // hudHome: never over a cinematic, the landing's or a bird driven off
+    !player.aboard && !inAir(player) && hudHome() && !guideHeadlineUp() && guideTour.t >= 0 && !guideTouring(); // the ride to their roost first; hudHome: never over a cinematic, the landing's or a bird driven off
 }
 function guideOpen(i) { guide.step = i; guide.t = 0; }
 function guideDone(s) { return s.need ? s.count(guide) >= s.need : s.done(guide); }
-// the lesson to show: the first one not learned whose place is at hand
+// the lesson to show: one whose moment is this one, else the first not learned
 function guideNext() {
-  for (let i = 0; i < GUIDE_STEPS.length; i++) if (!guide.learned[i] && GUIDE_STEPS[i].now && GUIDE_STEPS[i].now()) return i; // its moment is this one: ahead of its turn
-  for (let i = 0; i < GUIDE_STEPS.length; i++) {
-    const s = GUIDE_STEPS[i];
-    if (!guide.learned[i] && (!s.here || s.here())) return i;
-  }
+  for (let i = 0; i < GUIDE_STEPS.length; i++) if (!guide.learned[i] && GUIDE_STEPS[i].now && GUIDE_STEPS[i].now()) return i; // ahead of its turn
+  for (let i = 0; i < GUIDE_STEPS.length; i++) if (!guide.learned[i]) return i;
   return GUIDE_STEPS.length - 1;
 }
 // the card's clock, off the frame's time (it is UI, so it runs on a client too)
@@ -191,29 +209,36 @@ function updateGuide(now) {
   if (next !== guide.step) guideOpen(next); // its place came to hand, or the shown one's fell behind
 }
 
-// the card's rect on the view (x, y, w, h: GUIDE_K view px to each of its own
-// lw x lh), centred over the strip and its buy plates, and its X's corner in its own px
+// the card's rect on the view: its head row is GUIDE_K view px to each of its
+// own (lw x GUIDE_H, the X's corner at xx, xy in those), the line of detail
+// under it at the view's 1x; centred over the strip, its foot on the buy plates
 function guideRect(s) {
   const tip = guideTipOn();
-  const caps = s.caps();
+  const caps = s.caps(), icon = s.icon && s.icon();
   let w = GUIDE_PAD;
   for (const c of caps) w += pixelTextWidth(c) + 6 + 2;
   if (caps.length) w += 2;
-  w += pixelTextWidth(guideWord(s)) + GUIDE_PAD + 9; // the X
-  if (tip) w = Math.max(w, pixelTextWidth(s.tip) + GUIDE_PAD * 2);
-  const h = GUIDE_H + (tip ? GUIDE_TIP_H : 0);
-  const top = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - GUIDE_LIFT - h * GUIDE_K;
-  const x = Math.round((VIEW_W - w * GUIDE_K) / 2);
-  return { x, y: top, w: w * GUIDE_K, h: h * GUIDE_K, lw: w, lh: h, xx: w - 9, xy: 5 };
+  if (icon) w += icon.width + 4;
+  w += pixelTextWidth(guideWord(s));
+  const clk = guideClock(s);
+  if (clk) w += 5 + pixelTextWidth(clk);
+  w += GUIDE_PAD + 9; // the X
+  const tw = tip ? pixelTextWidth(s.tip) + GUIDE_PAD * 2 : 0;
+  const vw = Math.max(w * GUIDE_K, tw), h = GUIDE_H * GUIDE_K + (tip ? GUIDE_TIP_H : 0);
+  const top = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - GUIDE_LIFT - h;
+  const x = Math.round((VIEW_W - vw) / 2);
+  return { x, y: top, w: vw, h, hx: x + ((vw - w * GUIDE_K) >> 1), lw: w, xx: w - 9, xy: 5 };
 }
 // the pointer over the card's X (its own px, with 3 px of grace to its left)
 function guideOverX(r, mx, my) {
-  return mx >= r.x + (r.xx - 3) * GUIDE_K && mx < r.x + r.w && my >= r.y && my < r.y + GUIDE_H * GUIDE_K;
+  return mx >= r.hx + (r.xx - 3) * GUIDE_K && mx < r.x + r.w && my >= r.y && my < r.y + GUIDE_H * GUIDE_K;
 }
 // the line of detail: open for a lesson's first GUIDE_TIP_T s, so a first match reads each one once
 // unasked, then folded to the word; the DETAILS key (or ABILITY DETAILS on ALWAYS) opens it again
 function guideTipOn() { return settings.tipFull || keyHeld('details') || state.mode === 'dead' || (guide.step >= 0 && !guide.flash && guide.t < GUIDE_TIP_T); }
 function guideWord(s) { return s.need ? s.word + ' ' + Math.min(s.need, Math.max(0, s.count(guide))) + '/' + s.need : s.word; }
+// the seconds to the first wave on a lesson that carries them, as the top bar's clock writes them; '' once it has left
+function guideClock(s) { const t = s.clock && guideWave(); return t ? clockTxt(t) : ''; }
 function guideShown() {
   if (!guideOn() || player.dead || guide.step < 0) return null;
   const s = GUIDE_STEPS[guide.step];
@@ -255,7 +280,8 @@ function drawGuideArrow(now, at) {
   // directions so its stairs stay even (GUIDE_EDGE_ARROW, turned by quarters)
   const cx = VIEW_W / 2, cy = VIEW_H / 2, dx = sx - cx, dy = sy - cy;
   const k = Math.min((VIEW_W / 2 - M) / Math.max(1, Math.abs(dx)), (VIEW_H / 2 - M - 20) / Math.max(1, Math.abs(dy)));
-  const ex = Math.round(cx + dx * k) - 7, ey = Math.max(Math.round(cy + dy * k) - 7, railBottom() + GUIDE_RAIL_AIR); // clear of the top bar: touching it, it reads as part of it
+  const floor = VIEW_H - Math.round((AB_H + HUD_BAKE_HEAD) * hudSc()) - GUIDE_LIFT - GUIDE_H * GUIDE_K - GUIDE_TIP_H - 30; // ...and over the card on the hud: on the strip it reads as part of it
+  const ex = Math.round(cx + dx * k) - 7, ey = Math.min(floor, Math.max(Math.round(cy + dy * k) - 7, railBottom() + GUIDE_RAIL_AIR)); // clear of the top bar: touching it, it reads as part of it
   const oct = (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8; // 0 right, 1 down-right, ... clockwise
   const grid = GUIDE_EDGE_ARROW[oct & 1], turns = oct >> 1;
   const at2 = (i, j) => { for (let t = 0; t < turns; t++) { const n = 6 - j; j = i; i = n; } return [i, j]; };
@@ -301,6 +327,7 @@ function renderGuideDead(now) {
 
 // the card: flat graphite, the caps and the word, the lessons' pips over it
 function renderGuide(now) {
+  guideTourDraw();
   updateGuide(now);
   const s = guideShown();
   if (!s) return;
@@ -312,36 +339,93 @@ function renderGuide(now) {
 function drawGuideCard(now, s, lit, cur, x0) {
   const r = guideRect(s);
   const hot = x0 && mouse.inside && guideOverX(r, mouse.x, mouse.y);
-  const w = r.lw, h = r.lh;
+  ctx.fillStyle = lit ? GUIDE_GOLD : GUIDE_INK; ctx.fillRect(r.x - GUIDE_K, r.y - GUIDE_K, r.w + GUIDE_K * 2, r.h + GUIDE_K * 2);
+  ctx.fillStyle = GUIDE_EDGE; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = GUIDE_BG; ctx.fillRect(r.x + GUIDE_K, r.y + GUIDE_K, r.w - GUIDE_K * 2, r.h - GUIDE_K * 2);
+  if (guideTipOn()) drawPixelText(ctx, s.tip, r.x + ((r.w - pixelTextWidth(s.tip)) >> 1), r.y + GUIDE_H * GUIDE_K - 2, GUIDE_LBL, 1);
   ctx.save();
-  ctx.translate(r.x, r.y); ctx.scale(GUIDE_K, GUIDE_K); // from here the card's own px
-  ctx.fillStyle = lit ? GUIDE_GOLD : GUIDE_INK; ctx.fillRect(-1, -1, w + 2, h + 2);
-  ctx.fillStyle = GUIDE_EDGE; ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = GUIDE_BG; ctx.fillRect(1, 1, w - 2, h - 2);
+  ctx.translate(r.hx, r.y); ctx.scale(GUIDE_K, GUIDE_K); // from here the head row's own px
   let x = GUIDE_PAD;
-  const caps = s.caps();
+  const caps = s.caps(), icon = s.icon && s.icon();
   caps.forEach((c, i) => {
     // an ability key a point would learn pulses gold; one not learned is dim
     const learn = s.id === 'ability' && abLvCanBuy(player, i), dark = s.id === 'ability' && !abUnlocked(player, i);
     x += drawKeyCap(ctx, x, 3, c, dark && !learn, learn && Math.sin(now * 8) > 0 ? 2 : 0, now) + 2;
   });
   if (caps.length) x += 2;
+  if (icon) { ctx.drawImage(icon, x, (GUIDE_H - icon.height) >> 1); x += icon.width + 4; }
   const word = guideWord(s);
   drawPixelText(ctx, word, x, 6, lit ? GUIDE_GOLD : GUIDE_TXT, 1);
   if (s.need) { // the count in gold
     const head = s.word + ' ';
     drawPixelText(ctx, word.slice(head.length), x + pixelTextWidth(head) + 1, 6, GUIDE_GOLD, 1);
   }
+  const clk = guideClock(s);
+  if (clk) drawPixelText(ctx, clk, x + pixelTextWidth(word) + 5, 6, GUIDE_GOLD, 1); // the first wave's seconds, in gold like the top bar's clock
   // the X
   ctx.fillStyle = hot ? GUIDE_GOLD : GUIDE_DIM;
   if (x0) for (let i = 0; i < 5; i++) { ctx.fillRect(r.xx + i, r.xy + i, 1, 1); ctx.fillRect(r.xx + 4 - i, r.xy + i, 1, 1); }
-  if (guideTipOn()) drawPixelText(ctx, s.tip, GUIDE_PAD, GUIDE_H + 1, GUIDE_LBL, 1);
   // one pip a lesson: learned gold, this one white, the rest dark
-  const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = (w - pw) >> 1;
+  const n = GUIDE_STEPS.length, pw = n * 4 - 1, px0 = (r.lw - pw) >> 1;
   for (let i = 0; i < n; i++) {
     ctx.fillStyle = GUIDE_INK; ctx.fillRect(px0 + i * 4 - 1, -6, 4, 4);
     ctx.fillStyle = guide.learned[i] ? GUIDE_GOLD : i === cur ? GUIDE_TXT : GUIDE_EDGE;
     ctx.fillRect(px0 + i * 4, -5, 2, 2);
   }
   ctx.restore();
+}
+
+// ---- the ride to their roost -----------------------------------------------
+// A FIRST MATCH shows the goal before the first lesson: once your landing's
+// headline has gone, the camera rides down your lane from your eagle to
+// theirs (zoomed out to the shows' framing, applyZoom, js/sim/sim.js), holds
+// on their bird under one headline in their paint, and glides home. Walking
+// off cuts it short: the hero is yours from the first frame. It is this
+// screen's camera and nothing else, like the rest of the coach.
+const GUIDE_TOUR_GO = 3.4;    // s the ride down the lane takes, eased at both ends
+const GUIDE_TOUR_HOLD = 2.4;  // s it holds over their eagle
+const GUIDE_TOUR_STOP = 24;   // px the hero walks that hands the camera back
+const GUIDE_TOUR_ROAD = 24;   // points the middle road's ride is sampled at
+const guideTour = { t: -1, path: null, len: 0, x0: 0, y0: 0, done: false }; // t: s into the ride, -1 before it
+// the line the camera rides: your eagle, your lane to their hollow (the middle road for MID or the jungle), their eagle
+function guideTourPath() {
+  const mine = state.drop.eagles[player.team], theirs = state.drop.eagles[1 - player.team], lane = guideLaneOf();
+  let pts;
+  if (lane === 0 || lane === 2) pts = laneWaypoints(player.team, lane);
+  else {
+    const u0 = roadNest(player.team).u, u1 = roadNest(1 - player.team).u;
+    pts = [];
+    for (let i = 0; i <= GUIDE_TOUR_ROAD; i++) pts.push(roadPoint(u0 + (u1 - u0) * i / GUIDE_TOUR_ROAD));
+  }
+  return [{ x: mine.x, y: mine.y }].concat(pts, [{ x: theirs.x, y: theirs.y }]);
+}
+function guideTourAt(d) {
+  const P = guideTour.path;
+  for (let i = 1; i < P.length; i++) {
+    const l = Math.hypot(P[i].x - P[i - 1].x, P[i].y - P[i - 1].y);
+    if (d <= l || i === P.length - 1) { const k = l ? Math.min(1, d / l) : 1; return { x: P[i - 1].x + (P[i].x - P[i - 1].x) * k, y: P[i - 1].y + (P[i].y - P[i - 1].y) * k }; }
+    d -= l;
+  }
+  return P[P.length - 1];
+}
+function guideTouring() { return guideTour.t >= 0 && !guideTour.done; }
+// the camera's aim this frame while the ride runs (the play camera, js/sim/sim.js), else null
+function guideTourAim(dt) {
+  if (guideTour.done || NET.mode !== 'guide' || PRACTICE || guide.off || state.mode !== 'play' || !state.drop) return null;
+  const e = state.drop.eagles[player.team], r = state.drop.eagles[1 - player.team];
+  if (guideTour.t < 0) { // it waits for both birds down and your headline gone
+    if (!e || !r || e.state !== 'down' || r.state !== 'down' || guideHeadlineUp() || player.aboard || inAir(player)) return null;
+    guideTour.path = guideTourPath(); guideTour.t = 0; guideTour.x0 = player.x; guideTour.y0 = player.y;
+    guideTour.len = 0;
+    for (let i = 1; i < guideTour.path.length; i++) guideTour.len += Math.hypot(guideTour.path[i].x - guideTour.path[i - 1].x, guideTour.path[i].y - guideTour.path[i - 1].y);
+  }
+  guideTour.t += dt;
+  if (guideTour.t > GUIDE_TOUR_GO + GUIDE_TOUR_HOLD || Math.hypot(player.x - guideTour.x0, player.y - guideTour.y0) > GUIDE_TOUR_STOP) { guideTour.done = true; return null; }
+  return guideTourAt(guideTour.len * easeInOut(Math.min(1, guideTour.t / GUIDE_TOUR_GO)));
+}
+// the one headline, over their bird while the ride holds there
+function guideTourDraw() {
+  if (!guideTouring() || window.DBG.hideUI) return;
+  const t = guideTour.t - GUIDE_TOUR_GO + 0.3, left = GUIDE_TOUR_GO + GUIDE_TOUR_HOLD - guideTour.t; // up just before the camera arrives
+  drawHeadline('DRIVE OFF THEIR EAGLE', 1 - player.team, Math.min(t / 0.25, left / 0.4));
 }

@@ -36,7 +36,7 @@ function applyZoom(dt, snap) {
   // the title holds ZOOM_TITLE (its scene, js/ui/titlescene.js); the shows the match puts on (the roost tour, the
   // driven-off ceremony) hold ZOOM_SHOW whatever the wheel says: they frame
   // birds and valley, not your boots, and glide back to the wheel's zoom after
-  const show = (state.drop && (state.eagleCine ||
+  const show = (state.drop && (state.eagleCine || guideTouring() || // the FIRST MATCH's ride to their roost (js/ui/guide.js)
     (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee'))));
   // (each authored at the default UI SIZE: zu() carries it to this canvas)
   const want = state.mode === 'title' ? zu(ZOOM_TITLE) : show ? zu(ZOOM_SHOW)
@@ -154,6 +154,7 @@ function update(dt) {
 
   // camera: director mode's own first (dirCam, js/app/director.js), when it has
   // the shot - the free camera anywhere but the title, the steady follow in play
+  let tourAim = null;
   if (dirCam(dt)) {
     // the director holds it
   } else if (state.mode === 'title') {
@@ -187,6 +188,9 @@ function update(dt) {
       : state.drop.eagles.find((q) => q.state === 'flee');
     camX += (ec.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);
     camY += (ec.y - WV_H / 2 - camY) * Math.min(1, dt * 3.5);
+  } else if ((tourAim = guideTourAim(dt))) {
+    // the FIRST MATCH's ride down your lane to their eagle (js/ui/guide.js): held on its line, the follow takes it home after
+    camX = tourAim.x - WV_W / 2; camY = tourAim.y - WV_H / 2;
   } else {
     const vp = viewPlayer();
     const look = vp === player ? 0.12 : 0; // the aim lean is the local player's; a watched one is framed dead centre

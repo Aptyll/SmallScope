@@ -199,6 +199,7 @@ const TEXT = {
   'set.close': 'CLOSE',
   'set.surrender': 'SURRENDER',
   'set.leave': 'LEAVE',
+  'set.leaveSure': 'LEAVE?',
   'set.on': 'ON',
   'set.title': 'SETTINGS',
 

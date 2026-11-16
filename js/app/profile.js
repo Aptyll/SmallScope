@@ -136,6 +136,7 @@
   }
 
   let profile = blank();
+  let firstRun = false;
   let dirty = false;
   let timer = 0;
 
@@ -240,6 +241,7 @@
           for (const k in s.worn) if (typeof s.worn[k] === 'string' && s.worn[k].length <= ID_MAX) profile.worn[k] = s.worn[k];
         }
       } else {
+        firstRun = true; // the game's very first boot on this machine (PROFILE.firstRun)
         // no profile yet: adopt the settings the player already had
         try {
           const old = JSON.parse(localStorage.getItem(OLD_SETTINGS));
@@ -451,6 +453,8 @@
     rankedN() { return profile.rankedN; },
     // ---- new players ----------------------------------------------------------
     guided() { return profile.guided; },
+    // no profile was saved before this boot: the first launch, which goes straight into the FIRST MATCH (js/app/boot.js)
+    firstRun() { return firstRun; },
     setGuided(on) { on = on !== false; if (profile.guided !== on) { profile.guided = on; saveNow(); } },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
