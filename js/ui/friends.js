@@ -132,8 +132,9 @@ function friendDo(f) {
 
 // ---- the panel -------------------------------------------------------------
 // The hub's FRIENDS (L.friends): the head with the person-plus that opens
-// Steam's friends list, and your friends down it. Without Steam the panel is
-// not there (the party's code and JOIN are PARTY's, js/ui/hub.js).
+// Steam's friends list, and your friends down it. Without Steam the panel
+// stands empty, a dim person in its middle (the party's code and JOIN are
+// PARTY's, js/ui/hub.js).
 // Steam's friends list: the person-plus at the head's far end
 function socialAddRect(L) { const R = L.friends; return { x: R.x + R.w - SOCIAL_PAD - 8, y: R.y + 7, w: 8, h: 7 }; }
 // the rows under the head, FRIENDS.scroll rows down
@@ -217,9 +218,9 @@ function drawFriendFace(x, y, f) {
   ctx.fillStyle = frColor(f); ctx.fillRect(x + s - 4, y + s - 4, 4, 4);
 }
 function drawSocial(L, now, hit) {
-  if (!FRIENDS.on) return;
   const m = state.menu, R = L.friends, a = socialAddRect(L);
   hubPanel(R, 'hub.friends', '', false, false); // no page of its own: the person-plus opens Steam's list
+  if (!FRIENDS.on) { frBmp(R.x + ((R.w - 10) >> 1), R.y + HUB_HEAD + ((R.h - HUB_HEAD - 8) >> 1), FR_ICON.head, SC_EDGE); return; } // off Steam: the panel stands, its list empty
   frBmp(a.x, a.y, FR_ICON.add, hit && hit.f && hit.f.head ? '#ffd95c' : SC_GOLD);
   if (!m.joining) drawFriends(L, hit && hit.kind === 'friend' ? hit : null);
 }

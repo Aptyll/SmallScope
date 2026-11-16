@@ -319,7 +319,7 @@ function roomDo(h) {
   if (!h) return;
   if (h.kind === 'code') { roomCopy(); return; }
   if (h.kind === 'box') { m.codeOn = true; m.code = ''; SFX.pickup(); return; }
-  if (h.kind === 'talk') { talkOpen(); return; }
+  if (h.kind === 'talk') { if (!m.talkOn) talkOpen(); return; } // a click on the open chat keeps the line
   if (h.kind === 'friend') { if (h.f.head) friendHeadDo(); else friendDo(h.f); return; }
   if (h.kind === 'leave') { leaveRoom(); return; }
   if (h.kind === 'profile') { openSeatProfile(h.id, 'room'); return; }

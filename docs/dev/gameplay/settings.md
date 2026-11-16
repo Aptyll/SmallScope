@@ -6,7 +6,7 @@ profile or wiki all land here. The page hosts its own party at once (`beginParty
 relay, or a Steam lobby). League's client home in Graphite, flat and opaque: YOU (your face,
 name, rank badge and rating, your record and the last ten results as pips, the purse that opens
 the skins, the gear that opens the settings, QUIT in the desktop build) and MATCH HISTORY down the
-left; PARTY, HEROES and ITEMS in the middle; FRIENDS (Steam's; not there off Steam) and LADDER down
+left; PARTY, HEROES and ITEMS in the middle; FRIENDS (Steam's; empty off Steam) and LADDER down
 the right. A
 panel's click opens its whole page (the profile and its tabs, the wiki, the skins), and that
 page's way out comes back here. HEROES walks every hero with its arrows: the four ability wells
@@ -25,7 +25,8 @@ other: while you are alone JOIN and four slots (type or paste, Ctrl+V, a friend'
 join their party: `partySeek` looks the code up on the relay's list, or in a Steam lobby's data,
 which carries the same code: `steamCode`, js/net/transport-steam.js; a code nobody answers to
 rattles the slots); with people, the chat (js/ui/roomtalk.js: the ENTER key and the newest line;
-Enter or a click starts a line, Enter sends it, Esc drops it) and under PLAY the X that leaves. There is one mode, RANKED. A profile that has never seen a
+Enter or a click starts a line and raises the chat over the seats with its kept lines, Enter
+sends it, Esc drops it) and under PLAY the X that leaves. There is one mode, RANKED. A profile that has never seen a
 match through plays its first PLAY alone as FIRST MATCH (`roomGo`): straight to bots, pinned
 EASY (`NET.botLv` 0), with the coach, and its rematch is RANKED. RANKED looks for another party
 doing the same (js/ui/matchmaking.js): PLAY becomes a gold clock with an X (a press stops

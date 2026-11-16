@@ -16,8 +16,8 @@
 //   HEROES         one hero's four abilities (a card on hover) and its
 //                  numbers; the arrows walk all of them (the wiki's page)
 //   ITEMS          the build for that hero (buildsRec, js/app/builds.js)
-//   FRIENDS        Steam's friends (js/ui/friends.js), or off Steam your
-//                  party's code and JOIN for a friend's
+//   FRIENDS        Steam's friends (js/ui/friends.js); off Steam the panel
+//                  stands with its list empty
 //   LADDER         you among everyone this screen has met, by rating
 //
 // Every panel's head names it; a click on a panel opens its whole page and
@@ -70,8 +70,8 @@ function hubBuild(h) {
 // PARTY is one panel: its head names it with the count and the code; the
 // seats with PLAY beside them; and a foot row of plates as tall as each other
 // under them: JOIN while you are alone, the chat with the X that leaves under
-// PLAY once there are people. FRIENDS (Steam's) shares the right column with
-// LADDER, and off Steam LADDER takes it all.
+// PLAY once there are people; while a line is typed the chat rises over the
+// seats (L.chat). FRIENDS shares the right column with LADDER, half each.
 function hubTalking() { return NET.role === 'client' || NET.peers.size > 0; }
 function hubLayout() {
   const W = VIEW_W, H = VIEW_H, p = HUB_PAD, g = HUB_GAP;
@@ -86,9 +86,9 @@ function hubLayout() {
   const restY = strip.y + strip.h + g;
   const items = { x: mx, y: bot - HUB_ITEMS_H, w: mw, h: HUB_ITEMS_H };
   const hero = { x: mx, y: restY, w: mw, h: items.y - g - restY };
-  const fh = FRIENDS.on ? Math.round((bot - p - g) / 2) : 0;
+  const fh = Math.round((bot - p - g) / 2); // FRIENDS over LADDER, both always there
   const friends = { x: rx, y: p, w: side, h: fh };
-  const ladder = fh ? { x: rx, y: p + fh + g, w: side, h: bot - (p + fh + g) } : { x: rx, y: p, w: side, h: bot - p };
+  const ladder = { x: rx, y: p + fh + g, w: side, h: bot - (p + fh + g) };
   // PARTY's body: the seats, PLAY at its right end
   const talking = hubTalking(), leaving = talking && seekClock() == null; // while it looks, the clock's own X is the one way out
   const top = strip.y + HUB_HEAD + 6, fy = top + sh + 4;
@@ -105,8 +105,9 @@ function hubLayout() {
   const seats = order.map((q, i) => ({ x: sx + at[i] * (sw + sg), y: top, w: sw, h: sh, fs, p: q, k: side0.indexOf(q) })).sort((a, b) => a.x - b.x);
   const foot = { x: sx, y: fy, w: n * sw + (n - 1) * sg, h: HUB_CTRL_H }; // under the seats: the chat, or JOIN
   const talk = talking ? foot : null;
+  const chat = talk && state.menu.talkOn ? { x: sx, y: top, w: foot.w, h: fy + HUB_CTRL_H - top } : null; // a line being typed: the chat rises over the seats
   const box = foot;
-  return { card, hist, strip, hero, items, friends, ladder, seats, go, leave, talk, box, label: hubGoLabel() };
+  return { card, hist, strip, hero, items, friends, ladder, seats, go, leave, talk, chat, box, label: hubGoLabel() };
 }
 // what PLAY says: a guest's READY, the leader's PLAY, or the clock while it looks
 function hubGoLabel() {
@@ -149,7 +150,7 @@ function roomHit() {
   if (codeBoxShown() && overRect(L.box, 1)) return { kind: 'box' };
   const fh = friendsHit(L);
   if (fh) return fh;
-  if (L.talk && overRect(L.talk, 1)) return { kind: 'talk' };
+  if (L.chat ? overRect(L.chat, 1) : L.talk && overRect(L.talk, 1)) return { kind: 'talk' };
   if (!m.joining) for (const s of L.seats) if (overRect(s)) {
     if (isHuman(s.p) && seatPid(s.p.id)) return { kind: 'profile', id: s.p.id }; // a person's seat: their profile (js/ui/profile.js)
     const act = seatAct(s);
@@ -255,7 +256,7 @@ function drawHubHistory(L, hit) {
   }
 }
 // a seat: an empty one a dark well with the gold + that invites; a person's
-// card with the side's paint along its top, the face, the name, the crown
+// card with the face, the name, the crown
 // over the leader, a guest's READY tick (top left) and link (top right)
 function drawHubSeat(s, act, flash) {
   const p = s.p, me = p === player, x = s.x, y = s.y, w = s.w, h = s.h, fs = s.fs, fx = x + ((w - fs) >> 1), fy = y + 8;
@@ -269,8 +270,7 @@ function drawHubSeat(s, act, flash) {
   }
   ctx.fillStyle = flash ? '#3a3e46' : act ? SC_HOT : me ? SC_YOU : SC_ROW_B; ctx.fillRect(x, y, w, h);
   hubRim(x, y, w, h, me ? '#c89a3c' : act ? SC_LBL : SC_EDGE);
-  ctx.fillStyle = TEAMS[skin(p.team)].mark; ctx.fillRect(x + 1, y + 1, w - 2, 2);
-  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: fs >= 40 ? 3 : 2 });
+  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: fs >= 40 ? 3 : 2, bare: true }); // one party, one side: no side's paint
   if (p === roomHost()) drawCrown(fx + (fs >> 1) - 2, fy - 4);
   let nm = p.name || '';
   while (nm.length > 1 && pixelTextWidth(nm) > w - 6) nm = nm.slice(0, -1);
@@ -307,6 +307,21 @@ function drawHubPlay(L, hot) {
 function hubPlate(r, hot, on) {
   ctx.fillStyle = on ? SC_YOU : hot ? SC_HOT : SC_ROW_B; ctx.fillRect(r.x, r.y, r.w, r.h);
   hubRim(r.x, r.y, r.w, r.h, on ? '#c89a3c' : hot ? SC_LBL : SC_EDGE);
+}
+// the chat risen over the seats while a line is typed: the kept lines, newest
+// at the foot, over the plate the line is typed on
+function drawHubChat(C, r, now) {
+  ctx.fillStyle = SC_PLATE; ctx.fillRect(C.x, C.y, C.w, C.h);
+  hubRim(C.x, C.y, C.w, C.h, SC_EDGE);
+  const n = Math.min(NET.chat.length, Math.floor((r.y - C.y - 4) / TALK_PITCH)), lines = n ? NET.chat.slice(-n) : [];
+  ctx.save(); ctx.beginPath(); ctx.rect(C.x + 1, C.y + 1, C.w - 2, r.y - C.y - 1); ctx.clip(); // a long line stops at its edge
+  lines.forEach((c, i) => {
+    const y = r.y - (lines.length - i) * TALK_PITCH - 1, nm = c.name + ':';
+    hubT(nm, C.x + 6, y, TEAMS[skin(c.team)].mark);
+    hubT(c.s, C.x + 6 + pixelTextWidth(nm) + 5, y, SC_TXT);
+  });
+  ctx.restore();
+  drawHubTalk(r, now, false);
 }
 // the chat: at rest the ENTER key and the newest line, typing the line and its caret
 function drawHubTalk(r, now, hot) {
@@ -354,7 +369,7 @@ function drawHubStrip(L, now, hit) {
     hubT(roomCode(), cr.x + 9, cr.y + 1, col);
     if (!up && Math.floor(now * 3) % 2) { ctx.fillStyle = RM_BAD; ctx.fillRect(cr.x - 7, cr.y + 2, 4, 4); } // the link is down: the code would find nothing
   }
-  if (!m.joining) for (const s of L.seats) {
+  if (!m.joining && !L.chat) for (const s of L.seats) {
     let act = hit && hit.kind === 'seat' && hit.id === s.p.id ? hit.act : null;
     if (!act && m.rseat === s.p.id && !hit && m.rkeys) act = seatAct(s) || 'none'; // the keys' cursor lights the seat too
     drawHubSeat(s, act === 'none' ? null : act, m.cardFx && m.cardFx[s.p.id] > 0);
@@ -367,7 +382,8 @@ function drawHubStrip(L, now, hit) {
     hubPlate(r, hot, false);
     drawXMark(r.x + ((r.w - 5) >> 1), r.y + ((r.h - 5) >> 1), hot ? RM_BAD : SC_LBL);
   }
-  if (L.talk) drawHubTalk(L.talk, now, hit && hit.kind === 'talk');
+  if (L.chat) drawHubChat(L.chat, L.talk, now);
+  else if (L.talk) drawHubTalk(L.talk, now, hit && hit.kind === 'talk');
   else if (codeBoxShown() || m.joining) drawHubJoin(L.box, now, hit && hit.kind === 'box');
 }
 // HEROES: the hero, its title, four ability wells (one under the pointer gold), its numbers, and the arrows that walk the list
