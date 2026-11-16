@@ -2,9 +2,9 @@
 // Rules of the road (docs/bots/api.md has the whole contract):
 //   - think(obs) is called 10 times a second for YOUR seat only, with what your
 //     player could see. Return an act: the keys you are holding, plus a thought.
-//   - Held keys (move, goTo, aim, fire, work, slide) stay held until your next act.
+//   - Held keys (move, goTo, aim, attack, work, slide) stay held until your next act.
 //     One-shot keys (dodge, ability, useItem, cmd...) fire once.
-//   - `this` is your bot object, so keep memory on it (this.drawT below).
+//   - `this` is your bot object, so keep memory on it (this.team below).
 defineBot({
   name: 'STARTER',
   author: 'Softfall',
@@ -13,7 +13,6 @@ defineBot({
   init(hello) {
     this.team = hello.team;
     this.mid = hello.map.world * hello.map.tile / 2; // the map's centre, px
-    this.drawT = 0; // thinks spent drawing the current shot
   },
 
   think(obs) {
@@ -49,20 +48,14 @@ defineBot({
       act.aim = [tx, ty];
       const kind = obs.enemies.includes(foe) ? 'player' : 'soldier';
       act.think = { goal: 'FIGHT', why: melee ? 'IN REACH' : 'IN RANGE', target: { kind, id: foe.id, x: foe.x, y: foe.y } };
-      if (melee) {
-        act.goTo = { x: foe.x, y: foe.y };
-        act.fire = fd < 40 && !this.fire; // tap the swing
-      } else {
-        // a bow: hold the draw 7 thinks (0.7 s), let go for one, and keep your distance
-        if (fd < 110) act.move = [(me.x - foe.x) / fd, (me.y - foe.y) / fd];
-        this.drawT++;
-        act.fire = this.drawT < 8;
-        if (!act.fire) this.drawT = 0;
-      }
-      this.fire = act.fire;
+      // the basic attack is a MARK: name it and your hero strikes it whenever
+      // it is in range (me.range px to its edge), standing still for each
+      // wind-up. A blade walks in; a bow keeps its distance between shots
+      act.attack = foe.id;
+      if (melee || fd > me.range) act.goTo = { x: foe.x, y: foe.y };
+      else if (fd < me.range * 0.6) act.move = [(me.x - foe.x) / fd, (me.y - foe.y) / fd];
       return act;
     }
-    this.drawT = 0;
 
     // nothing to fight: go for the rival bird once it has landed
     const bird = obs.eagles.find((e) => e.team !== me.team && e.state === 'down');
@@ -70,9 +63,9 @@ defineBot({
       const d = Math.hypot(bird.x - me.x, bird.y - me.y);
       act.aim = [bird.x, bird.y];
       act.think = { goal: 'PUSH', why: 'BIRD IS DOWN', target: { kind: 'bird', id: bird.team, x: bird.x, y: bird.y } };
-      if (melee || d > 100) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
+      if (melee || d > me.range + 20) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
       if (melee) act.work = d < 40; // E on the bird: a swing chips its nerve
-      else if (d < 140) { this.drawT++; act.fire = this.drawT % 8 !== 0; }
+      else act.attack = 'eagle'; // a bow strikes it from range
       return act;
     }
 

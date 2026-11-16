@@ -39,8 +39,8 @@ free lines under those. The panel sizes itself to its widest line (capped at `TI
 short tooltip is a short panel; a free line wider than the cap breaks onto more lines (`tipFit`,
 `wrapText`), so no ability, item or translation runs out of the frame.
 
-The builders, one per kind: `tipAttack` (the hero's basic attack: its full-draw damage, the
-full draw (FULL CHARGE), the renock (BETWEEN HITS) and the reach, read off the sim's own functions),
+The builders, one per kind: `tipAttack` (the hero's basic attack: its damage, its attack speed and its RANGE, read off the
+sim's own functions),
 `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.

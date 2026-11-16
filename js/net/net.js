@@ -186,7 +186,7 @@ function netHostStep(dt) {
     if (!msg) continue;
     const i = players[pr.slot].input, m = msg.in;
     i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
-    i.fire = m.fire; i.work = m.work; i.slide = m.slide;
+    i.work = m.work; i.slide = m.slide;
     i.atk = m.atk; // the mark, already resolved off its wire token (netInClean)
     netInEdges(i, m);
     pr.lastTick = msg.tick;
@@ -213,19 +213,19 @@ function netInClean(m) {
   const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
-    fire: !!m.fire, work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
+    work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
     atk: netAtkIn(m.atk), // the mark as the host's own entity, or none
     ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), trick: idx(m.trick, TRICK_N), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
 // the basic attack's mark across the wire: the snapshot's own entity token
-// (snapToken / snapDeref, js/net/snapshot.js) - a player, a robot, an animal
-// or a building's anchor - and on the host only something it can be
+// (snapToken / snapDeref, js/net/snapshot.js) - a player, a robot, an animal,
+// a building's anchor or the bird - and on the host only something it can be
 // (a token naming nothing, or a plain object, is no mark)
 function netAtkOut(t) { const k = t && snapToken(t); return k ? { $: k.$, i: k.i } : null; }
 function netAtkIn(k) {
   if (!k || typeof k !== 'object' || typeof k.$ !== 'string' || !Number.isInteger(k.i)) return null;
   const t = snapDeref(k);
-  return t && (atkIsStruct(t) || players.includes(t) || robots.includes(t) || animals.includes(t)) ? t : null;
+  return t && (atkIsStruct(t) || atkIsEagle(t) || players.includes(t) || robots.includes(t) || animals.includes(t)) ? t : null;
 }
 function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
@@ -483,7 +483,7 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, trick: i.trick, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, trick: i.trick, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
@@ -642,8 +642,7 @@ function netClientApplyDelta(msg) {
     const out = []; snapCompareLoose(msg.full, snapBuildSeen(msg.full), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
     // a client's own: its verdict and death view (state.over/end, kept below)
-    // and the fire edge its own hands write on its own body (input.js)
-    const own = ['.state.over:', '.state.end:', '.players.' + localId + '.firePrev:'];
+    const own = ['.state.over:', '.state.end:'];
     const real = out.filter((l) => !own.some((k) => l.startsWith(k)));
     if (real.length) NET.verifyFail = { tick: msg.tick, out: real };
   }

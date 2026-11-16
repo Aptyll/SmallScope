@@ -10,7 +10,6 @@ defineBot({
   version: '1.0',
 
   init(hello) {
-    this.drawT = 0; this.swing = false;
     this.quietT = 0;      // s since anyone of the side last saw a rival near home
     this.sally = 0;       // the match second the side's sally began (0: none)
     this.lead = hello.seat === hello.team; // the side's first seat calls the sally
@@ -108,14 +107,14 @@ function pickKey(me, order) {
 }
 
 // strike the rival bird: a shooter stands off past the wing gust (it reaches
-// 76 px) and taps shots; a blade walks in and swings E
+// 76 px) and strikes it from range; a blade walks in and swings E
 function siege(bot, me, bird, act) {
   const d = Math.hypot(bird.x - me.x, bird.y - me.y);
   act.aim = [bird.x, bird.y];
   if (me.attack === 'shot') {
-    if (d > 115) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
+    if (d > me.range + 20) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     else if (d < 84) act.move = [(me.x - bird.x) / d, (me.y - bird.y) / d];
-    if (d < 135) { bot.drawT++; act.fire = bot.drawT % 2 === 1; } // further out, the woods eat the shots
+    act.attack = 'eagle'; // struck whenever it is in range (the bird's edge is ~25 px out from its middle)
   } else {
     act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     act.work = d < 56;
@@ -133,16 +132,13 @@ function fight(bot, me, foe, act) {
     if (ab[1].ready && d > 48 && d < 110) act.ability = 1;                         // rush in
     else if (ab[2].ready && d < 34) act.ability = 2;                               // stomp
     else if (ab[3].ready && d < 30 && foe.hp < foe.maxHp * 0.45) act.ability = 3;  // execute
-    bot.swing = !bot.swing;
-    act.fire = d < 40 && bot.swing;
+    act.attack = foe.id; // the hands walk in, stand and strike
   } else {
-    if (d < 100) act.move = [(me.x - foe.x) / d, (me.y - foe.y) / d];
-    else if (d > 220) act.goTo = { x: foe.x, y: foe.y };
+    if (d < me.range * 0.6) act.move = [(me.x - foe.x) / d, (me.y - foe.y) / d];
+    else if (d > me.range) act.goTo = { x: foe.x, y: foe.y };
     if (ab[1].ready && d < 110) act.ability = 1;                                   // net, and the kick back
     else if (ab[0].ready && d > 150 && d < 400) act.ability = 0;                   // piercing shot
-    bot.drawT++;
-    act.fire = bot.drawT < 8;
-    if (!act.fire) bot.drawT = 0;
+    act.attack = foe.id;
   }
   if (me.hp < me.maxHp * 0.3 && d < 60) act.dodge = true;
 }

@@ -727,14 +727,13 @@ function walkSlide(p, slide, dt, onIce, kit) {
 // mx/my/len: walkHeading's
 function walkStep(p, dt, mx, my, len, onIce, kit) {
   let sp = Math.hypot(p.vx, p.vy);
-  const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
   // every cap an ability may drag on (root, slow, cast, shield),
   // folded once - js/sim/abilities.js
   const abMul = abilityMoveMul(p);
   // a rider goes at the deer's gallop (RIDE, js/sim/wildlife.js): not the
-  // hero's stride, and a drawn bow does not slow the deer under it
+  // hero's stride
   const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
-    : statOf(p, 'ms') * chargeMul) * abMul; // MOVE SPEED (js/sim/stats.js)
+    : statOf(p, 'ms')) * abMul; // MOVE SPEED (js/sim/stats.js)
 
   if (p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
     // plain snow walking: near-instant vector approach, tuned so it feels
@@ -754,7 +753,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
       steer = 1.7; target = 0;
       decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT);
     } else if (onIce) {
-      const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
+      const cap = ICE_MAX * kit.iceMax * abMul;
       if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
       else { steer = 0; target = 0; decay = 0.18; } // idle glide
     } else {
@@ -808,7 +807,7 @@ function playerIntents(p, dt) {
     p.stunT = Math.max(0, p.stunT - dt);
     inp.dodge = false;
     inp.useItem = -1;
-    inp.work = inp.fire = inp.slide = false;
+    inp.work = inp.slide = false; // (the mark stays named: a stun only holds the wind-up, attackStep)
     inp.ability = -1;
     inp.cmd = null;
     inp.mx = inp.my = 0;
@@ -922,8 +921,7 @@ function playerPlunge(p) {
       if (p.rushT > 0) { p.rushT = 0; p.dash = ''; } // the charge ends in the water
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakRecall(p);                                      // the recall goes in the water with you
-      if (p.charging) { p.charging = false; p.chargeT = 0; }
-      p.fireArmed = false;
+      atkCancel(p);
       sfxAt('splash', p.x, p.y);
       burst(p.x, p.y + 4, '#3a6080', 10, 55, 0.5, true);
       burst(p.x, p.y + 2, '#ddf1f8', 8, 60, 0.5, true);
@@ -1038,7 +1036,7 @@ function playerAttack(p, dt) {
   // wound up on and struck while it is in range and the feet are still
   // (attackStep, js/sim/attack.js). A body mid-ability, mid-roll, falling
   // or on a cable has no hand free for it.
-  const free = p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) && p.castT <= 0 && p.shieldT <= 0 &&
+  const free = p.fallT <= 0 && p.stunT <= 0 && (p.swingT <= 0 || p.autoSwing) && p.castT <= 0 && p.shieldT <= 0 &&
     p.rushT <= 0 && p.zip < 0 && p.dodgeT <= 0;
   attackStep(p, dt, free);
 }

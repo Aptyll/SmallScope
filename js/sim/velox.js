@@ -33,7 +33,7 @@ const LANE_W = 18;              // px wide
 const LANE_FAST = 1.25;         // her walk x this on her own lane
 const LANE_FADE = 0.5;          // s it takes to melt back after its time (drawn only)
 // E QUICK STEP: a short skate dash down the aim; her next basic attack is
-// ready at once, at full draw, and lands harder
+// ready at once, and lands harder
 const QSTEP_SPD = 330;           // px/s
 const QSTEP_D = 56;              // px
 const QSTEP_READY_T = 3;         // s the readied throw waits
@@ -76,7 +76,7 @@ const VELOX_AB = [
     id: 'step', name: 'QUICK STEP', cd: [9, 8.5, 8, 7.5, 7], cast: 0.05, aim: { line: QSTEP_D },
     rank: { dmg: [6, 10, 14, 18, 22] }, // dmg: added to the readied throw
     tip: 'A SHORT DASH. YOUR NEXT THROW IS READY',
-    blurb: 'SKATE A SHORT DASH. YOUR NEXT SLING THROW IS READY AT ONCE, AT FULL DRAW, AND LANDS HARDER.',
+    blurb: 'SKATE A SHORT DASH. YOUR NEXT SLING THROW IS READY AT ONCE AND LANDS HARDER.',
     use: (p) => veloxStep(p),
     pose: () => ({ dx: 0, dy: 0, rot: 0 }),
     icon: VELOX_ICON32.step,
@@ -109,8 +109,8 @@ function veloxDeal(p, e, dmg, o) {
   if (p.runT > 0) veloxEcho(p, e);
   return dmg;
 }
-// her clocks, one sim step: the stacks, the readied throw (a held draw is full
-// at once), the long run
+// her clocks, one sim step: the stacks, the readied throw (it leaves with no
+// wind-up), the long run
 function veloxTick(p, dt) {
   if (p.keepT > 0 && (p.keepT -= dt) <= 0) p.keepN = 0;
   if (p.quickT > 0) {

@@ -194,8 +194,11 @@ function aiStructTile(o, p) {
 // its roost and an ally joins the fight the human is in. Every candidate
 // still resolves through seenAt: a buried rival is buried for everyone.
 // is the weapon in hand a blade? A bot with one fights at arm's length
-// (AI_MELEE_D px) instead of at a bow's 70
-const AI_MELEE_D = 18;
+// (aiMeleeD: its own weapon's range, centre to centre) instead of standing off
+function aiMeleeD(p) { return attackOf(p).range; }
+// the band a ranged hero holds a rival in: inside its range, a step short of
+// the edge so a strafe does not carry it out (aiRangeBand's edges)
+function aiShootBand(p) { const r = attackOf(p).range; return [Math.round(r * 0.55), Math.round(r * 0.9)]; }
 // Which band of `edges` (ascending px) distance d is in - 0 inside the first
 // edge, edges.length past the last - holding the band it was in (`band`)
 // until d is AI_BAND_HYS px past that band's own edge, so a body sitting on
@@ -378,7 +381,8 @@ function aiNearestAnimal(p) {
   return best;
 }
 
-// arrows die on solids, so a bot only shoots when the flight path is open
+// a key's shot dies on solids, so a bot reads whether the line is open before
+// it stands somewhere to fight (a basic attack's missile flies over anything)
 function aiLineClear(p, x, y) {
   const dx = x - p.x, dy = y - (p.y - BOW_Y), d = Math.hypot(dx, dy) || 1;
   for (let s = 10; s < d; s += 8) {
@@ -454,6 +458,7 @@ function updateAI(p, dt) {
   aiThink(p, dt); // the ladder (js/ai/ai-ladder.js)
   aiTricks(p); // a trick when the moment calls for one (js/sim/loadout.js)
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
+  if (!p.dead) skillStrike(p, aiProfile(p), dt); // ...and the mark it named is struck in the hands' own rhythm
   aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
@@ -493,7 +498,7 @@ function aiRecall(p) {
   if (!go && !(p.recallT > 0) && !wait) return;
   if (go) inp.cmd = { kind: 'recall' };
   inp.mx = inp.my = 0; inp.slide = false; inp.dodge = false; inp.jump = false;
-  if (go || p.recallT > 0) { inp.fire = false; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', low ? 'LOW HP' : 'SHOP', null); }
+  if (go || p.recallT > 0) { inp.atk = null; inp.work = false; inp.ability = -1; aiNote(p, 'RECALL', low ? 'LOW HP' : 'SHOP', null); }
   else aiNote(p, 'IDLE', 'HEALING', null);
 }
 

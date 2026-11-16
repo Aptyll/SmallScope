@@ -5,7 +5,7 @@ kit and adds the bonus fields (`add`, the [hero stat](hero-stats.md) bonus bag, 
 `dodgeCd`, `stealth` and the item passives'
 fields), then the six item slots (`itemMods`,
 js/sim/items.js; see [the items](the-merchants-counter.md#the-items)) write into it. `kitOf(p)` returns that cache, so
-every kit read site (movement, `attackDmg`, dodge timing, the AI, the draw meter) picks an
+every kit read site (movement, `attackDmg`, dodge timing, the AI) picks an
 item up without knowing it exists. Sites that read the bonus fields: `statOf` (`add`),
 **`seenAt()`** (`stealth`; the wolf pack, the road towers
 *and* `aiNearestEnemy` all go through it, so a stealth item works against a rival player

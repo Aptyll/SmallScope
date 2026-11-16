@@ -11,10 +11,9 @@ burning rival still has to read as the rival it is; the embers themselves are pa
 `updateBurn` rather than drawn here. What each state *does* is
 [gameplay.md](../gameplay/status-effects-one-set-for-every-unit.md).
 
-**The three bars over a body are three colours, never three shades of one**: health in the side's
-paint, stamina white, the draw meter gold (the palette is one block above `drawHealthBar` in
-[js/draw/overhead.js](../../../js/draw/overhead.js); the cursor's bow ring, the aim line and the mouse icon
-read the same two golds, so "full draw" is one colour everywhere).
+**The bars over a body are different colours, never shades of one**: health in the side's
+paint, stamina white (the palette is one block above `drawHealthBar` in
+[js/draw/overhead.js](../../../js/draw/overhead.js)).
 `drawHealthBar(cxp, topY, hp, maxHp, w, team, col?)` draws a small bar above every unit, always visible
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
@@ -46,16 +45,10 @@ health — never its colour: a bar that drained toward red would spend the rival
 "hurt", and a hurt ally would read as an enemy at a glance.
 The overhead bar is the **only** player health display (the heart sprites in
 js/sprites/icons.js are baked but unreferenced). Above it sits one
-more small meter — **the slot the hands report to**, and it carries three states that can never
-overlap, since a recall stands the body still and anything it does ends the channel: gold while
-charging (`DRAW_COL`), one white blink (`DRAW_FULL_FLASH`, 0.12 s) and then pale gold
-(`DRAW_FULL_COL`) at full draw — brighter, never a new hue: two discrete states, since a gradient
-is unreadable at 14 px, and never orange, which beside a red rival's bar is two warm bars; slate
-while the renock runs, pale gold the instant it comes back (the bow's own ready colour
-— white is the stamina bar's); and the **side's own glow** filling
-left to right while a recall channels (`RECALL_T`, [Recall](../gameplay/recall-and-the-roost-ring.md)).
-All three are drawn for **everyone**, because each is a tell somebody can act on — a shot is
-coming, a shot is not coming, a body is leaving and hitting them keeps it there. The overhead stack
+more small meter only while a recall channels: the **side's own glow** filling left to right
+(`RECALL_T`, [Recall](../gameplay/recall-and-the-roost-ring.md)). It is drawn for **everyone**,
+because it is a tell somebody can act on: a body is leaving, and hitting it keeps it there. The
+attack has no meter: the wind-up on the sprite is its tell. The overhead stack
 floats clear of the sprite: stamina plate at `py - 4` (white, `STAM_COL`, on every side — the one
 bar with no side to it; every player, since the level badge spans both
 bars), health at `py - 7`, that meter at

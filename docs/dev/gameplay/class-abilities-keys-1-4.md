@@ -384,8 +384,7 @@ VELOX, THE SKATER — the kiting marksman: she throws her sling while she skates
 still. Her rules live in **[js/sim/velox.js](../../../js/sim/velox.js)** (`VELOX_AB`, its `velox`
 banner), her pixels in [js/draw/velox.js](../../../js/draw/velox.js), her icons and looks in
 [js/sprites/velox.js](../../../js/sprites/velox.js). 82 hp, 10 armor, a step faster than a walk. Her
-STAFF SLING throws a shorter, quicker stone than IGNIA's ember, and her kit barely slows her
-while she draws (`chargeMul` 0.9) and turns sharply on ice (`iceSteer` 9, `iceMax` 1.25). Her
+STAFF SLING throws a shorter, quicker stone than IGNIA's ember, and her kit turns sharply on ice (`iceSteer` 9, `iceMax` 1.25). Her
 stones in flight and her lanes are things she leaves in the world (`veloxStones`, `veloxLanes`),
 saved and sent like HIEMS's ice.
 
@@ -418,13 +417,13 @@ marksman (a full-draw bolt flies about 350 px, IGNIA's ember 220) and a slow loo
 live in **[js/sim/sagitta.js](../../../js/sim/sagitta.js)** (`SAGITTA_AB`, its `sagitta` banner), her
 pixels in [js/draw/sagitta.js](../../../js/draw/sagitta.js), her icons and looks in
 [js/sprites/sagitta.js](../../../js/sprites/sagitta.js). 78 hp, 9 armor, a step slower than a walk,
-and her draw all but plants her feet (`chargeMul` 0.45). Her bolts are shots in `arrows` like any
+Her bolts are shots in `arrows` like any
 other; her pavise is a body in `robots` (`HERO_MACHINE.sagPavise`), so neither adds a list of its own.
 PIN and THE LONG BOLT hold the crossbow on the aim through their wind-up (the row's `aimHeld`).
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| P | **HEAVY BOLTS** | — | every `HEAVY_EVERY`th basic bolt she looses is heavy: ×`HEAVY_DMG` damage, ×`HEAVY_KB` shove, and a building takes ×`HEAVY_SIEGE` more (the shot's `siege`). Counted at the loose (`HERO_PASSIVE.heavybolts` `shot`), shown as marks at her feet, brass once the next is heavy |
+| P | **HEAVY BOLTS** | — | every `HEAVY_EVERY`th basic bolt she looses is heavy: ×`HEAVY_DMG` damage, and a building takes ×`HEAVY_SIEGE` more (the shot's `siege`). Counted at the loose (`HERO_PASSIVE.heavybolts` `shot`), shown as marks at her feet, brass once the next is heavy |
 | 1 | **PIN** | 11/10.5/10/9.5/9 s | a bolt down the aim at `PIN_SPD` for `PIN_RANGE`: the first body takes `dmg` (50/80/110/140/170) and a shove ×`PIN_KB`; a tree, rock or wall within `PIN_WALL` behind it pins it, stunned for `stun` (1.2 s) (`HERO_SHOT_HIT.pin`, `solidBehind`) |
 | 2 | **PAVISE** | 16/15/14/13/12 s | a tall shield `PAV_D` in front of her for `PAV_T`, one at a time: a body of her side (`robotBody`) with `shield` health (120/170/220/270/320). A rival's shot that meets its face (flying at least `PAV_FRONT` against its facing) ends on it; from behind or along its edge a shot goes by (`pavPasses`, the machine's `passes`); her side's shots pass; rivals break it and are paid for it |
 | 3 | **CRANK BACK** | 14/13/12/11/10 s | every rival body within `CRANK_R` of her feet takes `CRANK_DMG` and walks ×`CRANK_SLOW` for `slowT` (1-2 s); she is thrown `CRANK_D` away from her aim (`p.dash = 'crank'`), still facing it |
@@ -434,7 +433,7 @@ ARCUS, THE FLETCHER — the planted marksman: a longbow quick on the string (a f
 about 270 px), and no way out of a dive. His rules live in **[js/sim/arcus.js](../../../js/sim/arcus.js)**
 (`ARCUS_AB`, its `arcus` banner), his pixels in [js/draw/arcus.js](../../../js/draw/arcus.js), his icons
 and looks in [js/sprites/arcus.js](../../../js/sprites/arcus.js). 80 hp, 9 armor, a step slower than a
-walk (`chargeMul` 0.75). His arrows in flight are shots in `arrows` like any other; the ones standing
+walk. His arrows in flight are shots in `arrows` like any other; the ones standing
 in the snow are `arcusShafts`, FULL QUIVER's falling spots `arcusRains` (both in `SAVE_ROOTS` and the
 snapshot's `arcus`). An arrow lands in the snow through `HERO_SHOT_END` (the shot's `hit` when it ends,
 out of life or on what it struck). VOLLEY holds the bow on the aim through its wind-up (`aimHeld`).

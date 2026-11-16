@@ -4,21 +4,19 @@ The axe is **not selectable and is not a weapon**. It is in the hands from a swi
 (`p.swingT > 0 || p.swingCd > 0`; both ride the online snapshot, so a client draws it the same); the rest of the time the hands hold the hero's own weapon. Which objects a swing
 works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
 
-- **Left click = the hero's basic attack** ([the basic attack](the-basic-attack.md)). The press only records intent (`clickAction` sets
-  `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
+- **Left click = the hero's basic attack** ([the basic attack](the-basic-attack.md)): the press
+  names a mark (`input.atk`), and the sim winds up and strikes it on its own.
 - **The hands work on their own** (`autoWork(p)`, js/sim/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree (never a jungle wall's pine: the entry's `ready` is `treeFells`), a snowdrop clump, a rival's roosting eagle — and **any building on the
   other team** (`autoWorks`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
   the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
-  automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
-  draw begin under it, and the release fires on the frame the button lifts, swing or no swing),
-  and never touches the aim (`startSwing`
-  leaves the facing alone while a draw is running, so the aim never flicks toward the tile) — you
-  keep shooting, walking or drawing through it, and the tree comes down beside you, with
-  **both tools on the sprite**: the axe sweeping in one hand, the drawn weapon on the aim
-  in the other (`drawHeldTool`, [below](#the-draw)). It obeys the
+  automatic and not a cancel: it never drops a wind-up (`p.autoSwing` lets the attack run under
+  it), and never touches the aim (`startSwing` leaves the facing alone while a wind-up is
+  running) — you keep attacking or walking through it, and the tree comes down beside you, with
+  **both tools on the sprite**: the axe sweeping in one hand, the weapon on the mark in the other
+  (`drawHeldTool`, [below](#the-weapon-in-the-hand)). It obeys the
   same busy gates as E (a fall, a roll, a stun, an ability, the swing cooldown).
   Nothing in this is a key: the swing itself and the rim are the whole
   signal, so `drawWorkHint` shows no prompt over an `auto` target.
@@ -31,7 +29,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
   does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
-  at all ([opening it](the-merchants-counter.md#opening-it)). A valid target brings the axe out, drops any draw, faces the
+  at all ([opening it](the-merchants-counter.md#opening-it)). A valid target brings the axe out, drops any wind-up, faces the
   tile, and starts the swing; `swingHit(p)` **contests** the locked tile (`p.workTx/Ty`) so only
   one player's swing lands on it in a step, then hits whatever is there via
   `hitObject(o, p)`. The axe is drawn only until
@@ -39,7 +37,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
   lock ring is exactly "E will do something here".
 
 Whenever `workTarget()` is non-null, `near`, **and not something the hands take on their own**
-(`autoWorks(t.o, player)` nulls it — and tools aren't blocked, the bow drawn or a cable
+(`autoWorks(t.o, player)` nulls it — and tools aren't blocked, a wind-up running or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
 verb. Since every tree and rival building is `auto`, the only prompt that shows in play
@@ -60,78 +58,18 @@ the swing to the anchor. Your own buildings are never swung at. See
 [Buildings](buildings.md) for the damage numbers. The axe never hits a living
 thing: the hero's basic attack is the only weapon aimed at one.
 
-Every basic attack is **hold-to-charge**: holding the button arms it (`p.fireArmed`), the draw
-starts as soon as the cycle has run and runs `p.charging`/`p.chargeT` (movement targets
-scale by the kit's `chargeMul`, between 45% and 90% by hero — walk speed and the ice cap both — facing
-tracks the mouse, a draw meter renders
-above the player's health bar), and the release edge fires via `basicAttack(p)`. What the hold buys
-is [The draw](#the-draw). Shots carry
-their shooter's `owner`/`team`, live in the `arrows` array, and are updated in `updatePlay()`:
-they die on solid tiles (and a rival's **building** that stops one is sieged), on a **rival player** (see [PvP](../multiplayer.md#pvp)), on an **enemy worker
-bot** (`hurtRobot`) or on any animal hit (knockback scales with power) — whichever the step met
-first ([a shot in flight](the-basic-attack.md#a-shot-in-flight)) — or at the end of the shot's life.
+## The attack's clock
 
-`p.fireArmed` is what makes the draw survive an attack that isn't ready. It is set on the press edge,
-cleared on release and at every point that cancels a draw (`tryWork`, falling in a hole,
-an ability cast, clipping onto the zipline, an
-overlay opening in `sampleHumanInput`, `die`), and the draw begins on the first
-step where it is set *and* `nockT <= 0`. Requiring a fresh press instead
-would deadlock every controller that simply holds the button down — which is every bot:
-`aiThink` sets `inp.fire = chargeT < drawTime(p) * k`, so after a shot it goes straight back to
-true and no second edge ever arrives. `p.chargeT` is the raw seconds held and is **never
-clamped** — every reader takes `drawPow(p)` (0..1) off it, and the meter's white blink at the
-peak needs to see the hold run past the full draw.
+There is no ammunition. What sits between one attack and the next is **the attack's own clock**:
+the wind-up (`p.chargeT` up to `atkWind(p)`) and then the rest (`p.nockT` down from `atkRest(p)`),
+one `attackCycle(p)` together ([the basic attack](the-basic-attack.md#the-attack)). Every readout
+of it divides by `atkRest(p)`, never a bare number, so no meter can show a wait a different length
+from the one running. It shows on **the reticle** (`cursorInfo` → `cursorLook`, js/draw/cursor.js):
+every reticle in play carries `nock` (elapsed fraction, 1 = ready), and while the rest runs, four
+gold corner marks fall inward and land on the ring. `SFX.nock()` plays on the rest completing
+(very quiet). Nothing is drawn over the head for it: the hero's own wind-up is the tell.
 
-## The cycle
-
-There is no ammunition. What sits between one press and the next is **the attack's own cycle**:
-`basicAttack` sets `p.nockT = attackCycle(p)` (the row's `cycle`, [the basic
-attack](the-basic-attack.md)), and no draw can begin while that runs. Its end is the **one** gate:
-the frame the wipe clears, a held button starts the draw. `attackCycle(p)` is the one number every
-readout divides `nockT` by — the reticle's corner marks and the overhead slate
-bar — so no meter can show a cooldown a different length from the one running; a new readout
-divides by it too, never by the bare `kit.nock`.
-
-Two indicators carry it, and neither is a word:
-
-- **The overhead bar** (`drawPlayer`) — the draw meter's slot doubles as the cycle readout for
-  *every* player: gold filling = drawing, slate filling = reloading, pale gold = just came back.
-  Same geometry either way, so it never jumps.
-- **The reticle** (`cursorInfo` → `cursorLook`, js/draw/cursor.js). Every reticle in play carries `nock` (elapsed
-  fraction, 1 = ready), whatever the pointer is over. While the cycle runs, four gold corner marks
-  fall inward and land on the ring.
-
-`SFX.nock()` plays on the cycle completing (very quiet — it plays after every shot).
-
-## The draw
-
-Under the keyboard's [CLICK scheme](../multiplayer.md#the-click-scheme) a locked target draws the
-attack by itself to `CK_AUTO_DRAW` (0.7 — the same fraction a NORMAL bot looses at) while the hand
-is off the button, through this same curve and the same cycle: the auto-attack is a bot's loose
-and nothing more, a floor under the hand's own draw, never a second weapon. Its reach is
-`ckReach` (js/app/input.js): a blade's `reach` plus 6, a shot's flight at that draw.
-
-`drawPow(p)` — `chargeT` over `drawTime(p)`, clamped 0..1 — scales the attack three ways at once,
-each on a straight line from a floor to the row's own number (the `the draw` banner,
-js/sim/attack.js):
-
-| | at a tap (`pw` 0) | at full draw | floor |
-| --- | --- | --- | --- |
-| range | ×`DRAW_RANGE_MIN` | ×1 | 0.22 |
-| speed | ×`DRAW_SPEED_MIN` | ×1 | 0.6 |
-| damage (the whole sum: stat + speed bonus) | ×`DRAW_DMG_MIN` | ×1 | 0.3 |
-
-`shotFlight(s, pw)` turns that into the `spd` and `life` a shot (`{ speed, life }`) leaves with,
-the range curve applied through the life, so a tap also *stops short* rather than only arriving
-late. It is the one envelope: `shootAttack` fires through it and `drawAimLine` measures it, which
-is what lets the line on the ground grow out of the bow as the string comes back.
-
-`drawTime(p)` is the kit's `bowCharge` over ATTACK SPEED (`asMul`). The overhead bar, the aim line
-and the bots all read `drawTime`, never `bowCharge`. **That curve is the whole punishment for
-spamming the button** — short, slow and weak, with the cycle still to run before the next — dealt
-by the attack itself rather than by a counter, so what a player sees (a stubby line, a pale meter)
-is exactly what they get. Bots read the same curve: `aiThink` holds to `drawTime(p) × k` before
-loosing.
+## Shots in the air
 
 A shot in flight is drawn in its own pass (using `ex`/`ey`) as **the one arrow body**: `ARROW_MAP`
 (js/sim/actions.js), an ASCII master parsed once into `ARROW_BODY` — a white tip, a tapered flint
@@ -158,28 +96,14 @@ air. In the particle draw pass, a particle's
 `maxLife` is the seconds it spends fading (`burst` uses 0.4) and its optional `alpha` caps how
 opaque it ever gets; an optional `dx` is a steady sideways px/s the damping never takes (`burst`'s
 `drift`: the wind carrying a pine's snow).
-Opening an overlay or dying drops the draw without firing (and clears `fireArmed` with it);
-`BOW_CHARGE` (0.9 s) is a full draw.
 
-While the attack is drawn, `drawAimLine()` (called from `render()` right before the shots pass,
-using `ex`/`ey`) shows it. A **cut** grows its wedge (above). A **shot** gets a static line of 2×2
-drop-shadowed dots from the spawn point along the exact direction `shootAttack` uses. Both aim
-from `player.y - BOW_Y` (6 px above the feet, where the shot spawns) — not the feet — so the line
-and the flight pass exactly through the cursor instead of running parallel a few px above it.
-
-The line is **truthful, not decorative**, at the **draw held right now**: it runs exactly as far
-as the shot would fly if loosed this instant (`shotFlight`, so it grows out of the bow as the
-string comes back, and a tap's line is a stub), and stops at an `isSolidTile`. It still stops at
-the first animal it would hit (the same 8 px body test as the arrow update) with an impact cross —
-line-coloured on a solid, hunt-amber on a body — and otherwise ends in a short perpendicular
-range-cap bar. Colour follows the draw meter: gold charging, pale gold at full (`DRAW_COL` /
-`DRAW_FULL_COL`, js/draw/overhead.js).
+## The weapon in the hand
 
 The weapon is also drawn **on the player** by `drawHeldTool()` (called from `drawPlayer()`): at
 rest the hands hold the hero's own weapon (`SPRITES.weaponArt[attackOf(p).art]`, or the blade at
 its length), so what someone fights with reads off their sprite from across the snow. It is carried
 at the leading hand while idle/walking (turned to the facing, drawn *before* the body sprite for
-`up` so it's occluded, riding the run's bob - `runBob`), and rotated toward the mouse while drawn.
+`up` so it's occluded, riding the run's bob - `runBob`), and turned onto the mark through the wind-up (`aimAngle`, `p.aimA`).
 **The carry rule** (top of `drawHeldTool`) keeps it off the face: every art is turned about where
 the hand closes on it (`WEAPON_GRIP`, js/sprites/weapons.js, or a hero blade's `hilt`), never about
 its own middle, so a blade reaches out of the fist; a blade's hand rides an ellipse about the hips
@@ -197,8 +121,8 @@ and the hand turns it by the facing or the aim minus that: a bow's arrowhead is 
 way a bow is held — string toward the archer, belly toward the target — and the sword's point at
 −x.
 A melee swing sweeps the axe's icon along the swing arc instead, and a swing running
-under a draw (an automatic one — `autoWork`) draws **both**: the sweep first, the drawn weapon
-on top, since the attack about to leave is the thing to read.
+under a wind-up (an automatic one — `autoWork`) draws **both**: the sweep first, the weapon on
+top, since the attack about to leave is the thing to read.
 Mid-swing the axe takes over, swept along the same arc as the swing effect. Both sizes go
 through the same code: the icon is centred on its own half-width, 8×8 for the axe and 12×12
 for a weapon.

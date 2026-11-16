@@ -104,11 +104,10 @@ page the valley itself: why two companies are on the snow and why nobody on it d
 ([the setting](lore.md)) — one page a subject, so the snow never has to.
 [The wiki](gameplay/the-wiki.md).
 
-**The draw is the ammunition.** There is no quiver: what a shot is worth — how far, how fast, how
-hard — is how long the string was held, and the tool's own cycle is all that sits between one
-press and the next. Spamming the button is punished by the shots themselves, short and weak, never
-by a counter, so what the meter shows is exactly what you get.
-[The draw](gameplay/the-swing-tools-e.md#the-draw).
+**The attack is League's.** A click names a mark; the hero walks into range, stops, winds up and
+strikes on its own, and a shot homes in and cannot miss. The skill is in the rhythm (step, stop,
+hit) and in where you stand, never in holding a button. [The basic
+attack](gameplay/the-basic-attack.md#the-attack).
 
 **Momentum is the movement.** Ice is mechanically slippery, dodges chain, and **a roll is a hit** —
 the dodge is an attack, which is why a player mid-roll passes through small units instead of

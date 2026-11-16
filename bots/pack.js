@@ -7,7 +7,6 @@ defineBot({
 
   init(hello) {
     this.team = hello.team;
-    this.drawT = 0;
     this.focus = null;  // the rival the side agreed to shoot
     this.go = false;    // the pack has gathered and is moving
   },
@@ -37,13 +36,9 @@ defineBot({
       const d = dist(foe);
       act.aim = [foe.x + foe.vx * 0.2, foe.y + foe.vy * 0.2];
       act.think = { goal: 'FIGHT', why: foe.id === this.focus ? 'FOCUS' : 'NEAREST', plan: 'PACK', target: { kind: 'player', id: foe.id, x: foe.x, y: foe.y } };
-      if (melee) { act.goTo = { x: foe.x, y: foe.y }; act.fire = d < 40 && (obs.tick / 6) % 2 < 1; }
-      else {
-        if (d < 100) act.move = [(me.x - foe.x) / d, (me.y - foe.y) / d];
-        this.drawT++;
-        act.fire = this.drawT < 8;
-        if (!act.fire) this.drawT = 0;
-      }
+      if (melee || d > me.range) act.goTo = { x: foe.x, y: foe.y };
+      else if (d < me.range * 0.6) act.move = [(me.x - foe.x) / d, (me.y - foe.y) / d];
+      act.attack = foe.id; // struck whenever it is in range
       if (me.hp < me.maxHp * 0.3) act.dodge = true;
       return act;
     }
@@ -73,9 +68,9 @@ defineBot({
     const d = Math.hypot(bird.x - me.x, bird.y - me.y);
     act.aim = [bird.x, bird.y];
     act.think = { goal: 'PUSH', why: 'PACK IS GO', plan: 'PACK', target: { kind: 'bird', id: bird.team, x: bird.x, y: bird.y } };
-    if (melee || d > 100) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
+    if (melee || d > me.range + 20) act.goTo = { x: bird.x, y: bird.y, reach: 1 };
     if (melee) act.work = d < 40;
-    else if (d < 140) { this.drawT++; act.fire = this.drawT % 8 !== 0; }
+    else act.attack = 'eagle';
     if (me.hp < me.maxHp * 0.25) this.go = false; // too hurt: back to the rally
     return act;
   },

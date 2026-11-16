@@ -88,8 +88,10 @@ obs = {
     stats: { hp, dmg, as, armor, ap, haste, ms },  // the seven hero stats, buffs on: the HUD panel's numbers
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
     abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
-    attack,                // your basic attack: 'shot' (a bow) or 'cut' (a blade)
-    charging, chargeT,     // the draw in progress
+    attack,                // your basic attack: 'shot' (a ranged missile) or 'cut' (a blade)
+    range,                 // px your attack lands from, to the target's edge
+    attackReady,           // the last attack's rest is over: the next wind-up may start
+    charging, chargeT,     // the wind-up in progress (seconds into it)
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
@@ -159,7 +161,10 @@ act = {
                            // stops beside a tile you cannot stand on (a tree, a bird).
                            // Unreachable: dropped, and me.nav says 'fail' next think
   aim: [x, y],             // the world point you want the crosshair on
-  fire,                    // held: a bow draws while held and looses on release; a blade swings
+  attack,                  // held: the id of what to attack (a player, soldier, animal or
+                           // building id off the obs, or 'eagle' for the rival bird). Inside
+                           // me.range with your feet still, you wind up and strike on your own;
+                           // a shot homes and cannot miss. Moving cancels a wind-up for free
   work,                    // E held: chop, strike a rival building or bird under the aim
   slide,                   // shift held
   // edge (once)
@@ -233,14 +238,14 @@ fight `FIGHT WOLF STALK ROAD`, farm `FARM JUNGLE SUPPORT GATHER HUNT PUMP SHOP`,
 Every scripted seat aims with the same hands, the game's HARD bots' (`BOT_FILE_HANDS`,
 js/ai/ai-skill.js):
 
-| crosshair speed | wobble | a drawn shot |
+| crosshair speed | wobble | an attack |
 | --- | --- | --- |
-| 700 px/s, moving as an offset from your body | about 5 px at bow range, wider on a new target, settling in 0.6 s | is held until the crosshair is within 8 px of `aim` |
+| 700 px/s, moving as an offset from your body | about 5 px at bow range, wider on a new target, settling in 0.6 s | waits a reaction of about 0.06 s once the target is in range, and plants your feet for the wind-up |
 
-So releasing `fire` is a request: the arrow leaves once the crosshair has caught up. `aim` is
-where you *want* to aim; lead a moving target yourself.
+`aim` steers your abilities: it is where you *want* to aim, so lead a moving target yourself.
+`attack` needs no aim.
 
 ## Versioning
 
-`hello.api` is 7 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`; 6 dropped the HUNTER and the WARRIOR, `me.prone`, `me.hide`, `enemies[].prone` and the `grapple` act, and added `attack` to `allies` and `enemies`; 7 dropped the berry bush, so `nodes` lists trees only). A new field may appear at any time; a field is never renamed or removed without
+`hello.api` is 8 (2 swapped the side's `flags` for `pings`, and the `flag` order for `ping`; 3 dropped `me.bag`, the `useCard` edge and the shop's `sell` act, with the backpack and cards; 4 dropped `me.food`, `drops`, the `eatBerry`/`eatFish` edges and the shop's `trade` act, and added `me.potions`/`me.potionT` and the `useItem` edge; 5 renamed a gold pump's `structs` type from `generator` to `pump`; 6 dropped the HUNTER and the WARRIOR, `me.prone`, `me.hide`, `enemies[].prone` and the `grapple` act, and added `attack` to `allies` and `enemies`; 7 dropped the berry bush, so `nodes` lists trees only; 8 swapped the held `fire` for the held `attack` mark and added `me.range` and `me.attackReady`). A new field may appear at any time; a field is never renamed or removed without
 the number going up.

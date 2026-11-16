@@ -6,7 +6,7 @@ defineBot({
   author: 'Softfall',
   version: '1.0',
 
-  init(hello) { this.drawT = 0; this.bad = new Set(); this.tree = null; },
+  init(hello) { this.bad = new Set(); this.tree = null; },
 
   think(obs) {
     const me = obs.me;
@@ -27,11 +27,10 @@ defineBot({
       const d = dist(foe);
       act.aim = [foe.x, foe.y];
       act.think = { goal: 'DEFEND', why: own && own.hitT < 8 ? 'BIRD HIT' : 'AT THE ROOST', target: { kind: foe.cls ? 'player' : 'soldier', id: foe.id, x: foe.x, y: foe.y } };
-      if (me.attack === 'cut') { act.goTo = { x: foe.x, y: foe.y }; act.fire = d < 40 && (obs.tick / 6) % 2 < 1; }
-      else { this.drawT++; act.fire = this.drawT < 8; if (!act.fire) this.drawT = 0; }
+      if (me.attack === 'cut' || d > me.range) act.goTo = { x: foe.x, y: foe.y };
+      act.attack = foe.id; // struck whenever it is in range
       return act;
     }
-    this.drawT = 0;
 
     // hurt: drink a potion (useItem is the slot's key; it heals over time and
     // never stops the hands), and keep working

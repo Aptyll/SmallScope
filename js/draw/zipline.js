@@ -200,8 +200,7 @@ function drawZipStakes(ex, ey) {
 // walking itself to it - and the body stands too far out to clip on (past
 // ZIP_GRAB of the track), a static dotted gold line from the feet to the
 // nearest point of the track and a short bar across it there - the walk that
-// puts the cap over your head, in the aim line's own dots (drawAimLine,
-// js/draw/render.js), drawn right after it. Inside ZIP_GRAB the cap is the
+// puts the cap over your head, in 2x2 drop-shadowed dots. Inside ZIP_GRAB the cap is the
 // whole answer and the line stays away.
 function drawZipGuide(ex, ey) {
   const z = zipLitLine();

@@ -122,8 +122,7 @@ function tryWork(p) {
     p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
   const t = workTarget(p);
   if (!t || !t.near) return;
-  if (p.charging) { p.charging = false; p.chargeT = 0; } // work drops the draw
-  p.fireArmed = false;                                     // ...and the held button has to be pressed again
+  atkCancel(p); // work drops the draw
   p.autoSwing = false;
   startSwing(p, t);
 }
@@ -750,8 +749,7 @@ function stunUnit(e, t, src, firm) {
   e.stunMax = cur > 0 ? Math.max(e.stunMax || 0, e.stunT) : e.stunT;
   if (e instanceof Player) {
     e.dodgeT = 0;                                  // no roll survives being stunned out of it
-    if (e.charging) { e.charging = false; e.chargeT = 0; }
-    e.fireArmed = false;
+    atkCancel(e);
     e.swingT = 0; e.swingHitDone = true;           // the swing in flight never lands
     e.sliding = false;
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands

@@ -6,7 +6,7 @@ cursor (`image-set(url(...) <dpr>x) hx hy, <stock>`), so the OS draws it: it mov
 the mouse does, at the desktop's own speed, to the device pixel. A cursor painted into the canvas
 trails the hand by the frames between the event and the screen and snaps to whole game px, and
 that read as a slower mouse than the desktop (fixed 11-16). `cursorInfo()` resolves the pointer state once per
-frame from `mouse`, `state`, `player` (draw/flounder/roll), and what's under the pointer, and
+frame from `mouse`, `state`, `player` (flounder/roll), and what's under the pointer, and
 both the pixel cursor and the browser-cursor fallback read from it. It returns
 `{ kind, mode, dim, frac, nock, amb }`:
 
@@ -24,14 +24,13 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   counter's ([opening it](../gameplay/the-merchants-counter.md#opening-it)) and a ring would promise a swing the key does
   not make; **ice** the same lock in pale blue over bare ice;
   **hunt** amber breathing ring over an animal, a rival player or a rival robot (`unitUnder`,
-  actions.js — the same boxes the CLICK scheme's right button picks a body by); **bow** — while charging the ring closes as
-  the draw fills and turns pale gold at full, like the meter. `dim` (50% alpha) also means attacks
+  actions.js — the same boxes the CLICK scheme's right button picks a body by); `dim` (50% alpha) also means attacks
   are blocked right now: floundering in a hole, or mid-roll.
 - Every reticle in play also carries the **attack's own state**, whatever the pointer is
-  over, since the crosshair is where the eye already is: `nock` (0→1 over `attackCycle`) draws
+  over, since the crosshair is where the eye already is: `nock` (0→1 over `atkRest`, the attack's rest after the blow) draws
   four gold corner marks falling inward onto the ring. It comes from the one `ret()` helper inside
   `cursorInfo`, so no return site can forget it. See
-  [the cycle](../gameplay/the-swing-tools-e.md#the-cycle).
+  [the attack's clock](../gameplay/the-swing-tools-e.md#the-attacks-clock).
 - Sprites live in `SPRITES.cursor.{arrow,hand,grab}` (`CUPAL`, lit top-left, icy
   bevel) with one-colour `SPRITES.cursorShadow` twins drawn 1 px offset beneath; hotspots are
   in `CUR_HOT`. Reticles are procedural via `drawOutlinedRects()` (dark rim pass, then fill),

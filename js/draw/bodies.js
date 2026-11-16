@@ -722,7 +722,7 @@ function heroAimed(p) {
   const drawing = p.charging || castAims(p), h = aimHeading(aimAngle(p)), ha = h * Math.PI / 4;
   const behind = heldBehind(ha), own = HERO_AIMED[A.art];
   if (own) {
-    if (!drawing && !(p.nockT > 0 && p.castT <= 0 && attackCycle(p) - p.nockT < AIMED_LOOSE_T)) return null;
+    if (!drawing && !(p.nockT > 0 && p.castT <= 0 && atkSince(p) < AIMED_LOOSE_T)) return null;
     const r = own(h, !drawing ? 0 : drawPow(p) < 0.5 ? 1 : 2, p);
     return { img: r.img, grip: r.grip, rot: 0, x: r.hand[0], y: r.hand[1] - 2, behind, fist: true };
   }
@@ -777,7 +777,7 @@ function swingFrame(p) {
   if (!attackOf(p).cut) return -1;
   if (p.slashT > 0) return Math.floor((SLASH_T - p.slashT) * SWING_FPS);
   if (p.nockT <= 0 || p.charging || p.castT > 0) return -1;
-  const f = Math.floor((attackCycle(p) - p.nockT) * SWING_FPS);
+  const f = Math.floor(atkSince(p) * SWING_FPS);
   return f >= 0 && f < SWING_FRAMES ? f : -1;
 }
 // the body's offset for a blow or a staff's cast ({ dx, dy } whole px), or null

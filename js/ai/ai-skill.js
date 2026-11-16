@@ -22,23 +22,21 @@
 //           strafe beats a slow reader; 0 reads the truth)
 //   hand    px/s its crosshair moves at, as a mouse moves on the screen
 //           (0 = at once): a flick from the tree it was chopping to a rival
-//           takes a beat, and it holds a draw until the crosshair is on,
-//           so the shot comes late rather than wide
+//           takes a beat before a key aimed there lands
 //   aim     px of aim wobble at bow range (70 px), a smooth drift, wider
 //           the farther and the faster either body moves
 //   fresh   x the wobble on a new target, settling to 1 over AI_SETTLE
 //   lead    0..1 of the (read) motion it aims ahead by (flight time)
-//   draw    fraction of the full draw (drawTime) it looses at (a short draw is a weak shot)
-//   drawVar how far each shot's release strays from `draw`
-//   slip    lapses per minute of fighting: a freeze, an early loose or a
+//   lag     s it waits, once its basic attack is ready, before it starts
+//           the next (skillStrike): a slow hand's rhythm, a lost attack in five
+//   lagVar  how far each wait strays from `lag`
+//   slip    lapses per minute of fighting: a freeze, a missed attack or a
 //           straight walk in (skillSlip)
 //   dodge   x the chance per second it rolls when hurt
 //   abil    chance each AI_ABIL_T tick that a ready ability is spent
-//   strafe  fraction of each 2 s it keeps moving in a fight; the rest it
-//           PLANTS - stands, draws and shoots, the only time a slow side
-//           fires - so the moment it stops is the moment it is about to
-//           shoot, and the moment a new player hits it. Under 1 it also
-//           circles that much less: it walks in straighter
+//   strafe  fraction of each 2 s it keeps moving between its attacks; the
+//           rest it stands still, which is when a new player hits it.
+//           Under 1 it also circles that much less: it walks in straighter
 //   work    duty cycle of the E key while harvesting (its gold pace)
 // CHOICES (the ladder and the team brain read them; neutral when a
 // staged profile leaves one out):
@@ -70,16 +68,16 @@
 // - the difficulty is how well they fight when they get there, never
 // whether they come.
 const AI_LEVELS = [
-  { name: 'EASY', sight: 120, react: 1.1, cone: 60, rear: 0.25, perceive: 0.3, hand: 250, aim: 20, fresh: 2.2, lead: 0, draw: 0.6, drawVar: 0.25, slip: 6,
+  { name: 'EASY', sight: 120, react: 1.1, cone: 60, rear: 0.25, perceive: 0.3, hand: 250, aim: 20, fresh: 2.2, lead: 0, lag: 0.3, lagVar: 0.2, slip: 6,
     dodge: 0.25, abil: 0.2, work: 0.4, strafe: 0.3,
     judge: 0.1, focus: 0, team: 0.5, think: 1.2, memory: 2, pick: 'near', push: { t: 420, n: 2 }, guard: 1 },
-  { name: 'NORMAL', sight: 147, react: 0.7, cone: 80, rear: 0.4, perceive: 0.15, hand: 400, aim: 14, fresh: 1.8, lead: 0, draw: 0.7, drawVar: 0.15, slip: 3,
+  { name: 'NORMAL', sight: 147, react: 0.7, cone: 80, rear: 0.4, perceive: 0.15, hand: 400, aim: 14, fresh: 1.8, lead: 0, lag: 0.18, lagVar: 0.12, slip: 3,
     dodge: 0.5, abil: 0.35, work: 0.5, strafe: 0.45,
     judge: 0.4, focus: 0.3, team: 0.75, think: 0.8, memory: 4, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
-  { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, hand: 700, aim: 5, fresh: 1.5, lead: 0.5, draw: 0.9, drawVar: 0.06, slip: 1,
+  { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, hand: 700, aim: 5, fresh: 1.5, lead: 0.5, lag: 0.06, lagVar: 0.04, slip: 1,
     dodge: 1, abil: 0.8, work: 0.8, strafe: 0.8,
     judge: 0.75, focus: 0.7, team: 0.95, think: 0.5, memory: 7, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
-  { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, hand: 0, aim: 0, fresh: 1, lead: 1, draw: 0.95, drawVar: 0, slip: 0,
+  { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, hand: 0, aim: 0, fresh: 1, lead: 1, lag: 0, lagVar: 0, slip: 0,
     dodge: 2, abil: 1, work: 1, strafe: 1,
     judge: 0.95, focus: 1, team: 1, think: 0.3, memory: 10, pick: 'weak', push: { t: 300, n: 99 }, guard: 0, relentless: true },
 ];
@@ -99,8 +97,8 @@ const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(A
 // the one pair of hands every bot FILE's seat plays with (the bot API,
 // js/ai/bot-api.js, and the bot ladder that rates the files): HARD's, and
 // never a level's choices - so the bot ladder ranks what a bot decides, not
-// how well it aims. botStep runs skillHands(p, this, dt) after each act;
-// `hands` marks it as a whole-body wrap (the wobble and the held draw apply
+// how well it aims. botStep runs skillHands and skillStrike(p, this, dt)
+// after each act; `hands` marks it as a whole-body wrap (the wobble applies
 // to every aim, not just a fight the brain named)
 const BOT_FILE_HANDS = { name: 'BOT FILE', hands: true, hand: AI_LEVELS[2].hand, aim: AI_LEVELS[2].aim };
 // which profile p plays by: a staged override (DBG, the harness), else by side
@@ -124,22 +122,18 @@ function aiProfile(p) {
 //             screen with its player); aa its bearing (rad); off how far it
 //             trails the wish (px)
 //   alertT    s it stays wide awake after a hit; rate the notice rate last tick
-//   draw      this shot's release point; slipT/slipKind the lapse in play
+//   lag/readyT this attack's wait and how long it has been ready; slipT/slipKind the lapse in play
 //   lost      { x, y, t } the last rival it lost sight of, t s ago
 //   engaged   the fight rung had its hands this tick
-//   holdT     s a drawn blade has been held for a target out of its reach
 //   view      the few numbers the dev view shows, kept on p.ai.thought.skill
 //             when a brain has written a thought: { level, react, aim (the
 //             wobble now, px), off (px the crosshair trails), rate, slip }
 const AI_SETTLE = 0.6;     // s the fresh-target wobble takes to settle (time constant)
 const AI_WOBBLE_T = 0.5;   // s the wobble's drift takes to wander back to centre
 const AI_ALERT_T = 2;      // s a hit keeps a bot watching every side
-const AI_AIM_ON = 8;       // px off the wish inside which a drawn shot may go
-const AI_BLADE_CLOSE = 24; // px past a blade's full reach it may start a draw, closing in while it draws
-const AI_BLADE_HOLD = 1.5; // s a drawn blade waits for its target to come back in reach before it lets go
 function skillOf(p) {
   return p.ai.sk || (p.ai.sk = { tgt: null, px: 0, py: 0, pvx: 0, pvy: 0, ex: 0, ey: 0, settle: 1, cx: 0, cy: 0, aa: 0, off: 0, wishX: 0, wishY: 0, outX: NaN, outY: NaN,
-    alertT: 0, rate: 1, draw: 0, drawing: false, slipT: 0, slipKind: null, lost: null, engaged: false, holdT: 0 });
+    alertT: 0, rate: 1, lag: 0, readyT: 0, slipT: 0, slipKind: null, lost: null, engaged: false });
 }
 // a standard normal off the sim's stream (Box-Muller)
 function skillGauss() { return Math.sqrt(-2 * Math.log(1 - rng())) * Math.cos(2 * Math.PI * rng()); }
@@ -193,39 +187,29 @@ function skillAim(p, prof, foe, dt) {
   const tf = prof.lead > 0 ? d / 300 * prof.lead : 0; // s of flight it leads by
   return { x: sk.px + sk.pvx * tf + sk.ex, y: sk.py - 6 + sk.pvy * tf + sk.ey };
 }
-// the draw fraction this shot looses at: `draw`, strayed by `drawVar`,
-// rolled once per draw
-function skillDraw(p, prof) {
-  const sk = skillOf(p);
-  if (p.charging) {
-    if (!sk.drawing) { sk.drawing = true; sk.draw = Math.max(0.3, Math.min(1, prof.draw + (rng() * 2 - 1) * prof.drawVar)); }
-  } else sk.drawing = false;
-  return sk.drawing ? sk.draw : prof.draw;
-}
 // the lapse: `slip` times a minute of fighting its hands go wrong for a
-// moment - it FREEZES (stands, holds the draw), LOOSES EARLY (the weak tap),
-// or WALKS STRAIGHT IN (no strafe, no shot). Rewrites this tick's input.
+// moment - it FREEZES (stands, no attack), MISSES A BEAT (one attack not
+// started), or WALKS STRAIGHT IN (no strafe, no attack). Rewrites this tick's input.
 function skillSlip(p, prof, foe, dt) {
   const sk = skillOf(p), inp = p.input;
   if (sk.slipT <= 0) {
     if (!prof.slip || rng() >= dt * prof.slip / 60) return;
     const r = rng();
     sk.slipKind = r < 0.4 ? 'freeze' : r < 0.7 ? 'early' : 'overrun';
-    sk.slipT = sk.slipKind === 'early' ? dt : 0.35 + rng() * 0.5;
+    sk.slipT = sk.slipKind === 'early' ? 0.6 : 0.35 + rng() * 0.5;
   }
   sk.slipT -= dt;
-  if (sk.slipKind === 'freeze') { inp.mx = 0; inp.my = 0; inp.fire = p.charging; }
-  else if (sk.slipKind === 'early') inp.fire = false;
+  if (sk.slipKind === 'freeze') { inp.mx = 0; inp.my = 0; inp.atk = null; }
+  else if (sk.slipKind === 'early') inp.atk = null;
   else {
     const a = Math.atan2(foe.y - p.y, foe.x - p.x);
-    inp.mx = Math.cos(a); inp.my = Math.sin(a); inp.fire = p.charging;
+    inp.mx = Math.cos(a); inp.my = Math.sin(a); inp.atk = null;
   }
 }
 // the crosshair: after the ladder has written where it WANTS to aim, the
 // crosshair moves there at `hand` px/s as an offset from the body - a mouse
-// on a screen that follows its player - and a drawn shot is held until it is
-// within AI_AIM_ON px of the wish (only in a fight, or for a scripted seat:
-// a shot anywhere else goes where it goes)
+// on a screen that follows its player - so a key cast at the aim lands late
+// rather than wide
 function skillHands(p, prof, dt) {
   const sk = skillOf(p), inp = p.input;
   // an aim nobody rewrote since last tick is still last tick's wish, not
@@ -253,20 +237,19 @@ function skillHands(p, prof, dt) {
     v.off = Math.round(sk.off); v.rate = sk.rate; v.slip = sk.slipT > 0 ? sk.slipKind : null;
     th.skill = v;
   }
-  if ((sk.engaged || prof.hands) && p.charging && !inp.fire && sk.off > AI_AIM_ON) inp.fire = true;
-  if (!prof.hands) skillBlade(p, sk, inp, dt);
 }
-// a blade cuts only what is inside its reach at this draw (slashReach), so a
-// bot never swings at the air: it starts a draw only once the wish is near
-// enough to close on while drawing, and holds a drawn one while the wish is
-// out of reach - for AI_BLADE_HOLD at most, then it lets go like a hand that
-// gave up. Every bot, every level, every rung (a camp, prey, a rival); a
-// scripted seat's release is its own to call
-function skillBlade(p, sk, inp, dt) {
-  const m = attackOf(p).cut;
-  if (!m || !p.charging) sk.holdT = 0;
-  if (!m) return;
-  const wd = Math.hypot(sk.wishX - p.x, sk.wishY - p.y);
-  if (!p.charging) { if (inp.fire && wd > m.reach + AI_BLADE_CLOSE) inp.fire = false; return; }
-  if (!inp.fire && wd > slashReach(m, drawPow(p)) && sk.holdT < AI_BLADE_HOLD) { inp.fire = true; sk.holdT += dt; }
+// the strike: the brain named a mark (input.atk); these hands start each
+// attack `lag` late once it is due - the next attack a slow hand loses -
+// and plant the feet for the wind-up, so a strafe never cancels its own
+// blow; between two attacks the walk is the brain's (a bot kites). A mark
+// it cannot strike (gone, fogged) is let go.
+function skillStrike(p, prof, dt) {
+  const sk = skillOf(p), inp = p.input, t = inp.atk;
+  if (!t || !atkGood(p, t)) { inp.atk = null; sk.readyT = 0; return; }
+  if (p.charging) { inp.mx = 0; inp.my = 0; return; }
+  if (p.nockT > 0 || !atkIn(p, t)) { sk.readyT = 0; return; }
+  if (sk.readyT === 0) sk.lag = Math.max(0, (prof.lag || 0) + (rng() * 2 - 1) * (prof.lagVar || 0));
+  sk.readyT += dt;
+  if (sk.readyT < sk.lag) { inp.atk = null; return; }
+  inp.mx = 0; inp.my = 0;
 }

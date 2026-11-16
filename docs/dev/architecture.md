@@ -193,7 +193,7 @@ order, so the script tags still interleave them:
 | [js/draw/light.js](../../js/draw/light.js) | ~1000 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
 | [js/draw/cursor.js](../../js/draw/cursor.js) | ~180 | shared scope, no `window.*` export | the pointer's pixels, worn by the system cursor: `cursorLook`, `drawLook`, the bake (`hwCursor`) and `applyCursorStyle` |
 | [js/draw/passes.js](../../js/draw/passes.js) | ~600 | shared scope, no `window.*` export | the named steps `render()` runs in order: the ground, the flat pass, the y-sorted pass and each scenery object, shots, the air layer, the blit and the screen |
-| [js/draw/render.js](../../js/draw/render.js) | ~620 | shared scope, no `window.*` export | `render()` runs the frame's steps in order; the `.` debug overlays; the pointer's state (`cursorInfo`) and the aim line |
+| [js/draw/render.js](../../js/draw/render.js) | ~620 | shared scope, no `window.*` export | `render()` runs the frame's steps in order; the `.` debug overlays; the pointer's state (`cursorInfo`) |
 | [js/ui/wheel.js](../../js/ui/wheel.js) | ~500 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key prompts, the work/die/bell/shop hints |
 | [js/ui/minimap.js](../../js/ui/minimap.js) | ~230 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
 | [js/ui/character.js](../../js/ui/character.js) | ~150 | shared scope, no `window.*` export | the HUD's shared well tones, `overHud` and the character panel (G) |
@@ -428,7 +428,7 @@ The one rule that constrains a move: **a const is only visible to a file that lo
 declaring it**, so anything read at *load time* — an object literal, a top-level loop, a `const`
 initialised from another — has to be declared no later than that. Reads inside a function are
 free, because every function in the game runs long after the last script tag. One block sits
-where it does only because of this: `BOW_CHARGE`/`BOW_NOCK`/`DODGE_SPEED`/`SLIDE_MIN` (player.js,
+where it does only because of this: `DODGE_SPEED`/`SLIDE_MIN` (player.js,
 because the `CLASSES` table reads them). It says so in a comment; if you move a block and the console shows a
 `ReferenceError` naming a constant on load, this is why.
 

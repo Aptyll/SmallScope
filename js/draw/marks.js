@@ -193,6 +193,7 @@ function drawAtkMark(t, ex, ey, alpha) {
     drawAtkRing(Math.round(t.tx * TILE + w / 2 - ex), Math.round(t.ty * TILE + h / 2 - ey), Math.round(w / 2) + 3, Math.round(h / 2) + 2, ATK_MARK_COL, alpha, 0);
     return;
   }
+  if (atkIsEagle(t)) { drawAtkRing(Math.round(t.x - ex), Math.round(t.y - ey) + 2, 22, 9, ATK_MARK_COL, alpha, 0); return; }
   const r = Math.max(HERO_RING_RX + 2, Math.round(unitRadius(t) + 5));
   drawAtkRing(Math.round(t.x - ex), Math.round(t.y - ey) + 4, r, Math.max(3, Math.round(r * 0.45)), ATK_MARK_COL, alpha, 0);
 }

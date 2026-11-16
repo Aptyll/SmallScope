@@ -1,7 +1,7 @@
 'use strict';
 // The frame: render() composes ground, entities and lighting into the world
 // buffer and blits it under the UI, plus the '.' debug overlays and the
-// cursor, reticle and bow aim line.
+// cursor and reticle.
 // ------------------------------------------------------------ render
 function drawSpriteFlash(spr, x, y, flash) {
   ctx.drawImage(spr, x, y);
@@ -379,7 +379,7 @@ function drawNavPaths(ox, oy, ex, ey) {
   for (const b of robots) if (!b.dead) one(b, '#7fc8ff');
 }
 
-// ------------------------------------------------------------ cursor & aim line
+// ------------------------------------------------------------ cursor
 // cursorInfo() resolves what the pointer should look like this frame, once,
 // and both the pixel cursor (worn by the system cursor, js/draw/cursor.js)
 // and the BROWSER setting's stock cursor read from it:
@@ -427,7 +427,7 @@ function cursorInfo() {
   // hovering: `nock` is how much of the cycle between attacks has elapsed
   // (1 = ready). drawLook (js/draw/cursor.js) turns it into the ring's own behaviour, so the
   // crosshair the eye is already on is where the cooldown is read.
-  const nockF = player.nockT > 0 ? 1 - player.nockT / Math.max(0.01, attackCycle(player)) : 1;
+  const nockF = player.nockT > 0 ? 1 - player.nockT / atkRest(player) : 1;
   const ret = (mode, dim, extra) =>
     Object.assign({ kind: 'reticle', mode, dim, nock: nockF }, extra);
 

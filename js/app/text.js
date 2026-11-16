@@ -227,7 +227,7 @@ const TEXT = {
   'ctl.click': 'CLICK',
   'ctl.move': 'MOVE',
   'ctl.abilities': 'ABILITIES',
-  'ctl.fire': 'FIRE',
+  'ctl.fire': 'ATTACK',
   'ctl.rmb': 'RMB',
   'ctl.ping': 'PING',
   'ctl.items': 'ITEMS',

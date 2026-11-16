@@ -70,12 +70,6 @@ const DODGE_SPEED = 215;  // roll velocity -> ~60px travelled
 const DODGE_CHARGES = 2;
 const DODGE_CD = 3.5;     // seconds to refill one charge
 
-// The two bow numbers a class kit is expressed against - CLASSES below
-// reads both at load time, which is why they sit here and the rest of the
-// bow (the draw curve and the cycle: js/sim/attack.js; the trail: js/sim/actions.js).
-const BOW_CHARGE = 0.9;   // seconds to a full draw
-const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
-
 // ---- classes ------------------------------------------------------------
 // League's five POSITIONS. Each seat on a side plays one, handed out in the
 // draft (draftSeatRoles, js/ui/draft.js) and kept on the player as
@@ -112,8 +106,8 @@ const CLASSES = [
     story: 'HE CARRIED THE STANDARD OF A LEGION THE EMPIRE MARCHED INTO THE SNOW AND FORGOT. HE BROUGHT EVERY ONE OF THEM HOME, AND THE EMPIRE CALLED IT A RETREAT. THE STANDARD IS BROKEN NOW. HE STILL PLANTS IT.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 130, dmg: 16, armor: 24, ap: 0, haste: 0, ms: PLAYER_SPEED },
     grow: { hp: 10, dmg: 1.4, as: 0.008, armor: 2.9 },
-    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7,
+      spdDmg: 5, dodgeSpeed: 225 },
     rankOrder: [0, 2, 1], // the verdict, the march, the brace
     attack: { name: 'OATH GREATSWORD', art: 'sword', as: 0.77, range: 24, wind: 0.28, cut: { half: 1.05 } },
     // its art: the heroArt('armatos') row in js/sprites/armatos.js (its looks, worn
@@ -137,8 +131,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'fortiva',
     blade: 'chain', // her CHAIN GREATSWORD in her hands (HERO_BLADES, js/draw/heroes.js)
-    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7,
+      spdDmg: 5, dodgeSpeed: 225 },
   },
   {
     // the third hero (js/sim/bella.js): a duelist with a sword's cut
@@ -155,8 +149,8 @@ const CLASSES = [
     base: { hp: 104, dmg: 18, armor: 16, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 7, dmg: 1.7, as: 0.013, armor: 2.1 }, // sized so 17 levels grow what 11 did when the cap was 12
     rankOrder: [0, 2, 1], // the lunge, the slip, the parry
-    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75,
+      spdDmg: 5, dodgeSpeed: 240 },
   },
   {
     // the fourth named hero and the first mage (js/sim/ignia.js): fire that
@@ -174,8 +168,8 @@ const CLASSES = [
     // its art: the heroArt('ignia') row in js/sprites/ignia.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'ignia',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the fifth named hero (js/sim/aura.js): the far, patient mage - artillery.
@@ -193,8 +187,8 @@ const CLASSES = [
     // its art: the heroArt('aura') row in js/sprites/aura.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'aura',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the sixth named hero and the first healer (js/sim/salvia.js): heals, speed for
@@ -212,8 +206,8 @@ const CLASSES = [
     // its art: the heroArt('salvia') row in js/sprites/salvia.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'salvia',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },  {
     // the seventh named hero (js/sim/lucerna.js): the catch-and-save support, the only
     // pull of a rival in the game, a lantern that brings an ally home, a light that shows
@@ -230,8 +224,8 @@ const CLASSES = [
     // its art: the heroArt('lucerna') row in js/sprites/lucerna.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'lucerna',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the eighth named hero (js/sim/hiems.js): the control mage. She freezes a
@@ -249,8 +243,8 @@ const CLASSES = [
     // its art: the heroArt('hiems') row in js/sprites/hiems.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'hiems',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the ninth named hero (js/sim/rupes.js): a tank who engages. Slow to start and
@@ -267,8 +261,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'rupes',
     blade: 'maul', // his ICE MAUL in his hands (HERO_BLADES, js/draw/rupes.js)
-    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.7,
+      spdDmg: 5, dodgeSpeed: 220 },
   },
   {
     // the tenth named hero and the first jungler (js/sim/varro.js): a diver
@@ -286,8 +280,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'varro',
     blade: 'spear', // his HUNTING SPEAR in his hands (HERO_BLADES, js/draw/varro.js)
-    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 235 },
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75,
+      spdDmg: 5, dodgeSpeed: 235 },
   },
   {
     // the tenth named hero (js/sim/bucina.js): the tempo support, her side's speed and
@@ -305,8 +299,8 @@ const CLASSES = [
     // its art: the heroArt('bucina') row in js/sprites/bucina.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'bucina',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the twelfth named hero (js/sim/nix.js): the night scout, an assassin of
@@ -323,8 +317,8 @@ const CLASSES = [
     base: { hp: 98, dmg: 19, armor: 14, ap: 0, haste: 0, ms: PLAYER_SPEED + 6 },
     grow: { hp: 6.5, dmg: 1.8, as: 0.013, armor: 2 },
     rankOrder: [0, 2, 1], // the shard, the drift step, the cloud
-    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 240 },
+    kit: { iceMax: 1.15, iceSteer: 3.4, slideMin: 70, fatigue: 0.75,
+      spdDmg: 5, dodgeSpeed: 240 },
   },
   {
     // the ninth named hero (js/sim/faber.js): the zone mage. He holds a spot with
@@ -342,8 +336,8 @@ const CLASSES = [
     // its art: the heroArt('faber') row in js/sprites/faber.js (its looks, worn
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'faber',
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the fourteenth named hero (js/sim/velox.js): the kiting marksman. She throws her
@@ -362,8 +356,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'velox',
     // ice is her ground: a higher cap and a sharp turn on it; a drawn sling barely slows her
-    kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.9,
-      bowCharge: 0.6, nock: 0.4, spdDmg: 3, dodgeSpeed: 240 },
+    kit: { iceMax: 1.25, iceSteer: 9, slideMin: SLIDE_MIN, fatigue: 0.8,
+      spdDmg: 3, dodgeSpeed: 240 },
   },
   {
     // the fifteenth named hero (js/sim/falco.js): the falconer, an assassin who dives.
@@ -380,8 +374,8 @@ const CLASSES = [
     base: { hp: 96, dmg: 17, armor: 13, ap: 0, haste: 0, ms: PLAYER_SPEED + 4 },
     grow: { hp: 6.2, dmg: 1.7, as: 0.014, armor: 1.9 },
     rankOrder: [1, 0, 2], // the knife fan, the talons, the glide
-    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85, chargeMul: 0.65,
-      bowCharge: 0.75, nock: 0.45, spdDmg: 3, dodgeSpeed: 230 },
+    kit: { iceMax: 1.1, iceSteer: 3.2, slideMin: 70, fatigue: 0.85,
+      spdDmg: 3, dodgeSpeed: 230 },
   },
   {
     // the sixteenth named hero (js/sim/maris.js): a tank who catches one rival. Quick and chilling on
@@ -398,8 +392,8 @@ const CLASSES = [
     base: { hp: 126, dmg: 14, armor: 22, ap: 0, haste: 0, ms: PLAYER_SPEED - 2 },
     grow: { hp: 10, dmg: 1.2, as: 0.009, armor: 2.7 },
     rankOrder: [0, 2, 1], // the harpoon, the undertow, the brace
-    kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 220 },
+    kit: { iceMax: 1.2, iceSteer: 3.6, slideMin: 70, fatigue: 0.7,
+      spdDmg: 5, dodgeSpeed: 220 },
   },
   {
     // the seventeenth named hero (js/sim/lignum.js): a skirmisher who owns the treeline.
@@ -418,8 +412,8 @@ const CLASSES = [
     grow: { hp: 9, dmg: 1.7, as: 0.011, armor: 2.4 },
     rankOrder: [0, 1, 2], // the chop, the thrown axe, the bark skin
     // a woodsman off the ice: a low cap and a slow turn on it
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: 70, fatigue: 0.75, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: 70, fatigue: 0.75,
+      spdDmg: 5, dodgeSpeed: 225 },
   },
   {
     // the eighteenth named hero (js/sim/sagitta.js): the siege marksman. Her heavy crossbow
@@ -437,8 +431,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'sagitta',
     // a heavy draw that all but plants her feet while she winds it
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.45,
-      bowCharge: 0.75, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the nineteenth named hero (js/sim/clivus.js): a fighter who climbs. He goes over what
@@ -457,8 +451,8 @@ const CLASSES = [
     grow: { hp: 8.6, dmg: 1.7, as: 0.012, armor: 2.3 },
     rankOrder: [0, 1, 2], // the pick strike, the rope, the vault
     // a mountain guide: sure on the ice, a quick turn and a high cap on it
-    kit: { iceMax: 1.1, iceSteer: 3.6, slideMin: 80, fatigue: 0.8, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 5, dodgeSpeed: 225 },
+    kit: { iceMax: 1.1, iceSteer: 3.6, slideMin: 80, fatigue: 0.8,
+      spdDmg: 5, dodgeSpeed: 225 },
   },
   {
     // the twentieth named hero (js/sim/arcus.js): the planted marksman. His longbow is quick
@@ -476,8 +470,8 @@ const CLASSES = [
     // per player through heroSkinOf, their paint, the glyph and the emblem)
     id: 'arcus',
     // a light draw he can walk through, no better than anyone on ice
-    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.75,
-      bowCharge: 0.6, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the twenty-first named hero (js/sim/fossor.js): a fighter of brass, a machine of the
@@ -496,8 +490,8 @@ const CLASSES = [
     grow: { hp: 9.2, dmg: 1.6, as: 0.01, armor: 2.5 },
     rankOrder: [0, 1, 2], // the spadeful, under the snow, the bank
     // a heavy machine: slow to turn on the ice and slow to get going
-    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 0.8, chargeMul: 0.7,
-      bowCharge: 0.75, nock: 0.5, spdDmg: 0, dodgeSpeed: DODGE_SPEED },
+    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 0.8,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED },
   },
   {
     // the twenty-second named hero (js/sim/portitor.js): the carrying support, a copper engine
@@ -516,8 +510,8 @@ const CLASSES = [
     grow: { hp: 8, dmg: 1.1, as: 0.01, armor: 2.4 },
     rankOrder: [0, 1, 2], // the crate, the shoulder, the plough
     // heavy on the ice: slow to turn, a low cap
-    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
-      bowCharge: BOW_CHARGE, nock: 0.4, spdDmg: 0, dodgeSpeed: DODGE_SPEED - 10 },
+    kit: { iceMax: 0.9, iceSteer: 2.4, slideMin: SLIDE_MIN, fatigue: 1,
+      spdDmg: 0, dodgeSpeed: DODGE_SPEED - 10 },
   },
 ];
 // a hero's CLASSES index by name, -1 for none: what a profile or a bot names
@@ -690,7 +684,6 @@ function makeInput() {
   return {
     mx: 0, my: 0,        // movement axis (the sim normalises)
     aimX: 0, aimY: 0,    // world-space aim point (cursor, for the human)
-    fire: false,         // the attack button held (the CLICK scheme's own edges; the sim attacks by `atk`)
     atk: null,           // the MARK: the rival body or building the basic attack is on (attackStep, js/sim/attack.js)
     work: false,         // E held
     slide: false,        // shift held
@@ -839,7 +832,6 @@ class Player {
     this.recallT = 0; this.ringFxT = 0; this.mendT = 0; // ...and how long the bird has been mending it without a break
     this.nockT = 0;                                // the cycle: seconds until the next press (attackCycle, js/sim/attack.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (cutAttack, js/sim/attack.js; drawHeldTool, js/draw/bodies.js)
-    this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0;                           // the HUD's tell: renocked
     this.lvT = 0;                                  // a level just gained, counting down (levelUp)
     this.backT = 0;                                // just set down by the bird, counting down (respawnPlayer, the recall)
@@ -951,7 +943,6 @@ class Player {
     this.hitNx = 0; this.hitNy = 0; // which way the last blow landed (damagePlayer): its spark and recoil read it
     this.fallT = 0; this.fallRipT = 0;             // floundering in an ice hole
     this.footT = 0; this.footSide = 0;
-    this.firePrev = false;
     this.input = makeInput();
   }
 }
@@ -1192,9 +1183,7 @@ function bodyOut(p) {
   p.zip = -1;   // the handle is let go of (the respawn's reset clears the rest)
   p.zipWalk = false;
   rideEnd(p, true); // ...and off the deer, which bolts (js/sim/wildlife.js)
-  p.charging = false;
-  p.chargeT = 0;
-  p.fireArmed = false;
+  atkCancel(p);
   p.dodgeT = 0;
   p.vx = p.vy = 0;
   p.sliding = false;
@@ -1391,7 +1380,7 @@ function practiceRevive(p) {
   p.dodgeT = 0;
   clearUnitStatus(p); // the fire goes out with the fall, same as the stun
   p.fallT = 0; p.sliding = false;
-  p.charging = false; p.chargeT = 0; p.fireArmed = false;
+  atkCancel(p);
   p.potT = 0;                                    // the potion dies with the body here too
   p.recallT = 0;                                 // ...and the recall
   const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };

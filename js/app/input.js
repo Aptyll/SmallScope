@@ -553,7 +553,7 @@ function openPingWheel() {
 // (ckSees: dead, gone, fogged, or past CK_LOCK_R).
 const ATK_PICK_R = 10; // px of slack round the pointer a press still finds a body in
 // the mark under a world point: a rival body by its box (unitUnder), else
-// the nearest within ATK_PICK_R of the point, else a rival building whose
+// the nearest within ATK_PICK_R of the point, else the rival bird, else a rival building whose
 // drawn shape covers it (structShotBox: a tower's crossbow is clicked
 // where it is drawn, not at its footing)
 function atkPick(p, wx, wy) {
@@ -565,6 +565,8 @@ function atkPick(p, wx, wy) {
   for (const b of robots) near(b);
   for (const a of animals) near(a);
   if (best) return best;
+  // the rival bird on its roost, by the box it sits in
+  if (state.drop) for (const e of state.drop.eagles) if (e && atkGood(p, e) && Math.abs(wx - e.x) <= 16 && wy >= e.y - 22 && wy <= e.y + 6) return e;
   const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
   for (let dy = -1; dy <= 3; dy++) for (let dx = -2; dx <= 2; dx++) {
     if (!inWorld(tx + dx, ty + dy)) continue;
@@ -894,31 +896,25 @@ function sampleHumanInput(p, dt) {
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
     inp.slide = keyHeld('slide');
-    inp.fire = inp.work = false;
+    inp.work = false;
     inp.atk = null;
     inp.useItem = -1;
     inp.ability = -1;
     inp.trick = -1;
     inp.cmd = null;
-    if (p.charging) { p.charging = false; p.chargeT = 0; }
-    p.firePrev = false;
-    p.fireArmed = false;
     return;
   }
   // state.eagleCine: the ceremony has the camera - hands off
   // the controls until it hands back, exactly as pause zeroes them
   if (!live) {
     inp.mx = inp.my = 0;
-    inp.fire = inp.work = inp.slide = false;
+    inp.work = inp.slide = false;
     inp.atk = null;
     inp.dodge = false;
     inp.useItem = -1;
     inp.ability = -1;
     inp.trick = -1;
     inp.cmd = null;
-    if (p.charging) { p.charging = false; p.chargeT = 0; }
-    p.firePrev = false;
-    p.fireArmed = false;
     // the one thing that works mid-air: WASD drifts the fall (updateDrop
     // reads it) - under CLICK, a landing spot ordered mid-air is what the
     // fall drifts toward

@@ -17,7 +17,7 @@
 // realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
-const BOT_API = 7;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump'; 6: HUNTER and WARRIOR gone, `prone`, `hide` and the `grapple` act dropped, allies and foes carry `attack`; 7: berry bushes gone, so `nodes` lists pines only)
+const BOT_API = 8;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump'; 6: HUNTER and WARRIOR gone, `prone`, `hide` and the `grapple` act dropped, allies and foes carry `attack`; 7: berry bushes gone, so `nodes` lists pines only; 8: the held `fire` gone for the held `attack` mark, `me.range` and `me.attackReady` added)
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
 const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
@@ -77,6 +77,15 @@ function botNearSide(p, x, y) {
   }
   return false;
 }
+// the act's `attack`: a player's id (0..9), a soldier's, beast's or
+// building's id off the obs, or 'eagle' for the rival bird - anything else is none
+function botAtkId(v) { return v === 'eagle' ? v : typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : null; }
+// ...and the thing it names, for this seat right now (skillStrike drops what it cannot strike)
+function botAtkRef(p, id) {
+  if (id === null || id === undefined) return null;
+  if (id === 'eagle') return state.drop ? state.drop.eagles.find((e) => e && e.team !== p.team) || null : null;
+  return id < players.length ? players[id] : botRefs.get(id) || null;
+}
 // a body's hero stats as the panel reads them, buffs on, keyed as STATS
 function botStats(p) { const o = {}; for (const s of STATS) o[s.key] = Math.round(statShown(p, s.key) * 100) / 100; return o; }
 function botObserve(p) {
@@ -89,8 +98,9 @@ function botObserve(p) {
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
-    attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's wedge or a bow's shot (js/sim/attack.js)
-    charging: !!p.charging, chargeT: botR(p.chargeT),
+    attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's blow or a missile (js/sim/attack.js)
+    range: attackOf(p).range, attackReady: p.nockT <= 0, // px it strikes from (to the mark's edge), and whether the next is due
+    charging: !!p.charging, chargeT: botR(p.chargeT), // a wind-up in progress
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
     items: p.items.slice(), // ITEM_SLOTS slots, an item id or null each (js/sim/items.js)
@@ -212,7 +222,7 @@ function botHello(p) {
 const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
-  const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide,
+  const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, attack: botAtkId(a.attack), work: !!a.work, slide: !!a.slide,
     goTo: null, dodge: !!a.dodge, jump: !!a.jump,
     ability: -1, useItem: -1, trick: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
@@ -350,7 +360,7 @@ function botStep(p, dt) {
     }
   }
   const inp = p.input, a = r.act;
-  if (!a) { inp.mx = inp.my = 0; inp.fire = inp.work = inp.slide = false; return; }
+  if (!a) { inp.mx = inp.my = 0; inp.atk = null; inp.work = inp.slide = false; return; }
   inp.mx = a.mx; inp.my = a.my;
   if (a.goTo && !p.dead) {
     const n = navTo(p, a.goTo.x, a.goTo.y, PLAYER_R, a.goTo.reach, dt);
@@ -364,7 +374,7 @@ function botStep(p, dt) {
     else { inp.mx = n.dx; inp.my = n.dy; r.nav = n.d < TILE ? 'arrived' : 'ok'; }
   }
   if (a.aimX === a.aimX) { inp.aimX = a.aimX; inp.aimY = a.aimY; }
-  inp.fire = a.fire; inp.work = a.work; inp.slide = a.slide;
+  inp.atk = botAtkRef(p, a.attack); inp.work = a.work; inp.slide = a.slide;
   if (r.edge) {
     r.edge = false;
     inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
@@ -381,6 +391,7 @@ function botStep(p, dt) {
   }
   // the one pair of hands every scripted seat shares (js/ai/ai-skill.js)
   skillHands(p, BOT_FILE_HANDS, dt);
+  skillStrike(p, BOT_FILE_HANDS, dt);
 }
 // a think the bot did not answer in time. A file that stopped answering (a
 // hang, a crash) must not hold its keys forever: after BOT_LATE_MAX in a row

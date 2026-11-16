@@ -35,12 +35,12 @@ const SCENE = `
   var foe  = SA.cast(1, 24, 191, heroIndex('FORTIVA'), 'left');   // the rival they are both between
 `;
 
-// The arbalest is DRAWN and never let go. A loosed bolt crosses the crater and
-// lands in the bird, which flashes white and stops looking like a bird at
-// all - and the pose that sells a ranged hero is the draw anyway.
+// The arbalest winds up at the rival: the pose that sells a ranged hero. The
+// frame is taken mid wind-up only if SETTLE lands inside it (atkWind), so
+// check the shot after a change to her attack row.
 const PER = `
   SA.look(players[1].x, players[1].y - 3);
-  if (i === 4) SA.fire(true);
+  if (i === 4) SA.fire(players[1]);
 `;
 const SETTLE = 32;
 

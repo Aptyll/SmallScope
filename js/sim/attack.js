@@ -31,13 +31,17 @@
 // ranged attack can be outrun but never sidestepped, and a roll's i-frames
 // let it pass. Nothing a basic attack lands shoves anything.
 function attackOf(p) { return CLASSES[p.cls].attack; }
-// one whole attack for THIS player right now: one over ATTACK SPEED. Every
-// readout of the attack's clock divides `p.nockT` by this, so no meter can
-// show a wait a different length from the one running.
+// one whole attack for THIS player right now: one over ATTACK SPEED (the
+// wind-up and the rest after the blow, together)
 function attackCycle(p) { return 1 / Math.max(0.1, statOf(p, 'as')); }
 // seconds of wind-up before the blow leaves: the weapon's share of the cycle,
 // so ATTACK SPEED quickens the wind-up with the rest of the attack
 function atkWind(p) { return attackOf(p).wind * attackCycle(p); }
+// ...and the rest of it, after the blow leaves: what p.nockT counts down from,
+// so every readout of the attack's clock divides by this (and atkSince is
+// how long ago the blow left, for a pose drawn off it)
+function atkRest(p) { return Math.max(0.01, attackCycle(p) - atkWind(p)); }
+function atkSince(p) { return atkRest(p) - p.nockT; }
 // (the readers that still say "draw": the wind-up IS the draw - the bow
 // coming back, the blade cocked - so every pose already drawn off it reads
 // the wind-up for free)
@@ -56,12 +60,17 @@ const ATK_LEASH = 6;  // px past the range a wind-up already begun still lands f
 // a building as a mark: the anchor while it still stands
 function atkIsStruct(t) { return !!t && t.tx !== undefined && !!STRUCTS[t.type]; }
 function atkStands(t) { return inWorld(t.tx, t.ty) && structOf(objAt(t.tx, t.ty)) === t && t.hp > 0; }
+// ...and the rival bird on its roost, the match's objective: struck like a
+// body, its nerve chipped EAGLE_ARROW_DMG a blow whatever the weapon (hurtEagle)
+function atkIsEagle(t) { return !!state.drop && state.drop.eagles.includes(t); }
+function atkEagleUp(p, e) { return e.state === 'down' && !state.eagleCine && (!p || e.team !== p.team); }
 // Can p attack t at all right now: a rival body its side can see, or a
 // rival building still standing. Every picker asks this - the sim before a
 // wind-up, the pointer before a lock, a bot before it names a mark.
 function atkGood(p, t) {
   if (!t) return false;
   if (atkIsStruct(t)) return structFoe(p, t) && atkStands(t);
+  if (atkIsEagle(t)) return atkEagleUp(p, t);
   if (t.tx !== undefined && t.type !== undefined) return false; // a tile's thing (a pine, a rock) is work, never a mark
   return unitFoe(p, t) && inSight(p.team, t);
 }
@@ -73,12 +82,14 @@ function atkGap(p, t) {
     const dx = Math.max(x0 - p.x, 0, p.x - x1), dy = Math.max(y0 - p.y, 0, p.y - y1);
     return Math.hypot(dx, dy);
   }
+  if (atkIsEagle(t)) return Math.max(0, Math.hypot(t.x - p.x, t.y - p.y) - EAGLE_TILE_R * TILE);
   return Math.max(0, Math.hypot(t.x - p.x, t.y - p.y) - unitRadius(t));
 }
 function atkIn(p, t, slack) { return atkGap(p, t) <= attackOf(p).range + (slack || 0); }
 // where on the mark a blow is aimed: a body's middle, a building's centre
 function atkPt(t) {
   if (atkIsStruct(t)) { const c = structCenter(t); return { x: c.x, y: c.y - 4 }; }
+  if (atkIsEagle(t)) return { x: t.x, y: t.y - 8 };
   return { x: t.x, y: unitMidY(t) };
 }
 
@@ -99,12 +110,13 @@ function attackStep(p, dt, free) {
       p.charging = false;
       basicAttack(p, t);
       p.chargeT = 0;
-      p.nockT = Math.max(0, attackCycle(p) - atkWind(p));
+      p.nockT = atkRest(p);
     }
     return;
   }
   if (!free || !still || p.nockT > 0 || !atkGood(p, t) || !atkIn(p, t)) return;
   p.charging = true; p.chargeT = 0; p.atkOn = t;
+  breakRecall(p); // an attack ends the walk home, League's way (js/sim/recall.js)
   atkFace(p, t);
 }
 function atkCancel(p) { p.charging = false; p.chargeT = 0; p.atkOn = null; }
@@ -146,7 +158,7 @@ function shootAttack(p, A, t) {
 // the fog ends the shot where it is (`gone`).
 function homingStep(a, dt) {
   const t = a.homing;
-  if (atkIsStruct(t) ? !atkStands(t) : !unitAlive(t)) return 'gone';
+  if (atkIsStruct(t) ? !atkStands(t) : atkIsEagle(t) ? !atkEagleUp(null, t) : !unitAlive(t)) return 'gone';
   const q = atkPt(t);
   const dx = q.x - a.x, dy = q.y - a.y, d = Math.hypot(dx, dy) || 1;
   const step = a.spd * dt;
@@ -160,6 +172,7 @@ function homingStep(a, dt) {
 function homingLand(a) {
   const t = a.homing, src = players[a.owner];
   if (atkIsStruct(t)) { if (structFoe(sideOf(a), t)) hurtStruct(t, Math.round(a.dmg * (a.siege || 1)), src); return; }
+  if (atkIsEagle(t)) { if (t.team !== a.team) hurtEagle(t, EAGLE_ARROW_DMG, src, a.x, a.y + 8); return; }
   if (t.invuln > 0) return; // a roll's i-frames let it pass
   const d = Math.hypot(a.vx, a.vy) || 1;
   hurtUnit(t, a.dmg, a.vx / d, a.vy / d, src, { kb: 0, kbMul: 0, basic: true, ab: a.ab, burn: a.burn, slow: a.slow });
@@ -179,6 +192,7 @@ function cutAttack(p, A, t) {
   const a = Math.atan2(q.y - (p.y - BOW_Y), q.x - p.x);
   const dmg = attackDmg(p);
   if (atkIsStruct(t)) hurtStruct(t, dmg, p);
+  else if (atkIsEagle(t)) hurtEagle(t, EAGLE_ARROW_DMG, p, q.x, q.y + 8);
   else {
     const d = Math.hypot(t.x - p.x, t.y - p.y) || 1;
     hurtUnit(t, dmg, (t.x - p.x) / d, (t.y - p.y) / d, p, { kb: 0, kbMul: 0, basic: true }); // a basic attack (passiveDeal, js/sim/heroes.js)

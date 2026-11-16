@@ -40,7 +40,7 @@ function recallBlocked(p) {
   if (p.dead || inAir(p)) return 'busy';
   if (!roostTile(p)) return 'nobird';
   if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0 ||
-    p.zip >= 0 || p.zipWalk || p.mount || p.charging) return 'busy';
+    p.zip >= 0 || p.zipWalk || p.mount) return 'busy';
   return null;
 }
 // the cmd: start the channel, or say why not (me.lastCmd for a bot)
@@ -48,6 +48,7 @@ function startRecall(p) {
   if (p.recallT > 0) return true;
   const no = recallBlocked(p);
   if (no) return no;
+  atkCancel(p); // a wind-up in the hands is let go (js/sim/attack.js)
   p.recallT = RECALL_T;
   p.vx = p.vy = 0;
   sfxAt('wings', p.x, p.y);
@@ -66,7 +67,7 @@ function breakRecall(p) {
 function recallIntents(p) {
   if (!(p.recallT > 0)) return;
   const i = p.input;
-  if (i.mx || i.my || i.fire || i.work || i.slide || i.dodge || i.jump || i.ability >= 0) breakRecall(p);
+  if (i.mx || i.my || i.work || i.slide || i.dodge || i.jump || i.ability >= 0) breakRecall(p); // (a wind-up ends it too: attackStep)
 }
 
 // the step: the channel's clock and the landing, then the ring's heal.
