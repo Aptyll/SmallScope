@@ -96,7 +96,6 @@ function bakeDressing() {
   bakeDustLee();
   dustK = -1;
   dressPx = new Map(); crackPx = new Map();
-  if (ARENA) return;
   bakeDrifts();
   bakeBanks();
   bakeCracks();
@@ -133,7 +132,7 @@ function dressFree(tx, ty, rim) {
 // something stands on.
 const DRIFT_FADE = 0.06;      // depth over DEPTH_MID across which a pile's edge dithers in
 function bakeDrifts() {
-  if (!leeCell) return; // no depth map laid (the practice arena)
+  if (!leeCell) return; // no depth map laid yet
   const mid = DRIFT_MID(), top = DEEP_TOP();
   const band = (x, y) => { // 0 outside the mid band, else how far in (0..1]
     const fx = x / TILE, fy = y / TILE, d0 = Math.max(leeDepth(fx, fy), driftsDepth(fx, fy));
@@ -366,7 +365,7 @@ let lakeDrift = 0, lakeDriftT = 0; // how far the air has carried the streaks, a
 // a tile of ice no shore crosses: where the weather may draw
 const openIce = (tx, ty) => inWorld(tx, ty) && ground[idx(tx, ty)] === 1 && mirrorSlot[idx(tx, ty)] < 0;
 function drawLakeSky(ox, oy, tx0, ty0, tx1, ty1) {
-  if (!lakeId || ARENA) return;
+  if (!lakeId) return;
   const sky = lakeSky(), t = state.windT;
   const now = performance.now() / 1000, dt = Math.min(0.1, lakeDriftT ? now - lakeDriftT : 0);
   lakeDriftT = now;

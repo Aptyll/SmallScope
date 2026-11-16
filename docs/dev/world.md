@@ -7,8 +7,7 @@ stable per tile.
 
 ## The tile world
 
-- `WORLD = 278` tiles of `TILE = 16` px → a 4448×4448 px world (under `ARENA`, the practice
-  tool's side room, the const is 112 instead — see [the practice tool](#the-practice-tool)).
+- `WORLD = 278` tiles of `TILE = 16` px → a 4448×4448 px world.
   **`MAP_K` (1.2, core.js) spreads the layout**: every place in the match (the bases, lanes,
   camps, brush, jungle walls, the treeline's depth and its noise) is written at the old 232-tile
   scale and multiplied by `MAP_K` where its table is declared; bodies, road widths, camp
@@ -20,7 +19,7 @@ stable per tile.
   corner, ~58 along the diagonal) outright: `borderDepth` is the map's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the noise grew
   there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
-  the road's gate is at least the arc out. The union only adds pines and rolls nothing; not under `ARENA`.
+  the road's gate is at least the arc out. The union only adds pines and rolls nothing.
 - `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
   from the centre at the treeline. Nobody starts there (players land from the eagles,
   [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the rivers
@@ -41,14 +40,13 @@ stable per tile.
   instead of ending in a cut. Neither test rolls anything, so the `'rivers'` stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
-  `snowdrop`, `den`, `dummy`, `banner`, `log`, `trunk`,
-  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
+  `snowdrop`, `den`, `banner`, `trunk`,
+  `pylon`, `stump`, `eagle`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `boat` and `waypost` (added from `LANDMARKS`); the `STRUCTS` table's: `pump`,
-  `barracks`, `tower`. `banner`/`log` are
-  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `trunk` the fallen pine a
+  `barracks`, `tower`. `banner` is
+  [the road](#the-road)'s furniture, `trunk` the fallen pine a
   junction's landmark (`jungleMarks`: each tile it lies across carries the trunk's whole line), `pylon`
-  [the zipline](#the-zipline)'s, and `dummy`/`pkdie`/`agbell` exist only in
-  [the practice tool](#the-practice-tool)'s arena. `den` (solid, inert scenery
+  [the zipline](#the-zipline)'s. `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
   exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
@@ -100,13 +98,12 @@ stable per tile.
   pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes) and
-  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a roost pad's paving ([the road](#the-road)), and the
-  practice arena's track rolls. The bake also lays the scenery's
+  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, and a roost pad's paving ([the road](#the-road)). The bake also lays the scenery's
   [cast shadows](rendering/light-and-weather.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
 - **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
   along the wind (`SNOW_ANG`, which `layDrifts` turns onto the map's prevailing wind, `driftWind`, so
-  the swells and the [drifts](#snow-depth) lean one way; -0.33 under `ARENA`), lit on the sun's side and shaded on the lee in four close tones
+  the swells and the [drifts](#snow-depth) lean one way), lit on the sun's side and shaded on the lee in four close tones
   (`SNOW_PAL`) as flat tones on clean stepped edges, with a rare white glint on the lit tone. A low noise
   (`SNOW_REGION`, ~22 tiles a step, cut at `SNOW_CUT` into thirds of the map) lays out regions of
   three `SNOW_LOOKS` — fine drifts, broad swells, lee-only — blended across `SNOW_BLEND`. Every
@@ -192,26 +189,10 @@ border's. Two other map shapes (THICKET, all woods with paths cut through; FROZE
 lake with wooded islands) and the path network they needed were removed for now; the PR that
 removed them names the commit to recover them from.
 
-## The practice tool
-
-`?practice=1` (`PRACTICE`, js/sim/core.js) is the **practice tool on this same map**: boot.js grows
-it with `genWorld` and every pass after it, like a match, on the one map. There is no ride:
-`practiceLand` (js/sim/practice.js) crashes both birds onto their perches at boot (`eagleCrash`, so
-each merchant pitches its stall and raises the bays as in a match), people stand on their side's
-roost (`practiceSeat`, `roostTile`), empty seats are parked with no bots, and the match clock runs,
-so the waves keep the match's beat. Nothing is at stake: a death revives on the roost
-(`practiceRevive`), a bird at zero mends instead of fleeing (`practiceBirdMend`), the profile is never
-written. The practice bar (js/ui/cheats.js) adds the map's group: WAVES and TOWERS (the field's
-standing toggles, `state.prac`), SPAWN WAVE (`barracksQueue` on every bay) and RESPAWN CAMPS.
-Its **ARENA** well reloads the party onto the side room, `?practice=1&arena=1` (`ARENA`): the small
-fixed training field (`genPracticeWorld`, `WORLD` 112) with the dummy, the bell's
-rounds, the ice parkour and the deer ride, no lanes, bases, creek or camps, and its light pinned to
-early morning; its **MAP** well goes back (`practiceCross`, js/ui/rooms.js).
-
 ## Determinism and noise
 
 There is **one map**, grown from `MAP_SEED` (471, js/sim/core.js), a constant that is never rolled
-and never sent: every match, every screen and the [practice tool](#the-practice-tool) stand on the
+and never sent: every match and every screen stand on the
 same valley, and a page is born on it. **Everything random derives from two numbers** and there is
 no other entropy source: `MAP_SEED` for the map, `SEED` for the match. `SEED` is rolled when the
 page loads, so no two matches play out alike (bots' first heroes, tie-breaks, the orca's wanders,
@@ -219,9 +200,7 @@ every `rng()` roll), unless `?seed=N` pins it, which a tool uses to replay a bot
 changes the map, and the same `?seed` gives the same match (and `DBG.saveHash`). Only the host's
 matters online: a client paints what the host sends. Players never see either. `matchHash(a, b)`
 (js/sim/core.js) is `hash2` with `SEED` mixed in, for the host's per-match picks.
-`worldKind()` names the ground a page stands on (0 the match's map, 1 the practice tool on it, 2
-the arena); a host and a joiner, and a save and the page it loads on, must agree on it
-(`netHostHello`, `saveApply`). The info stack (`drawTags`, **F3** or the INFO DISPLAY row in the ESC
+The info stack (`drawTags`, **F3** or the INFO DISPLAY row in the ESC
 menu, default **off**) prints fps, frame times and the framed player's tile, no seed.
 
 - **The map is made on streams of its own.** Each worldgen pass that rolls draws from

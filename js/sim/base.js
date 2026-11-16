@@ -46,7 +46,6 @@ const BAY_CLEAR = 2;
 const BAY_RAG = 0.8;
 function baseBaySite(team, lane) { const p = baseBaySpot(team, lane); return { cx: p.tx - 1, cy: p.ty - 0.5 }; }
 function bayKeeps(tx, ty) {
-  if (ARENA) return false;
   const px = tx + 0.5, py = ty + 0.5, e = (vnoise(tx * 0.9 + 5.3, ty * 0.9 + 1.7) - 0.5) * 2 * BAY_RAG;
   for (const team of [0, 1]) for (let lane = 0; lane < BASE_BAYS.length; lane++) {
     const c = baseBaySite(team, lane), ax = Math.round(c.cx), ay = Math.round(c.cy);
@@ -64,9 +63,8 @@ function baseWall(team, a) {
   return BASE_R + (vnoise(Math.cos(a) * 2.2 + team * 41.3, Math.sin(a) * 2.2 + 7.7) - 0.5) * 2 * BASE_RAG;
 }
 // the side whose hollow holds (tx, ty), `pad` tiles past its wall counted in,
-// or -1 (always on the practice field, which has no bases)
+// or -1
 function baseAt(tx, ty, pad) {
-  if (ARENA) return -1;
   for (const team of [0, 1]) {
     const c = baseCentre(team), dx = tx - c.tx, dy = ty - c.ty;
     if (Math.hypot(dx, dy) <= baseWall(team, Math.atan2(dy, dx)) + pad) return team;
@@ -83,7 +81,6 @@ function baseRoadEnd(fx, fy) {
 // its tiles), and any ice is snow; round each bay the pines go too (bayKeeps). Runs after placeRoad, before the cables
 // and the camps (js/app/boot.js).
 function placeBase() {
-  if (ARENA) return;
   const R = Math.ceil(BASE_R + BASE_RAG);
   for (const team of [0, 1]) {
     const c = baseCentre(team);

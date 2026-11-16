@@ -41,7 +41,7 @@ the bots' own callout limits (`callFree`, `aiAnswerStep`).
   (`drawCalloutsMap`, `renderWorldMap`), the disc's square pulse under it for the first two beats.
 - **On the wheel**: the glyph at twice its size, gold under the pick, its name under the wheel.
 - **The cue**: `SFX.ping(k)` - two quick notes up, a DANGER's two notes down - for the side's
-  screens only, in a match and on the practice field.
+  screens only.
 
 | ping | glyph | ink |
 | --- | --- | --- |

@@ -147,7 +147,6 @@ function armVerdict(p) {
   for (let s = 8; s <= VERDICT_LEN; s += 12) {
     for (const st of structsNear(p, p.x + nx * s, p.y + ny * s, VERDICT_HALF)) if (!seen.includes(st)) { seen.push(st); hurtStruct(st, dmg, p); }
   }
-  if (PRACTICE) abHitDummies(p.x + nx * VERDICT_LEN / 2, p.y + ny * VERDICT_LEN / 2, VERDICT_LEN / 2, dmg);
   abFx.push({ kind: 'line', x: p.x, y: p.y - 2, a, r: VERDICT_LEN, half: VERDICT_HALF, t: 0, col: '#f4f7ff', fx: 'verdict', life: VERDICT_FX_LIFE });
   // the crack running down the line
   for (let s = 6; s < VERDICT_LEN; s += 6) burst(p.x + nx * s, p.y + 2 + ny * s, s % 12 ? '#eef4fb' : '#cfd8e8', 2, 30, 0.35, true);

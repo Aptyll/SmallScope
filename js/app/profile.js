@@ -107,10 +107,6 @@
       stats: blankStats(),
       hero: '',        // the hero last locked in, by name ('' none): where the pick opens next time
       pos: -1,         // the position this profile asks for in the draft (a POSITIONS index, js/sim/player.js), -1 any
-      loadouts: {},    // hero name -> its pre-game picks as "trick,trick,calling" (js/sim/loadout.js); a hero never picked has none
-      bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
-      bestRange: 0,    // the archery range's all-time best round score (0 = never played)
-      bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/sim/practice.js), by round id - these three are all practice writes
       // the cosmetics' purse and what it bought: coins, the owned ids, and
       // per slot (a hero's id) the id worn. A free cosmetic is never written to
       // `owned`, and an id the game no longer has is kept but never worn
@@ -194,14 +190,6 @@
       const s = read();
       profile = blank();
       if (s && typeof s === 'object') {
-        if (typeof s.bestLap === 'number' && isFinite(s.bestLap) && s.bestLap > 0) profile.bestLap = s.bestLap;
-        if (typeof s.bestRange === 'number' && isFinite(s.bestRange) && s.bestRange > 0) profile.bestRange = Math.floor(s.bestRange);
-        if (s.bestRounds && typeof s.bestRounds === 'object') {
-          for (const k in s.bestRounds) {
-            const n = s.bestRounds[k];
-            if (/^[a-z]+$/.test(k) && typeof n === 'number' && isFinite(n) && n > 0) profile.bestRounds[k] = Math.floor(n);
-          }
-        }
         // who you are: v1 and v3 keep one name and one ledger; v2 kept up to
         // three character slots, which fold into one here - the active slot's
         // name and hero, and every slot's stats added together, so nobody
@@ -220,9 +208,6 @@
         if (typeof hero === 'string' && HERO_NAME.test(hero)) profile.hero = hero; // a name the game no longer has opens on the default (profileHero, js/sim/player.js)
         else if (typeof hero === 'number' && isFinite(hero)) profile.hero = V3_HEROES[Math.floor(hero)] || '';
         if (typeof s.pos === 'number' && s.pos >= 0 && s.pos < POS_N) profile.pos = Math.floor(s.pos);
-        if (s.loadouts && typeof s.loadouts === 'object') {
-          for (const k in s.loadouts) if (/^[A-Z]+$/.test(k) && typeof s.loadouts[k] === 'string' && /^[a-z,]{0,60}$/.test(s.loadouts[k])) profile.loadouts[k] = s.loadouts[k];
-        }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
         if (typeof s.setAt === 'number' && isFinite(s.setAt) && s.setAt > 0) profile.setAt = Math.floor(s.setAt);
         if (typeof s.setSum === 'string' && s.setSum.length <= 16) profile.setSum = s.setSum;
@@ -298,64 +283,12 @@
     },
 
     // the position the draft seats this profile in first (draftSeatRoles, js/ui/draft.js), -1 any
-    // the picks last made for a hero, by its name ({ tricks, calling }, ids
-    // only; loadoutClean makes them whole), or null for a hero never picked
-    loadout(hero) {
-      const s = profile.loadouts[hero];
-      if (typeof s !== 'string') return null;
-      const a = s.split(',');
-      return { tricks: [a[0], a[1]], calling: a[2] };
-    },
-    setLoadout(hero, lo) {
-      if (typeof hero !== 'string' || !/^[A-Z]+$/.test(hero) || !lo || !Array.isArray(lo.tricks)) return;
-      const s = [lo.tricks[0], lo.tricks[1], lo.calling].map((x) => String(x || '')).join(',');
-      if (!/^[a-z,]*$/.test(s) || s.length > 60 || profile.loadouts[hero] === s) return;
-      profile.loadouts[hero] = s;
-      saveNow();
-    },
     pos() { return profile.pos; },
     setPos(i) {
       i = i >= 0 && i < POS_N ? i | 0 : -1;
       if (profile.pos === i) return;
       profile.pos = i;
       saveNow();
-    },
-
-    // the ice parkour's all-time best lap - one of the two things the arena
-    // itself writes back (updatePractice, js/sim/practice.js). Stored at the plate's
-    // own 0.1 s precision so the number shown IS the number kept; only a
-    // strictly better (lower) time writes, and a lap record is a moment, not
-    // a trickle, so it saves through immediately.
-    bestLap() { return profile.bestLap; },
-    setBestLap(t) {
-      if (!(t > 0)) return false;
-      const r = Math.round(t * 10) / 10;
-      if (profile.bestLap && r >= profile.bestLap) return false;
-      profile.bestLap = r;
-      saveNow();
-      return true;
-    },
-    // the archery range's all-time best round score - the lap record's twin
-    // (agEndRound, js/sim/practice.js). Whole points; only a strictly higher score
-    // writes, and a record is a moment, so it saves through immediately.
-    bestRange() { return profile.bestRange; },
-    setBestRange(n) {
-      if (!(n > 0)) return false;
-      const r = Math.floor(n);
-      if (r <= profile.bestRange) return false;
-      profile.bestRange = r;
-      saveNow();
-      return true;
-    },
-    // the bell's other rounds keep their records the same way, one per round id
-    bestRound(id) { return profile.bestRounds[id] || 0; },
-    setBestRound(id, n) {
-      if (!(n > 0)) return false;
-      const r = Math.floor(n);
-      if (r <= (profile.bestRounds[id] || 0)) return false;
-      profile.bestRounds[id] = r;
-      saveNow();
-      return true;
     },
 
     // ---- settings ---------------------------------------------------------

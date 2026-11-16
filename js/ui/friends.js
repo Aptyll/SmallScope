@@ -81,26 +81,26 @@ function friendsTick(dt) {
     FRIENDS.recent = (r.recent || []).map((q) => Object.assign({ recent: true }, q));
   }, () => { FRIENDS.busy = false; FRIENDS.on = false; });
 }
-// sf_state: 'match', 'pick' (a hero select under way), 'practice', 'room'
+// sf_state: 'match', 'pick' (a hero select under way), 'room'
 // (the party's seats) or 'menu' (anywhere else on the title). Join Game and
 // sf_lobby stand whenever the party this screen is in takes a friend: out of
 // a match and a hero select, with a seat left (the standing party,
 // js/ui/rooms.js, keeps one open on every menu)
-const FR_OPEN = ['room', 'menu', 'practice']; // the states whose party a friend may join
+const FR_OPEN = ['room', 'menu']; // the states whose party a friend may join
 function friendsPresence(b) {
-  const lobby = friendsLobby(), inMatch = state.mode !== 'title' && !PRACTICE;
-  const st = inMatch ? 'match' : PRACTICE ? 'practice' : NET.phase !== 'room' ? 'pick' : NET.mode && state.menu.screen === 'room' ? 'room' : 'menu';
+  const lobby = friendsLobby(), inMatch = state.mode !== 'title';
+  const st = inMatch ? 'match' : NET.phase !== 'room' ? 'pick' : NET.mode && state.menu.screen === 'room' ? 'room' : 'menu';
   const n = NET.mode && !inMatch ? partySize() : 0;
   const open = !!lobby && NET.mode && FR_OPEN.includes(st) && n < partyCap(NET.mode);
   const hero = PROFILE.hero(), key = [st, lobby, open, NET.mode || '', n, hero].join('|');
   if (key === FRIENDS.rp) return;
   FRIENDS.rp = key;
   const mode = PARTY_MODES[NET.mode] || PARTY_MODES.ranked, word = mode.charAt(0) + mode.slice(1).toLowerCase();
-  const status = st === 'match' ? 'In a match' : st === 'pick' ? 'Picking heroes' : st === 'practice' ? 'Practice Tool' : st === 'room' || n > 1 ? word + ' party, ' + n + ' of ' + partyCap(NET.mode) : 'In the menus';
+  const status = st === 'match' ? 'In a match' : st === 'pick' ? 'Picking heroes' : st === 'room' || n > 1 ? word + ' party, ' + n + ' of ' + partyCap(NET.mode) : 'In the menus';
   b.presence({ status, connect: open ? '+connect_lobby ' + lobby : '', sf_lobby: open ? lobby : '', sf_mode: NET.mode || '', sf_n: String(n), sf_state: st, sf_patch: PATCH_TXT, sf_hero: hero });
 }
 function friendsPlayed(b, dt) {
-  if (FRIENDS.played || state.mode === 'title' || PRACTICE || !friendsLobby() || !players.some((p) => p.control === 'remote')) return;
+  if (FRIENDS.played || state.mode === 'title' || !friendsLobby() || !players.some((p) => p.control === 'remote')) return;
   if ((FRIENDS.playT += dt) < FR_PLAYED_T) return;
   FRIENDS.played = true;
   b.playedWith(friendsLobby());
@@ -200,7 +200,7 @@ function frStatus(f) {
   const g = frGroup(f);
   if (g === 0) {
     if (f.state === 'room' || (f.state === 'menu' && f.n > 1)) return { t: (PARTY_MODES[f.mode] || PARTY_MODES.ranked) + ' ', n: f.patch === PATCH_TXT ? f.n + '/' + partyCap(f.mode) : frPatch(f.patch), bad: f.patch !== PATCH_TXT };
-    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'pick' ? 'PICKING' : f.state === 'practice' ? 'PRACTICE' : 'SOFTFALL' };
+    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'pick' ? 'PICKING' : 'SOFTFALL' };
   }
   return { t: ['', 'ONLINE', 'AWAY', 'OFFLINE'][g] };
 }

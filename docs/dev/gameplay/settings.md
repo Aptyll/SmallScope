@@ -41,10 +41,7 @@ rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a los
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`).
 FRIENDS lists your Steam friends (js/ui/friends.js). The
 keys walk the seats, right onto PLAY, down onto its X, right into the friends; Esc opens the
-settings. The practice field is off the hub and kept for the tools that stage on it
-([practice arena](../world.md#the-practice-tool)): a leader's page there hosts the party's code
-and each guest follows (`practiceBootHost`, `practiceBootJoin`); the field's LEAVE takes
-everyone back to the hub. A screen that is not in focus when someone joins, a chat
+settings. A screen that is not in focus when someone joins, a chat
 line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
 title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
 back to the same party on a fresh copy of the map, same code, same people in the same seats (the
@@ -53,8 +50,7 @@ A guest whose leader walks out of the party, or who was shown out, is back in a 
 own with a rattle; one whose leader leaves mid-match gets the HOST LEFT end screen (a headline
 and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js), and one
 whose socket drops mid-match shows a red pip blinking top-centre until the transport redials
-(`drawNetLink`). Every page is born on the one map, so joining a party never reloads the page
-(only following a party onto the practice field does). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
+(`drawNetLink`). Every page is born on the one map, so joining a party never reloads the page. Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
 party is a Steam lobby (`steamRooms`, js/net/transport-steam.js: the leader writes its name,
 patch, state, seat counts, code and `seek` into the lobby's data, and the list hands every key back). Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
@@ -162,15 +158,12 @@ PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its pale
 **The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
 button; ESC still folds the slab — and, in a match only, the way out beside it,
-LEAVE, out of the match or out of [practice](../world.md#the-practice-tool) (the ESC
-slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
+LEAVE, out of the match (the ESC
+slab is the one menu a match has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side may vote
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
-`'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on the
-map, or back to the party for a party's leader on the practice field; anyone else there takes
-`leavePractice()`, js/ui/menu.js, a whiteout onto a bare URL, landing on a fresh
-title page).
+`'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title).
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -263,6 +256,6 @@ An arrow off screen is a 2x chevron on the view's edge, kept under the top bar a
 finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once every
 lesson but the last is learned, the X is pressed, or any match reaches its result.
 
-LEAVE in any match asks first (`settingsLeave`): its first press turns the plank red and reads LEAVE? until the second press leaves, another press on the slab calls it off, or the slab closes (no clock: a timed ask ran out under a slow hand). The practice field leaves at once.
+LEAVE in any match asks first (`settingsLeave`): its first press turns the plank red and reads LEAVE? until the second press leaves, another press on the slab calls it off, or the slab closes (no clock: a timed ask ran out under a slow hand).
 
 RANKED is open from the first boot, with no matches to play first.

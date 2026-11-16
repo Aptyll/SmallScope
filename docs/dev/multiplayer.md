@@ -26,7 +26,7 @@ to the world.
   `p.active` is the `control !== 'none'` test every such loop uses.
 
 `DBG.setControl(id, 'human'|'ai'|'none')` flips a player live, which is how you stage a scene with
-fewer bots, a frozen target dummy, or a ghost. `DBG.setLocal(id)` rebuilds the ten with this
+fewer bots, a frozen target, or a ghost. `DBG.setLocal(id)` rebuilds the ten with this
 screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 
 **`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
@@ -78,8 +78,6 @@ useItem       edge-triggered, -1 or an item slot (0-5): that slot's key or a cli
               see Heals in gameplay.md)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/sim/abilities.js - see Classes below)
-trick         edge-triggered: use the loadout's trick on this key (0-1), -1 = none
-              (tryTrick, js/sim/loadout.js)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'ability', i} - an ability level: no tile, no reach, no
               contest, paid with a skill point
@@ -90,8 +88,6 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               (shopCmd, js/ui/shop.js)
               or {kind:'ping', k, x, y} - a ping at that world point, no
               reach and no contest (pingCmd, js/sim/pings.js)
-              or {kind:'pkdie'|'agbell', ...} - the practice room's
-              roll die and range bell
               An order of the wrong shape (a string where an index goes, a key
               off Object's prototype) is dropped by cmdOk before any branch runs:
               a bot file or a remote client can send anything.
@@ -203,11 +199,8 @@ bot fills, once per step from `sampleHumanInput`.
   or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
   any order of your own; a press anywhere else is the walk it always was).
 - **On a tree, an ice hole or a rival building it is a walk into reach and the swing**
-  (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant or the
-  practice furniture it is a walk into reach and the thing opening
-  (`ckUse`: the counter as a panel; the die and bell wheels as wheels left
-  standing, which the next right press picks from, or the press that walked up to them, held
-  and released on a wedge).
+  (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant it is a walk
+  into reach and the counter opening as a panel (`ckUse`).
 - **On a rival body it is a CHASE with a LOCK** (`unitUnder`, the hunt reticle's own boxes),
   the same as a left press: the body walks into the weapon's `range` by route, stands, and the
   attack strikes the mark. **Abilities never take the lock**: they cast at the pointer, the
@@ -955,15 +948,14 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an open seat.** `netHostHello` refuses a different patch or `world` (`worldKind()`: the match's map, the practice tool, the arena). In a party
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch. In a party
   (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
-  on its seats (BUSY once the hero select or the match has begun; FULL past five), or any time on
-  the practice tool (`practiceSeat`, onto the side's roost, or the arena's spawn). A host with no
+  on its seats (BUSY once the hero select or the match has begun; FULL past five). A host with no
   mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
   bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
-  match: LATE), flips it to `'remote'` and dresses it with the joiner's name, class, looks (`skins`) and loadout. The
+  match: LATE), flips it to `'remote'` and dresses it with the joiner's name, class and looks (`skins`). The
   `welcome` carries the roster (`netRoster`: control, team, name, cls per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.

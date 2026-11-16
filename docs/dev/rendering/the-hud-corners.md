@@ -3,7 +3,7 @@
 `renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The bottom bar is
 the HUD's one bar**: the hud strip carries the abilities, the six item slots and the
-gold. The top left is empty (the practice bar hangs there on the practice field), and so is the
+gold. The top left is empty, and so is the
 bottom right.
 
 | Where | What | Function |

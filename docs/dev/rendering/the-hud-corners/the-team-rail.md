@@ -34,7 +34,7 @@ It is drawn straight after the minimap in `renderUI` (under the counter's wash w
 the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
 what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the surrender vote and the
 announcer's plate all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
-the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
+a match with an empty side — `railSides` is null, nothing draws, and the
 clock goes back under the minimap: `mmClockShown`), and
 the announcer's plate steps under the spectate control and the vote as well while they are up (`noteY`).
 **Its scale is its own dial**, TOP BAR SIZE: `railSc` is `settings.hudRail` at its nearest stop

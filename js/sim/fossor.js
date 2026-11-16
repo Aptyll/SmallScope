@@ -109,7 +109,6 @@ function fossorSpade(p) {
     burst(q.x, unitMidY(q), '#f4f7ff', 7, 45, 0.4, true);
   }
   for (const s of structsInCone(p, p.x, p.y, a, SPADE_R, SPADE_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + nx * SPADE_R * 0.5, p.y + ny * SPADE_R * 0.5, SPADE_R * 0.5, dmg);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SPADE_R, half: SPADE_HALF, t: 0, col: '#f4f7ff', fx: 'spade', life: SPADE_FX_LIFE });
   for (let k = 0; k < 3; k++) burst(p.x + nx * (12 + k * 8), p.y + ny * (12 + k * 8) - 4, '#f4f7ff', 3, 40, 0.35, true); // the flung snow
   sfxAt('swing', p.x, p.y);
@@ -145,7 +144,6 @@ function fossorSurface(p) {
     if (!q.dead) knockUp(q, p.fsUpT || 0, p);
   }
   for (const s of structsNear(p, p.x, p.y, BURROW_HIT_R)) hurtStruct(s, p.fsUpDmg || 0, p);
-  if (PRACTICE) abHitDummies(p.x, p.y, BURROW_HIT_R, p.fsUpDmg || 0);
   burst(p.x, p.y + 2, '#f4f7ff', 12, 55, 0.5, true);
   sfxAt('hit', p.x, p.y);
 }
@@ -218,7 +216,6 @@ function updateFossorQuakes(dt) {
           if (!q.dead) knockUp(q, g.up, o);
         }
         for (const st of structsNear(o, x, y, QUAKE_W)) if (st.fsQuake !== g.n) { st.fsQuake = g.n; hurtStruct(st, g.dmg, o); }
-        if (PRACTICE) abHitDummies(x, y, QUAKE_W, g.dmg);
       }
       if (Math.floor(g.d / 16) > Math.floor(d0 / 16)) burst(g.x0 + g.nx * g.d, g.y0 + g.ny * g.d, '#8a6d50', 4, 45, 0.45, true);
     }

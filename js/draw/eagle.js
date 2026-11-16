@@ -403,7 +403,7 @@ function drawDropBind(act, verb, x, y, col, ts, centre) {
 // outline stamped under globalAlpha goes blotchy (the CLAUDE.md text rule).
 function drawDropHeadline() {
   const e = state.drop && state.drop.eagles[player.team];
-  if (PRACTICE || !e || e.state !== 'down' || window.DBG.hideUI || endScreen()) return; // the practice field boots with its birds down: no arrival
+  if (!e || e.state !== 'down' || window.DBG.hideUI || endScreen()) return;
   const t = e.restT - HEADLINE_IN;
   drawHeadline('PROTECT YOUR EAGLE', player.team, Math.min(1, t / 0.25, Math.max(0, (HEADLINE_HOLD - t) / 0.4)));
 }

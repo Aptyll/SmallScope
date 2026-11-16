@@ -94,9 +94,8 @@ function profileHeroSkins() {
   return out;
 }
 // what a finished match pays (endMatch, js/sim/player.js, on its first ending
-// only); practice pays nothing
+// only)
 function payMatchCoins(won) {
-  if (PRACTICE) return;
   PROFILE.addCoins(COINS_MATCH + (won ? COINS_WIN : 0));
 }
 

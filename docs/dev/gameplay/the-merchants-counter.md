@@ -22,8 +22,8 @@ at all and draws no health bar.
 either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured by
 `counterDist` (from the body itself, or from the nearest edge of the stall's footprint, so its back
 and sides count as well as its front; the cap and a click's walk go to `counterPt`, the middle of
-the stall's front edge) — and the `B SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
-prompt the practice armory's `E ARM` uses. **The counter has a key of its own**, the SHOP action
+the stall's front edge) — and the `B SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is a proximity
+prompt. **The counter has a key of its own**, the SHOP action
 (`b` on both schemes, `keyPress`, js/app/input.js), never the work key's: a stall stands under its
 lane zipline's first pylon, and when E was both, E at that spot opened the counter every time the
 rope was wanted. So E there clips onto the cable or swings, and the cursor's
@@ -315,7 +315,7 @@ stretches every third source pixel and frays 1 px linework.
 - **What is recorded.** Every finished item and upgraded pair of boots a player buys is noted on
   `p.buys` in the order bought (`buyItem`, `itemFinished`). When a match ends (`endMatch`, on the
   first win or loss) `buildsNote` files one record per **human** seat: the hero, those items, whether
-  its side won, the patch, and whether both sides had a person. Bots, practice and 1V1 are left
+  its side won, the patch, and whether both sides had a person. Bots are left
   out. The match's id is a hash of what every screen of it shares at the whistle (the match's stream seed `SEED`, the
   seats, their heroes and builds), so the host and each guest file the same record under the
   same key (`buildsKey`: match and seat). The records live in `PROFILE.builds` (their own

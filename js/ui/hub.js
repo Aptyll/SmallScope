@@ -50,7 +50,7 @@ const HUB_QUIT = ['...#...', '.#.#.#.', '#..#..#', '#.....#', '#.....#', '.#...#
 // (the one you are in, or your own hosted now)
 function hubEnter() {
   const m = state.menu;
-  if (state.mode !== 'title' || m.screen !== 'menu' || m.panel || state.fade || state.intro > 0 || PRACTICE || CROSS) return;
+  if (state.mode !== 'title' || m.screen !== 'menu' || m.panel || state.fade || state.intro > 0 || CROSS) return;
   if (NET.role === 'solo' || (NET.role === 'host' && !NET.peers.size && NET.transport && NET.transport.error)) beginParty('ranked');
   else beginRoom();
 }

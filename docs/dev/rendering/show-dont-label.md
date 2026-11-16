@@ -9,8 +9,7 @@ headlines (a death, a camp) and five deliberate carve-outs:
 - **Keybind indicators** (`'ESC BACK'`, a "1" in a slot's corner). They name an *action*, print
   whatever key it is bound to (`keyCap`, input.js), so a new one goes through `drawKeyPrompt`.
 - **The settings, PLAYER, hero, character and shop panels'** labelled rows.
-- **The instruments**: the practice room's (the dummy meter, the parkour lap clock, the archery
-  round's readouts and their BEST / LAST plates) and the [stat sheet](the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md). An instrument's whole job is comparing numbers.
+- **The instruments**: the [stat sheet](the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md). An instrument's whole job is comparing numbers.
 - **The [hover tooltip](the-hud-corners/the-hover-tooltip.md)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
   comparing an attack's speed against an item's stats is comparing numbers, and no shape does
   that. It is a carve-out, not a licence: the well still has to read at a glance without it.

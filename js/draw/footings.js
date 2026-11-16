@@ -198,7 +198,6 @@ function forkFootingOf(i) {
   return c;
 }
 function drawForkFootings(ex, ey) {
-  if (ARENA) return;
   for (let i = 0; i < 2; i++) {
     const c = forkFootingOf(i);
     if (c.wx - ex > WV_W || c.wy - ey > WV_H || c.wx + c.width < ex || c.wy + c.height < ey) continue;

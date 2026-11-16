@@ -143,12 +143,10 @@ one that *is* a body in the world, `bigHurt`, keeps a 0.04 jitter.
 
 | Cue | Says | Fired from |
 | --- | --- | --- |
-| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/sim/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
+| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) — never the `nock` blip, which is the sound of a bow being ready |
 | `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/app/input.js): the sheet, the chart, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
-| `wheelUp()` | a radial wheel rolled open | a ping wheel the first frame it shows (`renderWheel`), and whichever of the work key's two (roll die, range bell) the press opened |
-| `record()` | a new BEST | `agEndRound` and the parkour line (js/sim/practice.js) — one cue for one meaning, on both instruments |
-| `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim/sim.js) when a run of that length ends in the snow |
+| `wheelUp()` | a radial wheel rolled open | a ping wheel the first frame it shows (`renderWheel`) |
 | `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/sim/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](../rendering/the-hud-corners/notices-the-plates-under-the-minimap.md)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/sim/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim/sim.js), `dawnChime`'s opposite number |

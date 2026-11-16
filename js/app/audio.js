@@ -167,9 +167,6 @@
     uiShut: ['swirl_down_quiet.mp3'],    // ...and going away
     notch: ['mip.mp3'],                  // one step of a stepped control
     wheelUp: ['ollolodolo.mp3'],         // a radial wheel rolling open
-    record: ['dinglechime.mp3'],         // a new BEST on an instrument
-    runUp: ['wooow.mp3'],                // a run of hits reaching a milestone
-    runBroke: ['hard_no.mp3'],           // ...and the run lost
     alarm: ['synth_notification1.mp3'],  // your objective, struck out of sight
     marked: ['radarblip.mp3'],           // you have been found
     dazed: ['woorglegoorgle.mp3'],       // ...and stunned out of your own hands
@@ -837,21 +834,6 @@
       if (k === 'danger') { tone(700, 0.06, 'triangle', 0.08); tone(470, 0.1, 'triangle', 0.08, 0, 0.07); return; }
       tone(880, 0.05, 'triangle', 0.07); tone(1320, 0.08, 'triangle', 0.06, 0, 0.055);
     },
-    // A NEW BEST on any of the practice instruments - the range's round, the
-    // parkour's lap. One cue for the one meaning: it was the level-up sample
-    // at the bell and the dawn chime at the line, so the same event sounded
-    // like two different things twenty tiles apart.
-    record() {
-      if (smp('record', { vol: 0.89, jitter: 0 })) return;
-      tone(659, 0.1, 'triangle', 0.08); tone(988, 0.14, 'triangle', 0.08, 0, 0.09); tone(1318, 0.3, 'triangle', 0.07, 0, 0.2);
-    },
-    // The range's consecutive-hit run (agStreak, js/sim/practice.js): a milestone
-    // reached, pitched UP as the run grows - the one place a rate is meant to
-    // be heard, because the number it tracks is the thing being climbed - and
-    // the run lost. Losing five in a row must not sound like losing one, so
-    // the break only speaks for a run worth mourning (the call site's rule).
-    runUp(n) { if (smp('runUp', { vol: 0.8, jitter: 0, rate: Math.min(1.5, 1 + (n - 5) * 0.04) })) return; tone(700 + n * 12, 0.12, 'square', 0.07, 300); },
-    runBroke() { if (smp('runBroke', { vol: 0.79, jitter: 0 })) return; tone(300, 0.14, 'sawtooth', 0.09, -140); },
     // YOUR OBJECTIVE IS BEING STRUCK AND YOU CANNOT SEE IT: the one cue in
     // the game that speaks for something off screen, which is why it is a
     // notification and not the bird's own voice (bigHurt, below, is what the

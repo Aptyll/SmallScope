@@ -47,7 +47,7 @@ function lobbyLayout() {
   const gw = gridW(cols), pw = Math.min(LOBBY_PANEL_W, Math.floor((VIEW_W - gw - 2 * LOBBY_GUTTER) / 2));
   // the chat bottom left: its plate on the foot, its lines over it
   const chat = { x: pad, w: pw - pad - 4, ty: VIEW_H - pad - TALK_H, lines: LOBBY_CHAT_LINES };
-  // the seat rows: five a side under the head (a 1V1's one), down to the
+  // the seat rows: a side's seats under the head, down to the
   // chat (which keeps two lines at the least); yours in position order (TOP
   // first), the rivals' in seat order; an empty seat is out of the match
   const room = chat.ty - 6 - 2 * TALK_PITCH - LOBBY_HEAD;
@@ -236,8 +236,6 @@ function heroClick() {
 // plate), 'pickN' (hero N's cell) or null.
 function lobbyHit() {
   const L = lobbyLayout();
-  const lo = loadoutHit(L); // the pre-game picks' wells and picker, over everything under them (js/ui/loadout.js)
-  if (lo) return lo;
   const mineR = L.cards[1].find((r) => r.p === player);
   if (mineR && draftOpen() && overRect(selSwapRect(mineR), 1)) return 'swap';
   if (inTalk(L.chat)) return 'talk';
@@ -329,7 +327,6 @@ function lobbyKey(k, e) {
   if (m.lockT > 0) return;
   if (m.talkOn) { talkKey(k, e); return; }
   if (heroSearchKey(k, e)) return;
-  if (loadoutKey(k)) return; // ESC shuts the picks' picker first (js/ui/loadout.js)
   if (k === 'escape') { if (m.countT > 0) return; if (NET.role === 'host') { draftStop(); netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats; the count runs out
   else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the hero grid (js/ui/heroes.js)
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
@@ -341,7 +338,6 @@ function lobbyClick() {
   const m = state.menu;
   if (m.lockT > 0 || m.screenT < 1 || m.popT > 0) return;
   const h = lobbyHit();
-  if (loadoutClick(h)) return; // a well or its picker (js/ui/loadout.js); any other press shuts the picker and goes on
   m.searchOn = h === 'search';
   if (m.talkOn && h !== 'talk') m.talkOn = false;
   if (!h) return;
@@ -489,7 +485,6 @@ function renderLobby(now, a) {
     drawSelBrief(L, a);                // the pointed hero's name, title and abilities, where the stage has no room (js/ui/select.js)
     drawSelPlay(L, a, hot);            // BAN / LOCK IN
   }
-  drawLoadoutPicks(L, a, hot);         // the calling and the two tricks, and a picker over them (js/ui/loadout.js)
   drawSelMode(L, a);                   // the match's size and mode
   ctx.globalAlpha = a;
   drawTalk(L.chat, now, hot === 'talk'); // the side's chat (js/ui/roomtalk.js)

@@ -72,12 +72,10 @@ const DYNAMIC = [
   { file: 'js/draw/bodies.js', expr: 'T.spr', keys: strings('js/sim/robots.js', 'spr'), why: 'a soldier kind\'s team sets (SOLDIER_TYPES\' spr)' },
   { file: 'js/draw/falls.js', expr: 'type', keys: strings('js/sim/robots.js', 'spr'), why: 'a fallen soldier\'s team sets (SOLDIER_TYPES\' spr, carried by unitFall)' },
   { file: 'js/draw/falls.js', expr: 'kind', keys: KINDS, why: 'a fallen beast by its kind (unitFall, js/sim/farm.js)' },
-  { file: 'js/ui/loadout.js', expr: "kind+'_'+id", keys: () => [...read('js/sprites/loadout-icons.js').matchAll(/I\.((?:trick|calling)_\w+) =/g)].map((m) => m[1]), why: 'a pre-game pick\'s icon (loIcon)' },
   { file: 'js/draw/render.js', expr: 'key', keys: keysOf('js/sprites/items.js', 'itemAnim:'), why: 'an animated icon\'s live canvas (SPRITES.itemAnim)' },
 ];
 // SPRITES[expr] = ...: keys registered by expression
 const DYNAMIC_PUT = [
-  { file: 'js/sprites/loadout-icons.js', expr: 'id', why: 'a pre-game pick\'s 16 px icon, read by loIcon (js/ui/loadout.js)' },
   { file: 'js/sprites/item-icons.js', expr: "'item_'+id", why: 'an item\'s 16 px icon, read by itemIcon' },
 ];
 // SFX methods with no caller in the code, for a person at the console

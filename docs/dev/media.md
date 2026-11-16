@@ -59,8 +59,6 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `paint.py` | the 2D painted cutout painter: parts at 8x, banded to locked ramps, inner lines, outline, stickers, `lint` |
 | `sheet.py` | a concept pick sheet: letters and names, 8x/1x/2x, pasted into a real frame beside a player at each size asked |
 | `scenes/bear-wakes.js` | the example scene and template; `bear-wakes.cut.json` its cut |
-| `scenes/deer-ride.js` | the practice field's deer ride at a gallop: the three posts say JOIN, THE, DISCORD, then the log leap; `deer-ride.cut.json` its cut |
-| `scenes/deer-gap.js` | a hero on a deer breaks three word targets (WISHLIST, ON, STEAM), the last through a cut in the pines mid-leap, slowing to a freeze |
 
 ```
 node app/media/rec.js app/media/scenes/bear-wakes.js W/take --dry      # clean? then:
@@ -78,7 +76,6 @@ A scene file sets `window.SCENE = { o, setup(M), tick(M), done(M) }` (read `scen
 `o.dpr` is the frame; `o.k` (device px per world px) is the take's S, and an edit can zoom from
 the frame's width up to any k. A bigger S costs disk and time per frame, not quality you can't get
 in post below S: record at the closest zoom the cut needs. Actors act through `p.input` only.
-`o.practice` stages in the practice tool on the map instead of a match (no `?seed`, no drop).
 
 ## A cut
 

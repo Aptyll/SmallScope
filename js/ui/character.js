@@ -13,7 +13,7 @@ const BAG_KEY = '#5a5f69';    // an empty well's key: a step over the rim, so th
 // the pointer is over HUD that owns its own clicks, not over the world
 function overHud(x, y) {
   return !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
-    overMinimap() || !!cheatHit(x, y);
+    overMinimap();
 }
 
 // ---- the character panel (G) ---------------------------------------------

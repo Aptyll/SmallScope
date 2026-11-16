@@ -22,11 +22,7 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   drawIceBreaks(ox, oy);
 
   // the up orca's hole and its spouts coming down (js/draw/orca.js)
-  if (!ARENA) drawOrcaPool(ex, ey);
-
-  // the archery track's rails, flat under everything that walks, then the
-  // parkour's start/finish line, painted flat on the carved ice
-  if (ARENA) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
+  drawOrcaPool(ex, ey);
 
   // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
   drawTrample(ox, oy);
@@ -153,10 +149,6 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });
   for (const b of robots) if (fogShown(b, now) && !bodyOffView(b, ox, oy)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
-  // the archery targets (the training grounds', or one a staged scene stood in
-  // a match): entities, never tile objects (a slider crosses tiles every
-  // frame), sorted by their base like everything
-  for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
   // the middle's stone and the orca out of its ice (js/draw/cistern.js)
   pushMiddleDraws(draws, ox, oy);
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
@@ -199,7 +191,6 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else { const n = hitNudge(d.p, now); drawPlayer(d.p, ex - n.x, ey - n.y, now); } continue; }
     if (d.a) { const n = hitNudge(d.a, now); drawAnimal(d.a, ex - n.x, ey - n.y, now); continue; }
     if (d.r) { const n = hitNudge(d.r, now); drawRobot(d.r, ex - n.x, ey - n.y, now); continue; }
-    if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     // what stands in the sort that is not a body covers a body's night light
     // as it covers its pixels (litPunch, js/draw/light.js)
     // a piece that names its box (bx, by, bw, bh: world px) is tested on it; one
@@ -262,45 +253,10 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     drawHourLit(spr, px + sh, py + TILE - spr.height);
   } else if (LANDMARKS[o.type]) {
     drawLandmark(o, px + sh, py); // the boat (js/draw/landmarks.js); their parts draw nothing
-  } else if (o.type === 'dummy') {
-    // the practice target: skids on its tile, everything else drawn up off
-    // it like a tree. The readout bar only appears once it is hurt, and
-    // updatePractice mending it is what takes the bar away again. While
-    // the archery round's sink runs (agSinkU, js/sim/practice.js) the sprite
-    // drops and the snow line crops it - the bottom is already under the
-    // field - and at full depth the object leaves the grid entirely.
-    const su = ARENA ? agSinkU() : 0;
-    if (su > 0) {
-      const vis = Math.round(DUMMY_SPR.height * (1 - su));
-      if (vis > 0) ctx.drawImage(DUMMY_SPR, 0, 0, DUMMY_SPR.width, vis,
-        px + sh + ((TILE - DUMMY_SPR.width) >> 1), py + TILE - vis, DUMMY_SPR.width, vis);
-      return;
-    }
-    const dx = px + sh + ((TILE - DUMMY_SPR.width) >> 1);
-    const dy = py + TILE - DUMMY_SPR.height;
-    drawSpriteFlash(DUMMY_SPR, dx, dy, o.flash);
-    if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
-    // the combo readout, above the bar's slot so neither ever covers the other
-    drawDummyMeter(o, px + 8, dy - 10);
   } else if (o.type === 'pylon') {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'banner') {
-    drawBanner(o, px + sh, py, now);
-  } else if (o.type === 'pkdie') {
-    drawPkDie(o, px, py, now);
-  } else if (o.type === 'agbell') {
-    // mid-sink for the archery round, like the dummy and rack: the bell is
-    // drawn procedurally, so it slides down and a clip at its ground line
-    // crops what is already under the field
-    const su = ARENA ? agSinkU() : 0;
-    if (su > 0) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(px - 2, py + TILE - 29, 21, 29);
-      ctx.clip();
-      drawAgBell(o, px + sh, py + Math.round(su * 29), now);
-      ctx.restore();
-    } else drawAgBell(o, px + sh, py, now);
+    drawBanner(o, px + sh, py, now); // the road's pennant pole (js/draw/paving.js)
   } else if (o.type === 'snowdrop') {
     // a warren's clump: open until picked, then the snapped stem, then the
     // shut bud as it comes back (snowdropLeft, world.js) - and hovered while
@@ -532,9 +488,6 @@ function renderScreen(ox, oy, now) {
   // merchant's counter opened in the first seconds stands over it and not behind it
   if (state.mode === 'play') drawDropHeadline();
   renderUI(now);
-  // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
-  // plate, the final score (drawAgameUI, js/draw-world.js)
-  if (ARENA && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);

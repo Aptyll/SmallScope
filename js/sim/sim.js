@@ -78,12 +78,8 @@ function update(dt) {
   SFX.setAmbience(!state.paused && (state.mode !== 'dead' || state.over === 'respawning'),
     state.darkness > NIGHT_CUE);
 
-  // time (the clock starts with the eagle - the match is live while you ride).
-  // The practice arena has no clock at all: state.time stays pinned at the
-  // boot's early morning, so it is always crisp daylight, no dusk, no dawn
-  // refreeze - a training room, not a day. The practice tool's map keeps a
-  // match's clock: its waves march on the match's beat (barracksBeat)
-  if ((state.mode === 'play' || state.mode === 'drop') && !ARENA) {
+  // time (the clock starts with the eagle - the match is live while you ride)
+  if (state.mode === 'play' || state.mode === 'drop') {
     state.time += dt;
     state.elapsed += dt;
     if (state.time >= CYCLE) {
@@ -149,7 +145,6 @@ function update(dt) {
     netHostStep(dt); // a peer may knock while the host is still at the title
     updateTitle(dt); // menu timers, camera drift, and the ambient world behind it
   }
-  if (PRACTICE) updateRooms(dt); // a party's guest joining its leader on the field (js/ui/rooms.js)
   friendsTick(dt); // the Steam friends' list, presence and invite card (js/ui/friends.js)
 
   // camera: director mode's own first (dirCam, js/app/director.js), when it has
@@ -342,8 +337,8 @@ function structShotBox(o) {
 }
 
 // Everything one shot's step meets, in the order it meets it: `{ s, k, t }`,
-// `s` the fraction of the step, `k` what was met ('eagle' 'dummy' 'wall'
-// 'face' 'player' 'robot' 'animal') and `t` the thing itself (a wall rides as
+// `s` the fraction of the step, `k` what was met ('eagle' 'wall'
+// 'player' 'robot' 'animal') and `t` the thing itself (a wall rides as
 // its tile, `tx`/`ty`). Nothing past the first contact that must END the shot
 // is listed - a wall, a rival roost, a target face, and for any shot but a
 // pierce the first body. One array, reused every step; updatePlay reads it.
@@ -382,20 +377,6 @@ function shotContacts(a, x0, y0, dx, dy) {
     if (state.drop && o && o.type === 'eagle' && o.team !== a.team) {
       shotHits.push({ s, k: 'eagle', t: o }); stop = s; break;
     }
-    // the practice dummy: nearly three tiles tall on one solid tile, so a
-    // shot through the torso or head tiles (one and two above the base)
-    // lands too - asked before solidity, which would eat the base hit
-    if (PRACTICE) {
-      let dm = null;
-      for (let dd = 0; dd <= 2 && !dm; dd++) {
-        const q = objAt(tx, ty + dd);
-        if (q && q.type === 'dummy') dm = q;
-      }
-      if (dm && !(a.pierce && a.pierceHit.includes(dm))) {
-        shotHits.push({ s, k: 'dummy', t: dm });
-        if (!a.pierce) { stop = s; break; }
-      }
-    }
     if (isSolidTile(tx, ty)) {
       shotHits.push({ s, k: 'wall', tx, ty }); stop = s; break;
     }
@@ -414,16 +395,6 @@ function shotContacts(a, x0, y0, dx, dy) {
     if (s < 0 || s >= stop) continue;
     for (let i = shotHits.length - 1; i >= 0; i--) if (shotHits[i].s > s) shotHits.splice(i, 1);
     shotHits.push({ s, k: 'wall', tx: o.tx, ty: o.ty }); stop = s;
-  }
-  // ...the archery targets: the shot meets the FACE, wherever its habit has
-  // carried it - ptFace is the same geometry the draw uses, and the hit disc
-  // scales with the target's size (ptHitR). Practice's track holds them; in a
-  // match the list is empty unless a staged scene stood one (app/media/scenes)
-  for (const t of ptargets) {
-    if (!ptLive(t)) continue;
-    const f = ptFace(t);
-    const s = sweepDisc(x0, y0, dx, dy, f.x, f.y, ptHitR(t));
-    if (s >= 0 && s < stop) { shotHits.push({ s, k: 'face', t }); stop = s; }
   }
   // THE BODIES, all three kinds, each by its own hit disc - never the
   // shooter's own side, and never the shooter. A pierce skips whoever it has
@@ -504,12 +475,11 @@ function tickObjTimers(dt) {
 // never XP. A floor under everyone's purse, so a player who never swings an
 // axe still buys items, and a farmer pulls ahead only by the fells, never by
 // the clock. Silent on purpose: no floater,
-// no blip - the strip's purse is the tell. The practice
-// arena has no clock and gets none; the dead and the airborne earn nothing.
+// no blip - the strip's purse is the tell. The dead and the airborne earn nothing.
 const TRICKLE_GOLD = 8;
 const TRICKLE_T = 4;      // s per pay: 120 gold a minute, League's 2 a second
 function trickle(p, dt) {
-  if (p.dead || ARENA) return;
+  if (p.dead) return;
   p.trickleT += dt;
   if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
 }
@@ -518,7 +488,6 @@ function updatePlay(dt) {
   // the surrender votes read their orders before any body runs, since a body
   // that is down or stunned drops every order it is given (js/sim/surrender.js)
   updateVotes(dt);
-  updateOnevone(); // a 1V1's end: first strike, the soldiers, the first tower (js/sim/onevone.js)
 
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
@@ -535,7 +504,7 @@ function updatePlay(dt) {
   updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/sim/icebreak.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, creek fish claims
-  if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
+  sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // the ability flashes, and what each hero left in the world
   if (state.drop) updateDrop(dt);
@@ -592,16 +561,6 @@ function updatePlay(dt) {
       if (h.k === 'eagle') {
         hurtEagle(state.drop.eagles[t.team], EAGLE_ARROW_DMG, players[a.owner], hx, hy); // a flat spook, not the body damage
           dead = true;
-      } else if (h.k === 'dummy') {
-        if (a.pierce && a.pierceHit.includes(t)) continue; // three tiles, one body
-        hitDummy(t, a.dmg, hx, hy);
-          a.struck = true;
-        if (a.pierce) a.pierceHit.push(t); // the pierce keeps flying
-        else dead = true;
-      } else if (h.k === 'face') {
-        hitPTarget(t); // the face explodes on contact
-        a.ptHit = true; // this shot keeps the consecutive-hit run alive
-          dead = true;
       } else if (h.k === 'wall') {
         dead = true;
         // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
@@ -622,11 +581,6 @@ function updatePlay(dt) {
     if (end < 1) { a.x = x0 + dx * end; a.y = y0 + dy * end; }
     a.flown = (a.flown || 0) + vd * dt * end; // how far it has come: its streak waits for the tail to clear the bow (drawArrows, js/draw/passes.js)
     if (dead) {
-      // a practice shot that ends any way but in a target face breaks the
-      // range's consecutive-hit run (agStreak, js/sim/practice.js) - minigame or not
-      // ...and a run worth mourning says so on the way out: dropping one shot
-      // is not news, dropping a milestone run is (AG_RUN_STEP, js/sim/practice.js)
-      if (PRACTICE && !a.ptHit) { if (agStreak >= AG_RUN_STEP) SFX.runBroke(); agStreak = 0; }
       // A shot that ends - a miss, a wall, a body, or the end of its life -
       // vanishes; only a hero's own shot leaves something behind (ARCUS's arrows in the snow)
       heroShotEnd(a, endK);
@@ -635,7 +589,6 @@ function updatePlay(dt) {
   }
 
   updateWildlife(dt); // the animals, the orca and the camps (below)
-  if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos
 
   // structures + their robots
   updateStructures(dt);
@@ -658,7 +611,7 @@ function updateWildlife(dt) {
   updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/sim/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   updateCampSight(); // and each side learns the clocks it can see
-  if (!ARENA) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
+  updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 
 const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
@@ -794,9 +747,6 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
 function playerIntents(p, dt) {
   const inp = p.input;
   recallIntents(p); // anything the body does itself ends the walk home (js/sim/recall.js)
-  // a trick first: SHAKE OFF is the one press a stun lets through (tryTrick
-  // refuses the rest while stunned, js/sim/loadout.js)
-  if (inp.trick >= 0) { const i = inp.trick; inp.trick = -1; if (Number.isInteger(i) && i < TRICK_N) tryTrick(p, i); }
 
   // stunned: rolled through, or the wrong end of a tackle. Every intent is
   // dropped where it arrives rather than blocked at each action, so a human
@@ -1047,7 +997,6 @@ function updatePlayer(p, dt) {
   if (p.dead) { // out of the match: nothing it wants gets through
     inp.dodge = false;
     inp.useItem = -1;
-    inp.trick = -1;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -1190,13 +1139,8 @@ function updateFx(dt) {
     f.t += dt;
     if (f.t > (f.life || 0.9)) floaters.splice(i, 1);
   }
-  for (let i = wordPops.length - 1; i >= 0; i--) { // a target's word (hitPTarget, js/sim/practice.js)
-    wordPops[i].t += dt;
-    if (wordPops[i].t > WORD_POP_T) wordPops.splice(i, 1);
-  }
   updateSlashes(dt); // the sword's sweep on the snow (js/sim/attack.js)
   if (itemFlash > 0) itemFlash -= dt; // ... and an item well's
-  if (trickFlash > 0) trickFlash -= dt; // ... and a trick well's (js/ui/strip.js)
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];

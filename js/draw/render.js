@@ -131,13 +131,7 @@ function render() {
   titleFlyDraw(ex, ey); // the title's passing eagle: its shadow over the snow and the ten (js/ui/titlescene.js)
 
   drawSelection(ox, oy, now);
-  drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
   drawWorkHint(ox, oy);
-  // the parkour's two readouts: the lap clock over the runner, BEST / LAST
-  // on the frost plate at the gate (drawParkour, js/draw-world.js) - and the
-  // archery range's own BEST / LAST plate over the bell (drawAgame), with
-  // the hit-ring flash snapping over whatever face just broke (drawAgRings)
-  if (ARENA) { drawParkour(ex, ey, now); drawAgame(ex, ey, now); drawAgRings(ex, ey); }
 
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);

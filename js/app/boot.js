@@ -48,30 +48,21 @@ PROFILE.cloudSync(SETTINGS_LOCAL).then((got) => { if (got) applySettings(); });
 // the title track. Browsers refuse audio before a gesture, so SFX.music holds
 // this as pending and the first click or keypress starts it (see js/app/audio.js).
 SFX.music.play('intro', { in: 1.5 });
-if (ARENA) {
-  // the practice tool's side room, the training field (the `practice arena`
-  // banner, js/sim/practice.js): a fixed room instead of a match world - one
-  // dummy, open targets, the ice parkour, and nothing that spawns or
-  // restocks: no camps, wildlife or eagles at all. The practice tool itself
-  // grows the match's own map below, like any match
-  genPracticeWorld();
-} else {
-  genWorld();
-  layLanes();       // the top and bot lanes: fixed cuts, registered first so the creek can end under them (js/sim/lanes.js)
-  placeCreek();     // ...the frozen creek down the cross-diagonal, lane to lane, its bends, and the cistern round the middle (world.js, cistern.js)
-  placeRoad();       // the diagonal lane, and the side lanes with it (world.js)
-  placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
-  placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
-  placeTowers();     // ...and three road towers on each side's cable, which it is cut back to (js/sim/towers.js)
-  layJungle();       // ...and the jungle: the field inside the lanes planted solid and its paths cut through, mirrored to all four quarters (js/sim/jungle.js)
-  placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
-  placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
-  placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
-  towerLandings();   // ...and, with every pine planted, each cable's run-out past its towers (js/sim/towers.js)
-  spawnAnimals();
-  spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
-  stockCamps();      // the monsters go in once the world is standing
-}
+genWorld();
+layLanes();       // the top and bot lanes: fixed cuts, registered first so the creek can end under them (js/sim/lanes.js)
+placeCreek();     // ...the frozen creek down the cross-diagonal, lane to lane, its bends, and the cistern round the middle (world.js, cistern.js)
+placeRoad();       // the diagonal lane, and the side lanes with it (world.js)
+placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
+placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
+placeTowers();     // ...and three road towers on each side's cable, which it is cut back to (js/sim/towers.js)
+layJungle();       // ...and the jungle: the field inside the lanes planted solid and its paths cut through, mirrored to all four quarters (js/sim/jungle.js)
+placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
+placeLandmarks();  // ...and the story landmarks take their spots (landmarks.js)
+placePumps();      // ...and the two gold pumps beside the top and bot lanes' middles, with no rng() (js/sim/pumps.js)
+towerLandings();   // ...and, with every pine planted, each cable's run-out past its towers (js/sim/towers.js)
+spawnAnimals();
+spawnOrca();       // ...and the orca under its lake (js/sim/orca.js)
+stockCamps();      // the monsters go in once the world is standing
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/sim/depth.js)
 initPlayers();
 // on Steam, a name the player never chose becomes their Steam name (PROFILE.steamName),
@@ -98,43 +89,21 @@ const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(locat
 // the replay proof (js/sim/save.js): the valley as it grew is the baseline every
 // save is written against, and a load that reloaded onto its seed puts the
 // match back now - after the world stands, before the bake paints it
-if (!PRACTICE) saveBaseline();
-const LOADED_AT_BOOT = !PRACTICE && !NET.isClient && saveBootLoad();
+saveBaseline();
+const LOADED_AT_BOOT = !NET.isClient && saveBootLoad();
 prepGround(); // the ground bakes lazily from here, view first (js/draw/ground.js)
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
 camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
-// practice boots straight onto the snow: no title, no ride. On the map both
-// birds are already down on their perches, their merchants climbing off to
-// raise the bays (practiceLand, js/sim/practice.js). The other nine players
-// empty out (control 'none' - `active` is derived from it) and stand parked
-// in the corner forest (practiceVacate); the local player takes the spawn
-// (its side's roost, or the arena's tile) and the HUD slides in the way a
-// landing's does. A party's friends take seats as they join (netHostHello).
-if (PRACTICE) {
-  if (!ARENA) practiceLand();
-  for (const p of players) if (p !== player) practiceVacate(p);
-  practiceSeat(player);
-  // the arena: early morning, forever - sim.js never advances state.time
-  // under ARENA, so this is its one fixed hour, crisp daylight, shadowless
-  // dawn. The map keeps a match's mid-morning start, and its day runs on
-  if (ARENA) state.time = 0;
-  state.mode = 'play';
-  camX = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
-  camY = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
-  state.introFrom = { x: camX, y: camY };
-  state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
-}
-if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
-else if (JOIN_AT_BOOT) practiceBootJoin(JOIN_AT_BOOT); // a party's guest following its leader onto the field
-if (PRACTICE) practiceBootHost(); else rematchBootHost(); // a leader back from a match or the field: the party again, same people (js/ui/rooms.js)
+if (JOIN_AT_BOOT) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
+rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
 // the game's first launch goes straight into the FIRST MATCH's pick (js/ui/guide.js), and its end
 // lands on the hub (titleUrl, js/ui/rooms.js). A boot that came for something else keeps the hub:
-// a join, a party back from a match, the field, or a tool's ?seed=N or ?local=N
-if (PROFILE.firstRun() && !PRACTICE && !LOADED_AT_BOOT && !JOIN_AT_BOOT && state.mode === 'title' && state.menu.screen === 'menu' &&
+// a join, a party back from a match, or a tool's ?seed=N or ?local=N
+if (PROFILE.firstRun() && !LOADED_AT_BOOT && !JOIN_AT_BOOT && state.mode === 'title' && state.menu.screen === 'menu' &&
   !/[?&](seed|net|back|join|local)=/.test(location.search)) { beginParty('guide'); partyFind(); }
-// landing from a reload that whited out (a rematch, the field left): the white clears to the new world
+// landing from a reload that whited out (a rematch): the white clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
     sessionStorage.removeItem('softfall.reroll');
@@ -163,22 +132,6 @@ window.DBG = {
   laneLine, sideLaneDist, laneWaypoints, baseGate, baseBaySpot,
   // the snow's depth (js/sim/depth.js): the map, the deep band, the drifts and the wind that laid them
   snowDepth, deepAt, drifts, driftWind,
-  // the practice tool: whether this boot is one and whether it is the arena, the dummy's live record,
-  // the spawn tile, the shared hit paths, the archery targets, the parkour
-  // clock and the ESC slab's exit plank
-  PRACTICE, ARENA, practiceDummies, PR_SPAWN, hitDummy,
-  ptargets, ptFace, ptLive, ptHitR, hitPTarget, parkour,
-  // the archery round: the live state, the difficulty tables, the bell's
-  // resolver, ring a round in by hand at a difficulty (warp beside AG_BELL
-  // first - the reach check is real), spawn one random target, and the
-  // track parametrisation for staging shots
-  agame, AG_DIFF, agBellNear, agSpawn, agStock, agPos, AG_LEN, AG_BELL,
-  agRing: (diff, p) => agRing(p || player, { tx: AG_BELL.tx, ty: AG_BELL.ty, id: diff || agame.mode }),
-  get agStreak() { return agStreak; }, // the consecutive-hit run (rebinds, so a getter)
-  // the parkour roll station: roll a track by hand, resolve the die E would
-  // open the wheel on, and watch the sweep (pkAnim rebinds, so a getter;
-  // pkAnimStep lets a driver fast-forward the front)
-  pkRoll, pkDieNear, pkWheelPick, PK_DIFFS, pkAnimState: () => pkAnim, pkAnimStep,
   // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,

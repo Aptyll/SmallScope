@@ -28,11 +28,6 @@ const TEXT = {
   'end.lobby': 'LOBBY',
   'end.back': 'BACK',
   'end.replay': 'REPLAY',
-  // how a 1V1 ended (onevoneWhy, js/sim/onevone.js): under either headline, and the feed's line
-  'onevone.strike': 'FIRST STRIKE',
-  'onevone.farm': '{n} SOLDIERS',
-  'onevone.tower': 'FIRST TOWER',
-  'onevone.line': '{why}: THE {side} SIDE WINS THE 1V1',
 
   // ---- the hub, the landing page (js/ui/hub.js)
   'hub.history': 'MATCH HISTORY',
@@ -247,11 +242,10 @@ const TEXT = {
   // ---- the hero pick (js/ui/select.js): a hero's and a position's names stay on their entries
   'pick.ban': 'BAN A HERO!',
   'pick.pick': 'PICK YOUR HERO!',
-  'pick.loadout': 'PREPARE YOUR LOADOUT!',
+  'pick.ready': 'GET READY!',
   'pick.banning': 'BANNING...',
   'pick.picking': 'PICKING...',
   'pick.locked': 'LOCKED IN',
-  'pick.practice': 'PRACTICE TOOL',
   'pick.quick': 'QUICKPLAY',
 
   // ---- the wiki (js/ui/wiki.js): page tabs, page lines and table heads; a hero, ability or item keeps its own words on its entry

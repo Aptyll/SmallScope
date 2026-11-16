@@ -66,7 +66,7 @@ function addCallout(k, word, id, team, x, y, see) {
   evPush('call', [k, word, id, team, x, y, see]);
   callouts.push({ k, word, id, team, see, x, y, t: 0 });
   if (see === team && !CALLS[k].ping) callSaid[team][k] = callSaid[team].any = { t: state.elapsed, x, y };
-  if (player && see === player.team && (!PRACTICE || CALLS[k].ping)) { if (CALLS[k].ping) SFX.ping(k); else SFX.notch(); }
+  if (player && see === player.team) { if (CALLS[k].ping) SFX.ping(k); else SFX.notch(); }
 }
 
 function updateCallouts(dt) {
@@ -74,7 +74,6 @@ function updateCallouts(dt) {
     callouts[i].t += dt;
     if (callouts[i].t >= callLife(callouts[i])) callouts.splice(i, 1);
   }
-  if (PRACTICE) return;
   for (const p of players) {
     if (p.control !== 'ai' || !unitAlive(p)) continue;
     const ai = p.ai, g = ai.grudge;
@@ -172,7 +171,7 @@ function callFriend(p) {
 const CALL_GRUDGE_T = 90;   // s before the same rival may say it to the same hero again
 const CALL_GRUDGE_SEEN = 1; // s after first sight it may still be said (the side's screen may be full at the instant)
 function callGrudge(p, mark) {
-  if (PRACTICE || !unitAlive(p) || !mark || mark.team === p.team) return false;
+  if (!unitAlive(p) || !mark || mark.team === p.team) return false;
   const key = p.id + '>' + mark.id, last = callSaid[p.team]['grudge' + key];
   if (last && state.elapsed - last.t < CALL_GRUDGE_T) return false;
   let up = 0;

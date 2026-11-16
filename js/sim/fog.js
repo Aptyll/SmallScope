@@ -27,10 +27,9 @@ const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see so
 const FOG_BRUSH_RIM = 1.5; // tiles outside a brush patch's rim a side's hero or soldier still sees into it
 const FOG_FACE = 6;      // px past where a sight line meets stone still lit, so the wall's face shows
 
-// whether the fog is up: a match on the ground, never the practice field or
-// the title tour. DBG.fog = false lifts it for a debug look
+// whether the fog is up: a match on the ground, never the title tour. DBG.fog = false lifts it for a debug look
 function fogUp() {
-  return !ARENA && state.mode === 'play' && window.DBG.fog !== false;
+  return state.mode === 'play' && window.DBG.fog !== false;
 }
 
 // Every eye a side has, as { x, y, r, near, stone, open }: near for a body (a

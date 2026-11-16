@@ -11,7 +11,7 @@
 //
 //   node app/check-same.js                 this tree (uncommitted edits too) vs origin/main
 //   node app/check-same.js <ref>           vs another commit or branch
-//     --seeds 7,3,11   the match seeds (default 7,3,11), plus the practice map unless --no-practice
+//     --seeds 7,3,11   the match seeds (default 7,3,11)
 //     --min 8          match minutes played per seed
 //     --drop a,b       state keys the change adds or removes: left out of both hashes
 //     --scene <file>   a staged scene for a path bots rarely take (below), run on both trees
@@ -37,7 +37,6 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const CHUNK = 600;              // ticks between comparisons: 10 s of match
-const PRACTICE_RUN = 'practice';
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png',
   '.json': 'application/json', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav' };
 
@@ -48,14 +47,13 @@ function loadPlaywright() {
 }
 
 function parseArgs(argv) {
-  const a = { ref: 'origin/main', seeds: ['7', '3', '11'], min: 8, drop: [], scene: null, practice: true };
+  const a = { ref: 'origin/main', seeds: ['7', '3', '11'], min: 8, drop: [], scene: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--seeds') a.seeds = argv[++i].split(',').filter(Boolean);
     else if (k === '--min') a.min = +argv[++i];
     else if (k === '--drop') a.drop = argv[++i].split(',').filter(Boolean);
     else if (k === '--scene') a.scene = fs.readFileSync(path.resolve(argv[++i]), 'utf8');
-    else if (k === '--no-practice') a.practice = false;
     else if (k.startsWith('--')) { console.error('check-same: unknown flag ' + k + ' (the comment at the top of app/check-same.js)'); process.exit(2); }
     else a.ref = k;
   }
@@ -136,10 +134,9 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
     return v;
   };
   const step = (n) => { for (let i = 0; i < n; i += 60) { const k = Math.min(60, n - i); window.__checkT += k * 1000 / 60; D.step(1 / 60, k); } };
-  if (PRACTICE) saveBaseline(); // boot skips it there (practice is never saved); the hash reads against it
   const rows = [{ tag: 'title', tick: state.tick, sim: simHash(), px: views() }];
   if (upTo === state.tick) return { body: without(() => D.saveCapture().body) };
-  if (!PRACTICE) D.startGame();
+  D.startGame();
   if (scene) {
     for (let i = 0; i < 6000 && (state.mode !== 'play' || player.aboard); i++) step(1);
     rows.push({ tag: 'field', tick: state.tick, sim: simHash(), px: views() });
@@ -148,7 +145,7 @@ function playInPage({ chunks, CHUNK, drop, scene, upTo }) {
     return { rows, mode: state.mode };
   }
   for (let c = 0; c < chunks; c++) {
-    for (const p of players) if (!PRACTICE || p === player) p.control = 'ai'; // practice keeps its empty seats: one bot on the field
+    for (const p of players) p.control = 'ai';
     step(CHUNK);
     if (upTo != null && state.tick >= upTo) return { body: without(() => D.saveCapture().body) };
     rows.push({ tag: 'chunk', tick: state.tick, sim: simHash(), secs: sections(), px: views() });
@@ -162,7 +159,7 @@ async function play(browser, base, seed, a, upTo) {
   const errors = [];
   pg.on('pageerror', (e) => errors.push(String(e).split('\n')[0]));
   await pg.addInitScript(initScript);
-  const q = seed === PRACTICE_RUN ? '?practice=1' : '?seed=' + seed;
+  const q = '?seed=' + seed;
   try {
     await pg.goto(base + '/index.html' + q);
     await pg.waitForFunction(() => window.DBG && window.DBG.startGame, null, { timeout: 60000 });
@@ -206,7 +203,7 @@ async function main() {
   const { sha, dir } = exportRef(a.ref);
   const [B, T] = await Promise.all([serve(dir), serve(ROOT)]);
   const browser = await chromium.launch();
-  const seeds = a.scene ? a.seeds.slice(0, 1) : a.seeds.concat(a.practice ? [PRACTICE_RUN] : []);
+  const seeds = a.scene ? a.seeds.slice(0, 1) : a.seeds;
   const what = a.scene ? 'a staged scene' : `${a.min} match min per seed, compared every ${CHUNK / 60} s`;
   console.log(`check-same: this tree vs ${a.ref} (${sha.slice(0, 7)}), seeds ${seeds.join(' ')}, ${what}`);
   let code = 0;

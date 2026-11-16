@@ -185,8 +185,7 @@ weather moves reads it rather than keeping a clock of its own:
 
 Every day of a match rolls one of four weathers (the `weather` banner, js/sim/weather.js) off the map's seed
 and `state.day` with `hash2`, so a day brings the same weather every match and every client that knows the day (the snapshot already carries it)
-knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
-practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the
+knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`. A weather is only a row of **dials** in `WEATHERS` that the
 passes above already read:
 
 | dial | read by | calm | snow | blizzard | frost |

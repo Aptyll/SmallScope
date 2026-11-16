@@ -542,9 +542,8 @@ function healPlayer(p, n) {
 function gainGold(p, n) {
   p.gold += n;
   p.earned += n;
-  // lifetime total, coalesced - see profile.js. Practice gold is play money:
-  // a free room must never farm the tech tree's points.
-  if (p === player && !PRACTICE) PROFILE.addGold(n);
+  // lifetime total, coalesced - see profile.js
+  if (p === player) PROFILE.addGold(n);
 }
 // The merchant's till, and the ONE way gold reaches a wallet without counting
 // as earned. A SALE is an exchange, not a source: an item sold back is gold the
@@ -691,7 +690,6 @@ function makeInput() {
     jump: false,         // edge-triggered: on/off a cable or a deer
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
-    trick: -1,           // edge-triggered: use the loadout's trick on this key (0-1), js/sim/loadout.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
   };
 }
@@ -734,13 +732,6 @@ class Player {
     this.position = -1;                 // POSITIONS index the draft gave this seat, -1 none (draftReveal, js/ui/draft.js); the host's alone, never on the wire
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..abLvMax (5, the ultimate 3), a skill point each - like items, NOT cleared by reset(): a death keeps what was bought
-    this.cheatOn = { cd: false, hp: false }; // the practice bar's standing toggles, this player's own (cheatCmd/cheatAuto, js/sim/practice.js)
-    // the pre-game picks (js/sim/loadout.js): two tricks and a calling, set
-    // whole as the match starts (loadoutStart); the tricks' cooldowns and the
-    // calling's own clocks, which a death does not reset (League's own)
-    this.loadout = { tricks: [null, null], calling: null };
-    this.trickCd = [0, 0];
-    this.ks = { foe: -1, n: 0, t: 0, tick: -1, on: 0, mark: -1, cd: 4 };
     // the times of this player's recent pings, the spam guard's memory
     // (pingReady, js/sim/pings.js)
     this.pingLog = [];
@@ -846,7 +837,6 @@ class Player {
     // cast in progress, and every timed state one can leave on a body -
     // shielded, or mid-dash
     this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
-    this.sprintT = 0; this.runT = 0; this.shakeT = 0; // a trick's running effect: SPRINT, BANDAGE's quick step, SHAKE OFF's grace (js/sim/loadout.js)
     this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow, the mark,
     // and fire - is written and cleared in one place for
@@ -1214,10 +1204,6 @@ function bodyOut(p) {
 // respawn-pending local death gets the lighter 'respawning' overlay instead
 // (see endMatch/DEAD_ITEMS/renderDead).
 function die(p, src, cause) {
-  // practice: nothing is at stake and nobody is ever out - a death is undone
-  // on the spot, back at the spawn tile (on the map its side's roost) with
-  // the build and the bag untouched; a party's guests the same as its leader
-  if (PRACTICE) { practiceRevive(p); return; }
   // what this body is worth is read before the death clears the streak it wears
   const worth = killWorth(p), bounty = bountyOf(p);
   p.deathLog = p.hurtLog; p.hurtLog = []; // the blows that did it, for the death recap (js/ui/recap.js)
@@ -1244,7 +1230,7 @@ function die(p, src, cause) {
     killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai/ai-team.js)
     payTakedown(p, killer, foes, worth, bounty); // the kill's gold, the assists' share and a shutdown's bounty
-    if (killer === player && !PRACTICE) PROFILE.addKill(); // the profile's lifetime count
+    if (killer === player) PROFILE.addKill(); // the profile's lifetime count
     // FEAST (js/sim/items.js): a flat heal on a confirmed kill, the one
     // passive that isn't a plain kitOf() field
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
@@ -1266,7 +1252,7 @@ function die(p, src, cause) {
   // however its players go down after that
   if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
   else p.eliminated = true;
-  if (p === player) { if (!PRACTICE) PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
+  if (p === player) { PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
   // no NAME DOWN over the body: the feed line above says it, and the body's
   // own fall (the `going down` banner, js/draw/bodies.js) shows it, where a
   // word in the air sat over whatever the fight was still about
@@ -1360,8 +1346,6 @@ function rivalTeamsInMatch(p) {
 // together - a side is in the match while its bird roosts, whoever is
 // standing - so this is the last BIRD standing, never the last player.
 function checkLastStanding() {
-  // practice has no rivals and no ending - an empty roster must not read as a win
-  if (PRACTICE) return;
   // state.eagleCine: the driven-off ceremony is playing - the screens wait
   // for it (eagleFleeResolve re-runs this once the camera has had its moment)
   // a respawn wait is not an ending: a hero who is down when the last rival
@@ -1371,24 +1355,6 @@ function checkLastStanding() {
   endMatch('won');
 }
 
-// the practice room's answer to a fall: full pool, spawn tile, a beat of
-// grace - the fall through the ice or the tackle still HAPPENED (the damage
-// numbers taught what they taught), it just costs nothing that lasts
-function practiceRevive(p) {
-  p.hp = p.maxHp;
-  p.vx = p.vy = 0;
-  p.dodgeT = 0;
-  clearUnitStatus(p); // the fire goes out with the fall, same as the stun
-  p.fallT = 0; p.sliding = false;
-  atkCancel(p);
-  p.potT = 0;                                    // the potion dies with the body here too
-  p.recallT = 0;                                 // ...and the recall
-  const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
-  p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
-  p.invuln = 2;
-  burst(p.x, p.y - 4, '#f4f7ff', 14, 60, 0.5, true);
-  sfxAt('place', p.x, p.y); // in earshot only - it had rung on every screen for every bot's return
-}
 
 // Both end screens print the same object, so there is one of these rather
 // than one per ending: the match clock, the class it was played in, and the
@@ -1400,8 +1366,7 @@ function endSnapshot() {
     // the whole side, the local player first: every row either ending's table
     // prints, with the name TAB gives it (boardName: a bot goes by its hero), the hero and look it finished in (a mate who
     // is down at the whistle still shares the result)
-    // (a 1V1's is the duel: your row over your rival's)
-    roster: players.filter((q) => q.active && (q.team === player.team || state.onevone))
+    roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
       .map((q) => ({
         id: q.id, name: boardName(q), cls: q.cls, skin: heroSkinOf(q), team: q.team,
@@ -1420,8 +1385,8 @@ function endMatch(how) {
   // ...and the same edge for the loss sting below: a second endMatch('lost')
   // (or a driver poking it) must not ring twice over one ending
   const firstLoss = how === 'lost' && state.over !== 'lost';
-  // the same death ending the match (a 1V1 lost on FIRST STRIKE, a bird driven off
-  // while you wait to respawn) is not a new one: a replay already put away stays away
+  // the same death ending the match (a bird driven off while you wait
+  // to respawn) is not a new one: a replay already put away stays away
   const sameDeath = state.mode === 'dead' && player.dead;
   state.over = how;
   // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
@@ -1562,7 +1527,6 @@ function payTakedown(p, killer, foes, worth, bounty) {
 // is raised here, inside the step, and annRaise records it for the clients the
 // way a cue is recorded (the `sim events` banner, js/net/events.js) - and every
 // side hears every call, the way League's announcer speaks to the whole match.
-// Practice is never a match: it calls nothing.
 //
 // One call per kill, the biggest it earns: FIRST STRIKE (the match's first),
 // else a MULTI-kill of 2..5 (the run die() keeps, MULTI_T apart), else a
@@ -1571,7 +1535,7 @@ function payTakedown(p, killer, foes, worth, bounty) {
 // every body on the fallen side down.
 const ANN_MULTI_MAX = 5; // PENTA is the last multi-kill with a name
 function callKill(p, killer, bounty) {
-  if (PRACTICE || !killer || !players.includes(killer)) return;
+  if (!killer || !players.includes(killer)) return;
   let kind = 'kill', n = 0;
   if (!state.firstBlood) { state.firstBlood = true; kind = 'first'; }
   else if (killer.multiN >= 2 && killer.multiN <= ANN_MULTI_MAX) { kind = 'multi'; n = killer.multiN; }
@@ -1583,12 +1547,11 @@ function callKill(p, killer, bounty) {
 // a road tower down (STRUCTS[type].call, hurtStruct): credited to the player
 // who broke it, or to the side whose wave did
 function callStruct(o, p) {
-  if (PRACTICE) return;
   const by = p && players.includes(p) ? p : null;
   annRaise('tower', 0, by ? by.id : -1, by ? by.team : 1 - o.team, 'tower', o.team);
 }
 // a midline bear down (MONSTER[kind].teamPay, animalDies): the hunter's call
 function callBeast(a, hunter) {
-  if (PRACTICE || !hunter) return;
+  if (!hunter) return;
   annRaise('beast', 0, hunter.id, hunter.team, 'beast', a.kind);
 }

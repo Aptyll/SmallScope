@@ -7,7 +7,7 @@
 //   node app/check-join.js          every path, exit 1 on any failure
 //   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join,
 //                                       friend-invite, steam-party, steam-match, relay-match,
-//                                       menu-join, leader-follow, practice-join)
+//                                       menu-join, leader-follow)
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
 // process, handed to each page as `window.steamBridge` with the calls and
@@ -23,7 +23,7 @@ const { spawn } = require('child_process');
 const CHECK_PORT = 8479;       // its own port, so a game already served on 8471 is left alone
 const JOIN_WAIT = 15;          // s a guest has to be welcomed
 const PARTY_PATHS = ['steam-party', 'steam-match', 'relay-match'];
-const FRIEND_PATHS = ['menu-join', 'leader-follow', 'practice-join'];
+const FRIEND_PATHS = ['menu-join', 'leader-follow'];
 const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS, FRIEND_PATHS);
 
 // a profile already saved, so a page is not a first launch (which goes straight into the FIRST MATCH, js/app/boot.js)
@@ -249,8 +249,7 @@ async function runParty(browser, kind) {
 // guest's row for it must offer the gold step, the join must land, the
 // host's screen must turn to the seats, and the guest's seat must be keyed
 // by its SteamID. leader-follow: a leader and a friend (joined by code) take
-// up a third player's party, and both must end up in it. practice-join:
-// Join Game on a host standing on the practice field lands the guest there.
+// up a third player's party, and both must end up in it.
 // Every page also must refuse to leave a match it is in (match-guard, in
 // menu-join).
 async function runFriends(browser, kind) {
@@ -280,7 +279,6 @@ async function runFriends(browser, kind) {
     }
     return false;
   };
-  const remotes = (pg) => pg.evaluate(() => players.filter((p) => p.control === 'remote').length);
   let why = '';
   if (kind === 'menu-join') {
     const A = await mk('host', 0), B = await mk('guest', 1);
@@ -307,7 +305,7 @@ async function runFriends(browser, kind) {
       await C.waitForTimeout(800);
       if ((await C.evaluate(() => location.search)).includes('join=')) why = 'a page in a match left it for an invite';
     }
-  } else if (kind === 'leader-follow') {
+  } else { // leader-follow
     const A = await mk('lead', 0), B = await mk('friend', 1), C = await mk('other', 2);
     for (const pg of [A, B, C]) await open(pg);
     await stood(A); await stood(B); const lobbyC = await stood(C);
@@ -323,18 +321,6 @@ async function runFriends(browser, kind) {
       if (!a || !b || lob[0] !== lobbyC || lob[1] !== lobbyC) why = 'not both in the third party (lead ' + a + ', friend ' + b + ')';
       else if (inC !== 'FRIEND,LEAD') why = 'third party shows ' + inC;
     }
-  } else { // practice-join
-    const A = await mk('host', 0), B = await mk('guest', 1);
-    await open(A);
-    await stood(A);
-    await A.evaluate(() => practiceGo(practiceUrl(true))); // the field, hosting the party's code (a tool's way there: it is off the hub)
-    await A.waitForFunction(() => window.DBG && typeof hubLayout === 'function' && PRACTICE && NET.role === 'host' && NET.transport.open, null, { timeout: 15000 }); // the field's page, up
-    const lobby = await A.evaluate(() => NET.transport.lobbyId);
-    await open(B);
-    await B.evaluate((l) => steamJoinRequested(l), lobby);
-    if (!(await welcomed(B, 20))) why = 'guest never welcomed on the field';
-    else if (!(await B.evaluate(() => PRACTICE))) why = 'guest welcomed off the field';
-    else if ((await remotes(A)) !== 1) why = 'field host shows ' + (await remotes(A)) + ' remote';
   }
   if (errs.length) why = (why ? why + '; ' : '') + errs.slice(0, 3).join(' | ');
   for (const pg of pages) await pg.context().close();

@@ -17,8 +17,7 @@
 // A cue that is deliberately for everyone whatever the distance (a bird
 // landing) passes EV_ANYWHERE as its radius. What is NOT recorded: anything
 // raised outside the step - the HUD's blips, the menu, a refusal flash in a
-// drag - which the client raises for itself, and the practice arena, which
-// is never a match.
+// drag - which the client raises for itself.
 const EV_MAX = 1024;       // entries kept per flush; a fight is tens a second, this is a stall's worth
 const EV_ANYWHERE = 1e9;   // a radius that reaches every screen
 const evRing = [];         // [{ k, a }] since the last evDrain, in sim order

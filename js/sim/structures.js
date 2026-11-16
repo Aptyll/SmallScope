@@ -80,8 +80,7 @@ const STRUCTS = {
     // air and the spent one in the snow (updateTower, js/sim/towers.js)
     init(o) { o.zl = -1; o.zi = -1; o.ang = o.team === 0 ? -Math.PI / 4 : Math.PI * 3 / 4; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; },
     built() {},
-    // the practice bar's TOWERS off: the gun stands down
-    tick(o, dt) { if (!PRACTICE || state.prac.towers) updateTower(o, dt); else towerRest(o, dt); },
+    tick(o, dt) { updateTower(o, dt); },
     over: (o, x, y) => drawTowerTop(o, x, y), // its gun in its deck, and its bar (js/draw/towers.js)
   },
 };
@@ -106,8 +105,7 @@ function barracksWave(o) {
   if (every && n % every === 0) kinds.push('siege');
   return kinds.slice(0, Math.max(0, t.cap - barracksLaneLoad(o)));
 }
-// a bay queues its wave (the beat, and the practice bar's SPAWN WAVE,
-// cheatCmd js/sim/practice.js): `o.kinds` leave the door in order, `o.queue`
+// a bay queues its wave on the beat: `o.kinds` leave the door in order, `o.queue`
 // is how many are left. Returns how many it queued
 function barracksQueue(o) {
   const k = barracksWave(o);
@@ -214,12 +212,12 @@ function updateStructures(dt) {
 // as many as the lane's cap leaves room for, the front of the column first -
 // and the queue leaves the door one soldier every BARRACKS_ROLL, so a wave
 // reads as a column, not a heap. `+=` keeps the beat: no tick's overshoot
-// drifts it (the practice bar's WAVES off keeps the beat and queues nothing)
+// drifts it
 function barracksTick(o, dt) {
   o.waveT -= dt;
   if (o.waveT <= 0) {
     o.waveT += STRUCTS.barracks.waveT;
-    if (!PRACTICE || state.prac.waves) barracksQueue(o);
+    barracksQueue(o);
   }
   o.rollT -= dt;
   if (o.queue > 0 && o.rollT <= 0) {

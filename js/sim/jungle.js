@@ -96,7 +96,6 @@ function jungleInside() {
   return inside;
 }
 function layJungle() {
-  if (PRACTICE) return;
   const inside = jungleInside(), { segs, discs } = jungleCuts();
   const warrens = campSites().filter((c) => CAMPS[c.key].plan).map((c) => campTile(c.u, c.s));
   const span = creekSpan();

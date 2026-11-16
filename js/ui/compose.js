@@ -42,8 +42,6 @@ function renderUI(now) {
   // So the ORDER is the whole mechanism, and it is here rather than in the
   // panel: minimap and strip, the wash, then the slab.
   const shop = !out && shopOpen();
-  // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
-  if (!out && PRACTICE) drawCheatBar(now);
 
   // hud strip (the portrait, the ability wells over the bars, the items),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD

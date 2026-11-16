@@ -14,7 +14,7 @@ and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, a
 
 ## The deer run the valley
 
-`spawnAnimals()` (boot, after worldgen, never under `ARENA`) lays **each side's line**
+`spawnAnimals()` (boot, after worldgen) lays **each side's line**
 (`layDeerRoutes`, `deerRoutes[side]`): points `DEER_ROUTE_STEP` (5) tiles apart on a line parallel
 to the creek, `DEER_ROUTE_U` (100) tiles out along the road from that side's roost (the creek is
 at about 115), from one treeline to the other across the road, kept `DEER_ROUTE_KEEP` (3) tiles
@@ -80,7 +80,7 @@ bob; the plate holds still on the standing frame's seat. The hands stay free: th
 
 The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
 owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
-says `leap` (a felled trunk, the practice field's `log`, `isSolidTile`). A leap never lands on a trunk: it holds up to
+says `leap` (a felled trunk, `isSolidTile`). A leap never lands on a trunk: it holds up to
 `RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
 throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`). Bots never mount. The `riding` banner in
@@ -347,4 +347,4 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   ([pathfinding](pathfinding.md)), so a bot crosses only where round is much further. A bot file
   reads the line as `me.orca` ([the bot API](../../bots/api.md)).
 
-Not under `ARENA`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.
+`DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.

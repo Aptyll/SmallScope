@@ -21,7 +21,7 @@ const NET = {
   ready: new Set(),          // the waiting room's: the slots whose person has said READY (the host's to keep; a guest mirrors it off each roster)
   pings: [],                 // the waiting room's: ms to the host per slot, null for a bot or the host itself (pingsHost; a guest mirrors it)
   aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads roomLevel, js/ui/rooms.js)
-  mode: null,                // the party's mode: 'ranked' | 'guide' (PARTY_MODES, js/ui/rooms.js), 'practice' on the field, null with no party open; a guest's comes with the roster
+  mode: null,                // the party's mode: 'ranked' | 'guide' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
   botLv: null,               // a host's: RANKED's bots' level, pinned at PLAY (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
   ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
   cards: [],                 // the party's: each person's player card per slot (their hello's, the host's own cardMine; js/app/history.js)
@@ -130,14 +130,14 @@ function netLeave() {
   if (was === 'client') { initPlayers(); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; } // the host's roster goes with the host
   else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
 }
-// what the relay's list says of this room: who hosts it, on what patch, on
-// which ground (the match's map, the practice map or the arena), whether it is still open, and how many people are in it -
+// what the relay's list says of this room: who hosts it, on what patch,
+// whether it is still open, and how many people are in it -
 // what a code typed into another party's box is matched against
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, practice: worldKind(), state: state.drop ? 'live' : 'open', humans, sides,
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, state: state.drop ? 'live' : 'open', humans, sides,
     seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '', // a party looking for another (js/ui/matchmaking.js)
     hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
 }
@@ -215,7 +215,7 @@ function netInClean(m) {
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
     work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
     atk: netAtkIn(m.atk), // the mark as the host's own entity, or none
-    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), trick: idx(m.trick, TRICK_N), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
+    ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
 // the basic attack's mark across the wire: the snapshot's own entity token
 // (snapToken / snapDeref, js/net/snapshot.js) - a player, a robot, an animal,
@@ -231,7 +231,6 @@ function netInEdges(i, m) {
   i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
   if (m.useItem >= 0) i.useItem = m.useItem;
-  if (m.trick >= 0) i.trick = m.trick;
   if (m.cmd) i.cmd = m.cmd;
 }
 // who a hello is from, for a seat kept across a drop or a rematch: on Steam
@@ -243,7 +242,6 @@ function netHostHello(peer, msg) {
   msg.uid = netPeerUid(peer, msg.uid);
   if (NET.kicked.has(msg.uid)) return refuse('KICKED');
   if (msg.patch !== PATCH_TXT) return refuse('VERSION');
-  if (msg.world !== worldKind()) return refuse('WORLD'); // the match's map, the practice map and the arena are three rooms
   let slot = -1;
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
   if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
@@ -256,9 +254,8 @@ function netHostHello(peer, msg) {
   } else if (NET.mode) {
     // a party: a seat on the leader's own side, while it is still choosing
     // whom to bring - never once the hero select or the match has begun
-    // (a party on the practice field takes friends at any time)
-    if (NET.mode !== 'practice' && (state.mode !== 'title' || NET.phase !== 'room')) return refuse('BUSY');
-    if (partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a 1V1 is a party of one (js/ui/rooms.js)
+    if (state.mode !== 'title' || NET.phase !== 'room') return refuse('BUSY');
+    if (partySize() >= partyCap(NET.mode)) return refuse('FULL');
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
@@ -278,12 +275,9 @@ function netHostHello(peer, msg) {
   }
   const p = players[slot];
   p.control = 'remote';
-  if (PRACTICE) practiceSeat(p); // onto the field's spawn, out of the corner it was parked in
   if (msg.name) p.name = msg.name;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   p.skins = cleanHeroSkins(msg.skins); // the looks they wear, drawn on every screen (heroSkinOf, player.js)
-  p.loadout = loadoutParse(msg.load); // their pre-game picks for that hero, made whole as they land (loadoutStart, js/sim/loadout.js)
-  if (state.drop) loadoutStart(p); // a seat taken in a match under way (or on the practice field) flies with them now
   NET.ranks[slot] = msg.rank | 0 || null;
   NET.cards[slot] = peopleClean(msg.card); // who they are, for their profile (js/app/history.js)
   peopleNote([msg.card]);
@@ -337,7 +331,6 @@ function netHostLeave(peer) {
   NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
   NET.ready.delete(pr.slot); NET.pings[pr.slot] = null; NET.ranks[pr.slot] = null; NET.cards[pr.slot] = null; NET.pos[pr.slot] = -1;
   if (NET.mode && state.mode === 'title' && NET.phase === 'room') p.control = 'none'; // a party's seat stands empty again for the next friend
-  if (PRACTICE) practiceVacate(p); // the field has no bots: back to the corner, empty
   logEvent((p.name || 'A PLAYER') + ' LEFT', p);
   netHostRoster(); netHostRoom();
 }
@@ -483,11 +476,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, trick: i.trick, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.trick = -1; i.cmd = null;
+    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();
@@ -519,7 +512,6 @@ function netClientStep(dt) {
     // host says to the whole room: none of it is ours until the welcome
     if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
-    if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
     if (msg.t === 'cross') { crossHeard(msg); continue; }
     if (msg.t === 'follow') { followHeard(msg); continue; }  // the leader taking the party into a friend's (js/ui/roomtalk.js)    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
@@ -556,7 +548,7 @@ function netClientStats() {
   NET.was = { p: me, earned: me.earned, kills: me.kills, dead: me.dead };
 }
 function netClientHello() {
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, world: worldKind(), name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), load: loadoutStr(loadoutClean(PROFILE.loadout(CLASSES[profileHero()].name), profileHero(), PROFILE.pos())), rank: PROFILE.rank(), card: cardMine(), pos: PROFILE.pos(),
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, name: PROFILE.name(), cls: profileHero(), skins: profileHeroSkins(), rank: PROFILE.rank(), card: cardMine(), pos: PROFILE.pos(),
     party: CROSS ? CROSS.party : undefined, pn: CROSS ? CROSS.n : undefined }); // a party crossing in (js/ui/matchmaking.js)
 }
 // the roster the host dealt: our slot is the human here, the host's is a

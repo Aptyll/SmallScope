@@ -147,8 +147,7 @@ function startSwing(p, t) {
 // tree, a rival's roosting
 // eagle) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
-// player, nearest tile centre first. E keeps its day job for what is left - bare ice and the
-// practice dummy - and a held E always wins the hands.
+// player, nearest tile centre first. E keeps its day job for what is left - bare ice - and a held E always wins the hands.
 // Whether a tile is the hands' business. A
 // rival's building or roosting eagle answers with AUTO_PRIO_FOE, scenery with
 // 0: at equal distance the fight beats the pine beside it (autoTarget ranks by
@@ -275,7 +274,6 @@ function tackleObject(o, dmg, p) {
   joltObj(o, 0.1, 0.26);
   const c = structCenter(o);
   burst(c.x, c.y - 6, '#eef4fb', 8, 45, 0.5, true);
-  if (o.type === 'dummy') { hitDummy(o, dmg, c.x, c.y - 8); return; } // the dummy takes the shoulder for real
   if (!STRUCTS[o.type] || ownsStruct(o, p)) return;
   o.hp -= dmg;
   tallyHit(o, dmg);
@@ -400,8 +398,6 @@ function hitObject(o, p) {
     if (!e || e.state !== 'down' || p.team === o.team) { sfxAt('deny', ox, oy); return; }
     hurtEagle(e, EAGLE_WORK_DMG, p, ox, oy); // the puff lands on the struck tile
     sfxAt('chop', ox, oy);
-  } else if (o.type === 'dummy') {
-    hitDummy(o, DUMMY_WORK_DMG, ox, oy - 10);
   } else if (o.type === 'snowdrop') {
     if (OBJECTS.snowdrop.ready(o)) pickSnowdrop(o, p);
     else sfxAt('swing', ox, oy);
@@ -431,26 +427,6 @@ function pickSnowdrop(o, p) {
   }
   burst(ox, oy - 4, '#fff4b8', 6, 30, 0.5, true);
   burst(ox, oy - 4, '#ffd84a', 4, 24, 0.4, true);
-}
-
-// Every way of hurting the practice dummy lands here - the E swing, every
-// basic attack and arrow (js/sim/attack.js, js/sim/sim.js), and the roll's tackle - so
-// the numbers read the same whatever is thrown at it. The dummy never
-// breaks: the pool floors at zero and updatePractice (js/sim/practice.js) mends it
-// after DUMMY_RESET_T of quiet, which is what makes it a combo readout.
-function hitDummy(o, dmg, hx, hy) {
-  // the meter's ledger: a hit after the quiet (the mend window) is a new
-  // combo, so the totals start over from this blow
-  if (o.hitT > DUMMY_RESET_T) { o.mTotal = 0; o.mT0 = state.elapsed; }
-  o.mLast = dmg;
-  o.mTotal = (o.mTotal || 0) + dmg;
-  o.mT1 = state.elapsed;
-  o.hp = Math.max(0, o.hp - dmg);
-  o.hitT = 0;
-  joltObj(o, 0.1, 0.24);
-  tallyHit(o, dmg);
-  burst(hx, hy - 4, '#e0c890', 5, 40, 0.4, true); // straw off the sack
-  sfxAt('hit', hx, hy);
 }
 
 // What a building shrugs off a PLAYER's blow. Every way a hand can reach a
@@ -615,7 +591,7 @@ function structFoe(src, s) {
 // Every rival building the circle touches, resolved to its anchor and listed
 // ONCE: the buildings half of unitsNear, and the one door an AREA effect gets
 // to a building. A tile counts when its own centre is inside the reach plus a
-// tile's half width (exactly how abHitDummies measures), so a 3x2 bay is
+// tile's half width, so a 3x2 bay is
 // caught by whichever of its six tiles the ring actually crosses.
 function structsNear(src, x, y, r) {
   const out = [];
@@ -689,7 +665,6 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (src instanceof Player) { const m = statBuffMul(src, 'dmg'); if (m !== 1) dmg = Math.round(dmg * m); } // ...and the black bears the side has slain
   dmg = passiveDeal(src, e, dmg, o); // ...and a hero's passive may make more of it (HERO_PASSIVE deal, js/sim/heroes.js)
   dmg = itemsDeal(src, e, dmg, o); // ...and so may an item's (CULL, SURGE: js/sim/items.js)
-  dmg = loadoutDeal(src, e, dmg, o); // ...and a calling's or a tangle's (DUELIST, BOLAS: js/sim/loadout.js)
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {
@@ -710,9 +685,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   }
   if (ty.spark) burst(e.x, unitMidY(e), ty.spark, 6, 50, 0.45);
   if (src instanceof Player && src !== e) itemsOnHit(src, e, o, dmg); // the item passives a blow carries (js/sim/items.js)
-  if (src instanceof Player && src !== e) loadoutOnHit(src, e, o, dmg); // ...and its calling (js/sim/loadout.js)
   if (e instanceof Player && src && src !== e) itemsOnHurt(e, src, dmg, o); // ...and the ones a blow taken answers (THORNS)
-  if (e instanceof Player && src && src !== e) loadoutOnHurt(e, src, dmg, o); // ...and a WARDEN near it
   // fire outlives its own blow: whatever the damage type is worth on its own
   if (ty.ignite > 0) igniteUnit(e, ty.ignite, BURN_DPS, src);
   // ...and a blow that carries its own fire, `burn: [s, hp a second]`, lights it once it lands
@@ -820,9 +793,6 @@ const SHIELD_KINDS = {
   ward: { ink: '#f2cc6a' },
   // LIFELINE's, raised by a hit that takes its wearer low (itemsLifeline, js/sim/items.js)
   lifeline: { ink: '#e8eef8', breakInk: '#ffffff' },
-  // the loadout's (js/sim/loadout.js): the BULWARK trick, and a WARDEN's shield on an ally and itself
-  bulwark: { ink: '#cfd8e8' },
-  warden: { ink: '#f2cc6a' },
 };
 const SHIELD_ORDER = Object.keys(SHIELD_KINDS);
 function shieldUnit(p, hp, t, kind) {
@@ -940,14 +910,6 @@ function updateBurn(e, dt) {
   hurtUnit(e, Math.max(1, Math.round(e.burnDps * BURN_TICK)), 0, -1,
     src && !src.dead ? src : null, { type: 'burn', kb: 0, cause: 'fire' });
 }
-// WEAKENED: every blow the body lands is worth WEAK_MUL of itself
-// (loadoutDeal, from hurtUnit), League's exhaust. From the BOLAS trick.
-function weakenUnit(e, t) {
-  if (t <= 0 || !unitAlive(e)) return;
-  const cur = e.weakT || 0;
-  e.weakT = Math.max(cur, t * ccMul(e));
-  e.weakMax = cur > 0 ? Math.max(e.weakMax || 0, e.weakT) : e.weakT;
-}
 // put a body out - a death, a respawn, a fresh landing
 function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -1; e.burnFxT = 0; }
 
@@ -962,7 +924,6 @@ function updateUnitStatus(e, dt) {
   else e.slowMul = 1;
   if (e.upT > 0) e.upT = Math.max(0, e.upT - dt);
   if (e.healCutT > 0) e.healCutT = Math.max(0, e.healCutT - dt);
-  if (e.weakT > 0) e.weakT = Math.max(0, e.weakT - dt);
   updateBurn(e, dt);
 }
 // What is left of a non-player unit's speed - the same root/slow fold
@@ -979,7 +940,6 @@ function unitMoveMul(e) {
 function clearUnitStatus(e) {
   e.stunT = 0; e.stunMax = 0;
   e.rootT = 0; e.rootMax = 0; e.slowT = 0; e.slowMax = 0; e.slowMul = 1; e.markT = 0; e.upT = 0; e.healCutT = 0; e.healCut = 0;
-  e.weakT = 0; e.weakMax = 0;
   douseUnit(e);
 }
 

@@ -63,12 +63,6 @@ The world is 278 tiles of 16 px — a 4448×4448 px snowfield with a forest bord
 threaded by frozen lakes and rivers. Every match plays this one map.
 See [world.md](world.md#the-tile-world) and [one map](world.md#one-map).
 
-The **practice tool** plays this same map with no rival players and a bar of cheats (League's
-practice tool): lanes, waves, towers and camps as in a match, toggled or spawned from the bar.
-Its side room, the **arena**, is a small fixed training field cut to pure combat (a mending
-dummy, a target track with three bell-rung medal rounds, a timed ice-parkour loop and a deer
-ride). Nothing in either counts and nothing is at stake. See [the practice tool](world.md#the-practice-tool).
-
 ## The pillars
 
 **Your weapon is your hero's.** The left button is one plain MOBA basic attack that belongs to
@@ -85,10 +79,8 @@ every component of it you already hold, carries the hero stats, and a legendary 
 (a third hit that burns, a heal out of a fight, a slow on every hit). One pair of boots at a time.
 The counter's RECOMMENDED tab is your hero's build as players build it: the most picked and the best-winning paths with their pick and win rates, from every match each screen has seen or heard of through a join, and the curated build (the one bots buy) until a hero has the games. [The counter](gameplay/the-merchants-counter.md).
 
-**Three picks before the drop.** On the champ select each player takes a CALLING (a passive,
-League's keystone rune) and two TRICKS (two actives on long cooldowns, League's summoner spells):
-a bandage, a torch, bolas, a shield, a sprint, shaking off a hold, a cleaver for the jungle.
-No flash: the roll is everybody's. [The loadout](gameplay/loadout.md).
+**No summoner spells, no runes.** A hero is its four abilities and the items it buys; nothing
+else is picked before the match. No flash: the roll is everybody's.
 
 **Keys 1-4 are your hero.** Each hero carries four active abilities of its own (ARMATOS's line
 slam, brace, march and planted standard; SAGITTA's pin, pavise, crank back and long bolt; ARCUS's volley, twin nock, gather up and full quiver; FOSSOR's spadeful, under the snow, bank up and break ground; PORTITOR's supply crate, shoulder, plough on and carry home) and a

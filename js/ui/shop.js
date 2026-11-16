@@ -84,8 +84,7 @@ function shopServing(b) {
 }
 
 // Shuts the counter the moment you walk away from it. Called once per sim
-// step from updatePlay (js/sim/sim.js), never in practice: the training room
-// has no merchants.
+// step from updatePlay (js/sim/sim.js).
 function updateShop() {
   if (state.shop && (player.dead || !inReach(player, state.shop))) closeShop();
 }

@@ -83,8 +83,7 @@ the other way round:
   `RAY_AFTER` (4 s) past the landing — `landPlayer` stamps `state.rayT`, `updateFx` counts it down —
   and a **~15 s window around noon** (`RAY_NOON`, the middle of the daylight half). Both ease in and
   out over `RAY_WINDOW_FADE`. The gate is read *first*, so outside those windows the eight blits and
-  the 240 motes behind them never run at all. The practice arena's clock never moves, so
-  its training light never gets them. The sun is far away, so nothing here converges: shafts fanned
+  the 240 motes behind them never run at all. The sun is far away, so nothing here converges: shafts fanned
   off a nearby origin read as a spotlight rather than as daylight. What makes a parallel set
   read as *beams* rather than as striping laid over the picture is the **length fade**: each shaft
   swells out of nothing, peaks about a third of the way along and **trails off** before it leaves
@@ -135,10 +134,6 @@ the other way round:
   deepest 0.1 % of the field sits at **61 %**, the median at **97 %** and the mean at **94 %**.
   That swing is the number to check when retuning it; the shadow tint (`CLOUD_TINT`, cool, never
   grey) is the other half of how hard it bites.
-  **The practice arena is exempt** (`ARENA`): a shadow drifting over the dummy's meter or the
-  parkour's ice would change what those instruments are measuring between one lap and the next, and
-  that room's whole point is that its light never changes. (It gets no shafts either, for free —
-  its clock is pinned nowhere near noon and it has no eagle.)
 
 Then [the hour](#the-hour) (`todGrade`), then the night multiply, then **`litSnowdrops`**, the
 one light left in the game: each open snowdrop the object pass drew hands
@@ -168,7 +163,7 @@ rose light over violet shade as the dark lifts, clearing through the morning, cl
 warming through the afternoon, gold-orange over blue shade at dusk until the dark ramp takes it,
 and white over black — a no-op — through the night, whose own multiply does that half. **Keep the
 dusk multiply's blue channel near 160 or above**: at 118 a blue team's paint goes grey (the eagle
-did). The practice arena is exempt (`ARENA`): its light never changes, for its instruments' sake.
+did).
 
 **Midday** is clean light, and clean light is contrast: across the noon window (`TOD_NOON` ±
 `TOD_NOON_HALF`, easing over `TOD_NOON_FADE`, gated by `todNoon`) the world buffer is multiplied
@@ -236,4 +231,4 @@ does not follow the day clock: the shade lies where it lies at night too, under 
   `WeakMap` of shades per frame): players (the frame on show, a roll's own frame through a roll; none
   in a hole or on a deer), animals, soldiers, merchants (on the snow through a hop) and
   finished buildings. It is flat `SHADE_BODY` at `SHADE_BODY_A`, which reads the same on the snow
-  as the multiply. Birds, pylons and the practice furniture keep their small flat marks.
+  as the multiply. Birds and pylons keep their small flat marks.

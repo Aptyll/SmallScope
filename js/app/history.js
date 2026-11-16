@@ -13,20 +13,18 @@
 //
 // One record: { m: match id, v: patch, at: ms since 1970 (this machine's
 // clock: only ever shown as "how long ago"), mode: PARTY_MODES key, t: whole
-// seconds, w: your side won 1/0, you: your seat, lo: your loadout
-// "trick,trick,calling", seats: [{ s: seat, tm: team, n: name, p: their pid
+// seconds, w: your side won 1/0, you: your seat, seats: [{ s: seat, tm: team, n: name, p: their pid
 // ('' a bot, or a person who sent no card), h: hero NAME
 // (by name, so a hero added or removed moves nobody's row), b: 1 for a bot,
 // lv, k, d, a, cs, g: gold earned, dmg: to heroes, it: [six item ids or ''] }] }
 const MH_KEEP = 200;    // matches a screen keeps, the oldest out first
 const MH_NAME = /^[A-Z0-9]{1,16}$/;
-const MH_MODES = ['quick', 'ranked', 'onevone', 'guide'];
+const MH_MODES = ['quick', 'ranked', 'onevone', 'guide']; // quick and onevone: modes cut since, kept so their old records still read
 const MH_NUM_MAX = 1e7; // any count past this is a hand edit, not a match
 const MH_AT = (n) => typeof n === 'number' && isFinite(n) && n > 0 && n < 1e14; // a clock reading in ms
 
-// the mode the match was played under: the party's, or 1V1 off the match itself
+// the mode the match was played under: the party's
 function historyMode() {
-  if (state.onevone) return 'onevone';
   return MH_MODES.indexOf(NET.mode) >= 0 ? NET.mode : 'quick';
 }
 // the name a seat is filed under: what the board shows, made fit to keep
@@ -37,9 +35,8 @@ function historyName(p) {
   return n || CLASSES[p.cls].name;
 }
 // A match ends (endMatch, js/sim/player.js; once, on its first win or loss):
-// file it. `won` is the local side's result. Practice files nothing.
+// file it. `won` is the local side's result.
 function historyNote(won) {
-  if (PRACTICE) return null;
   const winner = won ? player.team : 1 - player.team;
   const seats = players.filter((p) => p.active && CLASSES[p.cls]).map((p) => ({
     s: p.id, tm: p.team, n: historyName(p), h: CLASSES[p.cls].name, b: isHuman(p) ? 0 : 1,
@@ -52,7 +49,7 @@ function historyNote(won) {
   const rec = historyClean({
     m, v: PATCH_TXT.replace(/^PATCH /, ''), at: Date.now(), mode: historyMode(),
     t: Math.max(1, Math.round(state.elapsed)), w: player.team === winner ? 1 : 0, you: player.id,
-    lo: [player.loadout.tricks[0], player.loadout.tricks[1], player.loadout.calling].map((x) => x || '').join(','), seats,
+    seats,
   });
   if (!rec) return null;
   const list = PROFILE.history().filter((r) => r.m !== rec.m); // a match is filed once
@@ -68,7 +65,7 @@ function historyClean(r) {
   if (!r || typeof r !== 'object' || typeof r.m !== 'string' || !/^[0-9a-f]{8}$/.test(r.m)) return null;
   if (typeof r.v !== 'string' || !/^\d\.\d{3}$/.test(r.v) || !MH_AT(r.at) || !num(r.t)) return null;
   if (MH_MODES.indexOf(r.mode) < 0 || (r.w !== 0 && r.w !== 1) || !(r.you >= 0 && r.you < MAX_PLAYERS)) return null;
-  if (typeof r.lo !== 'string' || !/^[a-z,]{0,60}$/.test(r.lo) || !Array.isArray(r.seats) || !r.seats.length || r.seats.length > MAX_PLAYERS) return null;
+  if (!Array.isArray(r.seats) || !r.seats.length || r.seats.length > MAX_PLAYERS) return null;
   const seats = [];
   for (const q of r.seats) {
     if (!q || typeof q !== 'object' || !(q.s >= 0 && q.s < MAX_PLAYERS) || (q.tm !== 0 && q.tm !== 1)) return null;
@@ -79,7 +76,7 @@ function historyClean(r) {
     seats.push({ s: q.s | 0, tm: q.tm, n: q.n, p: pid, h: q.h, b: q.b ? 1 : 0, lv: q.lv | 0, k: q.k | 0, d: q.d | 0, a: q.a | 0, cs: q.cs | 0, g: q.g | 0, dmg: q.dmg | 0, it: q.it.slice() });
   }
   if (!seats.some((q) => q.s === r.you)) return null;
-  return { m: r.m, v: r.v, at: Math.floor(r.at), mode: r.mode, t: Math.floor(r.t), w: r.w, you: r.you | 0, lo: r.lo, seats };
+  return { m: r.m, v: r.v, at: Math.floor(r.at), mode: r.mode, t: Math.floor(r.t), w: r.w, you: r.you | 0, seats };
 }
 
 // ---- what the screens read off it ------------------------------------------

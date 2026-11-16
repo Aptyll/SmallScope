@@ -145,7 +145,6 @@ function fortSever(p) {
     if (edge && q instanceof Player && q.team !== p.team) heroes++;
   }
   for (const s of structsInCone(p, p.x, p.y, a, SEVER_R, SEVER_HALF)) hurtStruct(s, dmg, p);
-  if (PRACTICE) abHitDummies(p.x + Math.cos(a) * SEVER_R * 0.6, p.y + Math.sin(a) * SEVER_R * 0.6, SEVER_R * 0.5, Math.round(dmg * SEVER_EDGE_MUL));
   if (heroes) {
     healPlayer(p, Math.min(heroes, SEVER_HEAL_N) * (SEVER_HEAL + p.maxHp * SEVER_HEAL_HP));
     burst(p.x, p.y - 10, '#9fd6a0', 8, 35, 0.45, true);

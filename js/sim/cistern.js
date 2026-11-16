@@ -47,7 +47,7 @@ const CIST_MID = 1, CIST_NOFIT = 2, CIST_ANY = 4;
 let cistTiles = null;  // the flags above (placeCistern)
 let cistCuts = null;   // per world tile, bit k: the step NAV_DX[k], NAV_DY[k] from its middle meets the stone
 let cistField = null;  // { x, y, w, h, d }: world px box, px from each px to the nearest stone (0 on it)
-let cistOn = false;    // a match with the cistern standing (never the practice arena)
+let cistOn = false;    // the cistern stands (placeCistern has run)
 
 // tiles from the crossing, of a continuous tile coordinate
 function cisternR(fx, fy) { return Math.hypot(roadOffS(fx, fy), creekP(fx, fy)); }
@@ -146,8 +146,7 @@ function cisternField() {
 function placeCistern() {
   cistTiles = new Uint8Array(WORLD * WORLD);
   cistCuts = new Uint8Array(WORLD * WORLD);
-  cistOn = !ARENA;
-  if (!cistOn) return;
+  cistOn = true;
   const f = cisternField(), c = (WORLD - 1) / 2, r = Math.ceil(CIST_CLEAR + 1);
   for (let ty = Math.floor(c - r); ty <= Math.ceil(c + r); ty++) for (let tx = Math.floor(c - r); tx <= Math.ceil(c + r); tx++) {
     if (!inWorld(tx, ty)) continue;

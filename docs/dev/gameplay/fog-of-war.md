@@ -34,7 +34,7 @@ js/draw/fog.js (the picture).
   (`HERO_COVER`: NIX in her snow cloud, `nixCover`; FALCO up in the sky on STOOP, `falcoCover`); `sightAt` and `fogShown` ask it
   ([deep snow](deep-snow.md)).
 - **A mark sees through it** (`markUnit`: FALCO's hawk, AURA's STARLIGHT, LUCERNA's LAMPLIGHT): `seenAt` and both maps show a marked body anywhere.
-- **Where it is up** (`fogUp`): a match on the ground. Never the practice arena, the drop's flight
+- **Where it is up** (`fogUp`): a match on the ground. Never the drop's flight
   or the title tour; `DBG.fog = false` lifts it for a debug look, and the media
   kit films without it unless a scene asks (`MEDIA.boot({ fog: true })`).
 - **Bots play by it.** `inSight(team, u)` is the side's answer, worked out once per unit per tick.

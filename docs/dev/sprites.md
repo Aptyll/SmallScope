@@ -685,8 +685,7 @@ Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recol
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering/render-pass-order.md)).
 
 **New sprites bake beside the code that draws them, not here.** The zipline pylon (js/draw/zipline.js)
-and the practice dummy (`DUMMY_SPR`, js/draw/practice.js)
-paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
+paints its char grid onto its own canvas and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. The detailed 32×32 ability icons (`AB32_PAL`,
 js/draw/abilities.js) bake lazily beside their drawer.

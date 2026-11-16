@@ -59,11 +59,11 @@ function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
 const PARTY_IDLE = 'ranked'; // the standing party's mode
 function partyStandOk() {
   const m = state.menu;
-  return netSteam() && !PRACTICE && state.mode === 'title' && NET.role === 'solo' && !m.joining && !(m.joinWait > 0) && !m.seek && !state.fade && !CROSS;
+  return netSteam() && state.mode === 'title' && NET.role === 'solo' && !m.joining && !(m.joinWait > 0) && !m.seek && !state.fade && !CROSS;
 }
 function partyStand() { netHost(); NET.mode = PARTY_IDLE; }
 // the standing party kept as you leave the seats: yours alone, not mid-meeting
-function partyKeep() { return netSteam() && !PRACTICE && NET.role === 'host' && !NET.peers.size && !(NET.transport && NET.transport.error) && !(NET.seek && (NET.seek.rival || NET.seek.crossing)); }
+function partyKeep() { return netSteam() && NET.role === 'host' && !NET.peers.size && !(NET.transport && NET.transport.error) && !(NET.seek && (NET.seek.rival || NET.seek.crossing)); }
 // a friend came into your party while this screen is on the title: the seats
 function partyArrived() {
   const m = state.menu;
@@ -119,7 +119,7 @@ function rankLevel() {
 // profile's rating, and any match seen through stops the title offering FIRST MATCH
 function rankResult(won) {
   if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP);
-  if (!PRACTICE) PROFILE.setGuided();
+  PROFILE.setGuided();
 }
 
 // PLAY: every friend READY, then the party looks for another (seekStart,
@@ -163,22 +163,9 @@ function joinRoom(r) {
   const m = state.menu;
   m.seek = null;
   roomsFeedClose();
-  // a party on other ground (the practice field, the arena, or the map from
-  // the field): this page follows it there
-  const there = roomWorldUrl(r);
-  if (there) { location.search = there.slice(there.indexOf('?')); return; }
   netJoin(r.room);
   m.joining = true;
   SFX.place();
-}
-// where a page goes to join room r when the room stands on other ground
-// than this page (`practice` in its data: 1 the field, 2 the arena,
-// netHostRoom), or null when it is the same ground
-function roomWorldUrl(r) {
-  const w = r.data ? +r.data.practice || 0 : 0, steam = netSteam() ? '&transport=steam' : '';
-  if (w === worldKind()) return null;
-  if (!w) return location.pathname + '?join=' + r.room + steam;
-  return location.pathname + '?practice=1' + (w === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + steam;
 }
 // a page that came up to join (a code on another valley, a Steam invite, a
 // rematch): the party screen, the join under way. A Steam rematch names the
@@ -226,14 +213,10 @@ function updateRooms(dt) {
     else if ((m.seek.t -= dt) <= 0) { m.seek = null; roomsFeedClose(); m.codeShake = NAME_SHAKE_T; SFX.deny(); if (m.joining) partyGiveUp(); }
   }
   // a join answered: the party's seats on a welcome, our own party again on a refusal
-  if ((m.screen === 'room' || PRACTICE) && NET.role === 'client' && m.joining) {
-    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; if (!PRACTICE) beginRoom(); }
+  if (m.screen === 'room' && NET.role === 'client' && m.joining) {
+    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; beginRoom(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) {
-      const why = NET.refused || NET.transport.error, T = NET.transport;
-      // a lobby joined by its id (Join Game, an invite) on the other ground:
-      // the practice field or the arena, or the map from the field - after it
-      const there = why === 'WORLD' && T.data ? roomWorldUrl({ room: T.lobbyId, data: T.data }) : null;
-      if (there) { netLeave(); m.joining = false; practiceGo(there); return; }
+      const why = NET.refused || NET.transport.error;
       netLeave();
       // back from a match: the leader may not have reopened the party yet, so
       // the join is tried again for a while before it counts as a refusal
@@ -247,11 +230,9 @@ function updateRooms(dt) {
     if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; partyGiveUp(); }
   }
 }
-// a join that never landed: our own party again on the title, or the field
-// alone on the practice page
+// a join that never landed: our own party again on the title
 function partyGiveUp() {
   if (homeParty) { crossHome(); return; } // a party that crossed to meet another and was turned away: home (js/ui/matchmaking.js)
-  if (PRACTICE) { NET.mode = null; return; }
   beginParty('ranked');
 }
 
@@ -424,7 +405,6 @@ function rematchOffer() {
 }
 function rematchHeard() {
   NET.rematch = { room: roomCode() };
-  if (PRACTICE) toLobby(); // the leader left the field: the party follows it back (js/ui/screens.js)
 }
 // the slot a returning person held last match, for netHostHello
 function rematchSeat(uid) {
@@ -446,37 +426,9 @@ function rematchBootJoin() {
   if (/[?&]back=1/.test(location.search)) state.menu.joinWait = CROSS ? MATCH_JOIN : REMATCH_WAIT;
 }
 
-// ------------------------------------------------------------ the practice field
-// The field (?practice=1) is off the hub (the one mode is RANKED) and kept
-// for the tools that stage a scene on it. A party taken there: the leader's
-// page reloads hosting on the party's code; each guest is told (`practice`) and
-// reloads joining it, trying the code while the leader's page comes up. On
-// the field friends join at any time and stand on the spawn (practiceSeat,
-// js/sim/practice.js). The leader's LEAVE takes everyone back to the party on
-// the hub (rematchUrl, rematchHeard); a guest's LEAVE takes only them to the hub.
-// The field is the match's map; the bar's ARENA / MAP well (practiceCross)
-// takes the leader's page across to the arena side room and back, every
-// guest told (`practice`, with `arena`) and following.
-function practiceUrl(host, arena) {
-  const code = roomCode() || JOIN_AT_BOOT || '', steam = netSteam() ? '&transport=steam' : '', a = arena ? '&arena=1' : '';
-  if (host) return location.pathname + '?practice=1' + a + '&net=host&back=1' + steam + (code ? (steam ? '&code=' : '&room=') + code : '');
-  return location.pathname + '?practice=1' + a + '&join=' + code + '&back=1' + steam;
-}
-// whether this page may take the field across: the party's leader (or a
-// page alone), never a guest - a guest goes where its leader goes
-function practiceCrossOk() { return PRACTICE && NET.role !== 'client' && !state.fade; }
-function practiceCross(arena) {
-  if (!practiceCrossOk()) return false;
-  if (NET.role === 'host') {
-    const seats = {};
-    for (const pr of NET.peers.values()) seats[pr.uid] = pr.slot;
-    try { sessionStorage.setItem(REMATCH_KEY, JSON.stringify({ mode: 'practice', seats })); } catch (e) { }
-    if (NET.peers.size) NET.transport.send('*', { t: 'practice', arena: arena ? 1 : 0 });
-    practiceGo(practiceUrl(true, arena));
-  } else practiceGo(location.pathname + '?practice=1' + (arena ? '&arena=1' : ''));
-  return true;
-}
-function practiceGo(url, secs) {
+// a page going elsewhere (a crossing party, a guest following its leader):
+// the reroll's whiteout, then the new URL
+function pageGo(url, secs) {
   if (state.fade) return;
   SFX.dodge();
   SFX.music.stop(0.45);
@@ -484,27 +436,6 @@ function practiceGo(url, secs) {
     try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
     location.href = url;
   } };
-}
-// a guest told the party is going (onto the map, or across to the arena or back): after it
-function practiceHeard(msg) {
-  const arena = !!(msg && msg.arena);
-  if (roomCode() && (!PRACTICE || arena !== ARENA)) practiceGo(practiceUrl(false, arena));
-}
-// the field's two boots (js/app/boot.js): the leader's page hosting the party
-// again, a guest's page joining it
-function practiceBootHost() {
-  if (NET.role !== 'host' || !/[?&]back=1/.test(location.search)) return;
-  let c = null;
-  try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
-  NET.mode = 'practice';
-  rematchCarry = { seats: (c && c.seats) || {} };
-}
-function practiceBootJoin(code) {
-  const m = state.menu;
-  NET.mode = 'practice'; m.joining = true;
-  if (netSteam() && code.length === RM_CODE_N) { partySeek(code, REMATCH_WAIT); return; }
-  netJoin(code);
-  rematchBootJoin();
 }
 
 // ------------------------------------------------------------ the pixels

@@ -46,7 +46,7 @@ function voteTally(v, team) {
 // can p start a vote right now? Only a person, only on a side still in the
 // match with a rival still in it, past the clock and off the cooldown
 function voteCanStart(p) {
-  if (PRACTICE || !state.drop || state.eagleCine || !isHuman(p) || !p.active) return false;
+  if (!state.drop || state.eagleCine || !isHuman(p) || !p.active) return false;
   if (state.elapsed < VOTE_OPEN || state.elapsed < voteCd()[p.team] || votes()[p.team]) return false;
   return teamInMatch(p.team) && rivalTeamsInMatch(p) > 0;
 }
