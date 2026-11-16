@@ -84,6 +84,7 @@ order, so the script tags still interleave them:
 | [js/app/input.js](../../js/app/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the entry points every press goes through (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the shared ping wheel (`openPingWheel`); `sampleHumanInput` folds keys and mouse into the input struct |
 | [js/sim/world.js](../../js/sim/world.js) | ~190 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, what each map paints a tile, solid tiles and open water |
 | [js/sim/field.js](../../js/sim/field.js) | ~210 | shared scope, no `window.*` export | the 3v3 field: its one signed distance folded four ways (lanes, jungle walls, perches, the two pits, the pine border), the lanes' lines and the road, the perches, and `genWorld` |
+| [js/sim/zipline.js](../../js/sim/zipline.js) | ~330 | shared scope, no `window.*` export | each side's zipline down each lane: laying the cables at boot, the cut to the furthest standing tower, and the ride every body takes on it |
 | [js/sim/towers.js](../../js/sim/towers.js) | ~200 | shared scope, no `window.*` export | the lane towers: two a side on each lane, and the crossbow's mark, wind, loose and bolt |
 | [js/sim/pumps.js](../../js/sim/pumps.js) | ~170 | shared scope, no `window.*` export | the two neutral gold pumps: standing the mirrored pair at boot, the ring's capture and the pay to the holding side |
 | [js/sim/camps.js](../../js/sim/camps.js) | ~360 | shared scope, no `window.*` export | the camps at their fixed mirrored sites: standing them up, stocking them, the respawn clock |
@@ -143,6 +144,7 @@ order, so the script tags still interleave them:
 | [js/draw/paving.js](../../js/draw/paving.js) | ~330 | shared scope, no `window.*` export | the road's pixels: `paintRoadOverlay` (called by `paintGroundTile`), its flagstones, edge, lip and per-tile memo |
 | [js/draw/lakes.js](../../js/draw/lakes.js) | ~510 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`) - the detail: [world](world.md#the-winds-leavings) |
 | [js/draw/trample.js](../../js/draw/trample.js) | ~370 | shared scope, no `window.*` export | the trampled snow: the packed/churned grid every body stamps, its refill, and the chunk canvases that draw it under the footprints |
+| [js/draw/zipline.js](../../js/draw/zipline.js) | ~200 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` |
 | [js/draw/depth.js](../../js/draw/depth.js) | ~160 | shared scope, no `window.*` export | deep snow's pixels: `DEEP_PAL` (loaded before ground.js, whose `SNOW_INK` appends it), `deepTone` (per pixel, from `snowTile`) and the brush's reeds (`reedDraws`/`drawReed`, y-sorted in `drawSorted`) |
 | [js/draw/icebreak.js](../../js/draw/icebreak.js) | ~190 | shared scope, no `window.*` export | an ice break's pixels: the warning cracks, the water, the plates, the crack band and the freeze back over (the thing itself: js/sim/icebreak.js) |
 | [js/draw/orca.js](../../js/draw/orca.js) | ~80 | shared scope, no `window.*` export | the orca's pixels: its shadow under the ice and the breach out of the hole (the thing itself: js/sim/orca.js) |
@@ -398,7 +400,7 @@ organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 
 **A file that decides things does not also draw them.** Every one of the sim files - core,
-player, input, world, field, towers, camps, nav, wildlife, structures, robots, actions, ai, sim, weather -
+player, input, world, field, zipline, towers, camps, nav, wildlife, structures, robots, actions, ai, sim, weather -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
 **js/ui/** (the HUD and the screens), so the folder is the boundary. canvas.js is the
 exception that proves it: it owns the buffers themselves.

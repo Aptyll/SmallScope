@@ -33,7 +33,8 @@
    record, the callout anchor);
 7. `drawSelection` (white pulsing corners with a dark shadow over an open wheel's target)
    → `drawWorkHint` (the E work prompt);
-8. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → arrows (`drawShaft`);
+8. construction progress bars → particles → `drawHitFx` (a big hit's spark) → `drawAimLine` (the bow's) → `drawZipGuide` (the
+    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (`drawShaft`);
 9. `heroAir` (what a hero's kit has in the air, `HERO_AIR`)
     → `drawTowerFx` (each road tower's sight line, bolt and spent bolt, js/draw/towers.js);
 10. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → `drawPops`
@@ -43,11 +44,13 @@
 11. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](drawing-a-thousand-of-something.md#the-wind-field))
     → `drawEagles` (a bird on its perch, while `state.drop` exists; one driven off draws on the
-    air layer, below);
+    air layer, below) → `drawZips` (each side's zipline cables, span by span with its sag and wind lean -
+    over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
+    js/draw/zipline.js);
 12. `renderLighting` (its first pass `drawFog`, [the fog of war](../gameplay/fog-of-war.md), js/draw/fog.js) → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](debug-overlays-hitboxes-and-routes.md));
 13. the air layer (`ctx = actx`): `drawEagles(…, true)` (a bird driven off, climbing away, and its
-    shadow) → a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
+    shadow) → the zipline riders and a hero over the scenery on an `over` dash (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](world-zoom-and-the-two-pixel-spaces.md#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see

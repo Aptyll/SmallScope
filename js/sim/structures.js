@@ -47,7 +47,7 @@ const STRUCTS = {
     // ang: the gun's bearing; tgt/chg: its mark and how far it has wound; cd: the
     // reload; heat/heatId: bolts in a row into one hero; bolt/pin: the one in the
     // air and the spent one in the snow (updateTower, js/sim/towers.js)
-    init(o) { o.ang = o.team === 0 ? 0 : Math.PI; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; },
+    init(o) { o.zl = -1; o.zi = -1; o.ang = o.team === 0 ? 0 : Math.PI; o.tgt = null; o.chg = 0; o.cd = 0; o.heat = 0; o.heatId = -1; o.bolt = null; o.pin = null; o.loose = -9; },
     built() {},
     tick(o, dt) { updateTower(o, dt); },
     over: (o, x, y) => drawTowerTop(o, x, y), // its gun in its deck, and its bar (js/draw/towers.js)
@@ -94,6 +94,7 @@ const RES_COLORS = {
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }
 
 function updateStructures(dt) {
+  zipSync(true); // a side's cable runs to its furthest standing tower on the lane (js/sim/zipline.js)
   for (const o of structures) {
     const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
     if (o.building) {

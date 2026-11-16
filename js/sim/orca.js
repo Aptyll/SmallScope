@@ -69,7 +69,7 @@ function orcaClear(x, y) {
 function orcaIce(tx, ty) { return orcaTileIn(tx, ty) && ground[idx(tx, ty)] === 1 && !objects[idx(tx, ty)]; }
 function orcaOnIce(p) { return orcaTileIn(Math.floor(p.x / TILE), Math.floor(p.y / TILE)) && ground[idx(Math.floor(p.x / TILE), Math.floor(p.y / TILE))] === 1; }
 // can it have this one: on the ground, on its ice, not on a cable
-function orcaPrey(p) { return !!p && p.active && !p.dead && orcaOnIce(p); }
+function orcaPrey(p) { return !!p && p.active && !p.dead && !(p.zip >= 0) && orcaOnIce(p); }
 
 // boot, after the fish (js/app/boot.js): the disc's tiles, the routes' toll on
 // them, and the orca put in at the home tile the seed hashes to

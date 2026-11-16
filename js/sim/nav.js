@@ -93,11 +93,11 @@ function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
   // ...and a body another carries stands where its carrier does (HERO_HELD, js/sim/heroes.js)
-  for (const p of players) if (p.active && !p.dead && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
+  for (const p of players) if (p.active && !p.dead && p.zip < 0 && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a bear (MONSTER.big)
   for (const a of animals) if (!a.dead) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
+  for (const b of robots) if (!b.dead && !(b.zip >= 0) && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;

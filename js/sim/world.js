@@ -73,6 +73,11 @@ const OBJECTS = {
   // opens the shop (merchNear, js/ui/shop.js). `sight`: px of fog its side
   // sees round it (sightSources, js/sim/fog.js).
   stall:    { solid: true,  w: 3, h: 2, sight: 176, mm: (o) => mmTeam(o) },
+  // a zipline's pylon (placeZips, js/sim/zipline.js): solid, inert to E,
+  // carrying its `team`. Its pixels are PYLON_SPRS in the object pass
+  // (js/draw/zipline.js); the cable itself is not an object at all - it
+  // hangs between the pylons' points (zips) and is drawn by drawZips.
+  pylon:    { solid: true,  mm: [150, 156, 170] },
   stump:    { solid: false, mm: [188, 200, 218] },
   // a roosting team eagle's hitbox tiles (placed by eagleRoost, js/sim/eagle.js):
   // solid to walkers and a work target for RIVAL E swings only - workTarget

@@ -106,7 +106,8 @@ function drawRobot(b, ex, ey, now) {
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
   const ax = SPRITES.robotAx[T.spr] || 6;
   const bx = Math.round(b.x - ex) - (left ? spr.width - ax : ax);
-  const by = Math.round(b.y + 4 - ey) - spr.height - bob; // tread bottom sits at b.y + 4
+  const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
+  const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
   // the ram (soldierRam): the body and its shadow shift, the bar holds still
   let rx = 0, ry = 0;
   if (b.atkAim && !T.shot) {
@@ -115,9 +116,10 @@ function drawRobot(b, ex, ey, now) {
     rx = Math.round(dx / d * n); ry = Math.round(dy / d * n);
   }
 
-  drawCastShade(spr, bx + rx, by + bob + ry); // on the ground under the bob
+  drawCastShade(spr, bx + rx, by + bob + zl + ry); // on the ground under the bob
 
   const lit = bodyLayerOpen(Math.round(b.x - ex), by + spr.height, 20, 36); // keeps its light at night (js/draw/light.js)
+  if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   ctx.drawImage(spr, bx + rx, by + ry); // never washed white when struck, like a hero: its sparks, its shove and its bar tell the hit (hurtRobot)
 
   // the four shared tells, same as any other body (js/sim/abilities.js)
@@ -300,7 +302,7 @@ const STUN_SWAY = [0, 1, 2, 1, 0, -1, -2, -1]; // px a stunned hero's body sways
 const STUN_SLUMP = 1;
 // upright, a body strides only while it covers ground on its own feet (see drawPlayer)
 function playerStrides(p) {
-  return p.moving && !heroHeld(p) && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a body another hero carries (HERO_HELD) does not
+  return p.moving && p.zip < 0 && !heroHeld(p) && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a zipline's rider hangs, and a body another hero carries (HERO_HELD) does not
 }
 function drawPlayer(p, ex, ey, now, stage) {
   const local = p === player;
@@ -308,10 +310,13 @@ function drawPlayer(p, ex, ey, now, stage) {
   let frame = 0;
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim/sim.js) - so a
-  // shift-slide and a push against a wall stand
+  // shift-slide and a push against a wall stand, and a zipline's rider hangs still
   const held = stage ? null : heldSeat(p); // ...and a carried body sits up on its carrier (heldSeat)
   const striding = !held && playerStrides(p);
   if (striding) frame = 1 + (Math.floor(p.animT) % 2);
+  // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
+  // is - the rope and handle over its head are the cable pass's (drawZips)
+  const zl = p.zip >= 0 ? ZIP_ALT : 0;
   const rl = held ? held.lift : 0;
   let spr = set[frame];
   // ...and a body on the move runs: the doll's eight frames (runFrame)
@@ -335,7 +340,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.dodgeT > 0) drawCastShade(S.roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
     else drawCastShade(spr, bx, by);
   }
-  if (!stage && p.fallT <= 0 && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
+  if (!stage && p.fallT <= 0 && !zl && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.pushT > 0 && p.fallT <= 0) drawPushRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (p.recallT > 0) drawRecallFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // the far half of the recall's feathers (js/draw/recall.js)
@@ -386,7 +391,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     const lean = state.mode !== 'title' ? attackLean(p) : null, lx = lean ? lean.dx : 0, ly = lean ? lean.dy : 0;
     const dazed = p.stunT > 0 && state.mode !== 'title'; // stunned: the body slumps and sways wide and slow, off its own clock, so it reads dazed and not jitter
     const daze = dazed ? STUN_SWAY[Math.floor(p.stunT * 8) & 7] : 0;
-    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) + (dazed ? STUN_SLUMP : 0);
+    const ax = px + lx + (pose ? pose.dx : 0) + daze, ay = py + ly + (pose ? pose.dy : 0) - zl + (dazed ? STUN_SLUMP : 0);
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away or pointing up the screen,
     // in the hand otherwise. A body holding the shield or charging has no hand
@@ -394,7 +399,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     // (heroStaffOf, js/draw/heroes.js), a blade is drawn back and then driven at
     // the aim (castBeat), and a key that is a shot holds the weapon on the aim
     // through its wind-up (castAims).
-    const held = p.shieldT <= 0 && p.rushT <= 0;
+    const held = p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     // what points up the screen or is carried facing away goes behind (THE CARRY RULE, drawHeldTool)
     if (held) drawHeldTool(p, px + lx, py + ly, true);
     const a0 = ctx.globalAlpha; // the caller's fade (the pick screen's showcase fading in and out): the weapon keeps it too
@@ -424,6 +429,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     if (p.mendT > 0) drawMendFeathers(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5, true);
     if (p.potT > 0) drawPotionHearts(p, Math.round(p.x - ex), Math.round(p.y - ey) + 5); // a drink at work (js/draw/hitfx.js)
     if (p.lvT > 0) drawLevelUp(p, spr, sx, sy, Math.round(p.x - ex), Math.round(p.y - ey) + 5);
+    if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
   }
   heroLayerClose(layer);
   if (layer) litAdd(heroCv, heroAt.x, heroAt.y, HERO_LW >> 1, HERO_FOOT, BODY_REACH, BODY_REACH_UP);
@@ -437,7 +443,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   if (stage || state.mode === 'title' || endScreen()) return;
 
   // the whole stack hangs off one y
-  const hy = py - heroRise(p) - // a taller body lifts it
+  const hy = py - heroRise(p) - (zl ? zl + 5 : 0) - // a taller body lifts it; a rider's frame rises with it and clears the handle
     (heldCarrying(p) ? HELD_LIFT + HELD_STACK : 0); // ...and a carrier's stands over the stack of the body on its back (heldSeat)
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.

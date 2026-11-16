@@ -687,6 +687,7 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
+    jump: false,         // edge-triggered: on or off a cable (zipToggle, js/sim/zipline.js)
     useItem: -1,         // edge-triggered: use what is in this item slot (0-5) - drink a potion (useItem, js/sim/items.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
     cmd: null,           // one-shot: {kind:'shop'|'ping'|..., ...} or {kind:'ability', i} (cmdOk, js/ui/wheel.js)
@@ -917,6 +918,10 @@ class Player {
     // the charge that last struck it, and BEDROLL's mend showing on it
     this.portRide = -1; this.portT = 0; this.portFastT = 0; this.portHomeId = -1; this.portRunN = 0;
     this.portBy = -1; this.portRunHit = -1; this.bedT = 0;
+    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
+    this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
+    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)
+    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, js/sim/zipline.js)
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
@@ -1159,6 +1164,8 @@ function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.
 // since nobody went down.
 function bodyOut(p) {
   p.dead = true;
+  p.zip = -1;   // the handle is let go of (the respawn's reset clears the rest)
+  p.zipWalk = false;
   atkCancel(p);
   p.dodgeT = 0;
   p.vx = p.vy = 0;

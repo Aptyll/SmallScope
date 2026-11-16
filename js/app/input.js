@@ -312,6 +312,21 @@ function keyPress(e) {
     if (state.shop) closeShop();
     else { const mb = merchNear(player); SFX.unlock(); if (mb) openShop(mb); else SFX.deny(); }
   }
+  // The work key's own presses: off a zipline, onto a cable in reach, or a
+  // walk to the cable under the pointer
+  if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen && !state.shop &&
+      !state.settingsOpen && !player.dead) {
+    // Riding a zipline, the key lets go of it - ahead of everything, since a
+    // rider passes every trunk at 220 px/s (zipToggle, js/sim/zipline.js,
+    // through the hop intent the step reads for every player)
+    if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; } // ...and walking to it, the key calls the walk off
+    // a ZIPLINE overhead: under either side's cable the key clips on (the
+    // cap over the cable says so - drawZipHint, js/ui/wheel.js)
+    if (zipNear(player)) { player.input.jump = true; return; }
+    // ...or the pointer on a cable out of reach: the same intent, and
+    // the step walks the body there and clips on (zipWalkStart, js/sim/zipline.js)
+    if (hoverZip()) { player.input.jump = true; return; }
+  }
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the six item slots. HUD: the sim runs on
   // underneath.
@@ -651,6 +666,12 @@ function ckRightPress() {
   const pt = ckPoint();
   if (!pt) return;
   const { wx, wy, tx, ty } = pt;
+  // on a zipline the press lets go of it, and walking to one it calls the
+  // walk off; a press ON a drawn cable (zipUnder, js/sim/zipline.js - the
+  // strand the hover lights) clips on under it or walks there and clips on
+  // (a press anywhere else is the walk it always was)
+  if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
+  else if (zipUnder(wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far) {
     const t = unitUnder(player, wx, wy);

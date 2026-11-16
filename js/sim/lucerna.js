@@ -121,7 +121,7 @@ function lucernaPull(e, x, y, hold) {
   const t = d / PULL_SPD + 0.1;
   e.pullX = x; e.pullY = y; e.pullT = t;
   if (hold) stunUnit(e, t, null, true);
-  if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
+  if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; if (e.zip >= 0) zipEnd(e, true); }
 }
 function stepPulls(dt) {
   for (const L of [players, animals, robots]) for (const e of L) {

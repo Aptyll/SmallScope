@@ -166,7 +166,9 @@ great crossbow on its deck, one on the straight and one on the bend by the perch
 the rival wave first, so a hero who walks in under it with their own soldiers can bring it down,
 and a hero who hits one of its side's heroes in its ring, or walks in alone, gets the bolt: it
 winds for a beat with a dashed line on the snow to its mark, and each bolt in a row into the same
-hero hits harder. [Road towers](gameplay/robots.md#road-towers), [the lanes](world.md#the-lanes),
+hero hits harder. **Each side's zipline** runs down each lane from beside its perch to just
+past its outer tower: E under it rides out at three times a walk, and losing a tower cuts the cable
+back to the next one. [Road towers](gameplay/robots.md#road-towers), [the lanes](world.md#the-lanes), [the ziplines](world.md#the-ziplines),
 [the waves](gameplay/robots.md#soldiers-the-waves).
 
 ## What the design is not

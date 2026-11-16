@@ -18,6 +18,8 @@ const FOG_HERO = 160;    // px a hero sees
 const FOG_EYE_STEP = 8;  // px a hero's sight grows or shrinks by at a time (heroEyeR)
 const FOG_SOLDIER = 112; // px a wave soldier sees (past its SOLDIER_AGGRO, so it sees what it turns on)
 const FOG_PERCH = 224;   // px the side's bird sees while it roosts on the perch
+const FOG_ZIP = 48;      // px each of a cable's eyes sees...
+const FOG_ZIP_STEP = 48; // ...and px between them along it: a band about 42 px either side of the cable
 const FOG_MERCH = 128;   // px the side's merchant sees, wherever it works
 const FOG_WOODS_N = 9;   // pines in the 5x5 tiles round a walkable tile that make it the woods
 const FOG_BRUSH = 48;    // px a side's hero or soldier must be inside to see someone in the woods
@@ -51,6 +53,10 @@ function sightSources(team, out) {
   }
   const e = state.drop && state.drop.eagles[team];
   if (e && e.state === 'down') out.push(sightEye(e.x, e.y, FOG_PERCH, false));
+  for (const z of zips) if (z && z.team === team) {
+    let was = null; // each cable eye names the one after it (`next`), so the drawn fog can join them into a band (js/draw/fog.js)
+    for (const q of zipEyes(z)) { const s = sightEye(q.x, q.y, FOG_ZIP, false); if (was) was.next = s; out.push(was = s); }
+  }
   return out;
 }
 // how far a hero sees: FOG_HERO, times any hero's own (HERO_SIGHT, js/sim/heroes.js: LUCERNA's
@@ -60,6 +66,18 @@ function heroEyeR(p) { return Math.round(FOG_HERO * heroSight(p) / FOG_EYE_STEP)
 function structCentre(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE }; }
 // a scenery object's middle (the stall): its footprint runs east and north of its anchor
 function objCentre(o) { const d = OBJECTS[o.type]; return { x: (o.tx + (d.w || 1) / 2) * TILE, y: (o.ty + 1 - (d.h || 1) / 2) * TILE }; }
+// the points along a cable its eyes stand at, every FOG_ZIP_STEP px from the
+// perch to its end; kept per cable (a tower's fall lays a new, shorter one: zipSync)
+const fogZipPts = new WeakMap();
+function zipEyes(z) {
+  let pts = fogZipPts.get(z);
+  if (pts) return pts;
+  pts = [];
+  const n = Math.max(1, Math.ceil(z.len / FOG_ZIP_STEP));
+  for (let i = 0; i <= n; i++) { const q = zipPoint(z, z.len * i / n); pts.push({ x: q.x, y: q.y }); }
+  fogZipPts.set(z, pts);
+  return pts;
+}
 function sightEye(x, y, r, near) { return { x, y, r, near }; }
 // the woods: a walkable tile with FOG_WOODS_N pines or more in the 5x5 round it
 function inWoods(x, y) {

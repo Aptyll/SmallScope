@@ -105,11 +105,21 @@ function workTargetAt(p, tx, ty) {
   return { o, tx, ty, near };
 }
 
+// the cable under the local player's pointer (zipUnder, js/sim/zipline.js), while
+// it is on the ground with the world under the pointer and nothing open over
+// it - or null. The cable pass lights the strand on it and the guide line
+// walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
+function hoverZip() {
+  if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return null;
+  if (player.dead || player.zip >= 0) return null;
+  return zipUnder(mouseWX(), mouseWY());
+}
+
 // E: swing the axe at the cursor's tile. Held E repeats every swing
 // cooldown; the weapon comes back on its own once the cooldown runs out.
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0) return; // both hands are on the ability
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return; // both hands are on the ability or on the zipline's handle
   const t = workTarget(p);
   if (!t || !t.near) return;
   atkCancel(p); // work drops the draw
@@ -174,7 +184,7 @@ function autoTarget(p) {
 // with a fall, a roll, a stun or an ability, waits.
 function autoWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0) return;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.zip >= 0) return;
   const t = autoTarget(p);
   if (!t) return;
   p.autoSwing = true;
@@ -187,6 +197,7 @@ function tryDodge(p) {
   if (p.dodgeT > 0 || p.dodgeCharges <= 0 || p.fallT > 0 || p.dead || p.stunT > 0 ||
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   breakRecall(p); // the roll is the one way YOU end your own recall channel
+  if (p.zip >= 0) zipEnd(p, false); // ...and the way off the zipline's handle
   let dx = p.input.mx, dy = p.input.my;
   if (!dx && !dy) {
     dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
@@ -725,6 +736,7 @@ function stunUnit(e, t, src, firm) {
     // the strip's numbers cannot say that while the body is not answering.
     if (cur <= 0) sfxFor(e, 'dazed');
   }
+  if (e.zip >= 0) zipEnd(e, true);      // any body's hold on the zipline's handle: dropped at rest under the cable
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
 
@@ -739,6 +751,7 @@ function rootUnit(e, t, src) {
   ccCredit(e, cur, t, src);
   e.rootT = Math.max(cur, t);
   e.rootMax = cur > 0 ? Math.max(e.rootMax || 0, e.rootT) : e.rootT; // the hold's full length, what its plate drains from (drawStatusPlate)
+  if (e.zip >= 0) zipEnd(e, true); // a rider is pulled off the cable
   if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }
 // Slowed: a multiplier on everything that moves the body, for a window.

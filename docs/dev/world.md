@@ -100,6 +100,17 @@ to its middle (`laneHold`). Two towers a side stand on each lane's centreline, o
 and one on the bend by the perch (`TOWER_SPOTS`, js/sim/towers.js, folded with `fieldFour`).
 The road's pixels are `paintRoadOverlay` (js/draw/paving.js).
 
+### The ziplines
+
+Each side strings a cable down each lane (`placeZips`, js/sim/zipline.js, at boot after
+`placeTowers`): pylons along the lane's outer edge, `ZIP_OFF` tiles off the centreline, from
+`ZIP_START` tiles out of the perch to `ZIP_PAST` tiles beyond the side's outer tower, at most
+`ZIP_SPAN` apart and one exactly past each tower. RED's top cable is laid off the lane and the
+towers and the other three are it mirrored tile for tile, so all four are alike. A pylon takes
+the tile of any pine on it. A cable runs only as far as its side's furthest standing tower on
+the lane (`zipSync`, each tower's `zl`/`zi`): back to the inner tower once the outer falls, and
+gone once both have. The ride is [the zipline](gameplay/momentum-movement-players-only.md#the-zipline).
+
 ## The bases
 
 A side's base is its PERCH: a disc `BASE_R` tiles round a point on the loop at the middle of its
@@ -195,8 +206,8 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
 ## One map
 
 The game plays **one map**: the 3v3 field, two lanes round a walled jungle
-([the tile world](#the-tile-world)). The old 5v5 valley (three lanes, the creek, the cistern, the
-ziplines and the landmarks) was cut with the 3v3 field; the PR that cut it names the commit to
+([the tile world](#the-tile-world)). The old 5v5 valley (three lanes, the creek, the cistern and the
+landmarks) was cut with the 3v3 field; the PR that cut it names the commit to
 recover it from.
 
 ## Determinism and noise
