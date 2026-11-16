@@ -25,7 +25,7 @@ const ROOT = path.join(__dirname, '..');
 const BROWSER = ['window', 'document', 'location', 'navigator', 'localStorage', 'sessionStorage',
   'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'Image', 'Audio', 'AudioContext',
   'webkitAudioContext', 'OfflineAudioContext', 'HTMLCanvasElement', 'CanvasRenderingContext2D',
-  'ImageData', 'Path2D', 'OffscreenCanvas', 'WebSocket', 'Blob', 'URL', 'FileReader', 'Worker',
+  'ImageData', 'Path2D', 'OffscreenCanvas', 'CSS', 'WebSocket', 'Blob', 'URL', 'FileReader', 'Worker',
   'KeyboardEvent', 'MouseEvent', 'Event', 'CustomEvent', 'alert', 'confirm', 'prompt', 'screen',
   'devicePixelRatio', 'innerWidth', 'innerHeight', 'getComputedStyle', 'matchMedia', 'history',
   'fetch', 'atob', 'btoa', 'createImageBitmap', 'RTCPeerConnection', 'RTCSessionDescription',

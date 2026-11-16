@@ -97,7 +97,7 @@ Two indicators carry it, and neither is a word:
 - **The overhead bar** (`drawPlayer`) — the draw meter's slot doubles as the cycle readout for
   *every* player: gold filling = drawing, slate filling = reloading, pale gold = just came back.
   Same geometry either way, so it never jumps.
-- **The reticle** (`cursorInfo` → `drawCursor`). Every reticle in play carries `nock` (elapsed
+- **The reticle** (`cursorInfo` → `cursorLook`, js/draw/cursor.js). Every reticle in play carries `nock` (elapsed
   fraction, 1 = ready), whatever the pointer is over. While the cycle runs, four gold corner marks
   fall inward and land on the ring.
 
