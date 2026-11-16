@@ -13,7 +13,7 @@
 // grid, so the stepped rim holds still while the camera slides.
 const FOG_TINT = [158, 160, 168]; // the multiply: a flat grey dim, cooler than nothing and far lighter than the night
 const FOG_CELL = 4;   // world px between the corners the edge is measured at
-const FOG_STEP = 2;   // world px per step of the rim
+const FOG_STEP = 1;   // world px per step of the rim: one, so a big disc's rim steps as evenly as a drawn circle (2 read as stairs)
 const FOG_ARC = 3;    // world px of arc between two sight lines at the end of their reach
 const FOG_CLAMP = 16; // px inside the edge a corner's distance is kept to (and out of it, for who is shown)
 const FOG_BAND = 8;   // world px of half-dim just outside the edge: the rim is two flat steps, not one hard line

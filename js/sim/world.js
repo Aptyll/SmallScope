@@ -672,6 +672,7 @@ const CREEK_HW = 1.6;       // tiles either side of the creek's line the ice run
 const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
 const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
 const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the cistern or a bend
+const CREEK_BEND_STIR = 0.4; // ...save that round a bend's camp the wander and the rag keep this share, so its banks never run ruler-straight
 const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the line's bend
 const CREEK_BEND_GAP = 4.2;  // tiles of snow bank between a bend's camp's cleared ground (r) and the ice
 const CREEK_BEND_LONG = 2.2; // a bend runs this many times its reach along the creek either way (2 or more keeps the camp clear)
@@ -704,16 +705,17 @@ function creekBend(w) {
   }
   return p;
 }
-// 0 through the cistern and a little past its culverts, and at a bend's
-// camp, easing to 1 CREEK_CALM tiles out: the wander and the banks' rag are
-// held still where the ice must meet a fixed thing square - the cistern's
-// culverts are baked art, so there the creek is CREEK_HW either side of the
-// cross-diagonal exactly
+// 0 through the cistern and a little past its culverts, and CREEK_BEND_STIR
+// at a bend's camp, easing to 1 CREEK_CALM tiles out: the wander and the
+// banks' rag are held still where the ice must meet a fixed thing square -
+// the cistern's culverts are baked art, so there the creek is CREEK_HW either
+// side of the cross-diagonal exactly - and only damped round a camp, whose
+// clearing the bend's gap keeps clear of that much wander
 function creekCalm(w) {
   let k = 1;
-  const at = (w0, r) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, t * t * (3 - 2 * t)); };
-  at(0, CIST_RO + 4); // the culverts
-  for (const B of creekBends()) at(B.w, B.L / 2);
+  const at = (w0, r, least) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, least + (1 - least) * t * t * (3 - 2 * t)); };
+  at(0, CIST_RO + 4, 0); // the culverts
+  for (const B of creekBends()) at(B.w, B.L / 2, CREEK_BEND_STIR);
   return k;
 }
 function creekMid(w) {
