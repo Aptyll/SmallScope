@@ -214,7 +214,7 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
 - **The bar** across the top: OVERVIEW, MATCH HISTORY, RANKED, STATS (white with a word-wide gold
   line when open) and a search field that lists the people met whose name starts with what is
   typed; a press or Enter opens one.
-- **OVERVIEW**: the most played hero standing large over a dark field, then RANKED (the rating),
+- **OVERVIEW**: the most played hero standing large over a dark field, weapon in hand and in the looks you wear (`drawOverviewModel`, the showcase's `drawPlayer` stage), then RANKED (the rating),
   RECORD (a blue-over-red bar), BEST HERO (the best win rate over three games) and, on your own,
   PRACTICE's best lap.
 - **MATCH HISTORY**: a summary (the last twenty's record, K/D/A and KDA, the three most played

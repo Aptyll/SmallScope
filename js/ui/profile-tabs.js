@@ -120,32 +120,48 @@ function profileTabHit(L) {
 }
 
 // ---- OVERVIEW ---------------------------------------------------------------------
-function drawOverview(L) {
+// the most played hero on show, the champ select's way (drawShowcase,
+// js/ui/select.js): the whole model with its weapon in hand, facing you, in
+// the looks you wear on your own profile (a card carries no looks: someone
+// else's stands in the plain one)
+const pfModel = {};
+const PF_MODEL_SCALE = 6; // px a model pixel, room allowing
+function drawOverviewModel(cls, c, B, sh, now) {
+  const sc = Math.max(2, Math.min(PF_MODEL_SCALE, Math.floor((sh - 20) / 24)));
+  const cx = B.x + (B.w >> 1), feet = B.y + sh - 12;
+  ctx.fillStyle = 'rgba(4,6,15,0.45)';
+  ctx.beginPath(); ctx.ellipse(cx, feet, 9 * sc, 2 * sc, 0, 0, Math.PI * 2); ctx.fill();
+  Object.assign(pfModel, player, {
+    cls, skins: c ? {} : player.skins, x: 0, y: 0, dir: 'down', moving: false, vx: 0, vy: 0, animT: 0,
+    zip: -1, mount: null, sliding: false, fallT: 0, dodgeT: 0, hurtT: 0, invuln: 0, castT: 0, shieldT: 0, rushT: 0, buffT: 0, pushT: 0, charging: false,
+  });
+  ctx.save();
+  ctx.beginPath(); ctx.rect(B.x, B.y, B.w, sh); ctx.clip();
+  ctx.translate(cx, feet - 4 * sc); ctx.scale(sc, sc); // a model's soles sit 4 px under its (x, y)
+  drawPlayer(pfModel, 0, 0, now, true);
+  ctx.restore();
+}
+function drawOverview(L, now) {
   const B = L.body, c = pfCard(), hs = pfHeroes();
   const main = hs.length ? hs[0].h : c ? c.pic : profilePic();
   const sh = Math.min(196, B.h - 92);
   pfBox(B.x, B.y, B.w, sh, '#101521');
   pfBox(B.x, B.y + sh - 52, B.w, 52, '#151b28');
   const cls = heroIndex(main);
-  if (cls >= 0) {
-    const spr = classSet({ cls, team: skin(1), skins: {} }).down[0];
-    const k = Math.max(1, Math.min(8, Math.floor((sh - 16) / spr.height)));
-    ctx.save(); ctx.beginPath(); ctx.rect(B.x, B.y, B.w, sh); ctx.clip();
-    ctx.drawImage(spr, B.x + (B.w >> 1) - ((spr.width * k) >> 1), B.y + sh - spr.height * k - 4, spr.width * k, spr.height * k);
-    ctx.restore();
-  }
+  if (cls >= 0) drawOverviewModel(cls, c, B, sh, now);
   pfT(main, B.x + 10, B.y + 8, SC_LIT, 2);
   if (hs.length) pfT(hs[0].n + (hs[0].n === 1 ? ' GAME' : ' GAMES'), B.x + 10, B.y + 24, SC_DIM);
   // the four numbers: rating, record, best hero, and a fourth that is yours alone
   const st = c ? { r: c.rk, g: c.g, w: c.w } : { r: PROFILE.rank(), g: PROFILE.stats().matches, w: PROFILE.stats().wins };
   const best = hs.filter((h) => h.n >= 3).sort((a, b) => b.w / b.n - a.w / a.n)[0] || hs[0];
-  const cw = Math.floor(B.w / 4), y = B.y + sh + 14;
+  const y = B.y + sh + 14;
   const cells = [
     ['RANKED', () => pfRatingMark(0, y + 12), String(st.r), wearsRank(c) ? RANK_TIERS[rankTier(st.r)] : 'RATING', SC_GOLD],
     ['RECORD', (x) => { pfBox(x - 30, y + 22, 60, 6, pfRed()); pfBox(x - 30, y + 22, st.g ? Math.round(60 * st.w / st.g) : 0, 6, pfBlue()); }, st.w + 'W ' + (st.g - st.w) + 'L', st.g ? Math.round(100 * st.w / st.g) + '% WINS' : '', SC_LIT],
     ['BEST HERO', (x) => { if (best) pfFace(best.h, x - 14, y + 12, 28, 2, true); }, best ? best.h : '-', best ? Math.round(100 * best.w / best.n) + '% IN ' + best.n : '', SC_LIT],
   ];
   if (!c) cells.push(['PRACTICE', null, PROFILE.bestLap() ? PROFILE.bestLap().toFixed(1) + 'S' : '-', 'BEST LAP', SC_LIT]);
+  const cw = Math.floor(B.w / cells.length); // three on someone else's, spread the same width as your four
   cells.forEach(([h, mark, v, sub, col], i) => {
     const cx = B.x + i * cw + (cw >> 1);
     pfTC(h, cx, y, SC_LBL);
@@ -319,7 +335,7 @@ function drawStatsRow(row, i) {
 // ---- the tab ---------------------------------------------------------------------------
 function drawProfileTab(L, now) {
   const m = state.menu, B = L.body;
-  if (m.pfTab === 0) { drawOverview(L); return; }
+  if (m.pfTab === 0) { drawOverview(L, now); return; }
   if (m.pfTab === 1) drawHistorySummary(B);
   if (m.pfTab === 3) {
     pfBox(B.x, B.y, B.w, 22, SC_PLATE);

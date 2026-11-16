@@ -29,13 +29,20 @@ function historyMode() {
   if (state.onevone) return 'onevone';
   return MH_MODES.indexOf(NET.mode) >= 0 ? NET.mode : 'quick';
 }
+// the name a seat is filed under: what the board shows, made fit to keep
+// (a name the record would refuse, a guest who sent none, falls back to the
+// hero's), so one odd seat never costs the whole match its record
+function historyName(p) {
+  const n = String(boardName(p) || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
+  return n || CLASSES[p.cls].name;
+}
 // A match ends (endMatch, js/sim/player.js; once, on its first win or loss):
 // file it. `won` is the local side's result. Practice files nothing.
 function historyNote(won) {
   if (PRACTICE) return null;
   const winner = won ? player.team : 1 - player.team;
   const seats = players.filter((p) => p.active && CLASSES[p.cls]).map((p) => ({
-    s: p.id, tm: p.team, n: boardName(p), h: CLASSES[p.cls].name, b: isHuman(p) ? 0 : 1,
+    s: p.id, tm: p.team, n: historyName(p), h: CLASSES[p.cls].name, b: isHuman(p) ? 0 : 1,
     p: p === player ? PROFILE.pid() : (NET.cards[p.id] && NET.cards[p.id].pid) || '', // whose card opens off this seat
     lv: p.level | 0, k: p.kills | 0, d: p.deaths | 0, a: p.assists | 0, cs: p.farm | 0,
     g: Math.round(p.earned) | 0, dmg: Math.round(p.dmgOut) | 0,
