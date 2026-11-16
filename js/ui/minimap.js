@@ -279,7 +279,8 @@ function mmFrame() {
     mmFrameKey = key;
     mmFrameCv.width = r.w; mmFrameCv.height = r.h;
     const keep = ctx; ctx = mmFrameCv.getContext('2d'); // drawHudFrame paints on ctx
-    try { drawHudFrame(0, 0, r.w, r.h, { corners: { tl: true, tr: true, bl: true, br: true } }); } finally { ctx = keep; }
+    // flush in the corner: only the open (top-left) corner is cut
+    try { drawHudFrame(0, 0, r.w, r.h, { corners: { tl: true, tr: false, bl: false, br: false } }); } finally { ctx = keep; }
     const g = mmFrameCv.getContext('2d');
     g.fillStyle = HUD_EDGE; g.fillRect(MM_PAD - 1, 1, MM_W + 2, 3); // the day band's track
     g.fillStyle = CHART_DARK; g.fillRect(MM_PAD - 1, MM_PAD_TOP - 1, MM_W + 2, MM_W + 2); // the chart's rim
