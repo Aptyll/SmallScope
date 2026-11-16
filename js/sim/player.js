@@ -764,6 +764,7 @@ class Player {
     this.lifeT = 0;                     // LIFELINE's wait before it can shield again (itemsLifeline)
     this.healCutT = 0; this.healCut = 0; // FROSTBITE on this body: how long, and the share of a heal it takes (cutHeal, js/sim/actions.js)
     this.buys = [];                     // every finished item and pair of boots bought this match, in order: the build the match records (buildsNote, js/app/builds.js)
+    this.shopUndo = [];                 // this counter visit's trades, newest last, to take back (undoShop, js/sim/items.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + items
     // bot brain (unused by a human player): current job, give-up timers and the
     // short blacklists that keep a bot from re-picking work it cannot reach
