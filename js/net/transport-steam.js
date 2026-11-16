@@ -182,7 +182,12 @@ function steamCode() {
 // code, seek) }, the numbers
 // parsed back out of Steam's string store. Polled while a code is being
 // looked for; close() stops it. Lobbies without a patch key are not this game's.
-function steamRooms(cb) {
+// `ask()`, read before every poll, is what Steam is asked for besides this
+// patch (desktop/steam-friends.js, lobbyFilter): { seek: mode } while the
+// party looks for a match, so the list holds only the parties looking in it
+// rather than Steam's first fifty of every idle one, and `near` while the
+// search is young (Steam's own region and the next ones first)
+function steamRooms(cb, ask) {
   const bridge = window.steamBridge;
   let timer = null, closed = false;
   const num = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 0; };
@@ -191,7 +196,7 @@ function steamRooms(cb) {
     try {
       const info = await bridge.info();
       if (!info.ready) { cb([], false); return; }
-      const list = await bridge.lobbies();
+      const list = await bridge.lobbies(Object.assign({ patch: PATCH_TXT }, ask ? ask() : {}));
       const rooms = [];
       for (const l of list) {
         const d = l.data || {};

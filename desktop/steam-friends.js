@@ -1,7 +1,7 @@
 // Steam's friends, which steamworks.js (0.4, its latest) does not reach: the
 // friends list, who is in Softfall and in which lobby, an invite straight to
 // one friend, the overlay's add-friend page, the players met in a match, and
-// the lobby list's reach (worldwide, not Steam's default of one region).
+// the lobby list's reach and filters (worldwide or near, this patch, a mode looking).
 // These call steam_api64.dll's flat API through koffi - the same DLL, already
 // loaded and initialised by steamworks.js in this process, so nothing here
 // inits or shuts Steam down. Any failure (koffi missing, the DLL's exports
@@ -16,6 +16,9 @@ const RP_KEYS = ['status', 'connect', 'sf_lobby', 'sf_mode', 'sf_n', 'sf_state',
 const RECENT_KEEP = 12;               // players met kept for the panel
 const COPLAY_KEEP = 40;               // Steam's own recent-players list is read this far
 const LOBBY_WORLDWIDE = 3;            // k_ELobbyDistanceFilterWorldwide
+const LOBBY_NEAR = 1;                 // k_ELobbyDistanceFilterDefault: this region and the ones next to it
+const LOBBY_EQUAL = 0;                // k_ELobbyComparisonEqual
+const LOBBY_SEEK_MAX = 100;           // lobbies a list asks for while looking for a match (Steam's default is 50)
 
 function dllPath() {
   const dist = path.join(path.dirname(require.resolve('steamworks.js')), 'dist');
@@ -54,6 +57,10 @@ function steamFriends(appId) {
     F.ok = true;
     // the lobby list's reach (main.js's steam:lobbies), on its own so a miss leaves the friends working
     try { api.distance = lib.func('void SteamAPI_ISteamMatchmaking_AddRequestLobbyListDistanceFilter(void *self, int filter)'); } catch (e) { }
+    try {
+      api.strFilter = lib.func('void SteamAPI_ISteamMatchmaking_AddRequestLobbyListStringFilter(void *self, const char *key, const char *value, int cmp)');
+      api.countFilter = lib.func('void SteamAPI_ISteamMatchmaking_AddRequestLobbyListResultCountFilter(void *self, int max)');
+    } catch (e) { api.strFilter = null; }
   } catch (e) { F.error = e.message; api = null; }
 
   const S = (v) => String(v);
@@ -97,6 +104,17 @@ function steamFriends(appId) {
   F.nameOf = (id) => (F.ok ? api.name(self(), B(id)) || '' : '');
   F.invite = (lobby, id) => F.ok && api.invite(api.mm(), B(lobby), B(id));
   F.worldwide = () => { if (F.ok && api.distance) api.distance(api.mm(), LOBBY_WORLDWIDE); }; // the next lobby list reaches every region
+  // what the next lobby list holds (main.js's steam:lobbies, the page's ask):
+  // every region's, or only near ones (`near`); only this patch's (`patch`);
+  // and while a party looks for a match only the lobbies looking in its mode
+  // (`seek`), more of them than Steam's default fifty
+  F.lobbyFilter = (ask) => {
+    if (!F.ok) return;
+    if (api.distance) api.distance(api.mm(), ask && ask.near ? LOBBY_NEAR : LOBBY_WORLDWIDE);
+    if (!ask || !api.strFilter) return;
+    if (ask.patch) api.strFilter(api.mm(), 'patch', String(ask.patch).slice(0, 32), LOBBY_EQUAL);
+    if (ask.seek) { api.strFilter(api.mm(), 'seek', String(ask.seek).slice(0, 32), LOBBY_EQUAL); api.countFilter(api.mm(), LOBBY_SEEK_MAX); }
+  };
   F.overlayUser = (dialog, id) => { if (F.ok && OVERLAY_DIALOGS.includes(dialog)) api.overlayUser(self(), dialog, B(id)); return F.ok; };
   F.overlay = () => { if (F.ok) api.overlay(self(), 'friends'); return F.ok; };
   F.presence = (kv) => {

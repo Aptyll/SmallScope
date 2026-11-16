@@ -42,7 +42,7 @@ function roomsFeedOpen() {
   if (roomsFeed) return;
   const m = state.menu;
   m.rooms = [];
-  roomsFeed = (netSteam() ? steamRooms : (cb) => wsRooms(netRelay(), cb))((rooms) => { m.rooms = rooms; });
+  roomsFeed = netSteam() ? steamRooms((rooms) => { m.rooms = rooms; }, seekAsk) : wsRooms(netRelay(), (rooms) => { m.rooms = rooms; });
 }
 function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
 
@@ -91,7 +91,7 @@ function leaveRoom() {
     netLeave();
     NET.mode = null;
   }
-  homeParty = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
+  homeParty = null; CROSS = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
   const m = state.menu;
   m.screen = 'menu'; m.seek = null; m.joining = false;
   FRIENDS.invites = []; // the friends invited belong to the party just left
@@ -119,6 +119,7 @@ function rankLevel() {
 // profile's rating, and any match seen through stops the title offering FIRST MATCH
 function rankResult(won) {
   if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP);
+  hostLagSave(); // how well this machine hosted it, for the next match's pick (js/net/net.js)
   PROFILE.setGuided();
 }
 
@@ -205,6 +206,7 @@ function updateRooms(dt) {
   partyArrived();
   hubEnter(); // the title is only passed through, onto the hub (js/ui/hub.js)
   updateSeek(dt); // the leader's PLAY looking for another party (js/ui/matchmaking.js)
+  seekResume(dt); // ...and looking again, home from a room that turned the party away
   if (m.codeShake > 0) m.codeShake = Math.max(0, m.codeShake - dt);
   // a code being looked for: joined the moment the list names it, a rattle when it never does
   if (m.seek) {
@@ -214,25 +216,25 @@ function updateRooms(dt) {
   }
   // a join answered: the party's seats on a welcome, our own party again on a refusal
   if (m.screen === 'room' && NET.role === 'client' && m.joining) {
-    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; beginRoom(); }
+    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.joinTo = null; m.codeOn = false; m.code = ''; beginRoom(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) {
-      const why = NET.refused || NET.transport.error;
+      const refused = NET.refused, why = refused || NET.transport.error;
       netLeave();
       // back from a match: the leader may not have reopened the party yet, so
       // the join is tried again for a while before it counts as a refusal
-      if (m.joinWait > 0 && why !== 'KICKED' && why !== 'VERSION' && why !== 'MATCHED') m.joinRetry = REMATCH_RETRY;
+      if (m.joinWait > 0 && !(CROSS && refused) && why !== 'KICKED' && why !== 'VERSION' && why !== 'MATCHED') m.joinRetry = REMATCH_RETRY; // a crossing page turned away goes home at once
       else { m.joining = false; m.codeShake = NAME_SHAKE_T; SFX.deny(); partyGiveUp(); }
     }
   }
   if (m.joinWait > 0) {
     m.joinWait -= dt;
-    if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(JOIN_AT_BOOT);
-    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; partyGiveUp(); }
+    if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(m.joinTo || JOIN_AT_BOOT); // a room crossed to (crossGo), or the one this page came up to join
+    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; m.joinTo = null; partyGiveUp(); }
   }
 }
 // a join that never landed: our own party again on the title
 function partyGiveUp() {
-  if (homeParty) { crossHome(); return; } // a party that crossed to meet another and was turned away: home (js/ui/matchmaking.js)
+  if (homeParty) { crossHome(true); return; } // a party that crossed to a match and was turned away: home, to look again (js/ui/matchmaking.js)
   beginParty('ranked');
 }
 
@@ -372,7 +374,7 @@ function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? N
 const REMATCH_KEY = 'softfall.rematch';
 const REMATCH_WAIT = 180; // s a guest back from a match keeps trying the party's code (the leader may still be reading the stats)
 const REMATCH_RETRY = 1;  // s between those tries
-let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the last match
+let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the last match, and `seek`: the seconds a search ran when a match turned it away (seekResume, js/ui/matchmaking.js), else null
 
 // this page's address with the party's and the match's words taken off: it boots onto the title
 function titleUrl() {
@@ -418,12 +420,11 @@ function rematchBootHost() {
   let c = null;
   try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
   NET.mode = 'ranked'; // after the FIRST MATCH the party plays for real
-  rematchCarry = { seats: (c && c.seats) || {} };
+  rematchCarry = { seats: (c && c.seats) || {}, seek: c && typeof c.seek === 'number' ? c.seek : null };
   beginRoom();
 }
 function rematchBootJoin() {
-  // a party crossing to meet another joins a room that is already up: a few tries, then home (js/ui/matchmaking.js)
-  if (/[?&]back=1/.test(location.search)) state.menu.joinWait = CROSS ? MATCH_JOIN : REMATCH_WAIT;
+  if (/[?&]back=1/.test(location.search)) state.menu.joinWait = REMATCH_WAIT;
 }
 
 // a page going elsewhere (a crossing party, a guest following its leader):
@@ -452,6 +453,16 @@ function drawPingBars(x, y, ms) {
   const col = n === 3 ? RM_OK : n === 2 ? RM_SLOW : RM_BAD;
   for (let i = 0; i < 3; i++) { ctx.fillStyle = i < n ? col : SC_EDGE; ctx.fillRect(x + i * 3, y + 6 - (i + 1) * 2, 2, (i + 1) * 2); }
 }
+// the bots' level as a bot wears it in the draft rows and on TAB (never
+// taken for a person): a rising bar per level standing on y + H (big: 10
+// tall; else 6), as many lit as the level is hard, in its colour - green,
+// amber, red, violet
+const BOT_COL = ['#7fd88a', '#e8b04a', '#e0524f', '#b77ce8'];
+function drawBotBars(x, y, k, big) {
+  const n = AI_LEVELS.length, w = big ? 3 : 2, g = big ? 2 : 1, H = big ? 10 : 6, col = BOT_COL[Math.min(BOT_COL.length - 1, k)];
+  for (let i = 0; i < n; i++) { const h = Math.round(H * (i + 1) / n); ctx.fillStyle = i <= k ? col : SC_EDGE; ctx.fillRect(x + i * (w + g), y + H - h, w, h); }
+}
+function botBarsW(big) { return AI_LEVELS.length * (big ? 5 : 3) - (big ? 2 : 1); }
 // a small pip that says the relay is there: green and breathing while the
 // socket is open, red and blinking while it is not
 function drawRelayPip(x, y, ok, now) {

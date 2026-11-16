@@ -7,7 +7,9 @@
 //   node app/check-join.js          every path, exit 1 on any failure
 //   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join,
 //                                       friend-invite, steam-party, steam-match, relay-match,
-//                                       menu-join, leader-follow)
+//                                       menu-join, leader-follow, steam-solos, steam-mix, steam-pairs,
+//                                       steam-eight)
+//   node app/check-join.js all          every path, the many-page matchmaking ones too
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
 // process, handed to each page as `window.steamBridge` with the calls and
@@ -22,9 +24,20 @@ const { spawn } = require('child_process');
 
 const CHECK_PORT = 8479;       // its own port, so a game already served on 8471 is left alone
 const JOIN_WAIT = 15;          // s a guest has to be welcomed
-const PARTY_PATHS = ['steam-party', 'steam-match', 'relay-match'];
+// a party path's parties (people in each, the leader first) and the drafts they must end in (people in each)
+const PARTY_SPECS = {
+  'steam-party': { parties: [3], drafts: [3] },
+  'steam-match': { parties: [2, 2], drafts: [4] },
+  'relay-match': { parties: [2, 2], drafts: [4] },
+  'steam-solos': { parties: [1, 1, 1, 1, 1, 1], drafts: [6] },          // six solo players: one 3v3, no bots
+  'steam-mix': { parties: [3, 1, 2], drafts: [6] },                     // a full side, a solo and a pair: one 3v3
+  'steam-pairs': { parties: [2, 2, 1, 1], drafts: [6] },                // two pairs and two solos: one 3v3
+  'steam-eight': { parties: [1, 1, 1, 1, 1, 1, 1, 1], drafts: [6, 2] }, // one full match, and the two left over meet
+};
+const PARTY_PATHS = Object.keys(PARTY_SPECS);
 const FRIEND_PATHS = ['menu-join', 'leader-follow'];
 const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS, FRIEND_PATHS);
+const SOLO_PATHS = ['steam-solos', 'steam-mix', 'steam-pairs', 'steam-eight']; // six pages and more: run by name (`all` runs them too)
 
 // a profile already saved, so a page is not a first launch (which goes straight into the FIRST MATCH, js/app/boot.js)
 function savedProfile(c) {
@@ -54,7 +67,12 @@ function fakeSteam() {
         case 'leaveLobby': leave(l, uid); return true;
         case 'fresh': for (const q of [...W.lobbies.values()]) leave(q, uid); return true; // a page starting holds no lobby (main.js)
         case 'lobby': return l ? info(l) : null;
-        case 'lobbies': return [...W.lobbies.values()].map((q) => Object.assign(info(q), { owner: '0' })); // a list sees no owner, as Steam's does
+        case 'lobbies': { // a list sees no owner, as Steam's does; the page's ask filters it as steam-friends.js's lobbyFilter has Steam do
+          const ask = a && a[0] && typeof a[0] === 'object' ? a[0] : {};
+          return [...W.lobbies.values()].filter((q) => (!ask.patch || q.data.patch === ask.patch) && (!ask.seek || q.data.seek === ask.seek)).map((q) => Object.assign(info(q), { owner: '0' }));
+        }
+        case 'pingLoc': return 'loc:' + (u.region || 'a'); // a made-up ping location: users in one region are near
+        case 'pingTo': { const r = String(a[0] || '').slice(4); return r === (u.region || 'a') ? 30 : 220; }
         case 'setLobbyData': if (!l) return false; Object.assign(l.data, a[1]); return true;
         case 'send': {
           const to = W.users.get(String(a[0])); if (!to) return false;
@@ -80,7 +98,8 @@ function fakeSteam() {
       const unb64 = (s) => { const t = atob(s), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; };
       window.steamBridge = {
         info: () => call('info'), createLobby: (k, n) => call('createLobby', k, n), joinLobby: (id) => call('joinLobby', String(id)),
-        leaveLobby: (id) => call('leaveLobby', String(id)), lobby: (id) => call('lobby', String(id)), lobbies: () => call('lobbies'),
+        leaveLobby: (id) => call('leaveLobby', String(id)), lobby: (id) => call('lobby', String(id)), lobbies: (ask) => call('lobbies', ask || null),
+        pingLoc: () => call('pingLoc'), pingTo: (l) => call('pingTo', String(l)),
         setLobbyData: (id, d) => call('setLobbyData', String(id), d), invite: (id) => call('invite', String(id)), log: (l) => call('log', String(l)),
         flash: () => call('flash'), accept: (id) => call('accept', String(id)),
         friends: () => call('friends'), inviteFriend: (l, id, c) => call('inviteFriend', String(l), String(id), c), presence: (kv) => call('presence', kv),
@@ -170,17 +189,18 @@ async function runPath(browser, kind) {
   return why;
 }
 
-// ---- a party (or two) into one champ select ------------------------------
+// ---- parties into champ selects -------------------------------------------
 // steam-party: a leader and two friends who joined by code; the friends say
-// READY, the leader presses FIND MATCH, and all three must stand in ONE draft
+// READY, the leader presses PLAY, and all three must stand in ONE draft
 // (three people in it, a friend's point seen by the
-// leader). steam-match / relay-match: two parties of two press FIND MATCH at
-// once and must meet in one draft of four (js/ui/matchmaking.js), with no
-// lobby left on the list still saying it looks for a match.
-const PARTY_WAIT = 45;         // s the pages have to stand in one draft
+// leader). steam-match / relay-match: two parties of two press PLAY at
+// once and must meet in one draft of four (js/ui/matchmaking.js). The solo
+// paths fill whole 3v3s from solo players and small parties (PARTY_SPECS);
+// every one ends with no lobby left on the list still saying it looks.
+const PARTY_WAIT = 75;         // s the pages have to stand in their drafts
 async function runParty(browser, kind) {
   const steam = kind !== 'relay-match', S = fakeSteam(), errs = [], pages = [], leads = [];
-  const spec = kind === 'steam-party' ? [3] : [2, 2];
+  const spec = PARTY_SPECS[kind].parties, want = PARTY_SPECS[kind].drafts.slice().sort((a, b) => b - a).join();
   const base = 'http://localhost:' + CHECK_PORT + '/', q = steam ? '&transport=steam' : '';
   const open = async (pg) => { await pg.goto(base + (q ? '?' + q.slice(1) : '')); await pg.waitForFunction(() => window.DBG && typeof hubLayout === 'function'); await pg.waitForTimeout(800); };
   const hosted = (pg) => pg.waitForFunction(() => NET.role === 'host' && NET.transport.open && roomCode(), null, { timeout: 10000 });
@@ -218,18 +238,27 @@ async function runParty(browser, kind) {
     await pages[0].waitForTimeout(1000);
     for (const A of leads) await A.evaluate(() => partyFind());
     const n = pages.length, t0 = Date.now();
-    let seen = [];
+    let seen = [], drafts = '';
+    // each page's draft: its host's code, the people in it, and each side's
+    const where = (pg) => pg.evaluate(() => ({ screen: state.menu.screen, draft: DRAFT.phase, people: players.filter(isHuman).length,
+      host: NET.isHost ? roomCode() : NET.code, sides: [0, 1].map((t) => players.filter((p) => p.team === t && isHuman(p)).length).join('v') })).catch(() => null);
     while (Date.now() - t0 < PARTY_WAIT * 1000) {
       await pages[0].waitForTimeout(1000);
-      seen = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ screen: state.menu.screen, draft: DRAFT.phase, people: players.filter(isHuman).length })).catch(() => null)));
-      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === n)) break;
-      seen = seen.map((v) => (v ? v.screen + ' ' + v.draft + ' ' + v.people : 'reloading'));
+      seen = await Promise.all(pages.map(where));
+      const by = {};
+      for (const v of seen) if (v) by[v.host] = (by[v.host] || 0) + 1;
+      drafts = Object.values(by).sort((a, b) => b - a).join();
+      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === by[v.host]) && drafts === want) break;
+      seen = seen.map((v) => (v ? v.screen + ' ' + v.draft + ' ' + v.people + ' ' + v.sides : 'reloading'));
     }
-    if (typeof seen[0] === 'string') why = 'not one draft: ' + seen.join(' | ');
+    if (typeof seen[0] === 'string') why = 'drafts ' + (drafts || '?') + ', not ' + want + ': ' + seen.join(' | ');
     else {
+      if (n >= 6) console.log('     ' + kind + ': drafts of ' + drafts + ', sides ' + [...new Set(seen.map((v) => v.host + ' ' + v.sides))].join(', '));
       // one press crosses the wire: a friend's point lands on the leader's draft
       const roles = await Promise.all(pages.map((pg) => pg.evaluate(() => NET.role)));
-      const H = pages[roles.indexOf('host')], G = pages[roles.indexOf('client')];
+      const H = pages[roles.indexOf('host')], hostCode = await H.evaluate(() => roomCode());
+      const codes = await Promise.all(pages.map((pg) => pg.evaluate(() => NET.code)));
+      const G = pages[roles.findIndex((r, i) => r === 'client' && codes[i] === hostCode)];
       const slot = await G.evaluate(() => { const h = CLASSES.findIndex((c, i) => !DRAFT.banned.includes(i) && DRAFT.hover[localId] !== i); draftPoint(h); return [localId, h]; });
       await H.waitForTimeout(800);
       if (!(await H.evaluate((s) => DRAFT.hover[s[0]] === s[1] || DRAFT.lock[s[0]] >= 0, slot))) why = "a friend's point never reached the leader";
@@ -329,7 +358,7 @@ async function runFriends(browser, kind) {
 
 (async () => {
   const { chromium } = loadPlaywright();
-  const only = process.argv[2], list = only ? [only] : PATHS;
+  const only = process.argv[2], list = only === 'all' ? PATHS : only ? [only] : PATHS.filter((k) => !SOLO_PATHS.includes(k));
   const server = spawn(process.execPath, [path.join(__dirname, 'server.js')], { env: Object.assign({}, process.env, { PORT: String(CHECK_PORT) }), stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 600));
   const opts = process.env.PLAYWRIGHT_BROWSERS_PATH && require('fs').existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {};

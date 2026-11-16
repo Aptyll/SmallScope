@@ -158,8 +158,13 @@ ipcMain.handle('steam:leaveLobby', (e, id) => { const l = lobbies.get(String(id)
 // (`seek`), a code a friend's lookup then finds instead of the live one
 ipcMain.handle('steam:fresh', () => { for (const l of lobbies.values()) { try { l.leave(); } catch (err) { } } lobbies.clear(); return true; });
 ipcMain.handle('steam:lobby', (e, id) => { const l = lobbies.get(String(id)); return l ? lobbyInfo(l) : null; });
-// the whole world's lobbies, not only this region's (Steam's default): friends far apart still meet
-ipcMain.handle('steam:lobbies', async () => { if (friends) friends.worldwide(); return (await steam.matchmaking.getLobbies()).map(lobbyInfo); });
+// the whole world's lobbies, not only this region's (Steam's default): friends far apart still meet.
+// The page's ask narrows it (friends.lobbyFilter): this patch's lobbies, and while a party looks for a
+// match only the ones looking in its mode, near regions first while its search is young
+ipcMain.handle('steam:lobbies', async (e, ask) => { if (friends) friends.lobbyFilter(ask || null); return (await steam.matchmaking.getLobbies()).map(lobbyInfo); });
+// ping locations (steam-messages.js): this machine's as text for its lobby's data, and the estimate to another's
+ipcMain.handle('steam:pingLoc', () => (msgs && msgs.ok ? msgs.pingLoc() : ''));
+ipcMain.handle('steam:pingTo', (e, loc) => (msgs && msgs.ok ? msgs.pingTo(String(loc)) : -1));
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('win:quit', () => { app.quit(); return true; });

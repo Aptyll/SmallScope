@@ -2,7 +2,7 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `boardName` (a bot reads as its hero), `renderScoreboard` | `scoreboard & log` |
+| the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `boardName` (a bot reads as its hero), `renderScoreboard` (a bot's row wears the bots' level bars under its hero, `drawBotBars`, rooms.js) | `scoreboard & log` |
 | the M map's slab: its bake, the header's clock, a press off the slab closing it, and the chart point -> world tile inverse a map order needs (the chart itself and its marks are both maps': the `chart` banner, js/ui/minimap.js) | `buildMapPanel`, `mapChart`/`mapView`, `MAP_HEAD_Y`, `mapAlloc` (the chart's buffers and the bake at the slab's current size), `mapCloseHit` (read by `pointerPress`, input.js), `renderWorldMap`, `mapTileAt` | `world map (M)` |
 | the ESC menu: its tabbed pages, their rows (a choice or dropdown row's `val`/`pick`), the open dropdown, the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout` (a table word through `optWord`), `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `setDrop`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
 | the CONTROLS page's listing in three columns and its pinned sub-navbar of two cells (WASD, CLICK: picking one picks the scheme) | `CTRL_COL_X`, `CTRL_TABS`, `CTRL_TAB_H` (the scroll is sized by `KEYS_LIST_H`) | `settings menu (ESC)` |
