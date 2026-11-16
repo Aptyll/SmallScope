@@ -59,10 +59,10 @@ function pairings(ladder, count) {
   return out;
 }
 
-// the five seats of each side: seat i is on team i % 2 (the roster's rule)
+// the three seats of each side: seat i is on team i % 2 (the roster's rule)
 function seatsOf(m) {
   const seats = {};
-  for (let i = 0; i < 10; i++) seats[i] = i % 2 === 0 ? m.team0 : m.team1;
+  for (let i = 0; i < 6; i++) seats[i] = i % 2 === 0 ? m.team0 : m.team1;
   return seats;
 }
 

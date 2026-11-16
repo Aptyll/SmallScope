@@ -13,7 +13,7 @@ stands is found, not written: `titleSceneAt()` takes the spot nearest the map's 
 room (`TITLE_LOGO`), the word column (`TITLE_WORDS`) and all ten heroes (`TITLE_BODY`) each sit on one
 clean ground (`titleSpotOk`; `titleGround` passes open snow or plain paving with nothing standing on it,
 no brush, no ice), found once per view size, so text never sits over reeds or a wall whatever the map
-becomes. The scene is ten heroes, five a side, facing each other (`TITLE_SPOTS`, the rivals
+becomes. The scene is six heroes, three a side, facing each other (`TITLE_SPOTS`, the rivals
 mirrored; `titleSpots()` fits them to the view, sliding the formation down so its back row's heads start
 under the logo's foot and squeezing it only when a small view has less room than it needs): `titleCast()` builds them as this screen's own `Player` bodies - never in `players`, never
 stepped or sent - your profile's hero leading your side and nine others dealt fresh each boot
@@ -108,7 +108,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
     local only, shut by `beginLobby`).
   - **The foot**: the **chat** bottom left (`drawTalk` at `L.chat`, js/ui/roomtalk.js: up to
     `LOBBY_CHAT_LINES` lines over its plate, your side's only while the draft is on) and the
-    **mode** bottom right (`drawSelMode`: 5V5 and the party's mode). The bots' level is not
+    **mode** bottom right (`drawSelMode`: 3V3 and the party's mode). The bots' level is not
     here: the leader sets it on the party screen ([settings](../gameplay/settings.md)), and the
     hero's abilities show only in the hero pop-up off the stage figure.
 
@@ -137,7 +137,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   **BAN** confirms it; a team's bans are its most pointed-at heroes, the people's before the
   bots' (`draftTeamBans`), shown in your side's wells as dim faces while the vote stands, the
   rivals' hidden until the phase ends, then both struck through in red. Then the **blind pick**
-  (`DRAFT_PICK_T`), all ten seats at once: a person starts pointing at the hero they came in on,
+  (`DRAFT_PICK_T`), all six seats at once: a person starts pointing at the hero they came in on,
   **LOCK IN** confirms (`draftConfirm`, the gold ring bursting off the figure). A hero a person
   on your side locked is out for you until your side's people hold every hero still in the pick
   (`draftCanLock`/`draftSideFull`); the rivals may take the same one, and you never see what
@@ -149,7 +149,7 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   points at, or picks for it the way a bot would (`draftReveal`). Space or the
   confirm plate call `pressPlay()` → `draftConfirm`.
 
-  **Positions** (`POSITIONS`, the `draft roles` banner: TOP, JUNGLE, MID, BOT, SUPPORT): as the
+  **Positions** (`POSITIONS`, the `draft roles` banner: TOP, JUNGLE, BOT): as the
   draft opens the host gives every seat one per side (`draftSeatRoles`, `DRAFT.role`): the
   people first, each on the one its profile asks for (`PROFILE.pos`; a guest's rides its
   hello, `NET.pos`) when nobody earlier on the side took it, then any free one, the bots last.

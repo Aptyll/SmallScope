@@ -18,7 +18,9 @@ const PF_MODE_TXT = { '': 'ALL', ranked: 'RANKED', quick: 'QUICKPLAY', onevone: 
 const PF_WIN_BG = '#141a24', PF_LOSS_BG = '#1e1517';
 const PF_WIN_LINE = '#1f2838', PF_LOSS_LINE = '#2c1e22';
 const PF_BOARD_ROW = 14;                 // a seat in an open match's scoreboard
-const PF_BOARD_H = 22 + 2 * (10 + 5 * PF_BOARD_ROW + 6);
+// an open match's scoreboard height: both sides as deep as its bigger one
+// (three a side now, five in a match filed before 0.962)
+function pfBoardH(r) { return 22 + 2 * (10 + Math.max(...[0, 1].map((t) => r.seats.filter((q) => q.tm === t).length)) * PF_BOARD_ROW + 6); }
 const pfBlue = () => TEAMS[1].mark, pfRed = () => TEAMS[0].mark;
 const pfK = (n) => (n >= 1000 ? Math.round(n / 100) / 10 + 'K' : String(n));
 const pfT = (t, x, y, c, sc) => drawPixelTextOutline(ctx, String(t), x, y, c, SC_INK, sc || 1);
@@ -71,7 +73,7 @@ function pfListLayout(L) {
     for (const e of pfMatches()) {
       const open = !e.short && m.pfOpen === e.r.m;
       rows.push({ x: B.x, y, w: B.w, h: PF_ROW_H, e, open });
-      y += PF_ROW_H + (open ? PF_BOARD_H : 0) + PF_ROW_GAP;
+      y += PF_ROW_H + (open ? pfBoardH(e.r) : 0) + PF_ROW_GAP;
     }
   } else if (m.pfTab === 2) {
     pfLadder().forEach((c, i) => { rows.push({ x: B.x, y, w: B.w, h: PF_LIST_H, c, i }); y += PF_LIST_H + 1; });
@@ -262,7 +264,7 @@ function drawRowBody(row, mine, col, cx, by) {
 function drawHistoryBoard(row) {
   const r = row.e.r, you = historyYou(r), x = row.x, w = row.w;
   let y = row.y + row.h;
-  pfBox(x, y, w, PF_BOARD_H, '#0f1218');
+  pfBox(x, y, w, pfBoardH(r), '#0f1218');
   pfT('SCOREBOARD', x + 10, y + 6, SC_LIT); pfBox(x + 10, y + 14, pixelTextWidth('SCOREBOARD'), 1, SC_GOLD);
   const best = Math.max(1, ...r.seats.map((q) => q.dmg));
   const cDmg = x + Math.min(300, w - 200), cCs = cDmg + 40, cGold = cCs + 36, cIt = cGold + 10;
@@ -340,7 +342,7 @@ function drawProfileTab(L, now) {
   const P = pfListLayout(L);
   ctx.save(); ctx.beginPath(); ctx.rect(P.clip.x, P.clip.y, P.clip.w, P.clip.h); ctx.clip();
   P.rows.forEach((row, i) => {
-    if (row.y > P.clip.y + P.clip.h || row.y + row.h + (row.open ? PF_BOARD_H : 0) < P.clip.y) return;
+    if (row.y > P.clip.y + P.clip.h || row.y + row.h + (row.open ? pfBoardH(row.e.r) : 0) < P.clip.y) return;
     if (m.pfTab === 1) { drawHistoryRow(row); if (row.open) drawHistoryBoard(row); }
     else if (m.pfTab === 2) drawLadderRow(row);
     else drawStatsRow(row, i);

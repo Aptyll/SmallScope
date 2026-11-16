@@ -28,7 +28,7 @@ order, so the script tags still interleave them:
 | File | Lines | Exposes | Role |
 | --- | --- | --- | --- |
 | [js/app/builds.js](../../js/app/builds.js) | ~150 | shared scope, no `window.*` export | the meta: each match's human builds and results recorded at the whistle, swapped on every join, and read back as the shop's RECOMMENDED paths with pick and win rates |
-| [js/app/history.js](../../js/app/history.js) | ~180 | shared scope, no `window.*` export | match history: every finished match filed at the whistle with all ten seats, the numbers the profile reads off it, and the player cards a party swaps (the people this screen met) |
+| [js/app/history.js](../../js/app/history.js) | ~180 | shared scope, no `window.*` export | match history: every finished match filed at the whistle with all its seats, the numbers the profile reads off it, and the player cards a party swaps (the people this screen met) |
 | [js/app/profile.js](../../js/app/profile.js) | ~390 | `PROFILE` | the local player profile - one name, its lifetime stats, the hero last picked (by name), the coins and the cosmetics bought and worn, the settings - and the only file that touches storage |
 | [js/app/font.js](../../js/app/font.js) | ~150 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
 | [js/app/text.js](../../js/app/text.js) | ~100 | `TEXT`, `tr` | the text table: the words the game prints for its own screens, by key ([text table](rendering/the-text-table.md)) |

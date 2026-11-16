@@ -76,7 +76,7 @@ const AI_LEVELS = [
     judge: 0.4, focus: 0.3, team: 0.75, think: 0.8, memory: 4, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
   { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, hand: 700, aim: 5, fresh: 1.5, lead: 0.5, lag: 0.06, lagVar: 0.04, slip: 1,
     dodge: 1, abil: 0.8, work: 0.8, strafe: 0.8,
-    judge: 0.75, focus: 0.7, team: 0.95, think: 0.5, memory: 7, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
+    judge: 0.75, focus: 0.7, team: 0.95, think: 0.5, memory: 7, pick: 'near', push: { t: 360, n: 3 }, guard: 1 },
   { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, hand: 0, aim: 0, fresh: 1, lead: 1, lag: 0, lagVar: 0, slip: 0,
     dodge: 2, abil: 1, work: 1, strafe: 1,
     judge: 0.95, focus: 1, team: 1, think: 0.3, memory: 10, pick: 'weak', push: { t: 300, n: 99 }, guard: 0, relentless: true },

@@ -42,9 +42,12 @@ function buildsKey(r) { return r.m + ':' + r.s; }
 // pairs of boots, an item three times over. It cannot stop a careful liar
 // (there is no server to ask), but it keeps a hand-edited record from being
 // anything a real match could not have been.
+// the most seats a match has ever had (five a side until 0.962): a record
+// filed then still reads, so the stores check a seat against this, never MAX_PLAYERS
+const SEATS_EVER = 10;
 function buildsClean(r) {
   if (!r || typeof r !== 'object' || typeof r.m !== 'string' || !/^[0-9a-f]{8}$/.test(r.m)) return null;
-  if (!(r.s >= 0 && r.s < MAX_PLAYERS && (r.s | 0) === r.s) || typeof r.v !== 'string' || r.v.length > 8) return null;
+  if (!(r.s >= 0 && r.s < SEATS_EVER && (r.s | 0) === r.s) || typeof r.v !== 'string' || r.v.length > 8) return null;
   if (!CLASSES.some((c) => c.name === r.h) || (r.w !== 0 && r.w !== 1) || (r.q !== 0 && r.q !== 1)) return null;
   if (!Array.isArray(r.b) || !r.b.length || r.b.length > BUILDS_ITEMS) return null;
   if (!r.b.every((id) => typeof id === 'string' && Object.hasOwn(BUILD_ITEMS, id) && itemFinished(id))) return null;

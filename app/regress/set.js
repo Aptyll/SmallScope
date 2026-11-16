@@ -16,7 +16,7 @@ const MATCHES = [
   { seed: 4, shape: 0, kind: 'level', level: 2, maxMin: 6 },   // HARD (was FROZEN ISLES)
   // the baked example bots (bots/*.js) on team 1, the brain on team 0: the
   // bot API's health rides along with every patch
-  { seed: 6, shape: 0, kind: 'level', level: 1, maxMin: 6, seats: { 1: 'pack', 3: 'pack', 5: 'keeper', 7: 'pack', 9: 'keeper' } },
+  { seed: 6, shape: 0, kind: 'level', level: 1, maxMin: 6, seats: { 1: 'pack', 3: 'pack', 5: 'keeper' } },
 ];
 
 // the stable name a match keeps from one patch to the next

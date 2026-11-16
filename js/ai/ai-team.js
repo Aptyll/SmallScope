@@ -5,11 +5,11 @@
 // writes an input.
 // ------------------------------------------------------------ team brain
 // Three ideas, each a small rule, and the teamwork is what they add up to:
-//   MOOD   every bot is one of five temperaments, dealt so each side fields
-//          all five. A mood moves the choices - when to back off, how far it
+//   MOOD   every bot is one of five temperaments, dealt round each side in
+//          one fixed order. A mood moves the choices - when to back off, how far it
 //          walks to help, how long it farms - never the hands (aim, draw and
 //          reactions are the profile's, js/ai/ai-skill.js).
-//   ROLE   every bot plays its drafted POSITION (laner, jungler, support:
+//   ROLE   every bot plays its drafted POSITION (laner, jungler:
 //          js/ai/ai-farm.js) unless the side's plan needs it for a bigger
 //          job - who pushes, who guards, who goes to the bear - picked by fit
 //          to the mood and the position. A role is kept while it is still
@@ -50,7 +50,7 @@ const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // its own (a lobby's, a joiner's) is the mood its name hashes to, so the same
 // name plays the same temperament in every match, online or off; a seat bot
 // (named after its colour) is the mood of its place on its side - the five
-// dealt round each side in one fixed order, so both sides field all five and
+// dealt round each side in one fixed order, each side starting two further on, and
 // RED-4 is the same bot every match. No seed, no rng: nothing here moves the
 // world's draws.
 function aiMoodOf(name) {
@@ -84,15 +84,14 @@ const AI_ROLES = {
   stalker:  { name: 'STALKER' },  // goes after a rival the side saw alone
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
   jungler:  { name: 'JUNGLER' },  // JUNGLE: walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
-  laner:    { name: 'LANER' },    // TOP, MID, BOT: last-hits the rival wave on its lane behind its own (js/ai/ai-farm.js)
-  support:  { name: 'SUPPORT' },  // SUPPORT: walks with its side's BOT and leaves it the last hits (js/ai/ai-farm.js)
+  laner:    { name: 'LANER' },    // TOP, BOT: last-hits the rival wave on its lane behind its own (js/ai/ai-farm.js)
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
 const AI_STALK_AT = 90;     // s into the match the side lets a stalker off the leash
 const AI_KEEP = 2;          // fit a bot's current role is worth over a better-suited teammate's
 // fit a position adds to the side's bigger jobs, on top of the mood's: the
 // roamers leave their post first, the laners last
-const AI_POS_FIT = { jungle: { pusher: 1, slayer: 2 }, support: { pusher: 1, guard: 1 } };
+const AI_POS_FIT = { jungle: { pusher: 1, slayer: 2 } };
 const AI_WINDOW_DOWN = 2;   // more rivals down than own: the side's free hands go for the bird
 const AI_WINDOW_MIN = 12;   // s a window, once opened, stays open (a respawn does not snap it shut)
 const AI_BEAR_AT = 240;     // s into the match before a side thinks about its bear
@@ -145,7 +144,7 @@ function aiDownCount(team) {
 // counts are the profile's own (aiPushers, prof.guard - the difficulty),
 // so the plan decides WHO, not how many; the window is the one time it adds
 // pushers of its own. Every bot those and the bear party leave plays its
-// POSITION (aiPosDeal, aiPosJob, js/ai/ai-farm.js), and a side of five
+// POSITION (aiPosDeal, aiPosJob, js/ai/ai-farm.js), and a side of three
 // has a position for every seat; a bot with none stalks once the match is
 // under way, and anyone left over has no role (aiRole: null). A bot keeps
 // its role while the role is still wanted (AI_KEEP), so the jobs do not

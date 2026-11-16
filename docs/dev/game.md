@@ -10,8 +10,8 @@ nine other people are on it.
 
 ## A match
 
-Ten players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
-online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
+Six players in `players` — **people and bots: every seat nobody takes is a bot's**, alone or in an
+online lobby ([online play](multiplayer.md#online-play)) — across **two teams of three, RED vs
 BLUE** (players alternate). Everyone plays one of **twenty-two heroes** (ARMATOS the defensive initiator, FORTIVA the juggernaut, BELLA the duelist, IGNIA the hearthkeeper, AURA the artillery mage, SALVIA the healer, LUCERNA the catch-and-save support, HIEMS the control mage, RUPES the engage tank, VARRO the jungler who calls wolves, BUCINA the tempo support, NIX the night scout, FABER the zone mage, VELOX the skating marksman, FALCO the diving assassin, MARIS the catch tank, LIGNUM the treeline skirmisher, SAGITTA the siege marksman, CLIVUS the climbing fighter, ARCUS the fletcher, FOSSOR the digger and PORTITOR the carrier — a human's is the one picked on the champ select's hero grid) and is **dropped in by their team's armoured eagle**, which flies in over its own corner and lands
 the whole side at home; nobody starts at a spawn camp. Each side's **base** is a fixed hollow cut
 into its **corner's** woods, RED always bottom-left, BLUE always top-right
@@ -226,6 +226,6 @@ each bolt in a row into the same hero hits harder. [Road towers](gameplay/robots
   [the hero grid](rendering.md#lobby) and [the profile](rendering/main-menu-title.md#the-profile). An
   online lobby sends the host that name and hero, and a **player card** to show (the picture, the
   rating, the record and the last ten matches; `cardMine`, js/app/history.js) that the match never
-  reads. Each screen keeps its own **match history** (every finished match with all ten seats) and
+  reads. Each screen keeps its own **match history** (every finished match with all its seats) and
   the cards it has heard; with no server, search finds only the people met. If a server ever holds
   the profile, it holds the same objects.

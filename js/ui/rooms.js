@@ -249,7 +249,7 @@ function beginRoom() {
 }
 // the room's host's body: ours, or the slot the welcome named
 function roomHost() { return players[NET.isClient ? NET.hostSlot : localId]; }
-// the five seats of side t, in slot order: the same five, the same order, on every screen
+// the three seats of side t, in slot order: the same three, the same order, on every screen
 function roomSide(t) { return players.filter((p) => p.team === t); }
 // your side's seats on the hub: partyCap of them, the people first and then
 // the empty seats a friend would take, in slot order on every screen

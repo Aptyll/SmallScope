@@ -31,8 +31,8 @@ table, then the path of the standings page.
 
 ## How it works
 
-- **An entry is one bot file playing all five seats of a side.** Seats 0, 2, 4, 6, 8 are team 0;
-  1, 3, 5, 7, 9 are team 1. Sides alternate from one match to the next.
+- **An entry is one bot file playing all three seats of a side.** Seats 0, 2, 4 are team 0;
+  1, 3, 5 are team 1. Sides alternate from one match to the next.
 - **Pairing:** the entry with the fewest games plays one of the four closest to it in rating.
   Each match gets a fresh seed, recorded, so any match can be replayed. A seed varies the match,
   never the map: every match is on the one map.
