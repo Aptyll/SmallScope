@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.957';
+const PATCH_TXT = 'PATCH 0.958';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.958', 'A NEW HOME SCREEN LIKE A GAME CLIENT: YOUR PROFILE AND MATCH HISTORY, A THREE SEAT PARTY WITH PLAY BESIDE IT AND ITS CHAT, A HERO\'S ABILITIES AND BUILD, YOUR FRIENDS AND THE LADDER, ALL ON ONE PAGE.'],
   ['0.957', 'A ROLLING HERO CURLS UP IN THEIR OWN COLOURS: THE SHOULDERS UNDER THE TUCKED HEAD WEAR THEIR HOOD, HAIR OR HELM, SO ABOUT A THIRD OF THE BALL IS THEIRS AND NOT THE TEAM\'S.'],
   ['0.956', 'HIT A CAMP AND ITS LEASH LIES ON THE SNOW: A RING OF DASHES WHERE THE MONSTERS GIVE UP, TURNING RED WHILE YOU ARE PAST IT AND THEY ARE ABOUT TO GO HOME.'],
   ['0.955', 'ON STEAM YOU ARE ALWAYS IN A PARTY OUTSIDE A MATCH, SO A FRIEND\'S JOIN GAME WORKS FROM ANY MENU OR THE PRACTICE FIELD; A LEADER WHO ACCEPTS AN INVITE BRINGS THE WHOLE PARTY ALONG.'],
