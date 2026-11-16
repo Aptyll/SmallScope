@@ -580,6 +580,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['MOUSE: moves at your desktop\'s own speed, the cursor no longer trails your hand', '0.951'],
     ['VIDEO: FULLSCREEN or WINDOWED, and UI SIZE; settings and keys follow you on Steam Cloud', '0.950'],
     ['A FOUNDER\'S GOLD FEATHER AND A RANKED SHIELD, FLINT TO CRYSTAL, ON PROFILES AND PARTY SEATS', '0.945'],
     ['YOUR PROFILE SHOWS YOUR MOST PLAYED HERO WHOLE, WEAPON IN HAND, IN THE SKIN YOU WEAR', '0.946'],

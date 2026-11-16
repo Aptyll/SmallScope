@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.950';
+const PATCH_TXT = 'PATCH 0.951';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.951', 'THE MOUSE NOW MOVES AT YOUR DESKTOP\'S OWN SPEED: THE PIXEL CURSOR IS DRAWN BY YOUR PC, SO IT NO LONGER TRAILS YOUR HAND.'],
   ['0.950', 'SETTINGS: THE VIDEO PAGE HAS FULLSCREEN OR WINDOWED AND A UI SIZE (THE WORLD STAYS THE SAME SIZE), AND ON STEAM YOUR SETTINGS AND KEYS FOLLOW YOU TO ANY PC.'],
   ['0.949', 'THE THINNEST ABILITY ICONS ARE REDRAWN BOLD: SAGITTA, ARCUS, MARIS, VARRO, CLIVUS, BELLA, NIX AND BUCINA, PLUS THE AMBUSHER AND QUICKHAND CALLINGS.'],
   ['0.948', 'AT NIGHT THE TOWERS, BAYS AND STALL NO LONGER BURN LAMPS: THE MOON ON THE PINES IS THE ONLY LIGHT LEFT.'],
