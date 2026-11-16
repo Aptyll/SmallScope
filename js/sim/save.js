@@ -25,8 +25,8 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 19;          // the body's shape; a body of another shape is refused, never half-read, so
-                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen; 17: the loadout cut; 18: three a side; 19: the two-lane field, the ride, ziplines and deer cut)
+const SAVE_V = 20;          // the body's shape; a body of another shape is refused, never half-read, so
+                            // nothing below fills in a field an older save lacked (4: the survival leftovers cut; 5: the wallet is p.gold; 6: buildings lose `tier`, the pump's type is 'pump'; 7: one `shields` list; 8: a player's `buys`, `lifeT` and FROSTBITE's heal cut; 9: the loadout's picks, cooldowns and calling clocks; 10: the valley a fifth bigger; 11: HUNTER and WARRIOR gone, so every hero index moved, and craters and nets cut; 12: a crash pad's centre is tx/ty; 13: the map grows on worldgen's own streams, so every seed's valley moved; 14: one map, the record names its world, not a seed; 15: berry bushes gone; 16: every fish gone and the creek frozen; 17: the loadout cut; 18: three a side; 19: the two-lane field, the ride, ziplines and deer cut; 20: a soldier's shot is its own, in soldierShots)
 
 // ---- what is saved ----------------------------------------------------------
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
@@ -48,6 +48,7 @@ const SAVE_ROOTS = [
   ['particles', ...saveArr(particles)], ['floaters', ...saveArr(floaters)], ['footprints', ...saveArr(footprints)],
   ['camps', ...saveArr(camps)],
   ['waves', ...saveArr(waves)], // each lane's soldier waves (js/sim/robots.js)
+  ['soldierShots', ...saveArr(soldierShots)], // their snowballs and bolts in the air (js/sim/robots.js)
   ['abFx', ...saveArr(abFx)],
   ['guards', () => [guards, guardN], (v) => { saveArr(guards)[1](v && v[0]); guardN = v ? v[1] : 0; }], // ARMATOS's standards (js/sim/armatos.js)
   ['orcaSpouts', ...saveArr(orcaSpouts)], // the up orca's throws in the air (js/sim/orca.js)

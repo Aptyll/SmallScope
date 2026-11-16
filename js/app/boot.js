@@ -180,7 +180,7 @@ window.DBG = {
   // The merchant's counter (js/ui/shop.js) and the items it sells
   // (js/sim/items.js): the catalogue, the panel's geometry, and every trade
   // without the pointer
-  BUILD_ITEMS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopRecommended, itemCost: (id, p) => itemCost(p || player, id),
+  BUILD_ITEMS, ITEM_DONE, ITEM_ALL, itemTier, itemInto, shopPicks: (p) => shopPicks(p || player), shopThreats: (p) => shopThreats(p || player), itemCost: (id, p) => itemCost(p || player, id),
   buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
   botNextItem, botItemBuy,
   // the heals: the potion's slot and its drink

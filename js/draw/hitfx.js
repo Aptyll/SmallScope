@@ -48,8 +48,7 @@ function hitAge(u, now) {
   const k = u instanceof Player ? 'P' : u.bot ? 'R' : 'A';
   hitBig = u.tallyLast >= HIT_BIG[k] * u.maxHp;
   if (!hitBig && !(u.tallyLast >= HIT_SMALL[k] * u.maxHp)) return -1;
-  const sub = NET.role === 'client' && NET.easeAt ? Math.max(0, Math.min(SNAP_EVERY * TICK_DT, now - NET.easeAt / 1000)) : 0;
-  const t = (state.tick - u.tallyTick) * TICK_DT + sub;
+  const t = (state.tick - u.tallyTick) * TICK_DT + netSince(now);
   return t >= 0 && t <= (hitBig ? HIT_PUFF_T : HIT_SMALL_T) ? t : -1;
 }
 function hitCurOf(u) {

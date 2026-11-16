@@ -105,6 +105,7 @@ function shopFx(p, txt, col) {
 function shopCmd(p, c) {
   if (c.act === 'item') return !!buyItem(p, c.id);
   if (c.act === 'sellItem') return !!sellItem(p, c.slot);
+  if (c.act === 'undo') return !!undoShop(p);
   return false;
 }
 
@@ -118,7 +119,7 @@ function shopCmd(p, c) {
 //   t | under it                                  |   theirs, owned ones ticked
 //   s |                                           | icon NAME  price
 //   [3 slots]                                     | stats, passive
-//   [3 slots]  [SELL n]                    purse  | [ BUY  n ]
+//   [3 slots]  [SELL n] [UNDO]             purse  | [ BUY  n ]
 //
 // The TOP tabs say WHAT to show: RECOMMENDED (your class's own build, the one
 // a bot of it buys: BOT_BUILDS, js/sim/items.js), ALL, and one tab a style
@@ -142,9 +143,6 @@ const SHOP_PANE_X = 330;   // the right pane's left edge, from the slab's
 const SHOP_SELL_W = 52, SHOP_BTN_H = 16;   // the SELL plate, and both plates' height
 const SHOP_TREE_PITCH = 24, SHOP_TREE_ROW = 34; // the build tree: a leaf's pitch, a level's
 const SHOP_INTO_MAX = 7;   // BUILDS INTO wells shown (empty ones keep the row's shape)
-const SHOP_REC_WELL = 36, SHOP_REC_PITCH = 40; // RECOMMENDED: a few items, so each icon is drawn twice the grid's size
-const SHOP_REC_ROW = 56, SHOP_REC_RATES = 10; // ...a section's pitch (its headline, its wells, their prices), and the line of rates under the paths
-const SHOP_PATH_PITCH = 46, SHOP_PATH_W = 150; // ...a path's wells (a chevron between), and the room one path takes
 const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
 const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_FAINT_INK = '#5c616b', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
 const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
@@ -193,37 +191,16 @@ function shopFiltered(id) {
   const c = state.shopCat;
   return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
 }
-// THE RECOMMENDED TAB, League's: your hero's build as the players who play
-// it build it (buildsRec, js/app/builds.js) - the most picked path of three
-// legendaries and, beside it, a path that wins more when one does, each with
-// its pick and win rate; then the boots and the other items people finish.
-// While the hero has too few games for numbers the curated list stands in
-// (BOT_BUILDS, the one a bot of it buys), as CORE with no numbers. Above it
-// all, START: the starter that opens the build (itemStarter), the potion and
-// the first item's basics.
+// THE RECOMMENDED TAB (js/ui/shop-rec.js): three cards bent to the match,
+// then START and the rest of the build (shopPicks)
 function shopHero() { return CLASSES[player.cls].name; }
-function shopRecommended() {
-  const R = buildsRec(shopHero(), botBuild(player));
-  const first = R.core[0].ids[0];
-  const start = [itemStarter(first), 'potion'].concat([...itemParts(first)].filter(isPart).sort((a, b) => BUILD_ITEMS[a].price - BUILD_ITEMS[b].price).slice(0, 3));
-  return { R, start };
-}
 // every item the tab names, for the gold pip the other tabs wear on them
 function shopRecSet() {
-  const { R } = shopRecommended();
-  return new Set(R.core.flatMap((r) => r.ids).concat(R.boots.flatMap((r) => r.ids)));
+  const P = shopPicks(player);
+  return new Set(P.cards.map((c) => c.id).concat(P.then));
 }
-// what the panel opens on: the first item of the top path you do not hold yet
-function shopRecNext() {
-  const { R } = shopRecommended();
-  const have = player.items.slice();
-  for (const id of R.core[0].ids.concat(R.boots.length ? [R.boots[0].ids[0]] : [], R.more)) {
-    const i = have.indexOf(id);
-    if (i >= 0) { have[i] = null; continue; }
-    return id;
-  }
-  return botNextItem(player) || ITEM_DONE[0];
-}
+// what the panel opens on: the first card, the next item of your build
+function shopRecNext() { return shopPicks(player).cards[0].id; }
 // the pieces of an item still to buy, the way its price is worked out (itemCost,
 // js/sim/items.js): a held piece is skipped, each slot counted once, and a piece not held is looked into
 function shopMissing(id) {
@@ -291,7 +268,8 @@ function shopLayout() {
   const x = Math.max(2, Math.round((VIEW_W - W) / 2)), y = SHOP_Y;
   const gx = x + SHOP_GRID_X, by = y + SHOP_H - 51; // the grid's left edge, the slots' top row
   const gw0 = PX - SHOP_GRID_X - 8; // the grid's width
-  const tabs = [], cats = [], grid = [], heads = [], slots = [], rates = [], arrows = [];
+  const tabs = [], cats = [], grid = [], heads = [], slots = [], arrows = [];
+  let cards = [];
   const span = (g) => SHOP_TABS.reduce((n, t) => n + pixelTextWidth(t.label) + 8, 0) + (SHOP_TABS.length - 1) * g;
   const gap = span(4) <= PX - 26 ? 4 : 0, low = span(gap) > PX - 26;
   let tx = x + 8;
@@ -299,34 +277,7 @@ function shopLayout() {
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
   const well = (id, wx, wy, w = SHOP_WELL) => grid.push({ id, x: wx, y: wy, w, h: w });
   if (state.shopTab === 'rec') {
-    // three sections of big wells: START with BOOTS beside it, the paths, THEN
-    const { R, start } = shopRecommended();
-    const sy = (r) => y + 25 + r * SHOP_REC_ROW + (r > 1 ? SHOP_REC_RATES : 0);
-    const gw = PX - SHOP_GRID_X - 8; // the grid's width, past the stat bar to the pane
-    const B = SHOP_REC_WELL, fits = Math.floor((gw + SHOP_REC_PITCH - B) / SHOP_REC_PITCH); // the big wells a row holds
-    const big = (id, wx, r) => well(id, wx, sy(r) + 9, B);
-    heads.push({ label: tr('shop.start'), x: gx, y: sy(0) });
-    start.slice(0, fits).forEach((id, i) => big(id, gx + i * SHOP_REC_PITCH, 0));
-    // BOOTS beside START; with no room there (a narrow view, a long START), after the one path that view holds
-    const paths = Math.max(1, Math.floor((gw + 8) / SHOP_PATH_W));
-    const room = (x0) => Math.max(0, Math.floor((gx + gw - x0 + SHOP_REC_PITCH - B) / SHOP_REC_PITCH));
-    const bx0 = gx + Math.min(start.length, fits) * SHOP_REC_PITCH + 12, br = room(bx0) ? 0 : 1, bx = br ? gx + paths * SHOP_PATH_W : bx0;
-    const boots = R.boots.slice(0, room(bx));
-    if (boots.length) heads.push({ label: tr('shop.boots'), x: bx, y: sy(br) });
-    boots.forEach((row, i) => big(row.ids[0], bx + i * SHOP_REC_PITCH, br));
-    const games = tr('shop.games', { n: R.games });
-    heads.push({ label: games, x: gx + gw - pixelTextWidth(games), y: sy(0), dim: true });
-    // the paths, side by side: three wells a step apart with a chevron
-    // between, and the pick and win rate under their prices
-    R.core.slice(0, paths).forEach((row, k) => { // the paths that fit
-      const px = gx + k * SHOP_PATH_W;
-      heads.push({ label: tr(!R.data ? 'shop.core' : row.best ? 'shop.mostWins' : 'shop.mostPicked'), x: px, y: sy(1) });
-      row.ids.forEach((id, i) => big(id, px + i * SHOP_PATH_PITCH, 1));
-      if (row.pick !== undefined) rates.push({ x: px, y: sy(1) + 9 + B + 10, pick: row.pick, win: row.win });
-      for (let i = 1; i < row.ids.length; i++) arrows.push({ x: px + i * SHOP_PATH_PITCH - 7, y: sy(1) + 9 + (B >> 1) });
-    });
-    heads.push({ label: tr(R.data ? 'shop.alsoBuilt' : 'shop.then'), x: gx, y: sy(2) });
-    R.more.slice(0, fits).forEach((id, i) => big(id, gx + i * SHOP_REC_PITCH, 2));
+    cards = shopRecLayout(gx, y + 25, gw0, by - 6, grid, heads);
   } else {
     // the rows the grid holds; more than that (a narrow view's fewer columns)
     // and the wheel walks them, an arrow at each end that has more
@@ -341,13 +292,14 @@ function shopLayout() {
     slots.push({ i, x: x + 6 + (i % ITEM_COLS) * SHOP_PITCH, y: by + ((i / ITEM_COLS) | 0) * SHOP_PITCH, w: SHOP_WELL, h: SHOP_WELL });
   }
   const sell = { x: x + 6 + ITEM_COLS * SHOP_PITCH + 4, y: by + 13, w: SHOP_SELL_W, h: SHOP_BTN_H };
+  const undo = { x: sell.x + SHOP_SELL_W + 4, y: sell.y, w: SHOP_SELL_W, h: SHOP_BTN_H };
   const pane = { x: x + PX, y: y + (low ? 22 : 6), w: W - PX - 6, h: SHOP_H - (low ? 28 : 12) };
   const into = [];
   for (let i = 0; i < SHOP_INTO_MAX; i++) into.push({ i, x: pane.x + 6 + i * SHOP_PITCH, y: pane.y + 15, w: SHOP_WELL, h: SHOP_WELL });
   return {
     panel: { x, y, w: W, h: SHOP_H }, px: PX, low,
     xr: { x: low ? x + W - 17 : pane.x - 17, y: y + 6, w: 11, h: 11 },
-    tabs, cats, grid, heads, slots, rates, arrows, sell, pane, into, by,
+    tabs, cats, grid, cards, heads, slots, arrows, sell, undo, pane, into, by,
     purse: { x: pane.x - 10, y: by + 18 },
     buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
     tree: shopTree(pane, shopPicked().id),
@@ -386,7 +338,7 @@ function shopTreeOwned(tree) {
 }
 
 // 'x' | 'panel' | {kind:'tab', id} | {kind:'cat', c} | {kind:'pick', id} |
-// {kind:'slot', i} | {kind:'buy'} | {kind:'sell'} | null. Shared by the
+// {kind:'slot', i} | {kind:'buy'} | {kind:'sell'} | {kind:'undo'} | null. Shared by the
 // click, the cursor and the tooltip, so the three can never disagree about
 // what the pointer is on.
 function shopHit(mx, my) {
@@ -396,16 +348,19 @@ function shopHit(mx, my) {
   if (ptInRect(L.xr, mx, my)) return 'x';
   for (const r of L.tabs) if (ptInRect(r, mx, my)) return { kind: 'tab', id: r.id };
   for (const r of L.cats) if (ptInRect(r, mx, my)) return { kind: 'cat', c: r.c };
-  for (const r of L.grid.concat(L.tree)) if (ptInRect(r, mx, my)) return { kind: 'pick', id: r.id };
+  for (const r of L.grid.concat(L.cards, L.tree)) if (ptInRect(r, mx, my)) return { kind: 'pick', id: r.id };
   const into = itemInto(shopPicked().id);
   for (const r of L.into) if (into[r.i] && ptInRect(r, mx, my)) return { kind: 'pick', id: into[r.i] };
   for (const r of L.slots) if (ptInRect(r, mx, my)) return { kind: 'slot', i: r.i };
   if (ptInRect(L.buy, mx, my)) return { kind: 'buy' };
   if (ptInRect(L.sell, mx, my)) return { kind: 'sell' };
+  if (ptInRect(L.undo, mx, my)) return { kind: 'undo' };
   return 'panel';
 }
 
 // the two orders the slab sends, through the player's input like every other act
+// UNDO: the last trade at this counter taken back (undoShop, js/sim/items.js)
+function shopUndo() { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'undo' }; }
 function shopBuy(id) { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'item', id }; }
 function shopSell(slot) {
   const id = player.items[slot];
@@ -424,6 +379,7 @@ function shopClick(h) {
   if (h.kind === 'slot') { if (player.items[h.i]) { state.shopSlot = h.i; SFX.place(); } return true; }
   if (h.kind === 'buy') { shopBuy(shopPicked().id); return true; }
   if (h.kind === 'sell') { if (state.shopSlot >= 0) shopSell(state.shopSlot); return true; }
+  if (h.kind === 'undo') { if (player.shopUndo.length) shopUndo(); return true; }
   return true; // the slab eats the rest; the world never sees it
 }
 // one right press: the shortcut - buy what is under it on the grid or the
@@ -490,20 +446,25 @@ function shopItemWell(r, id, h) {
 }
 // a flat plate with a word on it, and the gold it moves after the word as a
 // bare number (the purse is the one coin on the slab): gold, red when the
-// purse is short, dim when the plate is dim
-function shopPlate(r, word, n, bg, ink, nInk) {
+// purse is short, dim when the plate is dim; and a word after the number (`tail`)
+function shopPlate(r, word, n, bg, ink, nInk, tail) {
   ctx.fillStyle = bg; ctx.fillRect(r.x, r.y, r.w, r.h);
-  const tw = pixelTextWidth(word) + (n === undefined ? 0 : 5 + pixelTextWidth(String(n)));
+  const nw = n === undefined ? 0 : 5 + pixelTextWidth(String(n)), tw = pixelTextWidth(word) + nw + (tail ? 5 + pixelTextWidth(tail) : 0);
   const x0 = r.x + ((r.w - tw) >> 1), ty = r.y + ((r.h - 5) >> 1);
   drawPixelText(ctx, word, x0, ty, ink);
   if (n !== undefined) drawPixelText(ctx, String(n), x0 + pixelTextWidth(word) + 5, ty, nInk || (ink === SHOP_INK ? RES_COLORS.gold : ink));
+  if (tail) drawPixelText(ctx, tail, x0 + pixelTextWidth(word) + nw + 5, ty, ink);
 }
-// what buying the pick needs: its price now, and whether it can go through
+// what buying the pick needs: its price now, whether it can go through, and
+// when it cannot, the one thing in the way (`stop`: a text key, or 'gold')
 function shopBuyState(id) {
-  if (id === 'potion') { const n = BUILD_ITEMS.potion.price; return { n, gold: n <= player.gold, ok: n <= player.gold && potionRoom(player) }; }
-  const c = itemCost(player, id);
-  const gold = c.gold <= player.gold;
-  return { n: c.gold, gold, ok: gold && itemRoom(player, c.used) >= 1 && !bootsClash(player, id, c.used) };
+  if (id === 'potion') {
+    const n = BUILD_ITEMS.potion.price, gold = n <= player.gold, room = potionRoom(player);
+    return { n, gold, ok: gold && room, stop: !gold ? 'gold' : room ? null : player.potions > 0 ? 'shop.potionsFull' : 'shop.bagFull' };
+  }
+  const c = itemCost(player, id), gold = c.gold <= player.gold;
+  const stop = !gold ? 'gold' : bootsClash(player, id, c.used) ? 'shop.haveBoots' : itemRoom(player, c.used) < 1 ? 'shop.bagFull' : null;
+  return { n: c.gold, gold, ok: !stop, stop };
 }
 
 function drawShopPanel(now) {
@@ -520,7 +481,8 @@ function drawShopPanel(now) {
   ctx.fillRect(P.x + SHOP_GRID_X - 4, P.y + 23, 1, L.by - 9 - P.y - 23); // the stat bar's edge
   drawShopCats(L, h);
   for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, hd.dim ? SHOP_FAINT_INK : SHOP_DIM);
-  drawShopRates(L);
+  drawShopArrows(L);
+  for (const c of L.cards) drawShopCard(c, h);
   const rec = state.shopTab === 'rec' ? null : shopRecSet();
   const next = shopRecNext(), started = shopOpenPick() !== next; // a piece of the next item is in reach
   for (const r of L.grid) {
@@ -536,20 +498,12 @@ function drawShopPanel(now) {
   drawShopPane(L, h);
 }
 
-// a path's numbers under its wells: how many of the hero's games built it,
-// and how many of those it won - a win rate over half in the stat green
-function drawShopRates(L) {
-  for (const r of L.rates) {
-    drawPixelText(ctx, tr('shop.pick'), r.x, r.y, SHOP_DIM);
-    drawPixelText(ctx, r.pick + '%', r.x + 22, r.y, SHOP_INK);
-    const wx = r.x + 22 + pixelTextWidth(r.pick + '%') + 8, ww = pixelTextWidth(tr('shop.win')) + 3;
-    drawPixelText(ctx, tr('shop.win'), wx, r.y, SHOP_DIM);
-    drawPixelText(ctx, r.win + '%', wx + ww, r.y, r.win > 50 ? SHOP_STAT : SHOP_INK);
-  }
+// the grid's more-rows marks, at each end that has more
+function drawShopArrows(L) {
   ctx.fillStyle = SHOP_DIM;
   for (const a of L.arrows) for (let k = 0; k < 3; k++) {
-    if (a.up || a.down) { const ry = a.up ? a.y + k : a.y + 2 - k; ctx.fillRect(a.x + 2 - k, ry, 1, 1); ctx.fillRect(a.x + 2 + k, ry, 1, 1); } // the grid's more-rows mark
-    else { ctx.fillRect(a.x + k, a.y - 2 + k, 1, 1); ctx.fillRect(a.x + k, a.y + 2 - k, 1, 1); }
+    const ry = a.up ? a.y + k : a.y + 2 - k;
+    ctx.fillRect(a.x + 2 - k, ry, 1, 1); ctx.fillRect(a.x + 2 + k, ry, 1, 1);
   }
 }
 // RECOMMENDED and ALL ITEMS: the open one lit with a line under it
@@ -621,10 +575,16 @@ function drawShopPane(L, h) {
     drawPixelText(ctx, tr('shop.potionHeal', { hp: POTION_HEAL, s: POTION_T }), R.x + 17, y, SHOP_STAT);
     drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 13, SHOP_DIM);
   }
-  // BUY: the pick's price now. A purse that is short, or no room, greys the plate and dims the price with it
-  // (never an error's red: nothing went wrong, and never a minus, which read as a price below zero)
+  // BUY: the pick's price now. When it cannot go through, the grey plate says
+  // why instead: the gold still to find (and fills up as the purse does), a
+  // full bag, a pair already worn. Never an error's red: nothing went wrong,
+  // and never a minus, which read as a price below zero.
   const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
-  shopPlate(L.buy, tr('shop.buy'), b.n, !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY, b.ok ? SHOP_INK : SHOP_DIM);
+  if (b.ok) shopPlate(L.buy, tr('shop.buy'), b.n, hot ? SHOP_BUY_HOT : SHOP_BUY, SHOP_INK);
+  else if (b.stop === 'gold') {
+    shopPlate(L.buy, tr('shop.need'), b.n - player.gold, SHOP_PLATE, SHOP_DIM, RES_COLORS.gold, tr('shop.more'));
+    ctx.fillStyle = RES_COLORS.gold; ctx.fillRect(L.buy.x, L.buy.y + L.buy.h - 2, Math.round(L.buy.w * player.gold / b.n), 2);
+  } else shopPlate(L.buy, tr(b.stop), undefined, SHOP_PLATE, SHOP_DIM);
 }
 // the tree: a line down from each parent and across to its children, then the
 // wells; a component you hold is rimmed green with a tick and wears no price
@@ -659,7 +619,7 @@ function drawShopTree(L, h) {
 }
 
 // your six slots, three by two (the bottom bar's shape) in the bottom-left corner: a held item in its tier rim, the picked
-// one lit; an empty slot is a dark well. SELL beside them sells the pick.
+// one lit; an empty slot is a dark well. SELL beside them sells the pick, UNDO takes back the last trade.
 function drawShopSlots(L, h) {
   for (const r of L.slots) {
     const id = player.items[r.i];
@@ -670,6 +630,9 @@ function drawShopSlots(L, h) {
   }
   const pk = shopPicked(), live = pk.slot >= 0, hot = live && !!h && h.kind === 'sell';
   shopPlate(L.sell, tr('shop.sell'), live ? itemSellValue(pk.id) : undefined, hot ? SHOP_PLATE_HOT : SHOP_PLATE, live ? SHOP_INK : SHOP_DIM);
+  // UNDO beside it: lit while this visit has a trade to take back
+  const can = player.shopUndo.length > 0, uh = can && !!h && h.kind === 'undo';
+  shopPlate(L.undo, tr('shop.undo'), undefined, uh ? SHOP_PLATE_HOT : SHOP_PLATE, can ? SHOP_INK : SHOP_DIM);
 }
 
 // ---- tooltips ------------------------------------------------------------

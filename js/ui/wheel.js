@@ -95,6 +95,7 @@ function cmdOk(c) {
   if (c.kind === 'shop') {
     if (c.act === 'item') return cmdKey(BUILD_ITEMS, c.id);
     if (c.act === 'sellItem') return cmdInt(c.slot, 0, ITEM_SLOTS);
+    if (c.act === 'undo') return true; // nothing to check: the history is the player's own
     return false;
   }
   if (c.kind === 'ping') return cmdKey(PING_CALLS, c.k) && Number.isFinite(c.x) && Number.isFinite(c.y);

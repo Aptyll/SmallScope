@@ -104,6 +104,9 @@ const ITEM_PASSIVES = {
 // `kind` names the stat it is about when its stats cannot say (itemKind).
 // `starter` marks a STARTER (League's Doran's) and lists the kinds of build
 // it opens (itemStarter): a first buy that is part of nothing, sold on later.
+// `why` is a finished item's reason in two words, the tag on its RECOMMENDED
+// card (js/ui/shop-rec.js); `counter` names the rival threat it answers
+// (SHOP_THREATS there: 'heal', 'armor', 'burst', 'attack').
 const BUILD_ITEMS = {
   // starters: the opening gold's one item, a touch more stat than its price
   // buys in basics, and nothing to build it into
@@ -141,45 +144,45 @@ const BUILD_ITEMS = {
   rimecharm: { name: 'RIME CHARM', price: 800, from: ['bead'], stats: { ap: 12 }, passive: 'frost' },
   yarrow:  { name: 'YARROW BUNDLE', price: 800, from: ['glass'], stats: { hp: 15, haste: 8 }, passive: 'mend' },
   // boots
-  hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true, styles: ['tank', 'bruiser'] },
-  quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true, styles: ['marksman'] },
-  shoes:   { name: 'SNOWSHOES', price: 900, from: ['boots'], stats: { ms: 8, haste: 10 }, boots: true, styles: ['mage', 'assassin', 'bruiser'] },
-  emberb:  { name: 'EMBER BOOTS', price: 1000, from: ['boots', 'bead'], stats: { ms: 8, ap: 9 }, boots: true, styles: ['mage'] },
-  mukluk:  { name: 'MUKLUKS', price: 1000, from: ['boots', 'hide'], stats: { ms: 8, hp: 15 }, passive: 'steady', boots: true, styles: ['tank', 'bruiser'] },
-  skates:  { name: 'SKATES', price: 900, from: ['boots'], stats: { ms: 12 }, passive: 'glide', boots: true, styles: ['assassin', 'marksman'] },
+  hobnail: { name: 'HOBNAIL BOOTS', price: 1000, from: ['boots', 'plate'], stats: { ms: 8, armor: 12 }, boots: true, styles: ['tank', 'bruiser'], why: 'ARMOR' },
+  quick:   { name: 'QUICKSTEP BOOTS', price: 1000, from: ['boots', 'string'], stats: { ms: 8, as: 0.22 }, boots: true, styles: ['marksman'], why: 'ATTACK SPEED' },
+  shoes:   { name: 'SNOWSHOES', price: 900, from: ['boots'], stats: { ms: 8, haste: 10 }, boots: true, styles: ['mage', 'assassin', 'bruiser'], why: 'COOLDOWN SPEED' },
+  emberb:  { name: 'EMBER BOOTS', price: 1000, from: ['boots', 'bead'], stats: { ms: 8, ap: 9 }, boots: true, styles: ['mage'], why: 'ABILITY POWER' },
+  mukluk:  { name: 'MUKLUKS', price: 1000, from: ['boots', 'hide'], stats: { ms: 8, hp: 15 }, passive: 'steady', boots: true, styles: ['tank', 'bruiser'], why: 'SHORTER STUNS' },
+  skates:  { name: 'SKATES', price: 900, from: ['boots'], stats: { ms: 12 }, passive: 'glide', boots: true, styles: ['assassin', 'marksman'], why: 'ICE SPEED' },
   // legendary
-  horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'] },
-  feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'] },
-  frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'] },
-  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'cull', styles: ['assassin', 'marksman'] },
-  maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'] },
-  beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'] },
-  fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'] },
-  brand:     { name: 'IRON BRAND', price: 2900, from: ['whet', 'mail'], stats: { dmg: 8, armor: 20, haste: 10 }, passive: 'chill', styles: ['bruiser', 'tank'] },
-  grind:     { name: 'GRINDSTONE', price: 3000, from: ['whet', 'belt'], stats: { dmg: 8, hp: 50, haste: 15 }, passive: 'surge', styles: ['bruiser'] },
-  collar:    { name: 'IRON COLLAR', price: 3000, from: ['knife', 'mail'], stats: { dmg: 8, hp: 40, armor: 20 }, passive: 'leech', styles: ['bruiser'] },
-  bearskin:  { name: 'BEARSKIN', price: 2800, from: ['warm', 'belt'], stats: { hp: 110, armor: 10 }, passive: 'den', styles: ['tank'] },
-  brambmail: { name: 'BRAMBLE MAIL', price: 2700, from: ['bramble', 'jacket'], stats: { hp: 40, armor: 40 }, passive: 'thorns', styles: ['tank'] },
-  stonehide: { name: 'STONEHIDE', price: 2800, from: ['mail', 'belt'], stats: { hp: 70, armor: 30 }, passive: 'brace', styles: ['tank', 'bruiser'] },
-  hearth:    { name: 'HEARTH PLATE', price: 2800, from: ['ember', 'mail'], stats: { hp: 60, armor: 20, haste: 10 }, passive: 'smolder', styles: ['tank'] },
-  glacier:   { name: 'GLACIER SHIELD', price: 2700, from: ['buckler', 'jacket'], stats: { hp: 30, armor: 25, haste: 15 }, passive: 'steady', styles: ['tank'] },
-  cloak:     { name: 'SNOW CLOAK', price: 2600, from: ['sash', 'belt'], stats: { hp: 70, as: 0.2, ms: 8 }, passive: 'drift', styles: ['assassin', 'marksman'] },
-  storm:     { name: 'STORM GLASS', price: 3000, from: ['rod', 'almanac'], stats: { ap: 33, haste: 15 }, passive: 'surge', styles: ['mage'] },
-  deeprod:   { name: 'DEEP ROD', price: 3400, from: ['rod', 'rod'], stats: { ap: 48 }, passive: 'amplify', styles: ['mage'] },
-  marsh:     { name: 'MARSH LIGHT', price: 2800, from: ['lantern', 'almanac'], stats: { ap: 27, haste: 10, ms: 5 }, passive: 'scorch', styles: ['mage'] },
-  slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 24, hp: 50 }, passive: 'chill', styles: ['mage', 'bruiser'] },
-  clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 27, armor: 18, haste: 8 }, passive: 'brace', styles: ['mage', 'tank'] },
-  hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 24, as: 0.3, haste: 10 }, passive: 'kindling', styles: ['mage', 'marksman'] },
+  horn:      { name: "HUNTER'S HORN", price: 2800, from: ['quiver', 'recurve'], stats: { dmg: 9, as: 0.4, ms: 3 }, passive: 'kindling', styles: ['marksman'], why: 'BURNING HITS' },
+  feathers:  { name: 'FEATHERS', price: 2600, from: ['recurve', 'sash'], stats: { dmg: 5, as: 0.5, ms: 5 }, passive: 'light', styles: ['marksman', 'assassin'], why: 'QUICK DODGE' },
+  frostline: { name: 'FROST LINE', price: 2700, from: ['quiver', 'sash'], stats: { dmg: 8, as: 0.45 }, passive: 'chill', styles: ['marksman'], why: 'SLOWING HITS' },
+  sunstone:  { name: 'SUNSTONE', price: 3000, from: ['axe', 'pick'], stats: { dmg: 18 }, passive: 'cull', styles: ['assassin', 'marksman'], why: 'FINISH KILLS' },
+  maul:      { name: 'SPLITTING MAUL', price: 3100, from: ['axe', 'whet'], stats: { dmg: 15, haste: 10 }, passive: 'cull', styles: ['bruiser', 'assassin'], why: 'FINISH KILLS' },
+  beartooth: { name: 'BEAR TOOTH', price: 3000, from: ['tooth', 'axe'], stats: { dmg: 16, hp: 20 }, passive: 'leech', styles: ['bruiser', 'assassin'], why: 'LIFE STEAL' },
+  fang:      { name: 'WOLF FANG', price: 3000, from: ['knife', 'pick'], stats: { dmg: 9, hp: 50, haste: 10 }, passive: 'feast', styles: ['bruiser'], why: 'KILLS HEAL' },
+  brand:     { name: 'IRON BRAND', price: 2900, from: ['whet', 'mail'], stats: { dmg: 8, armor: 20, haste: 10 }, passive: 'chill', styles: ['bruiser', 'tank'], why: 'SLOWING HITS' },
+  grind:     { name: 'GRINDSTONE', price: 3000, from: ['whet', 'belt'], stats: { dmg: 8, hp: 50, haste: 15 }, passive: 'surge', styles: ['bruiser'], why: 'COMBO HITS' },
+  collar:    { name: 'IRON COLLAR', price: 3000, from: ['knife', 'mail'], stats: { dmg: 8, hp: 40, armor: 20 }, passive: 'leech', styles: ['bruiser'], why: 'TANKY DAMAGE' },
+  bearskin:  { name: 'BEARSKIN', price: 2800, from: ['warm', 'belt'], stats: { hp: 110, armor: 10 }, passive: 'den', styles: ['tank'], why: 'HUGE HEALTH' },
+  brambmail: { name: 'BRAMBLE MAIL', price: 2700, from: ['bramble', 'jacket'], stats: { hp: 40, armor: 40 }, passive: 'thorns', styles: ['tank'], why: 'ANTI-ATTACK', counter: 'attack' },
+  stonehide: { name: 'STONEHIDE', price: 2800, from: ['mail', 'belt'], stats: { hp: 70, armor: 30 }, passive: 'brace', styles: ['tank', 'bruiser'], why: 'LAST STAND' },
+  hearth:    { name: 'HEARTH PLATE', price: 2800, from: ['ember', 'mail'], stats: { hp: 60, armor: 20, haste: 10 }, passive: 'smolder', styles: ['tank'], why: 'BURN AURA' },
+  glacier:   { name: 'GLACIER SHIELD', price: 2700, from: ['buckler', 'jacket'], stats: { hp: 30, armor: 25, haste: 15 }, passive: 'steady', styles: ['tank'], why: 'SHORTER STUNS' },
+  cloak:     { name: 'SNOW CLOAK', price: 2600, from: ['sash', 'belt'], stats: { hp: 70, as: 0.2, ms: 8 }, passive: 'drift', styles: ['assassin', 'marksman'], why: 'STEALTH' },
+  storm:     { name: 'STORM GLASS', price: 3000, from: ['rod', 'almanac'], stats: { ap: 33, haste: 15 }, passive: 'surge', styles: ['mage'], why: 'COOLDOWN SPEED' },
+  deeprod:   { name: 'DEEP ROD', price: 3400, from: ['rod', 'rod'], stats: { ap: 48 }, passive: 'amplify', styles: ['mage'], why: 'MAX POWER' },
+  marsh:     { name: 'MARSH LIGHT', price: 2800, from: ['lantern', 'almanac'], stats: { ap: 27, haste: 10, ms: 5 }, passive: 'scorch', styles: ['mage'], why: 'BURNING SPELLS' },
+  slate:     { name: 'ICE SLATE', price: 2700, from: ['rod', 'hide'], stats: { ap: 24, hp: 50 }, passive: 'chill', styles: ['mage', 'bruiser'], why: 'SLOWING HITS' },
+  clock:     { name: 'STILL CLOCK', price: 3000, from: ['rod', 'mail'], stats: { ap: 27, armor: 18, haste: 8 }, passive: 'brace', styles: ['mage', 'tank'], why: 'LAST STAND' },
+  hornet:    { name: 'HORNET NEST', price: 2900, from: ['almanac', 'recurve'], stats: { ap: 24, as: 0.3, haste: 10 }, passive: 'kindling', styles: ['mage', 'marksman'], why: 'BURNING HITS' },
   // the counters (0.650): healing cut, armor pierced, a last shield, and the
   // support's two - heals that go further and armor for the hero beside you
-  bite:      { name: "WINTER'S BITE", price: 3000, from: ['rimeknife', 'axe'], stats: { dmg: 15, haste: 8 }, passive: 'frost', styles: ['marksman', 'assassin', 'bruiser'] },
-  hoarfrost: { name: 'HOARFROST STAFF', price: 2900, from: ['rimecharm', 'rod'], stats: { ap: 30, hp: 30 }, passive: 'frost', styles: ['mage', 'support'] },
-  auger:     { name: 'ICE AUGER', price: 3000, from: ['whet', 'pick'], stats: { dmg: 14, as: 0.15 }, passive: 'pierce', styles: ['marksman', 'assassin', 'bruiser'] },
-  lens:      { name: 'BURNING GLASS', price: 3000, from: ['rod', 'lantern'], stats: { ap: 36, ms: 3 }, passive: 'pierce', styles: ['mage'] },
-  oakheart:  { name: 'OAK HEART', price: 3000, from: ['knife', 'belt'], stats: { dmg: 8, hp: 60 }, passive: 'lifeline', styles: ['bruiser', 'tank'] },
-  mantle:    { name: 'QUILTED MANTLE', price: 2900, from: ['rod', 'jacket'], stats: { ap: 24, hp: 25, armor: 12 }, passive: 'lifeline', styles: ['mage'] },
-  shepherd:  { name: "SHEPHERD'S STAFF", price: 2700, from: ['yarrow', 'almanac'], stats: { ap: 21, hp: 30, haste: 10 }, passive: 'mend', styles: ['support'] },
-  banner:    { name: 'PACK BANNER', price: 2700, from: ['buckler', 'belt'], stats: { hp: 50, armor: 15, haste: 10 }, passive: 'rally', styles: ['tank', 'support'] },
+  bite:      { name: "WINTER'S BITE", price: 3000, from: ['rimeknife', 'axe'], stats: { dmg: 15, haste: 8 }, passive: 'frost', styles: ['marksman', 'assassin', 'bruiser'], why: 'ANTI-HEAL', counter: 'heal' },
+  hoarfrost: { name: 'HOARFROST STAFF', price: 2900, from: ['rimecharm', 'rod'], stats: { ap: 30, hp: 30 }, passive: 'frost', styles: ['mage', 'support'], why: 'ANTI-HEAL', counter: 'heal' },
+  auger:     { name: 'ICE AUGER', price: 3000, from: ['whet', 'pick'], stats: { dmg: 14, as: 0.15 }, passive: 'pierce', styles: ['marksman', 'assassin', 'bruiser'], why: 'ANTI-TANK', counter: 'armor' },
+  lens:      { name: 'BURNING GLASS', price: 3000, from: ['rod', 'lantern'], stats: { ap: 36, ms: 3 }, passive: 'pierce', styles: ['mage'], why: 'ANTI-TANK', counter: 'armor' },
+  oakheart:  { name: 'OAK HEART', price: 3000, from: ['knife', 'belt'], stats: { dmg: 8, hp: 60 }, passive: 'lifeline', styles: ['bruiser', 'tank'], why: 'SURVIVE BURST', counter: 'burst' },
+  mantle:    { name: 'QUILTED MANTLE', price: 2900, from: ['rod', 'jacket'], stats: { ap: 24, hp: 25, armor: 12 }, passive: 'lifeline', styles: ['mage'], why: 'SURVIVE BURST', counter: 'burst' },
+  shepherd:  { name: "SHEPHERD'S STAFF", price: 2700, from: ['yarrow', 'almanac'], stats: { ap: 21, hp: 30, haste: 10 }, passive: 'mend', styles: ['support'], why: 'BIGGER HEALS' },
+  banner:    { name: 'PACK BANNER', price: 2700, from: ['buckler', 'belt'], stats: { hp: 50, armor: 15, haste: 10 }, passive: 'rally', styles: ['tank', 'support'], why: 'GUARD ALLIES' },
 
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
@@ -246,6 +249,7 @@ function isStack(id) { return !!BUILD_ITEMS[id].stack; }
 function isBoots(id) { return !!BUILD_ITEMS[id].boots; }
 // an item a build is made OF: a legendary, or a pair of boots past FUR BOOTS
 function itemFinished(id) { const t = itemTier(id); return t === 'legend' || t === 'boots'; }
+for (const id of ITEM_ALL) if (itemFinished(id) && !BUILD_ITEMS[id].why) throw new Error('items.js: ' + id + ' has no why (its RECOMMENDED tag)');
 // the metal an item is drawn in, everywhere it shows (its well's rim, and the
 // ink its name is printed in): a basic in dim green, an epic or a pair of
 // boots in steel blue, a legendary in gold (the potion wears the basic's green)
@@ -310,6 +314,7 @@ function buyItem(p, id) {
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
   if (p.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
+  shopNote(p, c.gold);
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -325,6 +330,7 @@ function sellItem(p, slot) {
   const id = p.items[slot];
   if (!id || !merchNear(p)) { shopDeny(p); return false; }
   const v = itemSellValue(id);
+  shopNote(p, -v);
   if (id === 'potion') takePotion(p); // a stack sells one at a time
   else p.items[slot] = null;
   itemsChanged(p);
@@ -334,6 +340,33 @@ function sellItem(p, slot) {
   return true;
 }
 function itemSellValue(id) { return Math.floor(BUILD_ITEMS[id].price * ITEM_SELL); }
+
+// UNDO, League's: every trade at a counter can be taken back, last first,
+// for exactly what it cost - a buy refunds its whole price and gives back the
+// parts it used, a sale takes back what it paid and returns the item. The
+// history (`p.shopUndo`, newest last) is what the slots, the potions, the
+// build record and the gold were just before each trade. It lasts while you
+// stay at a counter: walking off, or dying, forgets it (itemsTick), so undo
+// can never turn a counter into a free swap in the field.
+const SHOP_UNDO_MAX = 20; // trades one visit remembers
+// a trade about to happen: `gold` is what it moves out of the purse (a sale's is negative)
+function shopNote(p, gold) {
+  p.shopUndo.push({ items: p.items.slice(), potions: p.potions, buys: p.buys.length, gold });
+  if (p.shopUndo.length > SHOP_UNDO_MAX) p.shopUndo.shift();
+}
+// the last trade taken back (input.cmd {kind:'shop', act:'undo'}, through runCmd)
+function undoShop(p) {
+  const u = p.shopUndo[p.shopUndo.length - 1];
+  if (!u || !merchNear(p) || p.gold < -u.gold) { shopDeny(p); return false; }
+  p.shopUndo.pop();
+  u.items.forEach((id, i) => { p.items[i] = id; }); p.potions = u.potions; p.buys.length = u.buys;
+  if (u.gold > 0) { p.gold += u.gold; p.goldSpent -= u.gold; } // a buy: never counted as earned, and no longer as spent
+  else p.gold += u.gold; // a sale: the price it paid goes back
+  itemsChanged(p);
+  shopFx(p, (u.gold > 0 ? '+' : '-') + Math.abs(u.gold), RES_COLORS.gold);
+  sfxFor(p, 'coin');
+  return true;
+}
 
 // THE BLOW ITSELF, before it lands (hurtUnit, js/sim/actions.js): CULL on a
 // body badly hurt, and SURGE's next basic attack after a key.
@@ -399,9 +432,10 @@ function itemPierce(src) { return src instanceof Player && src.kit && src.kit.pi
 function itemMend(src, q, n) { return src instanceof Player && src !== q && src.kit && src.kit.mend ? n * src.kit.mend : n; }
 // STEADY on crowd control's length (ccMul, js/sim/actions.js)
 function itemTen(e) { return e instanceof Player && e.kit && e.kit.steady ? STEADY_MUL : 1; }
-// the player's own clock, once a step (js/sim/sim.js): the fight timer, DEN's
+// the player's own clock, once a step (js/sim/sim.js): UNDO's visit, the fight timer, DEN's
 // heal once it has run out, SURGE's window, SMOLDER's pulse and the potion
 function itemsTick(p, dt) {
+  if (p.shopUndo.length && (p.dead || !merchNear(p))) p.shopUndo.length = 0; // UNDO lasts one visit
   if (p.fightT > 0) p.fightT = Math.max(0, p.fightT - dt);
   else if (p.kit.restHeal > 0 && p.hp < p.maxHp) healPlayer(p, p.kit.restHeal * dt);
   if (p.surgeT > 0) p.surgeT = Math.max(0, p.surgeT - dt);
@@ -436,6 +470,7 @@ function potionRoom(p) {
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
   if (p.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  shopNote(p, price);
   spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;
