@@ -284,12 +284,12 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   purse does, BAG FULL, ONE PAIR WORN or POTIONS FULL (never an error's red, since nothing went
   wrong, and never a minus);
 - in the bottom-left corner, **your six slots three by two**, the bottom bar's own shape (a potion
-  stack wearing its count), the **SELL** plate with what the picked slot sells for, and the purse.
+  stack wearing its count), the **SELL** plate with what the picked slot sells for, **UNDO** beside it (lit while this visit has a trade to take back), and the purse.
   **Gold shows once** along the bottom: the purse wears the coin, and both plates print bare
   numbers (`shopPlate`).
 
 A left click **picks** (an item on the grid, a node of the tree, a BUILDS INTO well, one of your
-slots: `state.shopSel`, `state.shopSlot`); BUY buys the pick and SELL sells the picked slot. A
+slots: `state.shopSel`, `state.shopSlot`); BUY buys the pick and SELL sells the picked slot. **UNDO** takes back the last trade, League's way (`undoShop`, js/sim/items.js): a buy refunds its whole price and returns the parts it used, a sale returns the item and takes back what it paid, last first, up to `SHOP_UNDO_MAX`. Each trade notes the slots, potions, build record and gold just before it (`shopNote`, on `p.shopUndo`); walking off the counter or dying forgets them (`itemsTick`), so it is never a free swap in the field. A
 **right click** is the shortcut (`shopRightClick`, asked first by the right button in
 `pointerPress`, js/app/input.js): on the grid or the tree it buys, on a slot it sells, and anywhere
 else on the slab it is only swallowed, so no ping wheel opens through the counter. The tab, the

@@ -314,6 +314,7 @@ function buyItem(p, id) {
   if (id === 'potion') return buyPotion(p);
   const c = itemCost(p, id);
   if (p.gold < c.gold || itemRoom(p, c.used) < 1 || bootsClash(p, id, c.used)) { shopDeny(p); return false; }
+  shopNote(p, c.gold);
   spendGold(p, c.gold);
   for (const j of c.used) p.items[j] = null;
   p.items[p.items.indexOf(null)] = id;
@@ -329,6 +330,7 @@ function sellItem(p, slot) {
   const id = p.items[slot];
   if (!id || !merchNear(p)) { shopDeny(p); return false; }
   const v = itemSellValue(id);
+  shopNote(p, -v);
   if (id === 'potion') takePotion(p); // a stack sells one at a time
   else p.items[slot] = null;
   itemsChanged(p);
@@ -338,6 +340,33 @@ function sellItem(p, slot) {
   return true;
 }
 function itemSellValue(id) { return Math.floor(BUILD_ITEMS[id].price * ITEM_SELL); }
+
+// UNDO, League's: every trade at a counter can be taken back, last first,
+// for exactly what it cost - a buy refunds its whole price and gives back the
+// parts it used, a sale takes back what it paid and returns the item. The
+// history (`p.shopUndo`, newest last) is what the slots, the potions, the
+// build record and the gold were just before each trade. It lasts while you
+// stay at a counter: walking off, or dying, forgets it (itemsTick), so undo
+// can never turn a counter into a free swap in the field.
+const SHOP_UNDO_MAX = 20; // trades one visit remembers
+// a trade about to happen: `gold` is what it moves out of the purse (a sale's is negative)
+function shopNote(p, gold) {
+  p.shopUndo.push({ items: p.items.slice(), potions: p.potions, buys: p.buys.length, gold });
+  if (p.shopUndo.length > SHOP_UNDO_MAX) p.shopUndo.shift();
+}
+// the last trade taken back (input.cmd {kind:'shop', act:'undo'}, through runCmd)
+function undoShop(p) {
+  const u = p.shopUndo[p.shopUndo.length - 1];
+  if (!u || !merchNear(p) || p.gold < -u.gold) { shopDeny(p); return false; }
+  p.shopUndo.pop();
+  u.items.forEach((id, i) => { p.items[i] = id; }); p.potions = u.potions; p.buys.length = u.buys;
+  if (u.gold > 0) { p.gold += u.gold; p.goldSpent -= u.gold; } // a buy: never counted as earned, and no longer as spent
+  else p.gold += u.gold; // a sale: the price it paid goes back
+  itemsChanged(p);
+  shopFx(p, (u.gold > 0 ? '+' : '-') + Math.abs(u.gold), RES_COLORS.gold);
+  sfxFor(p, 'coin');
+  return true;
+}
 
 // THE BLOW ITSELF, before it lands (hurtUnit, js/sim/actions.js): CULL on a
 // body badly hurt, and SURGE's next basic attack after a key.
@@ -403,9 +432,10 @@ function itemPierce(src) { return src instanceof Player && src.kit && src.kit.pi
 function itemMend(src, q, n) { return src instanceof Player && src !== q && src.kit && src.kit.mend ? n * src.kit.mend : n; }
 // STEADY on crowd control's length (ccMul, js/sim/actions.js)
 function itemTen(e) { return e instanceof Player && e.kit && e.kit.steady ? STEADY_MUL : 1; }
-// the player's own clock, once a step (js/sim/sim.js): the fight timer, DEN's
+// the player's own clock, once a step (js/sim/sim.js): UNDO's visit, the fight timer, DEN's
 // heal once it has run out, SURGE's window, SMOLDER's pulse and the potion
 function itemsTick(p, dt) {
+  if (p.shopUndo.length && (p.dead || !merchNear(p))) p.shopUndo.length = 0; // UNDO lasts one visit
   if (p.fightT > 0) p.fightT = Math.max(0, p.fightT - dt);
   else if (p.kit.restHeal > 0 && p.hp < p.maxHp) healPlayer(p, p.kit.restHeal * dt);
   if (p.surgeT > 0) p.surgeT = Math.max(0, p.surgeT - dt);
@@ -440,6 +470,7 @@ function potionRoom(p) {
 function buyPotion(p) {
   const price = BUILD_ITEMS.potion.price;
   if (p.gold < price || !potionRoom(p)) { shopDeny(p); return false; }
+  shopNote(p, price);
   spendGold(p, price);
   if (potionSlot(p) < 0) { p.items[p.items.indexOf(null)] = 'potion'; p.potions = 0; }
   p.potions++;

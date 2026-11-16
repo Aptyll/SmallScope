@@ -105,6 +105,7 @@ function shopFx(p, txt, col) {
 function shopCmd(p, c) {
   if (c.act === 'item') return !!buyItem(p, c.id);
   if (c.act === 'sellItem') return !!sellItem(p, c.slot);
+  if (c.act === 'undo') return !!undoShop(p);
   return false;
 }
 
@@ -118,7 +119,7 @@ function shopCmd(p, c) {
 //   t | under it                                  |   theirs, owned ones ticked
 //   s |                                           | icon NAME  price
 //   [3 slots]                                     | stats, passive
-//   [3 slots]  [SELL n]                    purse  | [ BUY  n ]
+//   [3 slots]  [SELL n] [UNDO]             purse  | [ BUY  n ]
 //
 // The TOP tabs say WHAT to show: RECOMMENDED (your class's own build, the one
 // a bot of it buys: BOT_BUILDS, js/sim/items.js), ALL, and one tab a style
@@ -291,13 +292,14 @@ function shopLayout() {
     slots.push({ i, x: x + 6 + (i % ITEM_COLS) * SHOP_PITCH, y: by + ((i / ITEM_COLS) | 0) * SHOP_PITCH, w: SHOP_WELL, h: SHOP_WELL });
   }
   const sell = { x: x + 6 + ITEM_COLS * SHOP_PITCH + 4, y: by + 13, w: SHOP_SELL_W, h: SHOP_BTN_H };
+  const undo = { x: sell.x + SHOP_SELL_W + 4, y: sell.y, w: SHOP_SELL_W, h: SHOP_BTN_H };
   const pane = { x: x + PX, y: y + (low ? 22 : 6), w: W - PX - 6, h: SHOP_H - (low ? 28 : 12) };
   const into = [];
   for (let i = 0; i < SHOP_INTO_MAX; i++) into.push({ i, x: pane.x + 6 + i * SHOP_PITCH, y: pane.y + 15, w: SHOP_WELL, h: SHOP_WELL });
   return {
     panel: { x, y, w: W, h: SHOP_H }, px: PX, low,
     xr: { x: low ? x + W - 17 : pane.x - 17, y: y + 6, w: 11, h: 11 },
-    tabs, cats, grid, cards, heads, slots, arrows, sell, pane, into, by,
+    tabs, cats, grid, cards, heads, slots, arrows, sell, undo, pane, into, by,
     purse: { x: pane.x - 10, y: by + 18 },
     buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
     tree: shopTree(pane, shopPicked().id),
@@ -336,7 +338,7 @@ function shopTreeOwned(tree) {
 }
 
 // 'x' | 'panel' | {kind:'tab', id} | {kind:'cat', c} | {kind:'pick', id} |
-// {kind:'slot', i} | {kind:'buy'} | {kind:'sell'} | null. Shared by the
+// {kind:'slot', i} | {kind:'buy'} | {kind:'sell'} | {kind:'undo'} | null. Shared by the
 // click, the cursor and the tooltip, so the three can never disagree about
 // what the pointer is on.
 function shopHit(mx, my) {
@@ -352,10 +354,13 @@ function shopHit(mx, my) {
   for (const r of L.slots) if (ptInRect(r, mx, my)) return { kind: 'slot', i: r.i };
   if (ptInRect(L.buy, mx, my)) return { kind: 'buy' };
   if (ptInRect(L.sell, mx, my)) return { kind: 'sell' };
+  if (ptInRect(L.undo, mx, my)) return { kind: 'undo' };
   return 'panel';
 }
 
 // the two orders the slab sends, through the player's input like every other act
+// UNDO: the last trade at this counter taken back (undoShop, js/sim/items.js)
+function shopUndo() { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'undo' }; }
 function shopBuy(id) { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'item', id }; }
 function shopSell(slot) {
   const id = player.items[slot];
@@ -374,6 +379,7 @@ function shopClick(h) {
   if (h.kind === 'slot') { if (player.items[h.i]) { state.shopSlot = h.i; SFX.place(); } return true; }
   if (h.kind === 'buy') { shopBuy(shopPicked().id); return true; }
   if (h.kind === 'sell') { if (state.shopSlot >= 0) shopSell(state.shopSlot); return true; }
+  if (h.kind === 'undo') { if (player.shopUndo.length) shopUndo(); return true; }
   return true; // the slab eats the rest; the world never sees it
 }
 // one right press: the shortcut - buy what is under it on the grid or the
@@ -613,7 +619,7 @@ function drawShopTree(L, h) {
 }
 
 // your six slots, three by two (the bottom bar's shape) in the bottom-left corner: a held item in its tier rim, the picked
-// one lit; an empty slot is a dark well. SELL beside them sells the pick.
+// one lit; an empty slot is a dark well. SELL beside them sells the pick, UNDO takes back the last trade.
 function drawShopSlots(L, h) {
   for (const r of L.slots) {
     const id = player.items[r.i];
@@ -624,6 +630,9 @@ function drawShopSlots(L, h) {
   }
   const pk = shopPicked(), live = pk.slot >= 0, hot = live && !!h && h.kind === 'sell';
   shopPlate(L.sell, tr('shop.sell'), live ? itemSellValue(pk.id) : undefined, hot ? SHOP_PLATE_HOT : SHOP_PLATE, live ? SHOP_INK : SHOP_DIM);
+  // UNDO beside it: lit while this visit has a trade to take back
+  const can = player.shopUndo.length > 0, uh = can && !!h && h.kind === 'undo';
+  shopPlate(L.undo, tr('shop.undo'), undefined, uh ? SHOP_PLATE_HOT : SHOP_PLATE, can ? SHOP_INK : SHOP_DIM);
 }
 
 // ---- tooltips ------------------------------------------------------------

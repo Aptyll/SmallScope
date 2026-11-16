@@ -152,6 +152,7 @@ const TEXT = {
   'shop.haveBoots': 'ONE PAIR WORN',
   'shop.potionsFull': 'POTIONS FULL',
   'shop.sell': 'SELL',
+  'shop.undo': 'UNDO',
   'shop.sellsFor': 'SELLS FOR',
   'shop.goldN': '{n} GOLD',
   'shop.price': 'PRICE',
