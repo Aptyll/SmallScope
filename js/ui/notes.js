@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SPEED: no more night lag in the reeds', '0.973'],
     ['CAMPS: a camp you leave runs home fast and heals', '0.972'],
     ['SHOP: BUY shines when you can afford it', '0.970'],
     ['ESC MENU: the hub\'s graphite look', '0.969'],

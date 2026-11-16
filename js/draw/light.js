@@ -860,8 +860,7 @@ bodyCv.width = BODY_LW; bodyCv.height = BODY_LH;
 const bodyCtx = bodyCv.getContext('2d');
 bodyCtx.imageSmoothingEnabled = false;
 const litCv = document.createElement('canvas'), lctx = litCv.getContext('2d');     // where a body shows this frame
-const punchCv = document.createElement('canvas'), pctx = punchCv.getContext('2d'); // one piece of scenery, to cut out of it
-const punchBigCv = document.createElement('canvas'), pbctx = punchBigCv.getContext('2d'); // ...and a piece too big for that one
+const punchCv = document.createElement('canvas'), pctx = punchCv.getContext('2d'); // the scenery to cut out of it, piled up (litPunch)
 const preCv = document.createElement('canvas'), prectx = preCv.getContext('2d');   // the frame before the night
 const LIT_STEP = 64;
 let litOn = false;      // the night is deep enough to hold anything back this frame
@@ -874,8 +873,9 @@ function bodyLightFrame() {
   // canvas read back as a source is copied whole, and the buffer is cut for
   // the furthest zoom out
   const lw = Math.ceil((WV_W + 1) / LIT_STEP) * LIT_STEP, lh = Math.ceil((WV_H + 1) / LIT_STEP) * LIT_STEP;
-  for (const c of [litCv, preCv, punchBigCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
-  if (punchCv.width !== PUNCH_W) { punchCv.width = PUNCH_W; punchCv.height = PUNCH_H; }
+  for (const c of [litCv, preCv, punchCv]) if (c.width !== lw || c.height !== lh) { c.width = lw; c.height = lh; }
+  pctx.setTransform(1, 0, 0, 1, 0, 0);
+  pctx.clearRect(0, 0, lw, lh); punchX1 = punchX0; // a pile a frame left (an early return) starts over
   lctx.setTransform(1, 0, 0, 1, 0, 0);
   lctx.clearRect(0, 0, WV_W + 1, WV_H + 1); // the corner of the buffer this frame uses (sizeWorldView)
 }
@@ -884,6 +884,7 @@ function bodyLightFrame() {
 // model can reach to either side and over its feet: the box scenery is tested on
 function litAdd(cv, x, y, cx, fy, hw, up) {
   if (!litOn) return;
+  litCut(x + cx - hw, y + fy - up, hw * 2, up + 8); // the scenery so far covers only what stands behind
   lctx.drawImage(cv, x, y);
   litBoxes.push(x + cx - hw, y + fy - up, hw * 2, up + 8);
 }
@@ -917,18 +918,20 @@ function bodyLayerClose(L) {
   wctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh);
   wctx.restore();
   wctx.globalAlpha = a;
-  if (litOn) { lctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
+  if (litOn) { litCut(L.x + sx, L.y + sy, sw, sh); lctx.drawImage(bodyCv, sx, sy, sw, sh, L.x + sx, L.y + sy, sw, sh); litBoxes.push(L.x + sx, L.y + sy, sw, sh); }
 }
 // Scenery in the y-sort, drawn by `draw` inside the box (x, y, w, h) in the
 // world's own coordinates: if that box crosses a body on record, the piece is
-// drawn once more on a scratch, cut to its box, and taken out of the record,
-// so what stands in front of a body covers its light as well as its pixels.
-// One redraw a piece, however many bodies stand behind it. A piece no bigger
-// than PUNCH_W x PUNCH_H (a pine, a reed: most of the sort) uses the small
-// scratch and a bigger one the view-sized one, because a canvas used as a
-// source right after it was drawn on is copied whole, and a frame-sized
-// scratch copied per pine cost more than the rest of the night together.
-const PUNCH_W = 64, PUNCH_H = 64;
+// drawn once more on the punch scratch, cut to its box, so what stands in
+// front of a body covers its light as well as its pixels. The cuts PILE UP on
+// the scratch (punchCv, in place over the view) and come out of the record
+// together (litCut): before a body joins the record over the pile, and before
+// the night reads it. A canvas used as a source right after it was drawn on
+// costs a GPU flush, so one cut per reed - a body in the brush stands behind
+// dozens - was most of a night frame on a real graphics card (139 ms, 0.972).
+// The pile is the same cut: taking out the union of the pieces' alpha at once
+// is taking each out in turn.
+let punchX0 = 0, punchY0 = 0, punchX1 = 0, punchY1 = 0; // the pile's box (world-buffer px); empty when x1 <= x0
 function litPunch(x, y, w, h, draw) {
   draw();
   if (!litOn || !litBoxes.length || ctx !== wctx) return;
@@ -940,31 +943,41 @@ function litPunch(x, y, w, h, draw) {
   for (let i = 0; i < litBoxes.length && !hit; i += 4)
     hit = x0 < litBoxes[i] + litBoxes[i + 2] && x1 > litBoxes[i] && y0 < litBoxes[i + 1] + litBoxes[i + 3] && y1 > litBoxes[i + 1];
   if (!hit) return;
-  const cw = x1 - x0, ch = y1 - y0, small = cw <= PUNCH_W && ch <= PUNCH_H;
-  const cv = small ? punchCv : punchBigCv, c = small ? pctx : pbctx;
-  // the small scratch holds the box at its own corner, the big one in place
-  const ox = small ? x0 : 0, oy = small ? y0 : 0;
-  c.setTransform(1, 0, 0, 1, 0, 0);
-  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
-  c.clearRect(x0 - ox, y0 - oy, cw, ch);
-  c.save();
-  c.beginPath(); c.rect(x0 - ox, y0 - oy, cw, ch); c.clip();
-  c.setTransform(T.a, T.b, T.c, T.d, T.e - ox, T.f - oy);
-  ctx = c;
-  try { draw(); } finally { ctx = wctx; c.restore(); }
+  if (punchX1 <= punchX0) { punchX0 = x0; punchY0 = y0; punchX1 = x1; punchY1 = y1; }
+  else { punchX0 = Math.min(punchX0, x0); punchY0 = Math.min(punchY0, y0); punchX1 = Math.max(punchX1, x1); punchY1 = Math.max(punchY1, y1); }
+  pctx.setTransform(1, 0, 0, 1, 0, 0);
+  pctx.globalAlpha = 1; pctx.globalCompositeOperation = 'source-over';
+  pctx.save();
+  pctx.beginPath(); pctx.rect(x0, y0, x1 - x0, y1 - y0); pctx.clip();
+  pctx.setTransform(T.a, T.b, T.c, T.d, T.e, T.f);
+  ctx = pctx;
+  try { draw(); } finally { ctx = wctx; pctx.restore(); }
+}
+// the pile of cuts out of the record, if it crosses (x, y, w, h) - a body
+// about to join it there, whose light the pile must not take - or at all
+// when no box is named
+function litCut(x, y, w, h) {
+  if (punchX1 <= punchX0) return;
+  if (w !== undefined && !(x < punchX1 && x + w > punchX0 && y < punchY1 && y + h > punchY0)) return;
+  const cw = punchX1 - punchX0, ch = punchY1 - punchY0;
   lctx.globalCompositeOperation = 'destination-out';
-  lctx.drawImage(cv, x0 - ox, y0 - oy, cw, ch, x0, y0, cw, ch);
+  lctx.drawImage(punchCv, punchX0, punchY0, cw, ch, punchX0, punchY0, cw, ch);
   lctx.globalCompositeOperation = 'source-over';
+  pctx.setTransform(1, 0, 0, 1, 0, 0);
+  pctx.clearRect(punchX0, punchY0, cw, ch);
+  punchX1 = punchX0;
 }
 // the frame as it stands, before the night goes over it...
 function bodyLightKeep() {
   if (!litOn || !litBoxes.length) return false;
+  litCut(); // the y-sort's last cuts
   prectx.globalCompositeOperation = 'copy';
   prectx.drawImage(worldCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
   return true;
 }
 // ...and its bodies stamped back over the night at BODY_HOLD
 function bodyLightStamp() {
+  litCut(); // (anything cut since the keep)
   lctx.globalCompositeOperation = 'source-in';
   lctx.drawImage(preCv, 0, 0, WV_W + 1, WV_H + 1, 0, 0, WV_W + 1, WV_H + 1);
   lctx.globalCompositeOperation = 'source-over';
