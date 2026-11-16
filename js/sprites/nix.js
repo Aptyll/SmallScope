@@ -253,7 +253,7 @@ const NIX_SKINS = [
 
 // ------------------------------------------------------------ nix dirk
 // Her ICE DIRK on TOOL_HELD_ART's frame, point left (HERO_BLADES.dirk, js/draw/nix.js):
-// a short blade of clear ice (half a sword's, 11 px with the hilt: the slanted grid's length, so it
+// a short blade of clear ice (12 px with the hilt: the slanted grid's length, so it
 // never grows in the swing), a dark grip, an ice pommel.
 const NIX_DIRK = [
   '......................',
@@ -265,10 +265,10 @@ const NIX_DIRK = [
   '......................',
   '......................',
   '................o.....',
-  '.........oooooooEooo..',
-  '........oWWIWIIIEgGIo.',
-  '.........oIiiiiiEGgIo.',
   '..........ooooooEooo..',
+  '.........oWWIIIIEgGIo.',
+  '..........oIiiiiEGgIo.',
+  '...........oooooEooo..',
   '................o.....',
   '......................',
   '......................',
@@ -281,8 +281,7 @@ const NIX_DIRK = [
 ];
 // The same dirk slanted, point up and right, as she carries it
 const NIX_DIRK_DIAG = [
-  '.........o..', '........oWo.', '.......oIio.', '......oIio..', '...o.oIio...', '..oEoWio....',
-  '...oEoo.....', '..oGoEo.....', '.oIo.o......', '..o.........', '............',
+  '............', '........o...', '.......oWo..', '......oIio..', '...o.oIio...', '..oEoWio....', '...oEoo.....', '..oGoEo.....', '.oIo.o......', '..o.........', '............',
 ];
 const NIX_DIRK_GRIP = [3, 7]; // where her hand closes on the slanted grid
 const NIX_DIRK_PAL = { o: '#241a12', I: '#bfe6f8', i: '#4fa8de', W: '#ffffff', E: '#8b93a8', g: '#3a3248', G: '#5c5470' };

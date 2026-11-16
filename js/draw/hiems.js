@@ -225,6 +225,7 @@ HERO_MARK.push(drawHiemsMarks);
 // of ice, white on a deep blue hexagon boss, on a pale birch staff, carried upright; the flake's heart glints between two frames.
 // The hand closes on the shaft at HIEMS_FLAKE_GRIP.
 const HIEMS_FLAKE = [
+  '.........',
   '...ooo...',
   '..odddo..',
   '.ocdddco.',
@@ -241,7 +242,6 @@ const HIEMS_FLAKE = [
   '..oGo....',
   '..oGo....',
   '..oGo....',
-  '..oGo....',
   '..ogo....',
   '..ogo....',
   '...o.....',
@@ -251,7 +251,7 @@ const HIEMS_FLAKE_PAL = { o: '#2e2440', c: '#e6f8ff', d: '#2f5f8f', D: '#5a9ad0'
 let hiemsFlakeArt = null;
 function hiemsFlake() {
   if (hiemsFlakeArt) return hiemsFlakeArt;
-  const glint = HIEMS_FLAKE.map((r, y) => (y === 4 ? 'occSSScco' : r));
+  const glint = HIEMS_FLAKE.map((r, y) => (y === 5 ? 'occSSScco' : r));
   hiemsFlakeArt = [bakeBladeArt(HIEMS_FLAKE, HIEMS_FLAKE_PAL), bakeBladeArt(glint, HIEMS_FLAKE_PAL)];
   return hiemsFlakeArt;
 }

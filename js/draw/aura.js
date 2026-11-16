@@ -207,6 +207,8 @@ HERO_GROUND.push(drawAuraGround);
 // warm white with a bright heart, bound in gold to a dark staff, carried upright; the
 // star flares between two frames. The hand closes on the shaft at AURA_SHARD_GRIP.
 const AURA_SHARD = [
+  '.........',
+  '.........',
   '....o....',
   '...oCo...',
   '..ocCco..',
@@ -223,13 +225,13 @@ const AURA_SHARD = [
   '...oGo...',
   '...oGo...',
   '...oGo...',
-  '...oGo...',
-  '...oGo...',
   '...ogo...',
   '...ogo...',
   '....o....',
 ];
 const AURA_SHARD_FLARE = [
+  '.........',
+  '.........',
   '....o....',
   '...oWo...',
   '..ocWco..',
@@ -239,7 +241,7 @@ const AURA_SHARD_FLARE = [
   '..ocWco..',
   '...oWo...',
   '..oyYyo..',
-].concat(AURA_SHARD.slice(9));
+].concat(AURA_SHARD.slice(11));
 const AURA_SHARD_GRIP = [4, 12];
 const AURA_SHARD_PAL = { o: '#2e2440', C: AU_STAR, c: '#f2cc6a', W: AU_WHITE, y: '#f2cc6a', Y: '#b98a2e', g: '#3a2c40', G: '#5c4868' };
 let auraShardArt = null;
