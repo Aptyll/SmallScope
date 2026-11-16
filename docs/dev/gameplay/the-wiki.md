@@ -29,7 +29,7 @@ typed twice, so a retune can never leave the wiki lying.
   `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` / `ANIMAL_LV_XP` through the same arithmetic `makeAnimal` and
   `animalDies` use ([Wildlife](wildlife.md)). The frames on the page wear the level a spawn would
   be dealt right now (`animalLevel()`).
-- **ITEMS**: the merchant's catalogue written down ([the items](the-merchants-counter.md#the-items)): four tables, BASIC,
+- **ITEMS**: the merchant's catalogue written down ([the items](the-merchants-counter.md#the-items)): five tables, STARTER, BASIC,
   BOOTS, EPIC and LEGENDARY (the shop's own rows, `shopRowKind`), each row the item's icon in a
   well rimmed by its tier the way the shop rims it, its name, and STATS (short labels) / PASSIVE /
   PRICE (`WIKI_ITEM_COLS`, `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the

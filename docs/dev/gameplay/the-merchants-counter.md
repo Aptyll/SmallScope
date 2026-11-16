@@ -3,7 +3,7 @@
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
 **stall** (the stall its [merchant](robots.md#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
-mould. It sells 64 items in League's four tiers (**basic**, **epic**, **boots** and
+mould. It sells three **starters** and 64 items in League's four tiers (**basic**, **epic**, **boots** and
 **legendary**, built out of each other) into [six item slots](#the-items), and the **health potion** (50, stacked up to 5 in one slot,
 [Heals](heals.md)). **Every item is on sale all the time, at one fixed price, and nothing sells
 out**, so a player can save up for the one they want. The items themselves are
@@ -73,6 +73,19 @@ KNIFE, BRAMBLE COAT, WARM STONE, two of the boots). `ITEM_ALL` is the catalogue 
 (tier, then price), `itemInto(id)` what an item goes into. Prices are on League's scale: a
 legendary is 2600 to 3400, and the gold income is sized so a laner's first one lands near five
 minutes ([economy](economy-one-currency.md)).
+
+A **starter** (League's Doran's) is the opening purse's one item: 450 of the `START_GOLD` 500,
+the rest a potion. It carries two stats, a touch more than its price buys in basics, is built
+from nothing and into nothing (`starter`, `isStarter`; `isPart` is false), and sells at half
+like any item. Its `starter` list names the kinds of build it opens (`itemKind`), and
+`itemStarter(first)` picks the one for a build whose first item is `first`: the shop's START row
+and a bot's opening buy both read it.
+
+| starter | price | stats | opens |
+| --- | --- | --- | --- |
+| TRAPPER'S KIT | 450 | +2 DAMAGE, +15 HEALTH | damage, attack speed, speed builds |
+| TALLOW CANDLE | 450 | +6 ABILITY POWER, +10 HEALTH | ability power and cooldown builds |
+| HIDE SHIELD | 450 | +22 HEALTH, +4 ARMOR | health and armor builds |
 
 | basic | price | from | stats | passive |
 | --- | --- | --- | --- | --- |
@@ -232,7 +245,9 @@ hero has too few games for numbers ([recommended builds](#recommended-builds)); 
 the numbers, so what it buys never depends on what one machine has heard. `botNextItem` is the next one it does not have, and
 `botItemBuy` what it would buy now: that item whole if the purse covers it, else the first
 component on the way to it (depth first, in the recipe's order, so an epic whole before its
-basics) it can afford and has room for.
+basics) it can afford and has room for. Before any of it, on a bag with nothing but potions, it
+buys its build's starter (`botStarter`, `botWantsStarter`); being part of nothing, the starter is
+the first stray it sells once the build wants the slot.
 `aiSpend` (js/ai/ai.js, rung 0 of `aiThink`, after a free skill point) sends that order whenever
 the bot is at a counter. When the purse covers the next **whole** item and the bot is out of a
 fight (`p.fightT`), it walks to its own side's counter (the stall, or the merchant's body) if that
@@ -246,11 +261,11 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
 (`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
 
 - the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, your
-  hero's build ([recommended builds](#recommended-builds)): START (the potion and the first
-  item's basics), the path or two of three legendaries with their pick and win rates, BOOTS and
+  hero's build ([recommended builds](#recommended-builds)): START (the build's starter, the potion
+  and the first item's basics), the path or two of three legendaries with their pick and win rates, BOOTS and
   ALSO BUILT, each a row under its headline, and the hero's games top right (`shopRecommended`,
   `drawShopRates`);
-  **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and basics, every pair of
+  **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and starters, the basics, every pair of
   boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
   (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE, SUPPORT), the same rows holding only the
   legendaries and boots whose `styles` name it. A style is what an item is for, not the lane role

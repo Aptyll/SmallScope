@@ -162,7 +162,7 @@ const WIKI_PAGES = [
     const b = [];
     b.push({ kind: 'line', h: 9, text: tr('wiki.itemsLine'), col: '#cfe0ff' });
     b.push({ kind: 'line', h: 9, text: tr('wiki.itemsParts'), col: TIP_DIM });
-    for (const [title, kind] of [['shop.basic', 'basic'], ['shop.boots', 'boots'], ['shop.epic', 'epic'], ['shop.legend', 'legend']]) {
+    for (const [title, kind] of [['shop.starter', 'starter'], ['shop.basic', 'basic'], ['shop.boots', 'boots'], ['shop.epic', 'epic'], ['shop.legend', 'legend']]) {
       b.push({ kind: 'gap', h: 4 });
       b.push({ kind: 'head', h: 12, text: tr(title), cols: WIKI_ITEM_COLS });
       for (const id of ITEM_ALL) if (shopRowKind(id) === kind && !isStack(id)) b.push({ kind: 'row', h: 20, id, cols: WIKI_ITEM_COLS });

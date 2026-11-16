@@ -145,6 +145,7 @@ const TEXT = {
   'shop.winRate': 'WIN RATE',
   'shop.over': 'OVER',
   'shop.potion': 'POTION',
+  'shop.starter': 'STARTER',
   'shop.basic': 'BASIC',
   'shop.epic': 'EPIC',
   'shop.legend': 'LEGENDARY',
