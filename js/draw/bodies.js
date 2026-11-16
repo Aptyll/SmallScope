@@ -13,7 +13,9 @@ function clipFrame(set, a) {
 }
 
 function drawAnimal(a, ex, ey, now) {
-  const spr = clipFrame(SPRITES[a.kind][a.dir], a);
+  // a kind with a `hot` set (the headlamp's amber lamps) wears it while it hunts:
+  // the threat bar is up from the first blow until the leash runs out
+  const S = SPRITES[a.kind], spr = clipFrame((a.threat > 0 && S.hot ? S.hot : S)[a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
   drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js)

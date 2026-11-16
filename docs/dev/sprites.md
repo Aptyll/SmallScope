@@ -625,6 +625,7 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
 | `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **38×38** (its own cell, snapped onto `DEPAL` 1:1) |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
+| `scrap` (the headlamp) | `idle` 6 (one is the bulb's blink), `run` 2, `lunge` 1, `down` 1; a `hot` set beside `left`/`right` | hand grids | 15×16 |
 | `alpha` (the bear) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8 | a painted rig | 110×76 |
 
 The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
@@ -638,6 +639,12 @@ tips the hop throws up.
 
 The wolf keeps its hand-drawn grids (a shared `wolfBody` plus three leg rows per frame): an idle
 and a two-frame gait. Left variants are `flipH` of the right-facing frames.
+
+The **headlamp** (`scrap`, beasts.js) is hand grids drawn with app/art, and every light on it has one
+job: cyan is sight (its two lamps and the aerial's bulb). Its set carries a **`hot`** twin, the same
+grids baked with the lamps amber (`HLHOT`), which `drawAnimal` wears while `a.threat > 0`: a camp
+that is hunting you says so in its eyes. Its **`down`** frame (lamps out, legs folded) is the one it
+falls in: `fallSpr` (js/draw/falls.js) takes a kind's `down` before its `idle`.
 
 The warrens' **snowdrops** ([world.md](world.md#camps)) are painted by
 `app/bake-snowdrops/paint.py` (Python with numpy and Pillow): distance-field shapes at 8×

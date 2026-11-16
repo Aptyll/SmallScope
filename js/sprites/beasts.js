@@ -1,6 +1,6 @@
 'use strict';
-// Everything with four legs: the rabbit and the wolf. The camps'
-// two bears are js/baked/bears.js.
+// Everything that roams a camp on its own legs: the rabbit, the wolf and the
+// HEADLAMP, the bottom jungle's stray robot. The camps' bear is js/baked/bears.js.
 (() => {
   const { flipH, bakeClips, mapClips } = SPR;
 
@@ -429,11 +429,144 @@
     '....ooo..ooo....',
   ]);
 
+  // ---------------------------------------------------------------- headlamp
+  // The scrap pile's stray robot (CAMPS.scrap, js/sim/camps.js): a brass box on
+  // two stilt legs, side view facing right, a big lamp over a small one on its
+  // visor and its aerial at the back. Every light has one job:
+  //   cyan (e) is sight - the lamps, and the bulb on the aerial;
+  //   the same pixels go amber in the `hot` set, worn while it hunts (drawAnimal
+  //   reads a.threat), so a camp shows it is coming for you without a word;
+  //   all of them dark in `down`, the frame it falls in (fallSpr, js/draw/falls.js).
+  // Drawn on the game grid with app/art (Noah's pick N, robot-camps round 3 in
+  // the project files); the grids are the source now, edited by hand.
+  const HLPAL = {
+    '.': null,
+    'o': '#26222a', // ink
+    'k': '#363a46', // dark iron: visor, far leg, joints
+    'i': '#6b7282', // iron: near leg
+    'h': '#7a5a2e', // brass shade, the panel seam
+    'g': '#b08a48', // brass
+    'G': '#d8b870', // brass, lit from above
+    'e': '#8ff0ff', // the lamps, at rest
+  };
+  const HLHOT = Object.assign({}, HLPAL, { e: '#ff6a30' }); // the lamps, hunting
+  const hlStand = [
+    '...o...........',
+    '..oeo..........',
+    '..okoooooo.....',
+    '.oGGGGGGGGooo..',
+    '.ogggghgggkkko.',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkkko',
+    '.ohhhhhhhkkkeko',
+    '..okooooiooooo.',
+    '..oko..oio.....',
+    '..okko.oiio....',
+    '...oko..oio....',
+    '...oko..oio....',
+    '..okko.oiio....',
+    '...oo...oo.....',
+  ];
+  const hlBlink = [
+    '...o...........',
+    '..oko..........',
+    '..okoooooo.....',
+    '.oGGGGGGGGooo..',
+    '.ogggghgggkkko.',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkkko',
+    '.ohhhhhhhkkkeko',
+    '..okooooiooooo.',
+    '..oko..oio.....',
+    '..okko.oiio....',
+    '...oko..oio....',
+    '...oko..oio....',
+    '..okko.oiio....',
+    '...oo...oo.....',
+  ];
+  const hlRunA = [
+    '...o...........',
+    '..oeo..........',
+    '..okoooooo.....',
+    '.oGGGGGGGGooo..',
+    '.ogggghgggkkko.',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkkko',
+    '.ohhhhhhhkkkeko',
+    '..ookoooiooooo.',
+    '..oko...oio....',
+    '..oko...oio....',
+    '.oko.....oio...',
+    '.oko.....oio...',
+    'okko.....oiio..',
+    '.oo.......oo...',
+  ];
+  const hlRunB = [
+    '...o...........',
+    '..oeo..........',
+    '..okoooooo.....',
+    '.oGGGGGGGGooo..',
+    '.ogggghgggkkko.',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkeko',
+    '.ogggghggkkkkko',
+    '.ohhhhhhhkkkeko',
+    '..oookooiooooo.',
+    '....okooio.....',
+    '....okkoiio....',
+    '.....okooio....',
+    '.....okooio....',
+    '....okkoiio....',
+    '.....oo.oo.....',
+  ];
+  const hlLunge = [
+    '....o..........',
+    '...oeo.........',
+    '...okoooooo....',
+    '..oGGGGGGGGooo.',
+    '..ogggghgggkkko',
+    '..ogggghggkkkeo',
+    '..ogggghggkkkeo',
+    '..ogggghggkkkko',
+    '..ohhhhhhhkkkeo',
+    '...okoooiooooo.',
+    '..oko...oio....',
+    '..oko...oio....',
+    '.oko.....oio...',
+    '.oko.....oio...',
+    'okko.....oiio..',
+    '.oo.......oo...',
+  ];
+  const hlDown = [
+    '...............',
+    '...............',
+    '...............',
+    '..oo...........',
+    '.okkoooooo.....',
+    '.oGGGGGGGGooo..',
+    '.ogggghgggkkko.',
+    '.ogggghggkkkkko',
+    '.ogggghggkkkkko',
+    '.ogggghggkkkkko',
+    '.ohhhhhhhkkkkko',
+    '..okikokikoooo.',
+    '.okkookkoo.....',
+    '..oo..oo.......',
+    '...............',
+    '...............',
+  ];
+  const hlClips = { idle: [hlStand, hlStand, hlStand, hlStand, hlStand, hlBlink], run: [hlRunA, hlRunB], lunge: [hlLunge], down: [hlDown] };
+  const hlSet = bakeClips(hlClips, HLPAL), hlHot = bakeClips(hlClips, HLHOT);
+
   const rabbitSet = bakeClips({ idle: rabbitIdle, hop: rabbitHop, rise: rabbitRise }, RBPAL);
   const wolfSet = bakeClips({ idle: [wolfStand], run: [wolfRunA, wolfRunB] }, WOPAL);
 
   Object.assign(SPRITES, {
     rabbit: { right: rabbitSet, left: mapClips(rabbitSet, flipH) },
     wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
+    scrap: { right: hlSet, left: mapClips(hlSet, flipH), hot: { right: hlHot, left: mapClips(hlHot, flipH) } },
   });
 })();
