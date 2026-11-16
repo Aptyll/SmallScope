@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MINIMAP: the whole map as a square, bottom right', '0.964'],
     ['MAP: two lanes and a jungle between, two towers a lane', '0.963'],
     ['CAMPS: wolves up top, scrap robots below, orca and bear in their pits', '0.963'],
     ['The perch stands on the ground from the start', '0.963'],
