@@ -257,11 +257,9 @@ and a stray it could sell counts as room when it decides to walk there.
 League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 520×288
 (`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
 
-- the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, your
-  hero's build ([recommended builds](#recommended-builds)): START (the build's starter, the potion
-  and the first item's basics), the path or two of three legendaries with their pick and win rates, BOOTS and
-  ALSO BUILT, each a row under its headline, and the hero's games top right (`shopRecommended`,
-  `drawShopRates`);
+- the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, three
+  **cards** ([the cards](#the-recommended-cards)), then a row of START (the build's starter while you
+  have bought nothing, and the potion) and THEN (or ALSO BUILT, with numbers: the rest of the build);
   **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and starters, the basics, every pair of
   boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
   (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE, SUPPORT), the same rows holding only the
@@ -281,9 +279,10 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
   tick, `shopTreeOwned`, and so is everything under it), its **card** (icon, name in its tier's
   ink, full price, each stat with its icon in green, the passive in gold over one dim line, ONE
   PAIR on boots, a drink's heal on the potion) and the **BUY** plate at its foot with what the buy
-  costs you now: green when it can go through, grey when there is no room or it would be a second
-  pair, and grey with the gold still missing behind a minus, in gold, when the purse is short
-  (`shopBuyState`; never an error's red, since nothing went wrong);
+  costs you now: green when it can go through; grey when it cannot, saying the one thing in the
+  way (`shopBuyState`'s `stop`): NEED 2300 MORE with a gold line along its foot that fills as the
+  purse does, BAG FULL, ONE PAIR WORN or POTIONS FULL (never an error's red, since nothing went
+  wrong, and never a minus);
 - in the bottom-left corner, **your six slots three by two**, the bottom bar's own shape (a potion
   stack wearing its count), the **SELL** plate with what the picked slot sells for, and the purse.
   **Gold shows once** along the bottom: the purse wears the coin, and both plates print bare
@@ -304,8 +303,31 @@ on it (the tabs, the row headlines, BUILDS INTO, BUY, SELL) are names, headlines
 plain words like the menus, kept in the text table as `shop.*` keys ([the text table](../rendering/the-text-table.md));
 everything else is icons, rims and numbers.
 
-**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more; RECOMMENDED shows the paths that fit. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
+**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more; RECOMMENDED's THEN shows the wells that fit. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
 stretches every third source pixel and frays 1 px linework.
+
+## The recommended cards
+
+RECOMMENDED leads with **three items drawn large** (js/ui/shop-rec.js, League's suggested items):
+each card has the item's name in its tier's ink, its icon at 3x, what it costs you now (red while
+the purse is short) and **why** in two words on a flat tag (the item's `why`, js/sim/items.js:
+ANTI-HEAL, SURVIVE BURST, ATTACK SPEED). A click picks it into the pane, a right click buys, like
+any well. `shopPicks` chooses them:
+
+- the **first card** is always the next item of your build in buying order (the first item, the
+  boots, the rest: [recommended builds](#recommended-builds)), skipping what you hold;
+- a **threat** on the rival side (`SHOP_THREATS`) puts the item that answers it (its `counter`) on
+  the next card, under the faces of the rivals it is good against: **heal** (a hero marked `heals`
+  in `CLASSES`, or a rival carrying LEECH, FEAST, DEN or MEND) brings a healing cut; **armor** (a
+  tank, or a rival with `SHOP_ARMOR_HEAVY` armor from items) brings PIERCE; **burst** (an assassin,
+  or a rival `SHOP_FED` kills past its deaths) brings LIFELINE; **attack** (marksmen and assassins)
+  brings THORNS. Each needs enough of it on the side (`need`), only asks the hero styles whose job
+  it is (`for`: a tank is never offered armor pierce), picks the answer that suits your style or
+  your damage kind, and goes quiet once you carry one;
+- the build's next items fill the rest; a finished build shows the other items of your style.
+
+What a threat reads is what the scoreboard (Tab) shows everyone: the rival heroes, their items,
+their kills and deaths. Only the panel reads it; the sim never does.
 
 ## Recommended builds
 
@@ -329,11 +351,11 @@ stretches every third source pixel and frays 1 px linework.
 - **What the tab shows.** `buildsStats(hero)` reads the hero's newest `BUILDS_HERO` (400) records:
   its games, and for every item, first pair of boots and **path** (the first three legendaries in
   the order bought) how many games had it and how many of those won. `buildsRec` cuts the tab
-  from that: **MOST PICKED**, the most built path, and beside it **MOST WINS**, a path of at least
-  `BUILDS_PATH_MIN` (4) games whose win rate beats it (ranked with a win and a loss added, so three
-  of three never outranks thirty of forty), each with PICK and WIN; the top three boots; and
-  **ALSO BUILT**, the other items finished most. Below `BUILDS_MIN` (10) games on a hero it shows
-  the curated list instead (`BOT_BUILDS`: CORE, BOOTS, THEN, no numbers). The tooltip's PICK RATE
+  from that: the most built path (and `best`, a path of at least `BUILDS_PATH_MIN` (4) games whose
+  win rate beats it, ranked with a win and a loss added, so three of three never outranks thirty
+  of forty), the top three boots, and **ALSO BUILT**, the other items finished most. The cards
+  follow the most built path, its first boots, then ALSO BUILT. Below `BUILDS_MIN` (10) games on a
+  hero they follow the curated list instead (`BOT_BUILDS`, under THEN). The tooltip's PICK RATE
   and WIN RATE come from the same numbers (`buildsItem`).
 - **What it trusts.** There is no server to ask, so a record is checked for being possible
   (`buildsClean`): a real hero and real finished items, a patch number, the match's minutes (`t`,

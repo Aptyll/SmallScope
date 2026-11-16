@@ -95,6 +95,8 @@ const POSITIONS = [
 // `style` is what the hero is for, one of the shop's ITEM_STYLES (js/sim/items.js),
 // shown as an emblem on its face in the pick (styleIcon, js/ui/heroes.js); a
 // `starter` is one of the few the pick lights for someone new (heroStarterLit).
+// `heals` marks a hero whose keys or passive give health back: the shop
+// suggests a healing cut against it (SHOP_THREATS, js/ui/shop-rec.js).
 const CLASSES = [
   {
     // the first hero (js/sim/armatos.js): his own 16 px body in each look
@@ -118,7 +120,7 @@ const CLASSES = [
     // (`attack`) who wins the long fight: the most health of
     // anyone and a hard hit, a step slower so a hero who keeps its distance
     // can beat her
-    name: 'FORTIVA', role: 'THE UNBROKEN', style: 'bruiser', passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
+    name: 'FORTIVA', role: 'THE UNBROKEN', style: 'bruiser', heals: true, passive: 'unbroken', // HERO_PASSIVE, js/sim/fortiva.js
     blurb: ['STRENGTH IS THE POWER TO REFUSE TO KNEEL.', 'THE LONGER THE FIGHT, THE HARDER SHE IS TO STOP.', 'THE EDGE OF THE ARC HEALS HER. THE SHIELD PAYS BACK WHAT IT TOOK.'],
     story: 'THE EMPIRE WORKED HER IN CHAINS AT ITS FORGES UNTIL THE DAY SHE STOOD UP AND DID NOT KNEEL AGAIN. SHE CUT THE CHAIN AND HAMMERED IT INTO A SWORD. THE VALLEY DOES NOT ASK WHERE A BLADE CAME FROM.', // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     base: { hp: 132, dmg: 18, armor: 20, ap: 0, haste: 0, ms: PLAYER_SPEED - 3 },
@@ -192,7 +194,7 @@ const CLASSES = [
     // the sixth named hero and the first healer (js/sim/salvia.js): heals, speed for
     // her side and the slows taken off them, at a mage's range; almost no damage and
     // little control, and under focus her heals are spent fast
-    name: 'SALVIA', role: 'THE MENDER', style: 'support', passive: 'warmbroth', // HERO_PASSIVE, js/sim/salvia.js
+    name: 'SALVIA', role: 'THE MENDER', style: 'support', heals: true, passive: 'warmbroth', // HERO_PASSIVE, js/sim/salvia.js
     blurb: ['THERE ARE NO SIDES IN HER TENT.', 'HEAL YOUR SIDE, SPEED THEM UP, TAKE THEIR SLOWS OFF.', 'ALMOST NO DAMAGE. KEEP BEHIND THEM.'],
     story: "SHE MENDED THE EMPIRE'S SOLDIERS ON BOTH SIDES OF A BORDER, WHICH THE EMPIRE CALLED TREASON. IN THE VALLEY THERE ARE NO SIDES IN HER TENT. SHE CHARGES BOTH COMPANIES THE SAME PRICE, AND NOBODY ARGUES WITH HER.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a staff's sprig: the ember's reach, a little weaker; her keys are the point
@@ -495,7 +497,7 @@ const CLASSES = [
     // the twenty-second named hero (js/sim/portitor.js): the carrying support, a copper engine
     // of the old works. It lifts an ally out of a fight, shields its side with crates and
     // shoves rivals aside, and runs across the map to a friend; little damage of its own
-    name: 'PORTITOR', role: 'THE CARRIER', style: 'support', passive: 'bedroll', // HERO_PASSIVE, js/sim/portitor.js
+    name: 'PORTITOR', role: 'THE CARRIER', style: 'support', heals: true, passive: 'bedroll', // HERO_PASSIVE, js/sim/portitor.js
     blurb: ['NOBODY GETS LEFT IN THE SNOW.', 'LIFT AN ALLY OUT OF THE FIGHT. THEIR HANDS STAY FREE.', 'LITTLE DAMAGE OF ITS OWN.'],
     story: "IT WAS BUILT IN THE OLD WORKS TO HAUL THE EMPIRE'S SILVER OVER THE PASS. ON THE LAST RETREAT IT SET THE SILVER DOWN IN THE SNOW AND CARRIED THE WOUNDED INSTEAD, ONE AT A TIME, ALL NIGHT. THE EMPIRE LEFT IT BEHIND FOR THAT. IT STILL KEEPS A BEDROLL ON ITS BACK FOR WHOEVER NEEDS IT.", // who they were before the pass: the wiki's hero page (docs/dev/lore.md)
     // a walking pole's blow: a little longer and slower than the ice axe
