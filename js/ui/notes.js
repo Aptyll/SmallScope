@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ROLL: a rolling hero curls up in their own colours', '0.957'],
     ['CAMPS: a hit camp shows its leash ring, red as it gives up', '0.956'],
     ['Four weapons sized to their hero: greatsword, dirk, two staves', '0.954'],
     ['Starter items: a first buy for every hero', '0.953'],

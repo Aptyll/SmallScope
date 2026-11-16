@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.956';
+const PATCH_TXT = 'PATCH 0.957';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.957', 'A ROLLING HERO CURLS UP IN THEIR OWN COLOURS: THE SHOULDERS UNDER THE TUCKED HEAD WEAR THEIR HOOD, HAIR OR HELM, SO ABOUT A THIRD OF THE BALL IS THEIRS AND NOT THE TEAM\'S.'],
   ['0.956', 'HIT A CAMP AND ITS LEASH LIES ON THE SNOW: A RING OF DASHES WHERE THE MONSTERS GIVE UP, TURNING RED WHILE YOU ARE PAST IT AND THEY ARE ABOUT TO GO HOME.'],
   ['0.955', 'ON STEAM YOU ARE ALWAYS IN A PARTY OUTSIDE A MATCH, SO A FRIEND\'S JOIN GAME WORKS FROM ANY MENU OR THE PRACTICE FIELD; A LEADER WHO ACCEPTS AN INVITE BRINGS THE WHOLE PARTY ALONG.'],
   ['0.954', 'ARMATOS\'S GREATSWORD, NIX\'S DIRK AND THE STAVES OF AURA AND HIEMS ARE A LITTLE SHORTER, SIZED TO THE HERO WHO HOLDS THEM.'],
