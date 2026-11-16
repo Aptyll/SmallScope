@@ -15,9 +15,10 @@
 // INVITE: in a Steam lobby an empty seat's + opens Steam's friends overlay
 // on it (every party has its code to copy as well; one friend at a time from
 // the social column, js/ui/friends.js). A friend's invite taken up, or
-// Steam's Join Game on a friend in a room, reloads this page onto that lobby
-// (`joinRequested` from desktop/main.js, or `+connect_lobby` at launch,
-// which main.js turns into ?join=); the join from boot does the rest.
+// Steam's Join Game on a friend anywhere out of a match, reloads this page
+// onto that lobby (`joinRequested` from desktop/main.js, or `+connect_lobby`
+// at launch, which main.js turns into ?join=), its party with it when this
+// screen leads one (steamJoinRequested); the join from boot does the rest.
 //
 // THE NUDGE (roomAttention): a screen not in focus when someone joins, a
 // chat line lands or the count to the match starts flashes in the taskbar
@@ -126,11 +127,36 @@ function roomInvite() {
   const b = window.steamBridge;
   if (b && b.invite && NET.transport && NET.transport.lobbyId) { b.invite(NET.transport.lobbyId); SFX.place(); } else SFX.deny();
 }
-// a friend's invite taken up while the game runs: onto that lobby, unless
-// this screen hosts people of its own (leaving would end their room)
+// A friend's party taken up while the game runs (their invite, Join Game on
+// them, their row's gold step, their card's JOIN): this page reloads onto
+// that lobby, from any menu, the party screen or the practice field - never
+// out of a match or a hero select under way, where it would walk out on nine
+// others. A leader with friends brings them along (Noah's call, 2026-11-16):
+// each guest is told (`follow`) and follows FOLLOW_LAG behind, so the
+// leader's hello lands first, when the two parties fit in one side's seats
+// (the friend's party's count off their presence or their invite). When
+// they cannot fit, the leader goes alone and the guests fall back to
+// parties of their own, as when any leader leaves.
+const FOLLOW_LAG = 1.2;    // s a guest's page takes to follow its leader across
+function partyFreeToGo() { return PRACTICE || (state.mode === 'title' && NET.phase === 'room' && !CROSS); }
 function steamJoinRequested(id) {
-  if (!id || (NET.role === 'host' && NET.peers.size) || (NET.transport && NET.transport.lobbyId === id)) { SFX.deny(); return; }
+  if (!id || state.fade || (NET.transport && NET.transport.lobbyId === id)) { SFX.deny(); return; }
+  if (!partyFreeToGo()) { if (state.mode === 'title') SFX.deny(); return; } // in a match the invite waits in Steam's chat
+  if (NET.role === 'host' && NET.peers.size && partyFollowFits(id)) NET.transport.send('*', { t: 'follow', lobby: id });
   location.search = '?join=' + id + '&transport=steam';
+}
+// whether this party and the one in lobby id fit one side together: what
+// the friends list or the invite card says of theirs (nothing known: try)
+function partyFollowFits(id) {
+  const f = FRIENDS.list.find((q) => q.lobby === id) || (FRIENDS.card && FRIENDS.card.lobby === id ? FRIENDS.card : null);
+  return (f ? f.n | 0 : 0) + partySize() <= partyCap(f && f.mode);
+}
+// a guest told its leader is taking the party into a friend's: after it
+function followHeard(msg) {
+  const id = String((msg && msg.lobby) || '');
+  if (!/^\d+$/.test(id) || !partyFreeToGo() || state.fade) return;
+  NET.rematch = { room: '', gone: true }; // the leader's lobby closing behind it is not a host walking out (netClientPoll)
+  practiceGo(location.pathname + '?join=' + id + '&transport=steam', FOLLOW_LAG);
 }
 if (window.steamBridge && window.steamBridge.onEvent) window.steamBridge.onEvent((ev) => { if (ev && ev.t === 'joinRequested') steamJoinRequested(String(ev.lobby || '')); });
 

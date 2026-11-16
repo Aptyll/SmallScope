@@ -8,6 +8,7 @@
 // A party IS a room: the screen hosts one the moment it opens (netHost, js/net/net.js),
 // on the relay or, under the wrapper with Steam asked for (netSteam), as a
 // Steam lobby, and it works the same with neither there - a party of one.
+// Under Steam it is open before any mode is picked (the standing party, below).
 // Its five seats are YOUR side's, in a row with you in the middle: you (the
 // gold rim), the friends who came in (a READY tick, three ping bars) and the
 // empty ones, each a dotted well with a gold + that invites - Steam's friends
@@ -60,18 +61,51 @@ function roomsFeedOpen() {
 }
 function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
 
-// a mode picked on the title: this screen's own party, hosted at once
+// THE STANDING PARTY. Under Steam a screen outside a match always holds a
+// party, as League's client does: from the first frame of the title, on
+// every menu and back from every match, its own (a lobby of one) or the one
+// it joined. Steam's Join Game on you, a friend's invite and the gold step
+// on your row all need a lobby to land in, so they work from wherever you
+// are, not only from the party screen. The party is logic, not a screen: a
+// friend who comes in while you are on the title takes you to the seats
+// (partyArrived), and whatever page shows the seats next reads the same
+// party. Off Steam (a browser, the relay) a party still opens with a mode,
+// as before: the relay's rooms are not a friends list.
+const PARTY_IDLE = 'quick'; // the standing party's mode until its leader picks one
+function partyStandOk() {
+  const m = state.menu;
+  return netSteam() && !PRACTICE && state.mode === 'title' && NET.role === 'solo' && !m.joining && !(m.joinWait > 0) && !m.seek && !state.fade && !CROSS;
+}
+function partyStand() { netHost(); NET.mode = PARTY_IDLE; }
+// the standing party kept as you leave the seats: yours alone, not mid-meeting
+function partyKeep() { return netSteam() && !PRACTICE && NET.role === 'host' && !NET.peers.size && !(NET.transport && NET.transport.error) && !(NET.seek && (NET.seek.rival || NET.seek.crossing)); }
+// a friend came into your party while this screen is on the title: the seats
+function partyArrived() {
+  const m = state.menu;
+  if (state.mode === 'title' && NET.role === 'host' && NET.peers.size && NET.phase === 'room' && m.screen === 'menu' && !m.panel && !state.fade) beginRoom();
+}
+// a mode picked on the title: this screen's own party (the standing one,
+// or one hosted now), in that mode
 function beginParty(mode) {
   if (NET.role === 'client') netLeave();
-  if (NET.role === 'solo') netHost();
+  if (NET.role === 'solo' || (NET.role === 'host' && !NET.peers.size && NET.transport.error)) netHost();
+  if (NET.mode !== mode) NET.ready.clear(); // said to the old mode (modeSet)
   NET.mode = mode;
   beginRoom();
 }
-// back to the title: the party closes (a guest walks out of someone else's)
+// back to the title: a guest walks out of someone else's party and a leader
+// with friends closes its own; a leader alone keeps its standing party
+// (partyKeep) and a page that let one go gets a fresh one (partyStandOk)
 function leaveRoom() {
   roomsFeedClose();
-  netLeave();
-  NET.mode = null;
+  if (partyKeep()) {
+    NET.seek = null;
+    NET.mode = PARTY_IDLE; NET.ready.clear();
+    netHostRoom();
+  } else {
+    netLeave();
+    NET.mode = null;
+  }
   homeParty = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
   const m = state.menu;
   m.screen = 'menu'; m.seek = null; m.joining = false;
@@ -199,12 +233,22 @@ function joinRoom(r) {
   const m = state.menu;
   m.seek = null;
   roomsFeedClose();
-  // a party already on the practice field: this page follows it there
-  // (`practice` 2 is the arena: netHostRoom)
-  if (r.data && +r.data.practice && (!PRACTICE || (+r.data.practice === 2) !== ARENA)) { location.search = '?practice=1' + (+r.data.practice === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + (netSteam() ? '&transport=steam' : ''); return; }
+  // a party on other ground (the practice field, the arena, or the map from
+  // the field): this page follows it there
+  const there = roomWorldUrl(r);
+  if (there) { location.search = there.slice(there.indexOf('?')); return; }
   netJoin(r.room);
   m.joining = true;
   SFX.place();
+}
+// where a page goes to join room r when the room stands on other ground
+// than this page (`practice` in its data: 1 the field, 2 the arena,
+// netHostRoom), or null when it is the same ground
+function roomWorldUrl(r) {
+  const w = r.data ? +r.data.practice || 0 : 0, steam = netSteam() ? '&transport=steam' : '';
+  if (w === worldKind()) return null;
+  if (!w) return location.pathname + '?join=' + r.room + steam;
+  return location.pathname + '?practice=1' + (w === 2 ? '&arena=1' : '') + '&join=' + r.room + '&back=1' + steam;
 }
 // a page that came up to join (a code on another valley, a Steam invite, a
 // rematch): the party screen, the join under way. A Steam rematch names the
@@ -240,6 +284,8 @@ pageListen(window, 'paste', (e) => {
 });
 function updateRooms(dt) {
   const m = state.menu;
+  if (partyStandOk()) partyStand();
+  partyArrived();
   updateSeek(dt); // the leader's FIND MATCH looking for another party (js/ui/matchmaking.js)
   if (m.codeShake > 0) m.codeShake = Math.max(0, m.codeShake - dt);
   if (m.modeFx > 0) m.modeFx = Math.max(0, m.modeFx - dt);
@@ -253,7 +299,11 @@ function updateRooms(dt) {
   if ((m.screen === 'room' || PRACTICE) && NET.role === 'client' && m.joining) {
     if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; if (!PRACTICE) beginRoom(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) {
-      const why = NET.refused || NET.transport.error;
+      const why = NET.refused || NET.transport.error, T = NET.transport;
+      // a lobby joined by its id (Join Game, an invite) on the other ground:
+      // the practice field or the arena, or the map from the field - after it
+      const there = why === 'WORLD' && T.data ? roomWorldUrl({ room: T.lobbyId, data: T.data }) : null;
+      if (there) { netLeave(); m.joining = false; practiceGo(there); return; }
       netLeave();
       // back from a match: the leader may not have reopened the party yet, so
       // the join is tried again for a while before it counts as a refusal
@@ -571,11 +621,11 @@ function practiceCross(arena) {
   } else practiceGo(location.pathname + '?practice=1' + (arena ? '&arena=1' : ''));
   return true;
 }
-function practiceGo(url) {
+function practiceGo(url, secs) {
   if (state.fade) return;
   SFX.dodge();
   SFX.music.stop(0.45);
-  state.fade = { a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff', then: () => {
+  state.fade = { a: 0, to: 1, spd: 1 / (secs || 0.55), color: '#f4f7ff', then: () => {
     try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
     location.href = url;
   } };

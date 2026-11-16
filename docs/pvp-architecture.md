@@ -440,7 +440,13 @@ The same screens and the same protocol ride either transport; only the list and 
    `createLobby('public', 10)`, makes a code of the same shape (`steamCode`) and writes `patch`,
    `state: 'open'`, `code` and the host's name into lobby data. The host publishes its
    list entry once the transport is open (`netHostRoom`), and again on every join, leave and at
-   the drop (`state: 'live'`).
+   the drop (`state: 'live'`). **Under Steam a page outside a match always holds a party**
+   (the standing party: `partyStandOk`/`partyStand`, mode `PARTY_IDLE` until the leader picks
+   one), from the title's first frame and on every menu, so Join Game, an invite and a friend's
+   row always have a lobby to land in; a lone leader leaving the seats keeps it (`partyKeep`), and
+   a friend coming in while the title shows turns it to the seats (`partyArrived`). Rich presence
+   (`friendsPresence`, js/ui/friends.js) offers Join Game (`connect`) and `sf_lobby` whenever that
+   party takes a friend: out of a match and a hero select, with a seat left.
 2. **Join by code.** A friend types or pastes the code into the JOIN slots of their own party
    (`partySeek`): the code is looked up on the list, fed live by `wsRooms`, or by `steamRooms`
    polled every `STEAM_LIST_T` (2 s) when `netSteam()`, matching a relay room's name or a lobby's
@@ -449,9 +455,16 @@ The same screens and the same protocol ride either transport; only the list and 
    `+connect_lobby ID` on the launch line, which desktop/main.js turns into `?join=ID`) joins
    directly (`partyBootJoin`), as does the gold step on a friend's row in the friends panel
    (their lobby from Steam's game info or their `sf_lobby` presence) and JOIN on a friend's
-   invite card (js/ui/friends.js).
+   invite card (js/ui/friends.js). Each of these is `steamJoinRequested` (js/ui/roomtalk.js),
+   taken from any menu or the practice field and never from a match or a hero select. A leader
+   with guests brings them: each guest is sent `follow` with the lobby and reloads onto it
+   `FOLLOW_LAG` behind the leader, when the two parties fit one side (`partyFollowFits`); when they
+   do not, the leader goes alone. A lobby joined by its id on other ground (the friend is on the
+   practice field, or the joiner is) is refused `WORLD`, and the joiner follows it there off the
+   lobby data the join read (`roomWorldUrl`).
 3. **Join.** `joinRoom(r)`: every page is born on the one map, so a joiner never reloads for the
-   world; only a page off the party's practice field follows it there (below). Then `netJoin` ->
+   world; only a page on other ground than the party (the practice field, the arena) follows it
+   there (`roomWorldUrl`, below). Then `netJoin` ->
    `connect()`, and once the transport is open the client sends `hello`.
 4. **The host answers** in `netHostHello`: `refuse` on another patch or `world`, else the slot - the
    parked one for a returning `uid`; in a party the first open seat on the leader's side, only
@@ -528,8 +541,9 @@ The same screens and the same protocol ride either transport; only the list and 
   `RECONNECT_GRACE` (60 s). A `hello` with that `uid` inside the grace, while the slot is still a
   bot, lands back in it - `welcome`, `full`, `remote` again. On the relay the client redials on
   its own (`WS_RETRY`, 2 s, doubling to `WS_RETRY_MAX`) and says `hello` again on open. Past the grace the `uid` is a
-  stranger and joins like one. The `uid` lives in `sessionStorage`, so it survives a reload and
-  not a new tab.
+  stranger and joins like one. On Steam the host keys a peer by its SteamID (`netPeerUid`), which
+  Steam vouches for and a crash or a new tab keeps; on the relay the `uid` is the one the page made,
+  in `sessionStorage`, so it survives a reload and not a new tab.
 - **A mid-match join** to a party is refused (`BUSY`). Without a mode it is a `hello` from an unknown `uid` while `state.drop` is set: accepted
   into an AI slot on the side with fewer people while `state.elapsed` is under `LATE_JOIN_T`
   (300 s), refused with `LATE` after. The joiner takes over the bot's body as it stands.

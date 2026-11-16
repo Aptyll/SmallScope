@@ -79,7 +79,7 @@ function steamTransport(lobbyId) {
         if (!info.ready) { this.error = info.error || 'STEAM'; return; }
         this.id = info.id;
         const l = await this.bridge.joinLobby(this.lobbyId);
-        this.owner = l.owner;
+        this.owner = l.owner; this.data = l.data || null; // what its host wrote: a refusal for the ground follows it (roomWorldUrl, js/ui/rooms.js)
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
