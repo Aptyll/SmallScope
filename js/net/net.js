@@ -222,8 +222,13 @@ function netInEdges(i, m) {
   if (m.trick >= 0) i.trick = m.trick;
   if (m.cmd) i.cmd = m.cmd;
 }
+// who a hello is from, for a seat kept across a drop or a rematch: on Steam
+// the peer's own SteamID, which Steam vouches for and a crash, a new tab or
+// a reinstall keeps; on the relay the id the page made (NET.uid)
+function netPeerUid(peer, uid) { return netSteam() ? 'steam:' + peer : String(uid || ''); }
 function netHostHello(peer, msg) {
   const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
+  msg.uid = netPeerUid(peer, msg.uid);
   if (NET.kicked.has(msg.uid)) return refuse('KICKED');
   if (msg.patch !== PATCH_TXT) return refuse('VERSION');
   if (msg.world !== worldKind()) return refuse('WORLD'); // the match's map, the practice map and the arena are three rooms
@@ -503,7 +508,8 @@ function netClientStep(dt) {
     if (!NET.welcomed && msg.t !== 'welcome') continue;
     if (msg.t === 'rematch') { rematchHeard(msg); continue; }
     if (msg.t === 'practice') { practiceHeard(msg); continue; } // the leader's START, or its cross to the arena and back: after it (js/ui/rooms.js)
-    if (msg.t === 'cross') { crossHeard(msg); continue; }    // the leader's party crossing to meet another (js/ui/matchmaking.js)
+    if (msg.t === 'cross') { crossHeard(msg); continue; }
+    if (msg.t === 'follow') { followHeard(msg); continue; }  // the leader taking the party into a friend's (js/ui/roomtalk.js)    // the leader's party crossing to meet another (js/ui/matchmaking.js)
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     if (msg.t === 'meta') { if (!NET.metaIn) { NET.metaIn = true; buildsMerge(msg.recs, BUILDS_TAKE); } continue; } // the host's builds, in answer to ours (js/app/builds.js)
     // the waiting room: the host's ten and its count, drawn here as there

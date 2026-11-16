@@ -8,7 +8,7 @@
 // green in Softfall (their party and its count, a match), blue online, amber
 // away, grey offline - in groups that fold (OFFLINE starts folded). The far
 // end of a row says what a click does: the gold step JOINS a friend's open
-// party (their lobby, the same reload a Steam invite takes:
+// party, wherever on the menus they are (their lobby, the same reload a Steam invite takes:
 // steamJoinRequested, js/ui/roomtalk.js), the letter INVITES an online friend
 // to yours (shown under the pointer; Steam's own invite plus a card on their
 // screen), a green tick is an invite just sent, and the gold person-plus on a
@@ -24,7 +24,9 @@
 //
 // PRESENCE: what this screen is doing goes into Steam's rich presence
 // (friendsPresence): the `status` line Steam's own friends list shows, its
-// Join Game (`connect`) while a party is open, and the sf_* keys the column
+// Join Game (`connect`) whenever this screen's party takes a friend (on any
+// menu: the standing party, js/ui/rooms.js; never in a match or a hero
+// select), and the sf_* keys the column
 // above reads on a friend's row (sf_hero: their face). A minute into a match with people, the
 // lobby's other members are marked played with (friendsPlayed).
 //
@@ -46,7 +48,6 @@ const FR_SENT = 30;         // s an invite shows its tick and cannot be sent aga
 const FR_CARD_T = 40;       // s a friend's invite card stays
 const FR_CARD_W = 168, FR_CARD_H = 22;
 const FR_PLAYED_T = 60;     // s into a match with people before they count as played with
-const FR_PARTY_MAX = 5;     // seats a party has (one side)
 const FR_COL = { game: '#7fd88a', on: '#6fa8dc', away: '#e8b04a', off: '#4a4e56' };
 const FR_ICON = {
   join: ['#....', '##...', '###..', '####.', '###..', '##...', '#....'],
@@ -86,16 +87,23 @@ function friendsTick(dt) {
     FRIENDS.recent = (r.recent || []).map((q) => Object.assign({ recent: true }, q));
   }, () => { FRIENDS.busy = false; FRIENDS.on = false; });
 }
+// sf_state: 'match', 'pick' (a hero select under way), 'practice', 'room'
+// (the party's seats) or 'menu' (anywhere else on the title). Join Game and
+// sf_lobby stand whenever the party this screen is in takes a friend: out of
+// a match and a hero select, with a seat left (the standing party,
+// js/ui/rooms.js, keeps one open on every menu)
+const FR_OPEN = ['room', 'menu', 'practice']; // the states whose party a friend may join
 function friendsPresence(b) {
   const lobby = friendsLobby(), inMatch = state.mode !== 'title' && !PRACTICE;
-  const room = !inMatch && NET.mode && state.menu.screen === 'room';
-  const st = inMatch ? 'match' : PRACTICE ? 'practice' : room ? 'room' : 'menu', n = room ? partySize() : 0;
-  const hero = PROFILE.hero(), key = [st, lobby, NET.mode || '', n, hero].join('|');
+  const st = inMatch ? 'match' : PRACTICE ? 'practice' : NET.phase !== 'room' ? 'pick' : NET.mode && state.menu.screen === 'room' ? 'room' : 'menu';
+  const n = NET.mode && !inMatch ? partySize() : 0;
+  const open = !!lobby && NET.mode && FR_OPEN.includes(st) && n < partyCap(NET.mode);
+  const hero = PROFILE.hero(), key = [st, lobby, open, NET.mode || '', n, hero].join('|');
   if (key === FRIENDS.rp) return;
   FRIENDS.rp = key;
   const mode = PARTY_MODES[NET.mode] || PARTY_MODES.quick, word = mode.charAt(0) + mode.slice(1).toLowerCase();
-  const status = st === 'match' ? 'In a match' : st === 'practice' ? 'Practice Tool' : st === 'room' ? word + ' party, ' + n + ' of ' + FR_PARTY_MAX : 'In the menus';
-  b.presence({ status, connect: room && lobby ? '+connect_lobby ' + lobby : '', sf_lobby: room ? lobby : '', sf_mode: NET.mode || '', sf_n: String(n), sf_state: st, sf_patch: PATCH_TXT, sf_hero: hero });
+  const status = st === 'match' ? 'In a match' : st === 'pick' ? 'Picking heroes' : st === 'practice' ? 'Practice Tool' : st === 'room' || n > 1 ? word + ' party, ' + n + ' of ' + partyCap(NET.mode) : 'In the menus';
+  b.presence({ status, connect: open ? '+connect_lobby ' + lobby : '', sf_lobby: open ? lobby : '', sf_mode: NET.mode || '', sf_n: String(n), sf_state: st, sf_patch: PATCH_TXT, sf_hero: hero });
 }
 function friendsPlayed(b, dt) {
   if (FRIENDS.played || state.mode === 'title' || PRACTICE || !friendsLobby() || !players.some((p) => p.control === 'remote')) return;
@@ -111,9 +119,9 @@ function friendAct(f) {
   if (FRIENDS.sent[f.id]) return 'sent';
   const mine = friendsLobby();
   if (f.game && f.lobby && f.lobby === mine) return null; // already in your party
-  if (f.game && f.lobby && f.state === 'room' && f.patch === PATCH_TXT && f.n < Math.min(FR_PARTY_MAX, partyCap(f.mode))) return 'join';
-  if (f.game && (f.state === 'match' || (f.patch && f.patch !== PATCH_TXT))) return null; // busy, or a patch that could not join
-  if (f.st && mine && seatsOpen() && partySize() < Math.min(FR_PARTY_MAX, partyCap(NET.mode))) return 'invite';
+  if (f.game && f.lobby && FR_OPEN.includes(f.state) && f.patch === PATCH_TXT && f.n < partyCap(f.mode)) return 'join';
+  if (f.game && (f.state === 'match' || f.state === 'pick' || (f.patch && f.patch !== PATCH_TXT))) return null; // busy, or a patch that could not join
+  if (f.st && mine && seatsOpen() && partySize() < partyCap(NET.mode)) return 'invite';
   return null;
 }
 function friendDo(f) {
@@ -203,8 +211,8 @@ function frBmp(x, y, rows, col) {
 function frStatus(f) {
   const g = frGroup(f);
   if (g === 0) {
-    if (f.state === 'room') return { t: (PARTY_MODES[f.mode] || PARTY_MODES.quick) + ' ', n: f.patch === PATCH_TXT ? f.n + '/' + FR_PARTY_MAX : frPatch(f.patch), bad: f.patch !== PATCH_TXT };
-    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'practice' ? PARTY_MODES.practice : 'SOFTFALL' };
+    if (f.state === 'room' || (f.state === 'menu' && f.n > 1)) return { t: (PARTY_MODES[f.mode] || PARTY_MODES.quick) + ' ', n: f.patch === PATCH_TXT ? f.n + '/' + partyCap(f.mode) : frPatch(f.patch), bad: f.patch !== PATCH_TXT };
+    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'pick' ? 'PICKING' : f.state === 'practice' ? PARTY_MODES.practice : 'SOFTFALL' };
   }
   return { t: ['', 'ONLINE', 'AWAY', 'OFFLINE'][g] };
 }
@@ -305,7 +313,7 @@ function drawFriendCard() {
   drawPixelText(ctx, talkClean(c.name).slice(0, 18) || '?', x + 19, y + 5, SC_LIT, 1);
   const sub = (PARTY_MODES[c.mode] || PARTY_MODES.quick) + '  ';
   drawPixelText(ctx, sub, x + 19, y + 13, SC_DIM, 1);
-  drawPixelText(ctx, c.patch === PATCH_TXT ? c.n + '/' + FR_PARTY_MAX : frPatch(c.patch), x + 19 + pixelTextWidth(sub), y + 13, c.patch === PATCH_TXT ? SC_DIM : RM_BAD, 1);
+  drawPixelText(ctx, c.patch === PATCH_TXT ? c.n + '/' + partyCap(c.mode) : frPatch(c.patch), x + 19 + pixelTextWidth(sub), y + 13, c.patch === PATCH_TXT ? SC_DIM : RM_BAD, 1);
   drawPixelText(ctx, 'JOIN', r.join.x, r.join.y + 2, h === 'join' ? '#ffd95c' : SC_GOLD, 1);
   frBmp(r.close.x + 1, r.close.y + 2, FR_ICON.x, h === 'close' ? SC_LIT : SC_DIM);
 }

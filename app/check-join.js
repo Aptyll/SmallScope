@@ -6,7 +6,8 @@
 // package>` points at one, else `playwright` is required as usual.
 //   node app/check-join.js          every path, exit 1 on any failure
 //   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join,
-//                                       friend-invite, steam-party, steam-match, relay-match)
+//                                       friend-invite, steam-party, steam-match, relay-match,
+//                                       menu-join, leader-follow, practice-join)
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
 // process, handed to each page as `window.steamBridge` with the calls and
@@ -22,7 +23,8 @@ const { spawn } = require('child_process');
 const CHECK_PORT = 8479;       // its own port, so a game already served on 8471 is left alone
 const JOIN_WAIT = 15;          // s a guest has to be welcomed
 const PARTY_PATHS = ['steam-party', 'steam-match', 'relay-match'];
-const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS);
+const FRIEND_PATHS = ['menu-join', 'leader-follow', 'practice-join'];
+const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS, FRIEND_PATHS);
 
 // a profile already saved, so a page is not a first launch (which goes straight into the FIRST MATCH, js/app/boot.js)
 function savedProfile(c) {
@@ -121,7 +123,9 @@ async function runPath(browser, kind) {
   if (kind === 'steam-invite') await B.goto(base + '?join=' + host.lobby + q); // what a Steam invite opens (steamJoinRequested / +connect_lobby)
   else if (kind.startsWith('friend')) { // the guest in a party of its own, the host in its friends' column
     await open(B);
-    await B.evaluate(() => menuActivate(menuItems().indexOf('QUICKPLAY')));
+    // friend-invite's guest sits in a full party of its own (a 1V1 is a party
+    // of one), so the host's row for it offers INVITE, not the gold step
+    await B.evaluate((inv) => (inv ? beginParty('onevone') : menuActivate(menuItems().indexOf('QUICKPLAY'))), kind === 'friend-invite');
     await B.waitForFunction((l) => NET.role === 'host' && NET.transport.open && FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), host.lobby, { timeout: 10000 });
     if (kind === 'friend-join') {
       const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, host.lobby);
@@ -240,6 +244,103 @@ async function runParty(browser, kind) {
   return why;
 }
 
+// ---- the standing party (js/ui/rooms.js) and a leader's follow ------------
+// menu-join: the host never opens a party, it only sits on the title; the
+// guest's row for it must offer the gold step, the join must land, the
+// host's screen must turn to the seats, and the guest's seat must be keyed
+// by its SteamID. leader-follow: a leader and a friend (joined by code) take
+// up a third player's party, and both must end up in it. practice-join:
+// Join Game on a host standing on the practice field lands the guest there.
+// Every page also must refuse to leave a match it is in (match-guard, in
+// menu-join).
+async function runFriends(browser, kind) {
+  const S = fakeSteam(), errs = [], pages = [];
+  const base = 'http://localhost:' + CHECK_PORT + '/?transport=steam';
+  const mk = async (tag, k) => {
+    const c = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const pg = await c.newPage();
+    await S.attach(pg, String(76561190000000100n + BigInt(k)), tag);
+    pg.on('pageerror', (e) => errs.push(tag + ': ' + e.message));
+    pages.push(pg);
+    return pg;
+  };
+  // a player past their first match: a fresh profile's first launch is the guided match, not the title
+  const open = async (pg) => {
+    const up = () => pg.waitForFunction(() => window.DBG && typeof menuActivate === 'function');
+    await pg.goto(base); await up();
+    if (await pg.evaluate(() => { if (PROFILE.guided()) return false; PROFILE.setGuided(); return true; })) { await pg.goto(base); await up(); }
+    await pg.waitForTimeout(800);
+  };
+  const stood = (pg) => pg.waitForFunction(() => NET.role === 'host' && NET.transport.open && NET.mode && NET.transport.lobbyId, null, { timeout: 10000 }).then(() => pg.evaluate(() => NET.transport.lobbyId));
+  const welcomed = async (pg, secs) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < (secs || JOIN_WAIT) * 1000) {
+      await pg.waitForTimeout(400);
+      try { if (await pg.evaluate(() => NET.role === 'client' && NET.welcomed)) return true; } catch (e) { } // mid-reload
+    }
+    return false;
+  };
+  const remotes = (pg) => pg.evaluate(() => players.filter((p) => p.control === 'remote').length);
+  let why = '';
+  if (kind === 'menu-join') {
+    const A = await mk('host', 0), B = await mk('guest', 1);
+    await open(A); await open(B);
+    const lobby = await stood(A); // on the title, no mode picked: the standing party
+    const rp = await A.evaluate(() => state.menu.screen);
+    await B.waitForFunction((l) => FRIENDS.on && FRIENDS.list.some((f) => f.lobby === l), lobby, { timeout: 10000 }).catch(() => { why = 'host row never showed its lobby'; });
+    if (!why) {
+      const act = await B.evaluate((l) => { const f = FRIENDS.list.find((q) => q.lobby === l); const a = friendAct(f); if (a === 'join') friendDo(f); return a; }, lobby);
+      if (rp !== 'menu') why = 'host was not on the title (' + rp + ')';
+      else if (act !== 'join') why = 'host row on the title offers ' + act;
+      else if (!(await welcomed(B))) why = 'guest never welcomed';
+      else {
+        await A.waitForTimeout(600);
+        const h = await A.evaluate(() => ({ screen: state.menu.screen, uid: [...NET.peers.values()].map((p) => p.uid).join() }));
+        if (h.screen !== 'room') why = 'host screen ' + h.screen + ', not the seats';
+        else if (h.uid !== 'steam:76561190000000101') why = 'guest seat keyed ' + h.uid;
+      }
+    }
+    if (!why) { // match-guard: a host in a match takes up no invite
+      const C = await mk('solo', 2);
+      await open(C); await stood(C);
+      await C.evaluate(() => { state.mode = 'play'; steamJoinRequested('123456789'); });
+      await C.waitForTimeout(800);
+      if ((await C.evaluate(() => location.search)).includes('join=')) why = 'a page in a match left it for an invite';
+    }
+  } else if (kind === 'leader-follow') {
+    const A = await mk('lead', 0), B = await mk('friend', 1), C = await mk('other', 2);
+    for (const pg of [A, B, C]) await open(pg);
+    await stood(A); await stood(B); const lobbyC = await stood(C);
+    const code = await A.evaluate(() => { beginParty('quick'); return roomCode(); });
+    await B.evaluate((c) => { beginParty('quick'); state.menu.codeOn = true; state.menu.code = ''; for (const ch of c) codeType(ch); }, code);
+    if (!(await welcomed(B))) why = 'friend never joined the leader';
+    else {
+      await A.waitForTimeout(600);
+      await A.evaluate((l) => steamJoinRequested(l), lobbyC);
+      const [a, b] = [await welcomed(A, 20), await welcomed(B, 20)];
+      const inC = await C.evaluate(() => players.filter((p) => p.control === 'remote').map((p) => p.name).sort().join());
+      const lob = await Promise.all([A, B].map((pg) => pg.evaluate(() => NET.transport.lobbyId).catch(() => '')));
+      if (!a || !b || lob[0] !== lobbyC || lob[1] !== lobbyC) why = 'not both in the third party (lead ' + a + ', friend ' + b + ')';
+      else if (inC !== 'FRIEND,LEAD') why = 'third party shows ' + inC;
+    }
+  } else { // practice-join
+    const A = await mk('host', 0), B = await mk('guest', 1);
+    await open(A);
+    await stood(A);
+    await A.evaluate(() => { beginParty('practice'); partyPractice(); });
+    await A.waitForFunction(() => window.DBG && typeof menuActivate === 'function' && PRACTICE && NET.role === 'host' && NET.transport.open, null, { timeout: 15000 }); // the field's page, up
+    const lobby = await A.evaluate(() => NET.transport.lobbyId);
+    await open(B);
+    await B.evaluate((l) => steamJoinRequested(l), lobby);
+    if (!(await welcomed(B, 20))) why = 'guest never welcomed on the field';
+    else if (!(await B.evaluate(() => PRACTICE))) why = 'guest welcomed off the field';
+    else if ((await remotes(A)) !== 1) why = 'field host shows ' + (await remotes(A)) + ' remote';
+  }
+  if (errs.length) why = (why ? why + '; ' : '') + errs.slice(0, 3).join(' | ');
+  for (const pg of pages) await pg.context().close();
+  return why;
+}
+
 (async () => {
   const { chromium } = loadPlaywright();
   const only = process.argv[2], list = only ? [only] : PATHS;
@@ -250,7 +351,7 @@ async function runParty(browser, kind) {
   let bad = 0;
   for (const k of list) {
     let why;
-    try { why = await (PARTY_PATHS.includes(k) ? runParty : runPath)(browser, k); } catch (e) { why = 'threw: ' + e.message.split('\n')[0]; }
+    try { why = await (PARTY_PATHS.includes(k) ? runParty : FRIEND_PATHS.includes(k) ? runFriends : runPath)(browser, k); } catch (e) { why = 'threw: ' + e.message.split('\n')[0]; }
     console.log((why ? 'FAIL ' : 'ok   ') + k + (why ? '  ' + why : ''));
     if (why) bad++;
   }
