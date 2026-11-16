@@ -35,7 +35,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.946';
+const PATCH_TXT = 'PATCH 0.947';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -56,6 +56,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.947', 'SIXTEEN THIN ITEM ICONS ARE REDRAWN BOLD, SO RODS, KNIVES, STAFFS, THE BOW AND THE AXE FILL THEIR SQUARE AND READ AT A GLANCE.'],
   ['0.946', 'YOUR PROFILE SHOWS YOUR MOST PLAYED HERO WHOLE, WEAPON IN HAND AND IN THE SKIN YOU WEAR, AND A MATCH IS NEVER LEFT OUT OF YOUR HISTORY OVER ONE ODD NAME.'],
   ['0.945', 'BADGES: A GOLD FEATHER FOR EVERYONE WHO BOUGHT SOFTFALL BEFORE IT GOES FREE, AND A RANKED SHIELD FROM FLINT TO CRYSTAL ON YOUR PROFILE AND PARTY SEAT.'],
   ['0.944', 'THE ROOST LIGHTS ITS FLOOR AS FAR AS THE BIRD HEALS.'],

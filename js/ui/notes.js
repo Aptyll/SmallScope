@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['Bolder item icons: rods, knives, staffs, the bow and the axe', '0.947'],
     ['ROOST: the floor where the bird heals is lit in your side colour', '0.944'],
     ['Clearings in the woods keep a few felled stumps by the trees', '0.927'],
     ['REPLAY on the DEFEAT screen shows the last four seconds again', '0.925'],
