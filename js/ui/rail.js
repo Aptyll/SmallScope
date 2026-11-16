@@ -111,9 +111,9 @@ function railBottom() {
   return L ? Math.round((RAIL_Y + RAIL_H) * railSc(L)) : 0;
 }
 function headlineY() { const b = railBottom(); return b ? b + 6 : 14; }
-// where the top-centre note (the announcer's plate, js/ui/announcer.js) starts: under the rail,
-// and under the spectate control while that is up (specLayout, screens.js)
-function voteY() { return headlineY() + (state.mode === 'dead' && state.deadView === 'spec' ? SPEC_H + 4 : 0); }
+// where the top-centre note (the announcer's plate, js/ui/announcer.js) starts: under the rail
+// (the spectate control lives in the death bar at the foot, deathBar, js/ui/screens.js)
+function voteY() { return headlineY(); }
 // ...and under the surrender vote while that is up (drawVotePanel, js/ui/vote.js)
 function noteY() { return voteY() + (voteUp() ? VOTE_H + 4 : 0); }
 function railMouse(mx, my, s) {

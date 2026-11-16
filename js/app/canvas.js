@@ -380,3 +380,64 @@ mmCv.width = WORLD; mmCv.height = WORLD;
 const mmCtx = mmCv.getContext('2d');
 const mmImg = mmCtx.createImageData(WORLD, WORLD);
 
+
+// ------------------------------------------------------------ camera modes
+// LOCKED or FREE, League's two cameras (settings.camFree; the camLock key
+// flips it, as does the CAMERA row on the ESC menu's GAME page). LOCKED rides the
+// body you are watching, as it always has. FREE stays where it is put: the
+// pointer against an edge of the screen pans it (camEdge), the centre key
+// cuts back to the body (a tap) or holds it there (held), and a press on the
+// minimap carries it anywhere on the map (camDrag; under LOCKED it springs
+// back on the release). While you are down the watched body is an ally or
+// your own fall; a FREE camera rides it too until an edge pan takes it off
+// (camLoose), and the centre key or a new ally puts it back on.
+//
+// The camera is this screen's alone: none of it is the sim's, so a client
+// pans and drags exactly as a host does.
+const CAM_EDGE = 3;      // game px from a screen edge (or past it, in a pillarbox bar) that pans a free camera
+const CAM_PAN = 420;     // game px of screen a second the edge pans: the same speed on screen at any zoom
+let camLoose = false;    // a free camera panned off the body it was riding while you are down
+let camDrag = false;     // the left button went down on the minimap and is still held
+// the camera answers to the pointer and its keys: in a match, yours or a respawn wait
+function camLive() { return state.mode === 'play' || (state.mode === 'dead' && state.over === 'respawning' && !state.eagleCine); }
+function camFreeOn() { return !!settings.camFree && camLive(); }
+function camFlip() { settings.camFree = !settings.camFree; camLoose = false; saveSettings(); SFX.ui(settings.camFree); }
+// -1, 0 or 1 a side: the pointer against an edge, or past it in the window's
+// bar. Never under a panel the pointer is working (the ESC slab, the chart,
+// a wheel) or with the window out of focus
+function camEdge() {
+  if (!camFreeOn() || camDrag || !mouse.inWin || state.settingsOpen || state.mapOpen || state.wheel || state.paused || !document.hasFocus()) return [0, 0];
+  const x = mouse.rawX, y = mouse.rawY;
+  return [x <= CAM_EDGE ? -1 : x >= VIEW_W - 1 - CAM_EDGE ? 1 : 0, y <= CAM_EDGE ? -1 : y >= VIEW_H - 1 - CAM_EDGE ? 1 : 0];
+}
+// One frame of the camera's mode, before the follow (update, js/sim/sim.js):
+// true when the follow should run, false when the camera is held where it is
+// (FREE, panned by the edge, or the minimap under the pointer)
+function camStep(dt) {
+  if (!camLive()) { camDrag = false; camLoose = false; return true; }
+  if (camDrag) {
+    const w = mmCamAt(mouse.x, mouse.y); // the minimap's point under the pointer, clamped onto it (js/ui/minimap.js)
+    if (w) { camX = w.x - WV_W / 2; camY = w.y - WV_H / 2; }
+    return false;
+  }
+  if (keyHeld('camCentre')) { camLoose = false; return true; }
+  if (!player.dead) camLoose = false;
+  if (!camFreeOn()) return true;
+  if (state.intro > 0) return true; // the glide onto a fresh or respawned body plays out first
+  const [ex, ey] = camEdge();
+  if (ex || ey) {
+    const v = CAM_PAN * dt / zoomCur;
+    camX += ex * v; camY += ey * v;
+    if (player.dead) camLoose = true;
+  }
+  return player.dead && !camLoose; // down: ride the watched ally (or your fall) until panned off
+}
+// the centre key's tap: straight onto the body you are watching, no sweep
+function camCentre() {
+  camLoose = false;
+  const vp = viewPlayer();
+  camX = vp.x - WV_W / 2; camY = vp.y - WV_H / 2;
+}
+// a left press on the minimap takes the camera; the release lets it go
+function camDragStart() { camDrag = true; if (player.dead) camLoose = true; }
+function camDragEnd() { if (!camDrag) return; camDrag = false; if (!camFreeOn()) camLoose = false; }

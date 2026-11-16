@@ -469,6 +469,7 @@ function renderScreen(ox, oy, now) {
 
   renderWeather(camX, camY); // on the screen: the exact camera, the way the ground was blitted
   renderVignettes();
+  drawDeathGrey(); // a respawn wait: the world without its colour (js/ui/screens.js)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   drawTallies(kPx, subX, subY); // the running damage totals the frames queued, crisp at any zoom (js/draw/overhead.js)
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);

@@ -154,9 +154,9 @@ function update(dt) {
   } else if ((tourAim = guideTourAim(dt))) {
     // the FIRST MATCH's ride down your lane to their eagle (js/ui/guide.js): held on its line, the follow takes it home after
     camX = tourAim.x - WV_W / 2; camY = tourAim.y - WV_H / 2;
-  } else {
+  } else if (camStep(dt)) { // a FREE camera, or the minimap under the pointer, holds it (the `camera modes` banner, js/app/canvas.js)
     const vp = viewPlayer();
-    const look = vp === player ? 0.12 : 0; // the aim lean is the local player's; a watched one is framed dead centre
+    const look = vp === player && !player.dead ? 0.12 : 0; // the aim lean is the living local player's; a watched body is framed dead centre
     // the lean is a FRACTION of the view, so it divides by the zoom: the same
     // pointer offset leans the same share of the screen however close you are
     const lookSX = (mouse.x - VIEW_W / 2) * look, lookSY = (mouse.y - VIEW_H / 2) * look;

@@ -134,8 +134,9 @@ order the CONTROLS page lists them. **The keyboard has two schemes and each keep
 (`settings.scheme`, `SCHEMES`): `settings.binds` is the WASD scheme's (action id → key name),
 `settings.bindsClick` the CLICK scheme's,
 `binds()` whichever is live, all saved with the
-profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
-reserved key or a key two actions share falls back to its default, and a profile saved on the
+profile and made whole by `mendBinds` after `loadSettings` (the saved binds are kept first; a bind an action never had, a
+reserved key or a key two actions share falls back to its default, and a default some saved bind
+already holds leaves the newer action unbound, its cap a `-`, rather than steal it; a profile saved on the
 old MOUSE scheme wakes on CLICK; `schemeActs`/`schemeKey` are the per-scheme roster and default). **Nothing compares a key
 event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
 binds and the arrows, which every key-driven menu steps on — the title's planks, the death
@@ -429,9 +430,9 @@ depends on `teamEagleDown(p.team)` alone: the wait and the return of
 `updatePlayer` just zeroes a dead player's intents either way. Only the local player's **elimination**
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
 lighter `endMatch('respawning')` wait instead — same `state.mode = 'dead'` machinery (so the
-replay window and the TAB scoreboard still work), but no dim and no planks: once the body's
-[fall](rendering/going-down.md) is over the camera goes to an ally (the wheel still zooms it), one countdown line sits over it, and the replay of the death opens large over the view until
-it is closed. A lost match holds one line over the dim for a beat and then opens
+TAB scoreboard still works), but no dim and no planks: the camera stays on the body's
+[fall](rendering/going-down.md) and the world greys a little, one bar at the foot holds the watch, the seconds and DOWNED BY, and the arrows step the watch on to each living ally, live (the wheel still zooms
+it). No replay of the death plays. A lost match holds one line over the dim for a beat and then opens
 [the defeat screen](rendering/the-end-screens.md) by itself (`openDefeat()`), whose LOBBY leads on
 to the post-game record and the title, and whose REPLAY plays the last four seconds again. Every death runs `checkLastStanding()`, which ends the match as a win once no **rival
 team** is left (a respawn wait does not hold it back: a hero who is down when the last rival bird

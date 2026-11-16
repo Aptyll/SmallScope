@@ -27,32 +27,39 @@ Either way the local player's overlay goes up through `endMatch('lost' | 'won' |
 banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, and the screen goes
 to a dim under one line for `'lost'` (the match is decided for everyone), which the defeat screen follows on its own, to
 [the victory screen](../rendering/the-end-screens.md), whose one plank is **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
-at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
-[fall](../rendering/going-down.md) is over) (`state.deadView = 'spec'`, `specNext` keeping to
-the side's own through `specOk`, the only spectating there is), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
-the live countdown, with **DOWNED BY** under it for the whole wait (`drawDownedBy`, js/ui/recap.js: the
-killing blow's face, gold-rimmed, its name in its side's colour and what it hit with, or `?` for a rival
-the side did not see), and [the replay window](../rendering/replay-the-last-four-seconds.md) opens large
-over the view with a close box on its corner (or ESC), so the death is watched first and the ally
-after, the player choosing when. A `'lost'` dim has no plank and no replay: after `LOST_BEAT` s (or a press) it opens
+at all, because the wait **is the live match**, the way League's is. `endMatch` leaves the camera
+on your own body (`state.deadView = 'spec'`, `state.spec = -1`), so the
+[fall](../rendering/going-down.md) plays where it happened and the camera stays there after it;
+the world shifts a little toward grey (`drawDeathGrey`, js/ui/screens.js: a light saturation fill,
+`DEATH_GREY`, over the world and the weather, under the UI, eased in over the fall's length) until
+the respawn gives the colour back. Everything to read sits in **one bar at the screen's foot**,
+where the hidden hud strip sits in play, so nothing covers the watched body and the top keeps
+only the rail (`deathBar`, `drawDeathBar`): the watch on the left, the seconds to the respawn at
+3× in the hub's white, and **DOWNED BY** on the right (`drawDownedBy`, js/ui/recap.js: the killing
+blow's face, gold-rimmed, its name in its side's colour and what it hit with, or `?` for a rival
+the side did not see); and [the death recap](../rendering/replay-the-last-four-seconds.md#the-death-recap) sits
+in the top-left corner, folded to its ring until opened. There is **no replay of the death**: a recording of you still standing
+under a respawn count read as if the death had not happened. A `'lost'` dim has no plank and no replay: after `LOST_BEAT` s (or a press) it opens
 [the defeat screen](../rendering/the-end-screens.md), the loss's own summary, the way a win goes
 to the victory screen. LOBBY on **either** ceremony then opens
 [the post-game lobby](../rendering/the-post-game-lobby.md), the whole match's record, and that
 screen's LOBBY is the door out.
-`'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
-once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'`, lands the local player at its bird, and replays the HUD
+`'respawning'` needs no state of its own: once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'`, lands the local player at its bird, and replays the HUD
 slide-in a fresh eagle landing gets. A win *or* an elimination also freezes what its screen will
 print (`endSnapshot()` on `state.end`: the clock, team, class and the side's table) because the match keeps running underneath and a total
 that climbs behind a table which already counted it reads as a bug — and because a loss's summary
 is opened off a plank minutes later, by which time none of those numbers are still true. Spectating
-sets `state.spec` to a living player's id and `viewPlayer()` — the one place the camera and minimap
-ask who to frame — returns it. The control is
-a top-centre `[<] FACE HERO [>]` strip on the HUD's graphite (`specLayout`/`specHit`: the watched hero's face and
-its hero name at 2x, `specName`, over a rule in its side's colour; sized to the widest hero name so the
-arrows never shift): clicking an arrow or pressing the arrow keys cycles (`specNext`, player order,
-skipping the dead — and skipping rivals while a respawn wait runs, since the wait is not a scouting
-window), ESC returns to the planks (on a wait, which has none, it closes the replay instead), and a
-watched player that dies hands the view to the next. There is deliberately no hint text; with nobody left the plate shows a dash instead of a name. LOBBY (`toLobby`) fades to dark and reloads
+sets `state.spec` to a living ally's index (or -1, your own fall) and `viewPlayer()`, the one place
+the camera and minimap ask who to frame, returns it: the ally is watched live, at the world's full
+resolution and speed, because it is the match itself. The control is
+the death bar's left end, `[<] FACE HERO [>]` (`specLayout`/`specHit`: the watched hero's face and
+its hero name at 2x, `specName`, over a rule in its side's colour; your own fall shows your face and
+name dimmed, with no rule; sized to the widest hero name so the arrows never shift): clicking an
+arrow or pressing the arrow keys steps a ring of your fall and each living ally (`specNext`,
+player order, `specOk` keeping it to your side, since the wait is not a scouting window), and a
+watched ally that dies hands the view on. The camera's modes hold here too
+([Camera modes](../rendering/camera-modes.md)): LOCKED rides the watched body, FREE rides it until
+an edge pan takes it off. There is deliberately no hint text. LOBBY (`toLobby`) fades to dark and reloads
 the page on the same URL (or the party's rematch), which boots into the title screen. **TAB still opens the standings
 while you are out**, which is the point of holding them above the dim.
 `state.mode` is `title | drop | play | dead`, and `updatePlay()` runs in `play`, `dead` **and**

@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['DEATH: live and lightly grey; one bar shows who downed you; watch allies', '0.975'],
+    ['CAMERA: Y for a free camera that pans at the edge, F back to you', '0.975'],
     ['CAMPS: the robot camps are HEADLAMPS; amber lamps mean they are after you', '0.974'],
     ['SPEED: no more night lag in the reeds', '0.973'],
     ['CAMPS: a camp you leave runs home fast and heals', '0.972'],

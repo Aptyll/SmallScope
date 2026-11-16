@@ -1370,9 +1370,6 @@ function endMatch(how) {
   // ...and the same edge for the loss sting below: a second endMatch('lost')
   // (or a driver poking it) must not ring twice over one ending
   const firstLoss = how === 'lost' && state.over !== 'lost';
-  // the same death ending the match (a bird driven off while you wait
-  // to respawn) is not a new one: a replay already put away stays away
-  const sameDeath = state.mode === 'dead' && player.dead;
   state.over = how;
   // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
   // match runs on underneath its own ceremony, so the table is frozen here
@@ -1395,7 +1392,6 @@ function endMatch(how) {
   state.deadTimer = 0;
   state.defeatT = 0;
   state.rpAgain = false;
-  state.rpClosed = how === 'hostleft' || (sameDeath && state.rpClosed); // every new death opens the replay again; a host walking out is no death, and its door (LOBBY) shows at once
   // an ENDING freezes its numbers here, not in the render pass: the match
   // runs on underneath (a gold pump can still pay out, a rival can still
   // fall) and a total that climbs behind a tally which already counted it
@@ -1412,10 +1408,9 @@ function endMatch(how) {
   // the end screen has a song of its own; a respawn timer is not the end of anything
   if (how === 'won' || how === 'lost') SFX.music.play(how === 'won' ? 'victory' : 'defeat', { in: 1.2 });
   player.input = makeInput(); // whatever was held dies with the player
-  // a respawn wait has no planks: it opens straight onto an ally, with the
-  // replay window over the view until it is closed (the `death & spectate`
-  // banner, js/screens.js); specNext keeps to the side while the wait runs
-  if (how === 'respawning') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
+  // a respawn wait has no planks: the camera stays on your fall, and the
+  // arrows step on to an ally (the `death & spectate` banner, js/ui/screens.js)
+  if (how === 'respawning') { state.deadView = 'spec'; state.spec = -1; }
 }
 
 

@@ -319,6 +319,12 @@ function renderMinimap(now) {
   const clock = clockTxt(state.elapsed);
   drawPixelTextOutline(ctx, clock, r.x + r.w - pixelTextWidth(clock) - 1, r.y - 8, '#f4f7ff', HUD_INK);
 }
+// the world point a press on the minimap points the camera at: the pointer
+// clamped onto the square, so a drag that runs off its edge keeps the edge
+function mmCamAt(sx, sy) {
+  const v = mmView();
+  return chartWorldAt(v, Math.max(v.x, Math.min(v.x + v.w - 1, sx)), Math.max(v.y, Math.min(v.y + v.w - 1, sy)));
+}
 // whether the clock stands over the square: only where the rail is not up
 function mmClockShown() { return !railLayout(); }
 

@@ -19,7 +19,7 @@ away (`replayClose`) and the defeat screen is back. Neither ceremony's LOBBY lea
 [the post-game lobby](the-post-game-lobby.md) first, and that screen's LOBBY is the door out. A
 respawn-pending death's LOBBY leaves directly — nothing has been lost yet, so there is no record
 to read. `endScreen()` is the one test for "a screen owns the frame" —
-`renderUI` and `replayShowing` both bow out under it (the recap would cover the
+`renderUI` and `replayShowing` both bow out under it (a replay would cover the
 whole ceremony; only the defeat screen's own REPLAY shows over one), and so does every per-body tell in the world under the wash (`drawPlayer` bails
 on it exactly as it does on the title's living world: a name plate with a health bar under it
 floating through the ceremony is the HUD showing up to a party it was not invited to); the
@@ -64,6 +64,7 @@ flight has just been watched live. It stands `LOST_BEAT` s and the defeat ceremo
 this one's. That is the **loss's beat**; a guest whose host left mid-match (`state.over =
 'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY
 word. **The respawn wait** is the fourth state and the lightest: no wash, no
-planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**
-at the same 3× in the same band, the number live. The wait opens under
-[the recap](replay-the-last-four-seconds.md), which owns the frame until it is closed.
+planks, the live match lightly greyed with the camera on your fall, one bar at the foot (the
+watch, the seconds to the respawn, DOWNED BY) and
+[the death recap](replay-the-last-four-seconds.md#the-death-recap) in the top-left corner
+([Death and respawn](../gameplay/death-and-respawn.md)).

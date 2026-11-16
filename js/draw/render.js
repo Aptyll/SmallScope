@@ -407,6 +407,7 @@ function cursorInfo() {
   const sp = shopHit(mouse.x, mouse.y);
   if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
+  if (camDrag || (overMinimap() && !(ckOn() && ck.arm))) return { kind: 'arrow' }; // the minimap carries the camera, not an attack
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || (sh.kind === 'item' && player.items[sh.i] === 'potion'))) return { kind: 'hand' };
   if (sh) return { kind: 'arrow' };

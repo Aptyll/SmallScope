@@ -4,12 +4,11 @@
 // are js/ui/endscreens.js.
 // ------------------------------------------------------------ replay
 // A rolling four seconds of the world, kept as pixels rather than as state,
-// played back while you are dead or paused. A DEATH gets the RECAP:
-// the whole frame, the way a goal replays - the ally view (a respawn wait)
-// waits underneath until its close box or ESC
-// puts it away, and the RESPAWNING IN Ns
-// line and the ESC BACK prompt draw over it. A lost match gets none. PAUSE gets the WINDOW: the
-// bottom-left corner at RP_W x RP_H, under the pause planks.
+// played back on pause and off the defeat screen's REPLAY. PAUSE gets the
+// WINDOW: the bottom-left corner at RP_W x RP_H, under the pause planks. The
+// defeat's REPLAY gets the whole frame until a press puts it away. A death
+// gets NONE: a respawn wait is the live match (the `death & spectate` banner
+// below), never a recording of you still standing.
 //
 // The capture is the WORLD LAYER itself (worldCv, one sample per world px,
 // before the blit scales it), with the k it was blitted at, so the recap
@@ -38,7 +37,6 @@ const RP_RATE = 1;              // playback speed: real time
 const RP_N = RP_SECS * RP_FPS;  // slots in the ring
 const RP_COLS = 12;             // atlas grid; RP_N / RP_COLS rows
 const RP_PAD = 4;               // inset from the bottom-left corner
-const RP_HOLD = 2;              // s into a death before a stray press may put the recap away: the clicks and the dodge a fight was mashing land on it otherwise
 // the biggest slot the ring will ever allocate, and so the memory ceiling:
 // RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (640x360 -> 110 MB). In world px: the
 // default zoom and every zoom closer fit whole; zoomed further out, the
@@ -117,29 +115,23 @@ function replayLive() {
   return goingDown(player) || (state.mode === 'play' && !player.dead);
 }
 
-// up on a death until it is closed (a respawn wait, once its half second
-// has landed - the recap) and on pause (the corner
-// window); never under a full-screen panel
+// up on pause (the corner window) and off the defeat's REPLAY (the whole
+// frame); never under a full-screen panel
 function replayShowing() {
   if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen || goingDown(player)) return false;
   if (state.paused) return true;
-  if (state.eagleCine) return false; // a bird driven off has the frame (hudInT, js/ui/strip.js): a respawn wait's recap, bar and countdown step aside
-  if (state.rpAgain) return state.mode === 'dead' && state.deadView === 'defeat'; // asked for, off the defeat screen's REPLAY: over that screen until it is put away
-  // not over an end screen: both are compositions, and the frame is theirs
-  if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
-  // a respawn wait only: a lost match has just been watched live (the bird's
-  // flight is the camera's, js/sim/eagle.js), and its screen is the defeat's
-  return !state.rpClosed && state.over === 'respawning';
+  if (state.eagleCine) return false; // a bird driven off has the frame (hudInT, js/ui/strip.js)
+  return !!state.rpAgain && state.mode === 'dead' && state.deadView === 'defeat'; // asked for, off the defeat screen's REPLAY: over that screen until it is put away
 }
 
-// Which of the two it is this frame: the recap fills the view on a death,
+// Which of the two it is this frame: the defeat's REPLAY fills the view,
 // the window sits in the bottom-left corner on pause
 function rpFull() { return state.mode === 'dead'; }
 function rpRect() {
   if (rpFull()) return { x: 0, y: 0, w: VIEW_W, h: VIEW_H };
   return { x: RP_PAD, y: VIEW_H - RP_H - RP_PAD, w: RP_W, h: RP_H };
 }
-// the recap's close box: a small plank inside the frame's top-right corner
+// the full frame's close box: a small plank inside its top-right corner
 function rpCloseRect() {
   return { x: VIEW_W - RP_CLOSE - 4, y: 4, w: RP_CLOSE, h: RP_CLOSE };
 }
@@ -148,12 +140,9 @@ function rpCloseHit() {
   const c = rpCloseRect();
   return overRect(c, 2);
 }
-// the recap is up: what draws under it (the ally view's strip, the death dim
-// and its planks) waits, and a press puts it away
+// the defeat's REPLAY is up: the defeat waits under it, and a press puts it away
 function replayFull() { return rpFull() && replayShowing(); }
-function replayClose() { state.rpClosed = true; state.rpAgain = false; SFX.pickup(); }
-// a death's recap still in its first RP_HOLD s: only ESC or its close box puts it away
-function replayHeld() { return replayFull() && !state.rpAgain && state.over === 'respawning' && state.deadTimer < RP_HOLD; }
+function replayClose() { state.rpAgain = false; SFX.pickup(); }
 
 // the overlay tracks the game canvas: the window's rect, at the canvas's
 // scale, in device pixels
@@ -210,7 +199,7 @@ function rpOverlay(on, a) {
   if (on && a !== rpAlpha) { rpAlpha = a; rpOv.style.opacity = a; }
 }
 
-// The recap: the frame itself, the playhead sweeping its bottom edge, a
+// The full frame: the recording itself, the playhead sweeping its bottom edge, a
 // close box in its top-right corner and the ESC prompt at its foot. The
 // window: the strip on a frost plate with the playhead on the bottom rim.
 // No label either way - a looping picture under a sweeping playhead is what
@@ -247,7 +236,6 @@ function renderReplay() {
     ctx.fillRect(c.x, c.y, 1, c.h); ctx.fillRect(c.x + c.w - 1, c.y, 1, c.h);
     ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
     for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
-    drawRecap(); // why: who hit you, with what, how much (js/ui/recap.js)
     // the way back to the allies: the key cap with its verb, over the world, so it wears the outline the world demands
     const verb = tr('end.back');
     drawKeyPrompt(Math.round((w - promptW(verb, 'esc')) / 2), h - 18, verb, false, 'esc');
@@ -289,15 +277,17 @@ function renderReplay() {
 // ('respawning', see die()/updateRespawns) - or its win, once every RIVAL
 // TEAM is gone (teams win together, see checkLastStanding) - puts the game
 // in mode 'dead' with the match running on underneath. 'lost' dims the
-// screen under one line and goes on to the defeat banner by itself (lostBeat); 'respawning' has no plank - it opens straight
-// onto an ally (endMatch picks one through specNext, which keeps to the side
-// while the wait runs) under one line, RESPAWNING IN Ns, with the replay
-// window large over the view until it is closed, and snaps back to 'play' on
-// its own once the timer clears; a win
+// screen under one line and goes on to the defeat banner by itself (lostBeat); 'respawning' has no plank - it is
+// the live match, the way League's is: the world greys (drawDeathGrey), the
+// camera stays on your fall, and over it reads RESPAWNING IN Ns, DOWNED BY
+// (who, and with what) and the recap in the top-left corner (js/ui/recap.js).
+// The arrows step the watch on to each living ally, live and at full speed,
+// and back to your fall (specNext). It snaps back to 'play' on its own once
+// the timer clears; a win
 // hands the whole frame to the victory banner (js/ui/endscreens.js), LOBBY
 // under it. A won or lost match is decided for everyone, so there is nothing
 // left to watch or play on: LOBBY is the only plank, on the victory banner and
-// on the defeat banner - the loss's own summary, the mirror of the victory screen. A respawn wait follows an ally through a top-centre control: two
+// on the defeat banner - the loss's own summary, the mirror of the victory screen. A respawn wait follows an ally through the death bar at the foot: two
 // pixel arrows around the name, clickable, the arrow keys do the same (no hint
 // text: the arrows are the explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
@@ -370,21 +360,31 @@ function openDefeat() {
   state.deadHover = [0, 0];
 }
 
-// the spectate control, top centre: [<] FACE HERO [>], on the HUD's graphite. Arrow boxes are SPEC_AW
-// wide; the plate between them is sized to the widest hero name so the
-// arrows never jump as the target changes.
-const SPEC_Y = 6, SPEC_H = 20, SPEC_AW = 13, SPEC_FACE = 16;
+// THE DEATH BAR: the whole wait in one graphite plate at the screen's foot,
+// where the hud strip sits in play, and nothing at the top but the rail -
+// one place to look, and the middle of the screen left to the match:
+//
+//   [<] FACE HERO [>]  |  9  |  [face] DOWNED BY / NAME  (icon)
+//
+// the watch (arrow boxes SPEC_AW wide round a slot sized to the widest hero
+// name, so the arrows never jump), the seconds to the respawn at 3x, and who
+// put you down (drawDownedBy, js/ui/recap.js).
+const SPEC_H = 20, SPEC_AW = 13, SPEC_FACE = 16;
+const DBAR_H = 36, DBAR_PAD = 6, DBAR_GAP = 10, DBAR_FOOT = 8; // the bar's height, its inset, the air round a divider, and its lift off the foot
+const DBAR_T = 30; // the seconds' slot: two digits at 3x
 function specName(p) { return CLASSES[p.cls] ? CLASSES[p.cls].name : p.name; } // who you are watching, by the hero on the field
-function specLayout() {
+function deathBar() {
   let nw = 0;
   for (const p of players) if (p.active) nw = Math.max(nw, pixelTextWidth(specName(p), 2));
-  const w = SPEC_AW + 3 + SPEC_FACE + 5 + nw + 5 + SPEC_AW;
-  const x = Math.round((VIEW_W - w) / 2);
-  const rb = railBottom(); // the team rail keeps the top edge while you are out (ui.js)
-  const y = rb ? rb + 4 : SPEC_Y;
-  return { x, y, w, h: SPEC_H,
+  const sw = SPEC_AW + 3 + SPEC_FACE + 5 + nw + 5 + SPEC_AW, dw = downedByW();
+  const w = DBAR_PAD + sw + DBAR_GAP + DBAR_T + (dw ? DBAR_GAP + dw : 0) + DBAR_PAD;
+  return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - DBAR_H - DBAR_FOOT, w, h: DBAR_H, sw, dw };
+}
+function specLayout() {
+  const B = deathBar(), x = B.x + DBAR_PAD, y = B.y + ((DBAR_H - SPEC_H) >> 1);
+  return { x, y, w: B.sw, h: SPEC_H,
     left: { x, y, w: SPEC_AW, h: SPEC_H },
-    right: { x: x + w - SPEC_AW, y, w: SPEC_AW, h: SPEC_H } };
+    right: { x: x + B.sw - SPEC_AW, y, w: SPEC_AW, h: SPEC_H } };
 }
 // which spectate arrow the pointer is on: -1 left, 1 right, 0 neither
 function specHit() {
@@ -417,19 +417,19 @@ function deadActivate(i) {
 function specOk(q) {
   return q !== player && q.active && !q.dead && q.team === player.team;
 }
-// follow the next watchable player in player order (dir -1 for the previous one)
+// The watch steps round a ring: your own fall (state.spec -1, where every wait
+// starts) and then each living ally in player order, and round again (dir -1
+// steps back). A new ally puts a FREE camera back on a body (camLoose,
+// js/app/canvas.js).
 function specNext(dir) {
-  const n = players.length;
-  let i = state.spec;
-  for (let k = 0; k < n; k++) {
-    i = ((i + dir) % n + n) % n;
-    // the camera leaving your own body for somebody else's is the one moment
-    // the player is not IN the world any more, and it had no sound at all -
-    // the view simply jumped across the map. Once per handover, not once per
-    // candidate the loop skips over.
-    if (specOk(players[i])) { if (state.spec !== i) SFX.spectate(); state.spec = i; return; }
-  }
-  state.spec = -1; // nobody left to watch
+  const ring = [-1];
+  players.forEach((q, i) => { if (specOk(q)) ring.push(i); });
+  const at = Math.max(0, ring.indexOf(state.spec));
+  const next = ring[(at + dir + ring.length) % ring.length];
+  // the camera leaving one body for another is a handover, and it sounds
+  if (next !== state.spec) SFX.spectate();
+  state.spec = next;
+  camLoose = false;
 }
 
 // back to the title screen: fade to dark and reload this seed - or, after a
@@ -448,9 +448,9 @@ function toLobby() {
 function deadKey(k) {
   if (state.fade || state.eagleCine) return; // a bird driven off has the frame (renderDead draws nothing): no press lands on a screen nobody can see
   if (state.deadView === 'scores') { scoresKey(k); return; } // the post-game record owns its own controls
-  // the recap takes every back key and puts itself away: the allies are underneath
+  // the defeat's REPLAY takes every back key and puts itself away
   if (replayFull()) {
-    if (k === 'escape' || (!replayHeld() && (k === 'backspace' || k === 'enter' || k === ' '))) replayClose();
+    if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') replayClose();
     return;
   }
   if (state.deadView === 'spec') {
@@ -470,8 +470,9 @@ function deadKey(k) {
 function deadClick() {
   if (state.fade || state.eagleCine) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
-  if (replayFull()) { if (!recapClick() && (!replayHeld() || rpCloseHit())) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do, once the fight's own presses are past
+  if (replayFull()) { replayClose(); return; } // any press puts the defeat's REPLAY away, as its keys do
   if (state.deadView === 'spec') {
+    if (recapClick()) return; // the recap's fold buttons (js/ui/recap.js)
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
   }
@@ -482,32 +483,59 @@ function deadClick() {
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }
 
-// the wait, and not a word more: the recap, then the ally the camera is on,
-// is the screen, and the number is the only thing to read (a FIRST MATCH adds
-// its coach's card, the lesson of that death: renderGuideDead, js/ui/guide.js). 3x in the upper
-// band where an eye lands, 2x on a view too narrow to hold it.
-function drawRespawnLine() {
-  const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
-  const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
-  const y = Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6); // clear of the spectate bar and a call under it
-  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), y, '#cfe4f2', '#0a0e23', ts);
-  drawDownedBy(y + 5 * ts + 8); // who put you down, under it (js/ui/recap.js)
+// the bar's plate under the watch, and its right two parts over it: the
+// seconds in the hub's white, then who put you down (a FIRST MATCH adds its
+// coach's card over the bar, the lesson of that death: renderGuideDead, js/ui/guide.js)
+function drawDeathBarPlate() {
+  const B = deathBar();
+  ctx.fillStyle = SC_INK; ctx.fillRect(B.x - 1, B.y - 1, B.w + 2, B.h + 2);
+  ctx.fillStyle = SC_BG; ctx.fillRect(B.x, B.y, B.w, B.h);
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(B.x, B.y, B.w, 1);
+}
+function drawDeathBar() {
+  const B = deathBar(), tx = B.x + DBAR_PAD + B.sw + DBAR_GAP;
+  ctx.fillStyle = SC_EDGE;
+  ctx.fillRect(tx - (DBAR_GAP >> 1), B.y + 6, 1, B.h - 12);
+  const t = String(Math.max(0, Math.ceil(player.respawnT)));
+  drawPixelText(ctx, t, tx + Math.round((DBAR_T - pixelTextWidth(t, 3)) / 2), B.y + Math.round((B.h - 15) / 2), SC_LIT, 3);
+  if (!B.dw) return;
+  const dx = tx + DBAR_T + DBAR_GAP;
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(dx - (DBAR_GAP >> 1), B.y + 6, 1, B.h - 12);
+  drawDownedBy(dx, B.y + ((B.h - DB_FACE) >> 1));
+}
+
+// THE GREY: while you wait to come back the world loses its colour, League's
+// sign that you are out of it - the HUD, the plates over it and every face in
+// them keep theirs. Drawn over the world and the weather, under the UI
+// (renderScreen, js/draw/passes.js); a saturation fill, so the pixels keep
+// their light and only lose their hue. It eases in as you fall and is gone
+// with the respawn.
+const DEATH_GREY_IN = 0.6; // s for the colour to drain: the fall's own length (DOWN_T, js/draw/bodies.js)
+const DEATH_GREY = 0.35;   // how much of it drains: a quiet shift, never a black-and-white screen (Noah)
+function drawDeathGrey() {
+  if (state.mode !== 'dead' || state.over !== 'respawning' || state.eagleCine) return;
+  const a = DEATH_GREY * Math.min(1, state.deadTimer / DEATH_GREY_IN);
+  if (a <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'saturation';
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#808080';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.restore();
 }
 
 function renderDead(now) {
   if (state.eagleCine) return; // ...and so do the wait's spectate bar and countdown, and a surrender's record, which opens once the flight is over
   if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
-  // the recap owns the frame: only a respawn wait's countdown reads over it
-  if (replayFull()) { if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); } return; }
+  if (replayFull()) return; // the defeat's REPLAY owns the frame
   if (state.deadView === 'spec') {
-    // top centre: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
+    // the death bar's left end: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
     // colour; each arrow is its own box that lights gold under the
     // pointer, so the control explains itself without a word of hint.
     const vp = viewPlayer();
     const L = specLayout();
     const hit = specHit();
-    ctx.fillStyle = HUD_INK; ctx.fillRect(L.x, L.y, L.w, L.h);
-    ctx.fillStyle = AB_BG; ctx.fillRect(L.x + 1, L.y + 1, L.w - 2, L.h - 2);
+    if (state.over === 'respawning') drawDeathBarPlate();
     for (const dir of [-1, 1]) {
       const r = dir < 0 ? L.left : L.right;
       const hot = hit === dir;
@@ -522,17 +550,14 @@ function renderDead(now) {
       }
     }
     const fx = L.x + SPEC_AW + 3, tx = fx + SPEC_FACE + 5;
-    if (vp !== player) {
-      const nm = specName(vp);
-      drawFace(fx, L.y + 2, SPEC_FACE, vp);
-      drawPixelText(ctx, nm, tx, L.y + 4, '#f4f7ff', 2);
-      ctx.fillStyle = TEAMS[skin(vp.team)].mark; ctx.fillRect(tx, L.y + 16, pixelTextWidth(nm, 2), 1);
-    } else {
-      // nobody left to watch: an empty plate with a dim dash where a name would be
-      ctx.fillStyle = '#6c717a';
-      ctx.fillRect(Math.round(L.x + L.w / 2) - 4, L.y + 9, 8, 2);
-    }
-    if (state.over === 'respawning') { drawRespawnLine(); renderGuideDead(now); }
+    // an ally: its face and name, white over its side's rule; your own
+    // fall: your face and name, dimmed, with no rule - you, out of it
+    const nm = specName(vp), you = vp === player;
+    drawFace(fx, L.y + 2, SPEC_FACE, vp);
+    if (you) { ctx.fillStyle = 'rgba(22,24,28,0.6)'; ctx.fillRect(fx, L.y + 2, SPEC_FACE, SPEC_FACE); }
+    drawPixelText(ctx, nm, tx, L.y + 4, you ? '#8a8f99' : '#f4f7ff', 2);
+    if (!you) { ctx.fillStyle = TEAMS[skin(vp.team)].mark; ctx.fillRect(tx, L.y + 16, pixelTextWidth(nm, 2), 1); }
+    if (state.over === 'respawning') { drawDeathBar(); drawRecap(); renderGuideDead(now); }
     return;
   }
   if (state.deadView === 'defeat') { renderDefeat(now); return; } // the loss's own summary

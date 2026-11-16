@@ -61,6 +61,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](../rendering/the-hud-corners/the-hover-tooltip.md)) —
+`camFree` — the CAMERA row: LOCKED (the default) rides your hero, FREE pans at the screen's edge ([camera modes](../rendering/camera-modes.md)) —
 `tipFull` — the ABILITY DETAILS row: HOLD ALT (the default: an ability's hover is the short card, the DETAILS key, Alt unless rebound, opens every rank's numbers; the row prints the live bind, an `off` given as a function) or ALWAYS (`tipClassAb`) —
 `aiLevel` — the rival bots' level where nothing pinned one (a party's PLAY always does: `NET.botLv`), an index into `AI_LEVELS` (js/ai/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` (a saved `'mouse'` wakes on `'click'`, `mendBinds`) — with `binds` / `bindsClick`,

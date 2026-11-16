@@ -100,6 +100,8 @@ const KEY_ACTIONS = [
   { id: 'details', verb: 'DETAILS', key: 'Alt', ck: 'Alt' },
   { id: 'ping', verb: 'PING', ck: 'g', was: 'flag' }, // `was`: the id a saved bind of it went by
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
+  // the camera (the `camera modes` banner, js/app/canvas.js): LOCKED or FREE, and back onto your hero
+  { id: 'camLock', verb: 'CAMERA LOCK', key: 'y', ck: 'y' }, { id: 'camCentre', verb: 'CENTRE CAMERA', key: 'f', ck: 'f' },
   { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'SCOREBOARD', key: 'Tab', ck: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n', ck: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p', ck: 'p' },
 ];
@@ -127,10 +129,19 @@ function mendBinds() {
   const mend = (map, scheme) => {
     const s = map && typeof map === 'object' ? map : {};
     const out = {}, used = {};
-    for (const a of schemeActs(scheme)) {
+    // the saved binds first, then the defaults round them: an action newer
+    // than the save never takes a key the player put on another action -
+    // it waits unbound for a key of its own instead (the CONTROLS page)
+    const acts = schemeActs(scheme);
+    for (const a of acts) {
       const k = s[a.id] !== undefined ? s[a.id] : a.was && s[a.was];
-      out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : schemeKey(a, scheme);
-      used[out[a.id]] = true;
+      if (typeof k === 'string' && k && !keyReserved(k) && !used[k]) { out[a.id] = k; used[k] = true; }
+    }
+    for (const a of acts) {
+      if (out[a.id]) continue;
+      const k = schemeKey(a, scheme);
+      out[a.id] = used[k] ? '' : k;
+      used[k] = true;
     }
     return out;
   };
@@ -169,6 +180,7 @@ function keyCap(a) {
     const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(binds()[d]));
     return l.every((s) => s.length === 1) ? l.join('') : l.join('/');
   }
+  if (binds()[a] === '') return '-'; // on the scheme, waiting for a key of its own (mendBinds)
   return binds()[a] ? keyLabel(binds()[a]) : 'RMB';
 }
 // ...and its short form for a well's corner, where two or three characters fit
@@ -213,7 +225,7 @@ function rebindLive() {
 // ------------------------------------------------------------ input
 const keys = {}; // key name (lowercase) -> held; written by the listeners
 // inside: pointer over the canvas
-const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false };
+const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, rawX: VIEW_W / 2, rawY: VIEW_H / 2, inWin: false };
 // THE ONE HIT TEST. Is the point (x, y) on the rect r ({x, y, w, h}) grown by
 // px to each side and py above and below (py is px when left out)? ...and
 // overRect asks it of the pointer: every screen's hover and click go through
@@ -263,6 +275,11 @@ function keyPress(e) {
   // mode, since a Short is filmed off the drop and the end screens too
   if (directorKey(e)) return;
   if (state.mode === 'title') { menuKey(e); return; }
+  // the camera's two keys, in play and through a respawn wait alike
+  if (camLive() && !e.repeat && !state.settingsOpen) {
+    if (keyIs(e, 'camLock')) { camFlip(); return; }
+    if (keyIs(e, 'camCentre')) { camCentre(); return; }
+  }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
   if (state.mode !== 'play') return;
   // the ESC slab has the arrows while it is up: they page and scroll it
@@ -339,6 +356,7 @@ function keyRelease(e) {
 pageListen(window, 'blur', () => {
   for (const k in keys) keys[k] = false;
   state.rebind = null; // a cap left listening would eat the first key back
+  camDragEnd(); // a minimap drag whose release went to another window
   // the ping wheel G holds is a held gesture: its keyup is lost with the
   // focus, so it closes (choosing nothing); so does a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
@@ -363,7 +381,13 @@ function pointerMove(x, y) {
 }
 // the in-canvas cursor must vanish when the pointer leaves the page
 pageListen(canvas, 'mouseleave', () => { mouse.inside = false; });
-pageListen(document, 'mouseleave', () => { mouse.inside = false; });
+pageListen(document, 'mouseleave', () => { mouse.inside = false; mouse.inWin = false; });
+// ...and where it is anywhere in the window, off the canvas too (a pillarbox
+// bar): the free camera's edge pan reads it (camEdge, js/app/canvas.js)
+pageListen(window, 'mousemove', (e) => {
+  const r = canvas.getBoundingClientRect();
+  mouse.rawX = (e.clientX - r.left) / scale; mouse.rawY = (e.clientY - r.top) / scale; mouse.inWin = true;
+});
 pageListen(canvas, 'mousedown', (e) => {
   // a press carries its own position - don't trust the last mousemove (touch,
   // synthetic clicks and pointer-lock all press without moving first)
@@ -395,7 +419,14 @@ function pointerPress(button) {
   }
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
-  if (state.mode === 'dead') { SFX.unlock(); if (profileUp()) profileClick(); else if (!voteClick()) deadClick(); return; }
+  if (state.mode === 'dead') {
+    SFX.unlock();
+    if (profileUp()) profileClick();
+    else if (voteClick()) return;
+    else if (camLive() && overMinimap()) camDragStart(); // a respawn wait looks anywhere on the map
+    else deadClick();
+    return;
+  }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
@@ -409,6 +440,7 @@ function pointerPress(button) {
   if (shopClick(shopHit(mouse.x, mouse.y))) return;
   if (state.charOpen && charClick(charHit(mouse.x, mouse.y))) return;
   if (hudPress(mouse.x, mouse.y)) { SFX.unlock(); return; }
+  if (overMinimap()) { camDragStart(); return; } // the camera, carried across the map (the `camera modes` banner, js/app/canvas.js)
   mouse.down = true;
   atkPress();
 }
@@ -425,6 +457,7 @@ function sideButton(button, down) {
 function pointerRelease(button) {
   if (button === 3 || button === 4) { sideButton(button, false); return; }
   if (button === 1) return; // the middle button is bound to nothing
+  if (button === 0) camDragEnd(); // the minimap lets the camera go
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   // releasing the button just drops the held intent; updatePlayer fires the

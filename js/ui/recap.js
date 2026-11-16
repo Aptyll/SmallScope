@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ death recap
-// Why you went down, in the top-left corner of the replay of it (the `replay`
-// banner, js/ui/screens.js), read the way League's is:
+// Why you went down, in the top-left corner through the whole respawn wait
+// (the `death & spectate` banner, js/ui/screens.js), read the way League's is:
 //
 //   [-]  ( ring )  [>]     the ring: all the damage, split by kind, the total in it
 //   [face] 51 ====   o o   one line per hitter, biggest first: its total over a
@@ -41,8 +41,8 @@ const RC_KINDS = ['atk', 'ab', 'other'];
 const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', scrap: 'recap.scrap', bear: 'recap.bear', fire: 'recap.fire',
   orca: 'recap.orca', ice: 'recap.ice', tackle: 'recap.tackle', eagle: 'recap.eagle' };
 const RC_MOVE = { roll: 'recap.roll' };
-// 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
-const recap = { view: 1 };
+// 0 the ring alone (where a wait starts: the bar at the foot already names the killer), 1 the lines, 2 opened out: this screen's, kept across deaths
+const recap = { view: 0 };
 
 function rcKind(e) { return e.k === 'atk' || e.k === 'ab' ? e.k : 'other'; }
 
@@ -196,8 +196,11 @@ function recapHover(L) {
   }
   return null;
 }
-// a death's recap only: the defeat screen's REPLAY is the bird leaving, not a death to explain
-function recapLive() { return replayFull() && !state.rpAgain && player.deathLog && player.deathLog.length > 0; }
+// up through a respawn wait, over the live match (renderDead, js/ui/screens.js)
+function recapLive() {
+  return state.mode === 'dead' && state.over === 'respawning' && state.deadView === 'spec' && !state.eagleCine &&
+    !window.DBG.hideUI && player.deathLog && player.deathLog.length > 0;
+}
 // the pointer over a button: the cursor's hand (render.js)
 function recapHot() {
   if (!recapLive()) return false;
@@ -281,29 +284,27 @@ function drawRecap() {
 }
 
 // ---- downed by -------------------------------------------------------------------
-// The death's headline, under the respawn count for the whole wait, over the
-// replay and the ally view alike (drawRespawnLine, js/ui/screens.js): DOWNED BY,
-// the face of the blow that put you down (the gold rim its line wears on the
-// plate), its name in its side's colour, and what it hit with. The replay can
-// be put away; this stays, so no death goes unexplained.
+// The death's last part, the right end of the death bar at the screen's foot
+// (drawDeathBar, js/ui/screens.js), for the whole wait: DOWNED BY, the face
+// of the blow that put you down (the gold rim its line wears on the plate),
+// its name in its side's colour, and what it hit with, so no death goes
+// unexplained.
 const DB_FACE = 26;  // the face's square, rim included
-const DB_PAD = 5;    // px inside the plate
 // the killing blow: the record's last entry (recapNote, js/sim/player.js)
 function recapKill(log) { return log && log.length ? log[log.length - 1] : null; }
-function drawDownedBy(y) {
-  if (state.over !== 'respawning') return;
+// its width in the bar (0 with nothing on the record)
+function downedByW() {
+  const e = recapKill(player.deathLog);
+  if (!e) return 0;
+  return DB_FACE + 6 + Math.max(pixelTextWidth(tr('recap.downedBy'), 1), pixelTextWidth(rcWho(e), 2)) + (rcIcon(e) ? 8 + RC_ICON : 0);
+}
+// drawn from x, its face's top at y
+function drawDownedBy(x, y) {
   const e = recapKill(player.deathLog);
   if (!e) return;
-  const head = tr('recap.downedBy'), who = rcWho(e), icon = rcIcon(e);
-  const tw = Math.max(pixelTextWidth(head, 1), pixelTextWidth(who, 2));
-  const w = DB_PAD + DB_FACE + 6 + tw + (icon ? 8 + RC_ICON : 0) + DB_PAD, h = DB_FACE + DB_PAD * 2;
-  const x = (VIEW_W - w) >> 1;
-  ctx.fillStyle = SC_INK; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-  ctx.fillStyle = SC_BG; ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, w, 1);
-  rcFace(x + DB_PAD, y + DB_PAD, { e }, true, player.team, DB_FACE);
-  const tx = x + DB_PAD + DB_FACE + 6;
-  drawPixelText(ctx, head, tx, y + DB_PAD + 3, SC_LBL, 1);
-  drawPixelText(ctx, who, tx, y + DB_PAD + 12, e.by >= 0 ? rcWhoCol(e) : SC_LIT, 2);
-  if (icon) rcDrawIcon(icon, x + w - DB_PAD - RC_ICON, y + ((h - RC_ICON) >> 1));
+  const icon = rcIcon(e), tx = x + DB_FACE + 6;
+  rcFace(x, y, { e }, true, player.team, DB_FACE);
+  drawPixelText(ctx, tr('recap.downedBy'), tx, y + 3, SC_LBL, 1);
+  drawPixelText(ctx, rcWho(e), tx, y + 12, e.by >= 0 ? rcWhoCol(e) : SC_LIT, 2);
+  if (icon) rcDrawIcon(icon, x + downedByW() - RC_ICON, y + ((DB_FACE - RC_ICON) >> 1));
 }
