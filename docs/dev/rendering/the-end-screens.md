@@ -64,7 +64,7 @@ flight has just been watched live. It stands `LOST_BEAT` s and the defeat ceremo
 this one's. That is the **loss's beat**; a guest whose host left mid-match (`state.over =
 'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY
 word. **The respawn wait** is the fourth state and the lightest: no wash, no
-planks, the live match greyed with the camera on your fall and the spectate strip over it, one
-line — **RESPAWNING IN Ns** at the same 3× in the same band, the number live — and
+planks, the live match lightly greyed with the camera on your fall, one bar at the foot (the
+watch, the seconds to the respawn, DOWNED BY) and
 [the death recap](replay-the-last-four-seconds.md#the-death-recap) in the top-left corner
 ([Death and respawn](../gameplay/death-and-respawn.md)).

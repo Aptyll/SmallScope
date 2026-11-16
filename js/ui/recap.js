@@ -41,8 +41,8 @@ const RC_KINDS = ['atk', 'ab', 'other'];
 const RC_WORLD = { tower: 'recap.tower', soldier: 'recap.wave', wolf: 'recap.wolf', scrap: 'recap.scrap', bear: 'recap.bear', fire: 'recap.fire',
   orca: 'recap.orca', ice: 'recap.ice', tackle: 'recap.tackle', eagle: 'recap.eagle' };
 const RC_MOVE = { roll: 'recap.roll' };
-// 0 the ring alone, 1 the lines, 2 opened out: this screen's, kept across deaths
-const recap = { view: 1 };
+// 0 the ring alone (where a wait starts: the bar at the foot already names the killer), 1 the lines, 2 opened out: this screen's, kept across deaths
+const recap = { view: 0 };
 
 function rcKind(e) { return e.k === 'atk' || e.k === 'ab' ? e.k : 'other'; }
 
@@ -284,31 +284,27 @@ function drawRecap() {
 }
 
 // ---- downed by -------------------------------------------------------------------
-// The death's plate, bottom centre where the hud strip sits in play, for the
-// whole wait, over your fall and the ally view alike (drawRespawnLine,
-// js/ui/screens.js) - never over the watched body or its bar: DOWNED BY,
-// the face of the blow that put you down (the gold rim its line wears on the
-// plate), its name in its side's colour, and what it hit with, so no death
-// goes unexplained.
+// The death's last part, the right end of the death bar at the screen's foot
+// (drawDeathBar, js/ui/screens.js), for the whole wait: DOWNED BY, the face
+// of the blow that put you down (the gold rim its line wears on the plate),
+// its name in its side's colour, and what it hit with, so no death goes
+// unexplained.
 const DB_FACE = 26;  // the face's square, rim included
-const DB_PAD = 5;    // px inside the plate
-const DB_FOOT = 10;  // px from the plate to the screen's foot
 // the killing blow: the record's last entry (recapNote, js/sim/player.js)
 function recapKill(log) { return log && log.length ? log[log.length - 1] : null; }
-function drawDownedBy() {
-  if (state.over !== 'respawning') return;
+// its width in the bar (0 with nothing on the record)
+function downedByW() {
+  const e = recapKill(player.deathLog);
+  if (!e) return 0;
+  return DB_FACE + 6 + Math.max(pixelTextWidth(tr('recap.downedBy'), 1), pixelTextWidth(rcWho(e), 2)) + (rcIcon(e) ? 8 + RC_ICON : 0);
+}
+// drawn from x, its face's top at y
+function drawDownedBy(x, y) {
   const e = recapKill(player.deathLog);
   if (!e) return;
-  const head = tr('recap.downedBy'), who = rcWho(e), icon = rcIcon(e);
-  const tw = Math.max(pixelTextWidth(head, 1), pixelTextWidth(who, 2));
-  const w = DB_PAD + DB_FACE + 6 + tw + (icon ? 8 + RC_ICON : 0) + DB_PAD, h = DB_FACE + DB_PAD * 2;
-  const x = (VIEW_W - w) >> 1, y = VIEW_H - h - DB_FOOT;
-  ctx.fillStyle = SC_INK; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-  ctx.fillStyle = SC_BG; ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, w, 1);
-  rcFace(x + DB_PAD, y + DB_PAD, { e }, true, player.team, DB_FACE);
-  const tx = x + DB_PAD + DB_FACE + 6;
-  drawPixelText(ctx, head, tx, y + DB_PAD + 3, SC_LBL, 1);
-  drawPixelText(ctx, who, tx, y + DB_PAD + 12, e.by >= 0 ? rcWhoCol(e) : SC_LIT, 2);
-  if (icon) rcDrawIcon(icon, x + w - DB_PAD - RC_ICON, y + ((h - RC_ICON) >> 1));
+  const icon = rcIcon(e), tx = x + DB_FACE + 6;
+  rcFace(x, y, { e }, true, player.team, DB_FACE);
+  drawPixelText(ctx, tr('recap.downedBy'), tx, y + 3, SC_LBL, 1);
+  drawPixelText(ctx, rcWho(e), tx, y + 12, e.by >= 0 ? rcWhoCol(e) : SC_LIT, 2);
+  if (icon) rcDrawIcon(icon, x + downedByW() - RC_ICON, y + ((DB_FACE - RC_ICON) >> 1));
 }

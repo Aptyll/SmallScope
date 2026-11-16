@@ -21,7 +21,6 @@ const TEXT = {
   'end.lost': 'YOUR EAGLE WAS DRIVEN OFF',
   'end.hostLeft': 'THE HOST LEFT',
   'end.hostLeftSub': 'THE MATCH ENDS HERE',
-  'end.respawn': 'RESPAWNING IN {s}S',
   'end.victory': 'VICTORY',
   'end.defeat': 'DEFEAT',
   'end.noResult': 'NO RESULT',

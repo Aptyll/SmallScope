@@ -287,7 +287,7 @@ function renderReplay() {
 // hands the whole frame to the victory banner (js/ui/endscreens.js), LOBBY
 // under it. A won or lost match is decided for everyone, so there is nothing
 // left to watch or play on: LOBBY is the only plank, on the victory banner and
-// on the defeat banner - the loss's own summary, the mirror of the victory screen. A respawn wait follows an ally through a top-centre control: two
+// on the defeat banner - the loss's own summary, the mirror of the victory screen. A respawn wait follows an ally through the death bar at the foot: two
 // pixel arrows around the name, clickable, the arrow keys do the same (no hint
 // text: the arrows are the explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
@@ -360,21 +360,31 @@ function openDefeat() {
   state.deadHover = [0, 0];
 }
 
-// the spectate control, top centre: [<] FACE HERO [>], on the HUD's graphite. Arrow boxes are SPEC_AW
-// wide; the plate between them is sized to the widest hero name so the
-// arrows never jump as the target changes.
-const SPEC_Y = 6, SPEC_H = 20, SPEC_AW = 13, SPEC_FACE = 16;
+// THE DEATH BAR: the whole wait in one graphite plate at the screen's foot,
+// where the hud strip sits in play, and nothing at the top but the rail -
+// one place to look, and the middle of the screen left to the match:
+//
+//   [<] FACE HERO [>]  |  9  |  [face] DOWNED BY / NAME  (icon)
+//
+// the watch (arrow boxes SPEC_AW wide round a slot sized to the widest hero
+// name, so the arrows never jump), the seconds to the respawn at 3x, and who
+// put you down (drawDownedBy, js/ui/recap.js).
+const SPEC_H = 20, SPEC_AW = 13, SPEC_FACE = 16;
+const DBAR_H = 36, DBAR_PAD = 6, DBAR_GAP = 10, DBAR_FOOT = 8; // the bar's height, its inset, the air round a divider, and its lift off the foot
+const DBAR_T = 30; // the seconds' slot: two digits at 3x
 function specName(p) { return CLASSES[p.cls] ? CLASSES[p.cls].name : p.name; } // who you are watching, by the hero on the field
-function specLayout() {
+function deathBar() {
   let nw = 0;
   for (const p of players) if (p.active) nw = Math.max(nw, pixelTextWidth(specName(p), 2));
-  const w = SPEC_AW + 3 + SPEC_FACE + 5 + nw + 5 + SPEC_AW;
-  const x = Math.round((VIEW_W - w) / 2);
-  const rb = railBottom(); // the team rail keeps the top edge while you are out (ui.js)
-  const y = rb ? rb + 4 : SPEC_Y;
-  return { x, y, w, h: SPEC_H,
+  const sw = SPEC_AW + 3 + SPEC_FACE + 5 + nw + 5 + SPEC_AW, dw = downedByW();
+  const w = DBAR_PAD + sw + DBAR_GAP + DBAR_T + (dw ? DBAR_GAP + dw : 0) + DBAR_PAD;
+  return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - DBAR_H - DBAR_FOOT, w, h: DBAR_H, sw, dw };
+}
+function specLayout() {
+  const B = deathBar(), x = B.x + DBAR_PAD, y = B.y + ((DBAR_H - SPEC_H) >> 1);
+  return { x, y, w: B.sw, h: SPEC_H,
     left: { x, y, w: SPEC_AW, h: SPEC_H },
-    right: { x: x + w - SPEC_AW, y, w: SPEC_AW, h: SPEC_H } };
+    right: { x: x + B.sw - SPEC_AW, y, w: SPEC_AW, h: SPEC_H } };
 }
 // which spectate arrow the pointer is on: -1 left, 1 right, 0 neither
 function specHit() {
@@ -473,17 +483,25 @@ function deadClick() {
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }
 
-// the wait, and not a word more: the live match is the screen, and the
-// number and the one who put you down are all there is to read - the count
-// up top, DOWNED BY at the foot, so neither sits on the body being watched (a FIRST MATCH adds
-// its coach's card, the lesson of that death: renderGuideDead, js/ui/guide.js). 3x in the upper
-// band where an eye lands, 2x on a view too narrow to hold it.
-function drawRespawnLine() {
-  const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
-  const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
-  const y = Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6); // clear of the spectate bar and a call under it
-  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), y, SC_LIT, SC_INK, ts); // the hub's white over its ink, like every word around it
-  drawDownedBy(); // who put you down, at the foot of the screen where the strip sat (js/ui/recap.js)
+// the bar's plate under the watch, and its right two parts over it: the
+// seconds in the hub's white, then who put you down (a FIRST MATCH adds its
+// coach's card over the bar, the lesson of that death: renderGuideDead, js/ui/guide.js)
+function drawDeathBarPlate() {
+  const B = deathBar();
+  ctx.fillStyle = SC_INK; ctx.fillRect(B.x - 1, B.y - 1, B.w + 2, B.h + 2);
+  ctx.fillStyle = SC_BG; ctx.fillRect(B.x, B.y, B.w, B.h);
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(B.x, B.y, B.w, 1);
+}
+function drawDeathBar() {
+  const B = deathBar(), tx = B.x + DBAR_PAD + B.sw + DBAR_GAP;
+  ctx.fillStyle = SC_EDGE;
+  ctx.fillRect(tx - (DBAR_GAP >> 1), B.y + 6, 1, B.h - 12);
+  const t = String(Math.max(0, Math.ceil(player.respawnT)));
+  drawPixelText(ctx, t, tx + Math.round((DBAR_T - pixelTextWidth(t, 3)) / 2), B.y + Math.round((B.h - 15) / 2), SC_LIT, 3);
+  if (!B.dw) return;
+  const dx = tx + DBAR_T + DBAR_GAP;
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(dx - (DBAR_GAP >> 1), B.y + 6, 1, B.h - 12);
+  drawDownedBy(dx, B.y + ((B.h - DB_FACE) >> 1));
 }
 
 // THE GREY: while you wait to come back the world loses its colour, League's
@@ -511,14 +529,13 @@ function renderDead(now) {
   if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
   if (replayFull()) return; // the defeat's REPLAY owns the frame
   if (state.deadView === 'spec') {
-    // top centre: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
+    // the death bar's left end: [<] FACE HERO [>]. The watched hero's face and name at 2x over a rule in its side's
     // colour; each arrow is its own box that lights gold under the
     // pointer, so the control explains itself without a word of hint.
     const vp = viewPlayer();
     const L = specLayout();
     const hit = specHit();
-    ctx.fillStyle = HUD_INK; ctx.fillRect(L.x, L.y, L.w, L.h);
-    ctx.fillStyle = AB_BG; ctx.fillRect(L.x + 1, L.y + 1, L.w - 2, L.h - 2);
+    if (state.over === 'respawning') drawDeathBarPlate();
     for (const dir of [-1, 1]) {
       const r = dir < 0 ? L.left : L.right;
       const hot = hit === dir;
@@ -540,7 +557,7 @@ function renderDead(now) {
     if (you) { ctx.fillStyle = 'rgba(22,24,28,0.6)'; ctx.fillRect(fx, L.y + 2, SPEC_FACE, SPEC_FACE); }
     drawPixelText(ctx, nm, tx, L.y + 4, you ? '#8a8f99' : '#f4f7ff', 2);
     if (!you) { ctx.fillStyle = TEAMS[skin(vp.team)].mark; ctx.fillRect(tx, L.y + 16, pixelTextWidth(nm, 2), 1); }
-    if (state.over === 'respawning') { drawRespawnLine(); drawRecap(); renderGuideDead(now); }
+    if (state.over === 'respawning') { drawDeathBar(); drawRecap(); renderGuideDead(now); }
     return;
   }
   if (state.deadView === 'defeat') { renderDefeat(now); return; } // the loss's own summary

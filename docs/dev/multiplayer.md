@@ -431,8 +431,7 @@ depends on `teamEagleDown(p.team)` alone: the wait and the return of
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
 lighter `endMatch('respawning')` wait instead — same `state.mode = 'dead'` machinery (so the
 TAB scoreboard still works), but no dim and no planks: the camera stays on the body's
-[fall](rendering/going-down.md) and the world greys, one countdown line sits up top and DOWNED BY
-at the foot, and the arrows step the watch on to each living ally, live (the wheel still zooms
+[fall](rendering/going-down.md) and the world greys a little, one bar at the foot holds the watch, the seconds and DOWNED BY, and the arrows step the watch on to each living ally, live (the wheel still zooms
 it). No replay of the death plays. A lost match holds one line over the dim for a beat and then opens
 [the defeat screen](rendering/the-end-screens.md) by itself (`openDefeat()`), whose LOBBY leads on
 to the post-game record and the title, and whose REPLAY plays the last four seconds again. Every death runs `checkLastStanding()`, which ends the match as a win once no **rival
