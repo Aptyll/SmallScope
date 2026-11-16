@@ -22,16 +22,13 @@ at all and draws no health bar.
 either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured by
 `counterDist` (from the body itself, or from the nearest edge of the stall's footprint, so its back
 and sides count as well as its front; the cap and a click's walk go to `counterPt`, the middle of
-the stall's front edge) — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
-prompt the practice armory's `E ARM` uses. **A merchant in reach owns E outright**: unlike the
-armory, the roll die and the bell — which all stand aside for a real
-[work target](the-swing-tools-e.md) — the counter is taken *first*, ahead of the swing and ahead of
-everything else the key does (`keyPress`, js/app/input.js). It has to be: the merchant fells trees for
-a living and loiters among them, so there is very often a trunk one tile off the counter, and a
-swing that outranked the counter would leave the shop unopenable under its own `E SHOP` cap.
-One rule answers in all three places: the press, the cap, and whether the
-cursor's [lock ring](../rendering/cursor.md) promises a swing. The counter is a **panel, not a held wheel**:
-the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateShop`
+the stall's front edge) — and the `B SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
+prompt the practice armory's `E ARM` uses. **The counter has a key of its own**, the SHOP action
+(`b` on both schemes, `keyPress`, js/app/input.js), never the work key's: a stall stands under its
+lane zipline's first pylon, and when E was both, E at that spot opened the counter every time the
+rope was wanted. So E there clips onto the cable or swings, and the cursor's
+[lock ring](../rendering/cursor.md) promises whatever E would do. The counter is a **panel, not a held wheel**:
+the SHOP key opens it and the SHOP key, Escape, the X or **walking out of reach** shuts it (`updateShop`
 re-checks `inReach` every step). It is HUD like the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
 

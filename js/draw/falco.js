@@ -205,12 +205,15 @@ HERO_BODY_DRAW.push(drawFalcoSky);
 // At rest it hangs point down from the fist at his side, forward of him side-on
 // (FALCO_KNIFE, js/sprites/falco.js; HERO_CARRY): a short blade, never held out level.
 // Thrown, the hand cocks it back over the shoulder and flings empty (HERO_AIMED).
+// Side-on it keeps THE GRIP RULE (heroStaff, js/draw/heroes.js): its top, the fist, leans the
+// way the face looks, so the point trails back and down; facing the camera or away it
+// hangs out from the body, point clear of the coat.
 function falcoCarry(p, px, py) {
   if (attackOf(p).art !== 'knife') return false;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
-  const K = FALCO_KNIFE, k = side ? K.fwd : K.down, img = lead ? k.img : heldFlip(k.img);
+  const flip = lead === side, K = FALCO_KNIFE, k = side ? K.fwd : K.down, img = flip ? heldFlip(k.img) : k.img;
   const hx = lead ? px + (side ? 12 : 13) + rc : px + (side ? 3 : 2) - rc, hy = py + 11;
-  ctx.drawImage(img, hx - (lead ? k.grip[0] : img.width - 1 - k.grip[0]), hy - k.grip[1], img.width, img.height);
+  ctx.drawImage(img, hx - (flip ? img.width - 1 - k.grip[0] : k.grip[0]), hy - k.grip[1], img.width, img.height);
   if (p.dir !== 'up') heroFist(p, hx, hy, lead ? 1 : -1);
   return true;
 }

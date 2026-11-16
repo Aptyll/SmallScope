@@ -787,30 +787,35 @@ const INK_STRIDE = 8, WORLD_RIM = '#0f1632';
 // body's frame comes out the same pixels every frame, and a nearer body's
 // whole frame - name and bars as one - covers a farther one's, the way
 // League's plates pile.
-const worldPlates = [];
+// A plate laid `under` (the roost's bar: drawPerchBar, js/draw/eagle.js) is
+// stamped before every body's, whatever the draw order: the objective's bar
+// spans a whole clearing, and a hero standing under it keeps its name.
+const worldPlates = [], worldPlatesUnder = [];
 let platesNow = false; // set while the flush stamps them: a plate's own calls then draw in place
 // a world layer: the world buffer, or the air layer over it (airCv, js/app/canvas.js) -
 // both hold their readouts back for the flush, above the grade
 function inWorldLayer() { return ctx === wctx || ctx === actx; }
-function overheadPlate(fn) {
+function overheadPlate(fn, under) {
   if (!inWorldLayer() || platesNow) { fn(); return; }
   // the caller's fade (a buried body's) and its offset ride along; a clip
   // does not - a cut frame is the bug
-  worldPlates.push(fn, ctx.globalAlpha, ctx.getTransform());
+  (under ? worldPlatesUnder : worldPlates).push(fn, ctx.globalAlpha, ctx.getTransform());
 }
 function flushPlates() {
-  if (!worldPlates.length) return;
+  if (!worldPlates.length && !worldPlatesUnder.length) return;
   const base = ctx.getTransform();
   platesNow = true;
-  for (let i = 0; i < worldPlates.length; i += 3) {
-    ctx.globalAlpha = worldPlates[i + 1];
-    ctx.setTransform(worldPlates[i + 2]);
-    worldPlates[i]();
+  for (const q of [worldPlatesUnder, worldPlates]) {
+    for (let i = 0; i < q.length; i += 3) {
+      ctx.globalAlpha = q[i + 1];
+      ctx.setTransform(q[i + 2]);
+      q[i]();
+    }
+    q.length = 0;
   }
   ctx.setTransform(base);
   ctx.globalAlpha = 1;
   platesNow = false;
-  worldPlates.length = 0;
 }
 function drawWorldText(text, x, y, color, scale, alpha, rim) {
   if (!inWorldLayer() || platesNow) {

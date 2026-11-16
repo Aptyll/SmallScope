@@ -28,8 +28,7 @@ works is their `OBJECTS` entry's `work` flag. Two verbs, two inputs:
   (bare ice is nothing); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
-  does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
-  at all ([opening it](the-merchants-counter.md#opening-it)). A valid target brings the axe out, drops any wind-up, faces the
+  does nothing (the counter has its own key, SHOP: [opening it](the-merchants-counter.md#opening-it)). A valid target brings the axe out, drops any wind-up, faces the
   tile, and starts the swing; `swingHit(p)` **contests** the locked tile (`p.workTx/Ty`) so only
   one player's swing lands on it in a step, then hits whatever is there via
   `hitObject(o, p)`. The axe is drawn only until
@@ -45,7 +44,7 @@ is **HIT** over the practice dummy; the verb and the lift are still read off the
 (`verb`, `lift`: 33 for a pine, 28 for the dummy, 10–12 for the short ones),
 scenery wider than a tile takes it on its middle (`w`), and the building branch — BREAK,
 clearing the sprite and centred on the footprint — stays for a building that is ever not `auto`.
-A merchant and a zipline in reach claim the cap first (`drawShopHint`, `drawZipHint`). The cap
+A zipline in reach claims the cap first (`drawZipHint`); a merchant in reach adds its own SHOP cap (`drawShopHint`). The cap
 visibly presses (face drops a pixel, highlight gone, label goes gold) while the local player's
 `input.work` is set.
 If the prompt would overlap the player sprite (an adjacent target) it flips under the tile

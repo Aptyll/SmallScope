@@ -234,7 +234,7 @@ eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-
 ## The FIRST MATCH
 
 **The FIRST MATCH** (`PARTY_MODES.guide`) is a real 5v5 against EASY bots with the coach on (js/ui/guide.js);
-the title's FIRST MATCH goes straight to the hero pick, its draft has no ban phase (`draftBansPerTeam`) and its pick clock is `DRAFT_PICK_FIRST_T` (`draftPickT`).
+the title's FIRST MATCH goes straight to the hero pick, its draft has no ban phase (`draftBansPerTeam`) and its pick has no clock at all (`draftPickT`): it waits for LOCK IN.
 The game's very first launch (`PROFILE.firstRun`: no profile was saved before this boot) skips the title and opens that pick
 at once (js/app/boot.js), unless the boot came for something else (a join, a party back, the field, a tool's `?seed=N` or `?local=N`).
 A FIRST MATCH played alone ends on the title, by LEAVE or by its result (`titleUrl`, the way `rematchUrl` sends it, js/ui/rooms.js);
@@ -263,6 +263,6 @@ An arrow off screen is a 2x chevron on the view's edge, kept under the top bar a
 finished lesson holds its card gold for `GUIDE_FLASH`. The title stops offering FIRST MATCH once every
 lesson but the last is learned, the X is pressed, or any match reaches its result.
 
-LEAVE in any match asks first (`settingsLeave`): its first press turns the plank red and reads LEAVE? for `LEAVE_ASK_T` s, the second leaves. The practice field leaves at once.
+LEAVE in any match asks first (`settingsLeave`): its first press turns the plank red and reads LEAVE? until the second press leaves, another press on the slab calls it off, or the slab closes (no clock: a timed ask ran out under a slow hand). The practice field leaves at once.
 
 RANKED is open from the first boot, with no matches to play first.

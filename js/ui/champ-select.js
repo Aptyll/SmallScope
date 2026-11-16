@@ -36,7 +36,7 @@ const LOBBY_HEAD = 44;                   // the band over the columns and the gr
 const LOBBY_MODEL = 2;                   // the stage model's scale under the grid: the 48 px model at 2x
 const LOBBY_PAD = 6;                     // the margin off the view's edge
 const LOBBY_CHAT_LINES = 6;              // the chat's lines over its plate, bottom left
-const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
+const COUNT_T = 10;                    // s: the countdown from the reveal to the eagle: long enough to see who you face and pick a look, never a blink
 function lobbyLayout() {
   const cx = Math.round(VIEW_W / 2), pad = LOBBY_PAD;
   // the grid takes six heroes a row where the view is wide enough for the

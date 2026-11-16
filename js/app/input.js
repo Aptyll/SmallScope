@@ -85,6 +85,10 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift' }, { id: 'work', verb: 'USE', key: 'e' },
+  // the merchant's counter has a key of its own, never the work key's: a
+  // stall stands under a zipline's first pylon, and one key for both opened
+  // the counter every time the rope was wanted
+  { id: 'shop', verb: 'SHOP', key: 'b', ck: 'b' },
   // the six item slots' keys (useItem, js/sim/items.js): what a slot holds is
   // used off its key - a potion drunk. On WASD they run on past the abilities'
   // 1-4; under CLICK, where QWER are the abilities, they are 1-6
@@ -298,18 +302,27 @@ function keyPress(e) {
   if (tk >= 0) player.input.trick = tk;
   // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
   if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; ckClear(); }
+  // The SHOP key: the counter of whichever merchant is in reach (merchNear,
+  // js/ui/shop.js - the same resolver its cap over the counter reads,
+  // drawShopHint, js/ui/wheel.js), either team's; the same key shuts it, as
+  // ESC does. Out of reach it is refused. Seated on the bird it does
+  // nothing: the merchant standing beside the roost must not open its
+  // counter under the crew's leap.
+  if (keyIs(e, 'shop') && !e.repeat && !state.wheel && !state.mapOpen &&
+      !state.settingsOpen && !player.dead && !player.aboard) {
+    if (state.shop) closeShop();
+    else { const mb = merchNear(player); SFX.unlock(); if (mb) openShop(mb); else SFX.deny(); }
+  }
   // The work key at a practice prop (the parkour die, the range bell): the
   // press opens its wheel over it, the pointer picks, and RELEASING it takes
   // - the right-click wheel's own hold-and-release grammar, moved onto the
   // key. A real work target in
   // reach keeps the key's day job over any of that furniture (the same rule
-  // that decides which prompt is showing) - but NOT over a merchant, which
-  // takes the key ahead of the work itself; ordinary work is suppressed
+  // that decides which prompt is showing); ordinary work is suppressed
   // while any wheel is up, and while the counter is open
   // (sampleHumanInput). Seated on the bird it does nothing: the crew leaps
-  // off on its own (updateDrop), and the merchant standing beside the roost
-  // must not open its counter under the leap.
-  if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
+  // off on its own (updateDrop).
+  if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen && !state.shop &&
       !state.settingsOpen && !player.dead && !player.aboard) {
     // Riding a zipline, the key lets go of it - ahead of everything, since a
     // rider passes the counter and every trunk at 220 px/s (zipToggle,
@@ -317,21 +330,7 @@ function keyPress(e) {
     if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; } // ...and walking to it, the key calls the walk off
     // ...and on deer-back it is the hop off, the same way (hopToggle, js/sim/wildlife.js)
     if (player.mount) { player.input.jump = true; return; }
-    // The merchant's counter is a PANEL, not a held wheel, so the key that
-    // opened it shuts it - whatever else has come into reach meanwhile.
-    if (state.shop) { closeShop(); return; }
-    // ...and a MERCHANT IN REACH OWNS THE KEY OUTRIGHT - ahead of a work
-    // target, and so ahead of everything below it. Inside SHOP_REACH of a
-    // body you are AT the counter, which nobody arrives at by accident;
-    // meanwhile the merchant fells trees for a living and loiters among
-    // them, so there is very often a trunk one tile from the counter, and E
-    // swinging at that trunk is the shop refusing to open for no reason the
-    // player can see. The same rule decides which cap is showing
-    // (drawWorkHint, js/ui/wheel.js) and whether the cursor promises a swing
-    // (cursorInfo, js/draw/render.js).
-    const mb = merchNear(player);
-    if (mb) { SFX.unlock(); openShop(mb); return; }
-    // ...then a ZIPLINE overhead: under either side's cable the key clips
+    // a ZIPLINE overhead: under either side's cable the key clips
     // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
     // the trunk beside it is still chopped from one step further out
     if (zipNear(player)) { player.input.jump = true; return; }
@@ -384,7 +383,7 @@ function keyPress(e) {
     else if (state.shop) closeShop();
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
     else {
-      state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; state.wheel = null; SFX.ui(state.settingsOpen);
+      state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; leaveAsk = false; state.wheel = null; SFX.ui(state.settingsOpen);
     }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }

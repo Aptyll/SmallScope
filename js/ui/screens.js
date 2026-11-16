@@ -38,6 +38,7 @@ const RP_RATE = 1;              // playback speed: real time
 const RP_N = RP_SECS * RP_FPS;  // slots in the ring
 const RP_COLS = 12;             // atlas grid; RP_N / RP_COLS rows
 const RP_PAD = 4;               // inset from the bottom-left corner
+const RP_HOLD = 2;              // s into a death before a stray press may put the recap away: the clicks and the dodge a fight was mashing land on it otherwise
 // the biggest slot the ring will ever allocate, and so the memory ceiling:
 // RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (640x360 -> 110 MB). In world px: the
 // default zoom and every zoom closer fit whole; zoomed further out, the
@@ -151,6 +152,8 @@ function rpCloseHit() {
 // and its planks) waits, and a press puts it away
 function replayFull() { return rpFull() && replayShowing(); }
 function replayClose() { state.rpClosed = true; state.rpAgain = false; SFX.pickup(); }
+// a death's recap still in its first RP_HOLD s: only ESC or its close box puts it away
+function replayHeld() { return replayFull() && !state.rpAgain && state.over === 'respawning' && state.deadTimer < RP_HOLD; }
 
 // the overlay tracks the game canvas: the window's rect, at the canvas's
 // scale, in device pixels
@@ -447,7 +450,7 @@ function deadKey(k) {
   if (state.deadView === 'scores') { scoresKey(k); return; } // the post-game record owns its own controls
   // the recap takes every back key and puts itself away: the allies are underneath
   if (replayFull()) {
-    if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') replayClose();
+    if (k === 'escape' || (!replayHeld() && (k === 'backspace' || k === 'enter' || k === ' '))) replayClose();
     return;
   }
   if (state.deadView === 'spec') {
@@ -467,7 +470,7 @@ function deadKey(k) {
 function deadClick() {
   if (state.fade || state.eagleCine) return;
   if (state.deadView === 'scores') { scoresClick(); return; }
-  if (replayFull()) { if (!recapClick()) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do
+  if (replayFull()) { if (!recapClick() && (!replayHeld() || rpCloseHit())) replayClose(); return; } // the recap's fold buttons (js/ui/recap.js); any other press puts it away, as its keys do, once the fight's own presses are past
   if (state.deadView === 'spec') {
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
@@ -486,8 +489,9 @@ function deadClick() {
 function drawRespawnLine() {
   const t = tr('end.respawn', { s: Math.max(0, Math.ceil(player.respawnT)) });
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
-  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2),
-    Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6), '#cfe4f2', '#0a0e23', ts); // clear of the spectate bar and a call under it
+  const y = Math.max(frameTop() + 30, noteY() + ANN_FACE + 2 * ANN_PAD + 6); // clear of the spectate bar and a call under it
+  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), y, '#cfe4f2', '#0a0e23', ts);
+  drawDownedBy(y + 5 * ts + 8); // who put you down, under it (js/ui/recap.js)
 }
 
 function renderDead(now) {

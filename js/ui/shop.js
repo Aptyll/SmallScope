@@ -622,11 +622,10 @@ function drawShopPane(L, h) {
     drawPixelText(ctx, tr('shop.potionHeal', { hp: POTION_HEAL, s: POTION_T }), R.x + 17, y, SHOP_STAT);
     drawPixelText(ctx, (player.potions || 0) + ' / ' + it.stack, R.x + 6, y + 13, SHOP_DIM);
   }
-  // BUY: the pick's price now. A purse that is short greys the plate and prints the gold still missing, in
-  // gold behind a minus (never an error's red: nothing went wrong); no room dims it
+  // BUY: the pick's price now. A purse that is short, or no room, greys the plate and dims the price with it
+  // (never an error's red: nothing went wrong, and never a minus, which read as a price below zero)
   const b = shopBuyState(pk.id), hot = !!h && h.kind === 'buy';
-  if (!b.gold) shopPlate(L.buy, tr('shop.buy'), '-' + (b.n - Math.floor(player.gold)), SHOP_PLATE, SHOP_DIM, RES_COLORS.gold);
-  else shopPlate(L.buy, tr('shop.buy'), b.n, !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY, b.ok ? SHOP_INK : SHOP_DIM);
+  shopPlate(L.buy, tr('shop.buy'), b.n, !b.ok ? SHOP_PLATE : hot ? SHOP_BUY_HOT : SHOP_BUY, b.ok ? SHOP_INK : SHOP_DIM);
 }
 // the tree: a line down from each parent and across to its children, then the
 // wells; a component you hold is rimmed green with a tick and wears no price
