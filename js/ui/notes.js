@@ -591,6 +591,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['BOTS keep to their role for the first 6 minutes, then roam', '0.964'],
     ['3V3: three a side, bots fill empty seats; roles TOP, JUNGLE, BOT', '0.962'],
     ['HOME: profile, history, party, heroes, items, friends and ladder on one page', '0.958'],
     ['FIRST MATCH: shows the goal, walks you to your lane, starters and roles in the pick', '0.952'],

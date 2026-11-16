@@ -186,6 +186,7 @@ function makeWindow(seed, extra) {
     HTMLElement, HTMLCanvasElement, HTMLImageElement: HTMLElement,
     AudioContext: INERT, webkitAudioContext: INERT,
     CompressionStream: undefined, DecompressionStream: undefined,
+    BOOT_MISSED: [], // index.html's inline script makes it: the scripts that never arrived (none here)
   };
   w.window = w; w.self = w; w.globalThis = w;
   return w;

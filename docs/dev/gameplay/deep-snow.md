@@ -26,4 +26,5 @@ at the widest zoom cost ~2 ms a frame headless (SwiftShader); not yet measured o
 **Bots** see through the same rule (`seenAt`/`inSight`), so a rival in a patch is not there for
 them until one walks up to it. A laner with no column on its lane waits in the nearest patch within
 `AI_BRUSH_R` of its hold point that is no further out from its own base than the hold point
-(`aiBrushWait`, js/ai/ai-farm.js) instead of standing in the open.
+and within `AI_BRUSH_LANE` of its own lane's road (`aiBrushWait`, js/ai/ai-farm.js) instead of
+standing in the open.
