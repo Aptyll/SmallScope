@@ -314,6 +314,7 @@ function aiNearestAnimal(p) {
     // The two midline camps' kinds are never a hunt: a lone bot pulling one dies to it
     if (a.dead || a === p.ai.huntAvoid || !inSight(p.team, a)) continue; // one in the fog is not there
     if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
+    if (a.homing) continue; // one running home is out of the fight (campRunHome, js/sim/wildlife.js)
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
   }

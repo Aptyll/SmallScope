@@ -125,6 +125,7 @@ function makeAnimal(kind, x, y, fix) {
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
+    homing: false, homeT: 0, invuln: 0,  // camp monster: running back to its spot after a hunt, untouchable on the way (campRunHome)
     dead: false,
   };
   // stun, root, slow, a mark, fire: an animal wears
@@ -205,6 +206,9 @@ function updateAnimal(a, dt) {
   if (isAnchored(a)) a.kbx = a.kby = 0; // a shove from anything never moves it (MONSTER.anchor)
   // every timed state on the body first - the burn can kill, and a corpse
   // must not then take a step (js/sim/actions.js, `status effects`)
+  // a camp monster running home wears nothing: no stun, slow, root or fire
+  // keeps it out of its camp (campRunHome)
+  if (a.homing) { clearUnitStatus(a); a.kbx = a.kby = 0; }
   updateUnitStatus(a, dt);
   if (a.hp <= 0 && !a.dead) { animalDies(a); return; }
   relevelAnimal(a);
@@ -524,6 +528,9 @@ const BEAR_ROAR_FRAMES = 8;
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
+const CAMP_HOME_MUL = 2;   // x the kind's hunting speed a monster runs home at once its hunt ends
+const CAMP_HOME_HEAL_T = 1; // s to heal from nothing to full on the run home
+const CAMP_HOME_MAX_T = 6; // s the run home may take before it settles where it is
 const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
 const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
 // The kills' rewards past the gold (YIELD, core.js). A bear buff is what a
@@ -583,7 +590,7 @@ function wakeCamp(w, t) {
   // camp mid-chase stays quiet however often it is hit
   let cue = null;
   for (const o of animals) {
-    if (o.dead || !isCampKind(o.kind) || o.home !== w.home || o.target) continue;
+    if (o.dead || !isCampKind(o.kind) || o.home !== w.home || o.target || o.homing) continue; // one running home stays out of it
     if (ANIM_CLIPS[o.kind].roar) { setClip(o, 'roar'); cue = 'roar'; }
     else if (!cue) cue = 'howl';
     o.target = t; o.threat = 1;
@@ -644,6 +651,8 @@ function updateCampMonster(a, dt) {
     if (a.hp < a.maxHp && a.burnT <= 0) a.hp = Math.min(a.maxHp, a.hp + a.maxHp * dt / CAMP_REGEN_T);
   }
   a.target = t;
+  // a hunt that ends, leashed or with nobody left, sends it straight home
+  if (awake && !t && !M.still) campRunHome(a, true);
   // the mark over its head (drawAnimal): a monster on a hunt, and nothing else
   a.senseT = t ? a.senseT + dt : 0;
 
@@ -664,7 +673,15 @@ function updateCampMonster(a, dt) {
   }
 
   let moving = false;
-  if (t) {
+  if (a.homing) {
+    // the reset: straight back to its own spot at a run, healing as it goes
+    a.homeT += dt;
+    if (a.hp < a.maxHp) a.hp = Math.min(a.maxHp, a.hp + a.maxHp * dt / CAMP_HOME_HEAL_T);
+    const sx = a.spawnX === undefined ? hx : a.spawnX, sy = a.spawnY === undefined ? hy : a.spawnY;
+    const n = navStep(a, sx, sy, foot, M.spd * CAMP_HOME_MUL, dt);
+    if (!n.ok || n.d < 8 || a.homeT > CAMP_HOME_MAX_T) campRunHome(a, false);
+    else moving = true;
+  } else if (t) {
     if (a.goal) { a.goal = null; navClear(a); } // the patrol is off; the quarry is the route now
     // run the route to the quarry; in reach (a route step there only shoves
     // at the body it is already touching), or with no route (it is out over
@@ -709,8 +726,22 @@ function updateCampMonster(a, dt) {
   // standing, and coming for you; a kind with a walk (a bear) walks its
   // patrol and gallops the hunt, a wolf runs both at two paces
   const walks = !!ANIM_CLIPS[a.kind].walk;
-  setClip(a, moving ? (t || !walks ? 'run' : 'walk') : 'idle');
-  stepClip(a, dt, moving && !walks ? (t ? 1.5 : 0.75) : 1);
+  setClip(a, moving ? (t || a.homing || !walks ? 'run' : 'walk') : 'idle');
+  stepClip(a, dt, moving && !walks ? (a.homing ? 2 : t ? 1.5 : 0.75) : a.homing ? CAMP_HOME_MUL * 0.75 : 1);
+}
+
+// The reset, League's way: the moment a hunt ends a monster turns and RUNS
+// back to the spot it was stocked on (spawnCampMonster), CAMP_HOME_MUL its
+// hunting speed, healing to full on the way and untouchable while it goes -
+// invuln, so a blow (hurtUnit), a sweep (unitsHit) and a shot (homingLand)
+// all pass it, nothing it wears holds it (updateAnimal), and a hit on the
+// camp does not wake it. A camp you leave cannot be kited home or chipped
+// on the way. `on` false: it is there (or its route is lost), and it settles.
+function campRunHome(a, on) {
+  a.homing = on; a.homeT = 0; a.invuln = on ? 1 : 0;
+  a.goal = null; navClear(a);
+  if (on) { a.threat = 0; clearUnitStatus(a); }
+  else { a.hp = a.maxHp; a.idleT = rand(0.8, 2.6); }
 }
 
 // one camp monster's blow on its quarry: the hurt, the spray, the sound
