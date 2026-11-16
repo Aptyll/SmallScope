@@ -15,15 +15,19 @@ The [counter](../gameplay/the-merchants-counter.md#the-panel) bakes nothing: it 
 (`drawHudFrame`, js/ui/strip.js) every frame at `SHOP_W` × `SHOP_H`, and on a resize its *position* moves (`shopLayout`); a view
 narrower than the slab takes the difference out of its left side (`shopFit`).
 
-The map panel's chart is a `MAP_W`-square slot **fitted to the view** (`fitMapSlab()`, below:
-96 to `CHART_MAX` 232 px), so every tile-space position drawn on the chart (the camera rect,
-every mark) is multiplied by `MAP_S = MAP_W / WORLD`, and `mapTileAt` is the inverse. **The chart
-is a drawn map, not a photograph of the tiles**: `buildWorldMapImg()` files every tile under a `CH_*` class
-(`objChart(o)` for what stands on it, else the ground array), flattens the class map — a lone
-tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
-(`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
-highest class among the tiles it covers, so a one-tile wall never drops out of its run when a
-chart folds the match's `WORLD` tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a flat chart** in quiet greys:
+**The chart is both maps'** (the `chart` banner, js/ui/minimap.js): the M map's slab and the minimap
+are the same drawn map at two sizes. A chart (`chartNew`) is sized by `chartSize(ch, W)` to a `W`-px
+square of the `MAP_T0`/`MAP_N` tiles `chartFit` takes once (the played map and `CHART_PAD` round it),
+and drawn through a **view** (`chartView(x, y, w)`: the square on the screen and the projection
+`o + tile * s` every mark takes, `chartX`/`chartY`; `chartWorldAt` is the inverse a press needs, under
+`mapTileAt` and `mmWorldAt`). The M map's slot is fitted to the view (`fitMapSlab()`, below: 96 to
+`CHART_MAX` 232 px). **The chart is a drawn map, not a photograph of the tiles**: `chartClasses()` files
+every tile under a `CH_*` class (`objChart(o)` for what stands on it, else the ground array) and flattens
+the class map — a lone tile of forest or ice is ground again, a snow pinhole with three sides of one mass
+is that mass (`CHART_NEED`) — once for both maps; `chartInk(ch)` resamples it into that chart by priority
+(each chart pixel takes the highest class among the tiles it covers, so a one-tile wall never drops out
+of its run when a chart folds the match's tiles into fewer px), and paints one flat ink per class
+(`CHART_INK`) — **a flat chart** in quiet greys:
 pale snow for the open ground, deep slate for the woods, cold blue for the ice and the creek, a
 tan track for the road. Nothing is painted over the inks — no lit or inked rims, no grain — since
 the marks and the team inks are the read, and shading fought them. No grid: a single
@@ -32,13 +36,17 @@ and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()
 reads as a shape in its colour with the bird bright at its heart. The sim keeps stepping under
 it and the local player keeps walking
 ([the M map does not pause](../gameplay/the-m-map-does-not-pause.md)), so every live part — the
-camera rect, every body's mark, the watched body's heart — moves while the chart is open; the
-image itself is re-inked at most every `MM_REBUILD` ticks, like the minimap's, so a wall built
-or a tree felled behind the parchment shows up on it within half a second.
+camera's frame, every body's mark, the watched body's heart — moves while the chart is open; the
+class map is re-taken at most every `MM_REBUILD` ticks, so a wall built
+or a tree felled shows up on both maps within half a second, and a chart re-inks only when the class
+map is newer than its picture. Over the picture, in this order: the fog of war, the night, the
+camera's frame (one pale pixel, filled rows, never a stroked path), the landmarks
+(`drawChartGround`); the camps (`drawChartCamps`); every body, the eagles, your side's calls and pings
+(`drawCalloutsMap`) and the watched body (`drawChartBodies`); the camps' clocks last (`drawChartClocks`).
 
 **One grammar for both maps** (`drawMapDot`/`drawMapUnit`/`drawMapYou`/`drawMapBird`, the
 `what a body looks like on a map` group in js/draw/marks.js): a square in its side's ink is a
-body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the disc), and
+body — a player one step bigger than a robot (3 vs 2 px on the M map, 2 vs 1 on the minimap), and
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
@@ -53,36 +61,26 @@ buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **
 (`MAP_HEAD_Y`) is the match clock at 2× in pale ink, and **no close button**: M or Escape closes the chart,
 and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
 There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
-own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each
+own), no title, and **no camp names until asked**: each
 camp is its glyph in its camp's ink (while it is cleared and your side knows it, its seconds in
 white under the glyph, stamped after every dot: `drawCampMark`/`drawChartClocks`, as
 on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
-The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
-`MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
-px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,
-index 5 = the 1:1 baseline) on the same `ZOOM_EASE` the camera uses, so both zooms under one
-hand feel like one control. A save written before `settings.v` indexes the old six-rung ladder
-and is carried across by `MM_MIGRATE` on load. Stepped by the
-scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
-zoom in the wheel handler and is saved with the settings. Every marker drawn over it (robots, players,
-camp glyphs, the callouts and your side's [pings](../gameplay/pings.md)) multiplies its tile
-offset by `s`. The disc sits on an opaque graphite
-backing (`AB_BG`, to `MM_R + 5`; its day ring's track is `HUD_EDGE`) inside a **strong 2 px
-`HUD_INK` outline** (to `MM_R + 7`), the HUD frame's own three inks since 0.459, and it has **no
-hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
-there is no halo or second ring outside it. `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
-game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
-backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
-clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
-composited with `destination-in` on the `mmView` scratch canvas — instead of `clip()`.
-**But `mmRing` must never run per frame**: it is a per-pixel `hypot`/`atan2` loop issuing a
-`fillRect` per lit pixel (~1.6 ms a frame when it did). The static chrome (outline, silhouette,
-the ring's track) is baked per `MM_R` alone in `mmChrome`, and the day/night arcs plus the dusk tick per `(MM_R, progress step)` in `mmArcBand` — the
-cycle quantised to `MM_ARC_STEPS` (512), about a pixel of arc per step, so the band repaints
-every couple of real seconds. Only the progress tip, the centre dot and the markers are
-per-frame fills. The terrain image is throttled the same way: `updateMinimap()`'s full
-`WORLD²` sweep (a `structOf` call per tile) reruns at most every `MM_REBUILD` (30) sim ticks —
-at one map pixel per tile, a build or a cut ice hole arriving half a second late is invisible.
+**The minimap is the whole played map, always** (since 0.964; the round scrolling disc top right
+went): a square in the **bottom-right corner**, the League place, `MM_GAP` off the right and bottom
+edges (`applyMinimapSize`, core.js: `MM_X`/`MM_Y` the chart's top-left, `MM_W` its side, 112 px at
+the MINIMAP SIZE dial's 100, `settings.mmSize`). Nothing scrolls or zooms under the eye, so the
+wheel over it zooms the camera as anywhere else. `renderMinimap()` draws the chart (`mmChart`) through
+`mmView()` with the same layers as the M map at mark size 1, clipped to the square (a whole-pixel rect
+clip, which never blurs), on a frame baked once per size (`mmFrame`): `drawHudFrame` with its four
+corners cut, the chart's dark rim, and on top the **day band** — a 3 px row whose elapsed day is gold
+and night blue on `HUD_EDGE`, a grey dusk tick and a pale tip where the clock stands. The frame is
+`MM_PAD` px on three sides and `MM_PAD_TOP` on top (`mmFrameRect`); `overMinimap()` is the pointer on
+that whole box and `mmWorldAt` answers only over the chart. It has **no hover state** of its own; a
+camp under the pointer wears its name tag as on the M map. With no team rail up, the clock stands
+over its right edge (`mmClockShown`). The hud strip's size dial stops where the strip would reach it
+(`stripCap`, js/ui/strip.js): the minimap keeps its corner. The 1-px-a-tile terrain picture
+(`updateMinimap`, `mmCv`) is no longer the minimap's: it is the bot log's map and the arena's, taken
+when they ask.

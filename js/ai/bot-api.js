@@ -19,7 +19,7 @@
 // re-validates every order, and the hands are the ladder's (skillHands).
 const BOT_API = 8;          // the message shape's version; a rename bumps it (4: food -> potions, eatBerry/eatFish -> useItem; 5: a gold pump's struct type 'generator' -> 'pump'; 6: HUNTER and WARRIOR gone, `prone`, `hide` and the `grapple` act dropped, allies and foes carry `attack`; 7: berry bushes gone, so `nodes` lists pines only; 8: the held `fire` gone for the held `attack` mark, `me.range` and `me.attackReady` added)
 const BOT_THINK = 6;        // ticks between thinks: 10 a second at TICK_DT
-const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minimap's default reach, MM_R tiles)
+const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the round minimap's old default reach, 24 tiles)
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
 const BOT_WHY_MAX = 20;     // chars of a thought's `why` (the dashboard's plate)
 const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page

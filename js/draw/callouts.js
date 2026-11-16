@@ -10,12 +10,12 @@
 //   the ping  a pixel ring that pulses outward twice from the spot it names
 //             (not for a `pin` call - HELP, ON IT: the caller is the spot,
 //             and the plate is on it)
-//   the map   the same pulse on the minimap disc (drawCalloutsMap), for the
+//   the map   the same pulse on both maps (drawCalloutsMap), for the
 //             calls about a place
 // A player's PING (the `pings` banner, js/sim/pings.js) is a callout with no
 // plate: its glyph stands over the spot on a one-pixel stem, rimmed dark,
-// above the same two pulses, and the same glyph sits on the minimap disc and
-// the chart for the whole of its life (drawPingMark, drawPingGlyph).
+// above the same two pulses, and the same glyph sits on the minimap and the
+// M map for the whole of its life (drawPingMark, drawPingGlyph).
 // All of it draws above the lighting, like every other world text, so a call
 // reads at midnight.
 const CALL_PLATE = 'rgba(12,18,42,0.84)';
@@ -140,14 +140,13 @@ function drawPingGlyph(g, k, cx, cy, s, ink, rim) {
   for (let r = 0; r < 7; r++) for (let q = 0; q < 7; q++) if (rows[r][q] === '#') g.fillRect(x0 + q * s, y0 + r * s, s, s);
 }
 
-// the same pulse on the minimap disc, for calls the screen may not show -
-// and a ping's glyph on the spot for the whole of its life
-function drawCalloutsMap(ptx, pty, s, vp) {
-  ctx.save();
-  ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
+// the same pulse on either map (a chart view v, chartView, js/ui/minimap.js),
+// for calls the screen may not show - and a ping's glyph on the spot for the
+// whole of its life
+function drawCalloutsMap(v, vp) {
   for (const c of callouts) {
     if ((c.see === undefined ? c.team : c.see) !== vp.team) continue;
-    const mx = Math.round(MM_CX + (c.x / TILE - ptx) * s), my = Math.round(MM_CY + (c.y / TILE - pty) * s);
+    const mx = chartX(v, c.x), my = chartY(v, c.y);
     const u = (c.t % CALL_PULSE) / CALL_PULSE;
     if (c.t <= CALL_PULSE * 2 && CALLS[c.k].map !== false) {
       const r = 1 + Math.round(u * (CALLS[c.k].ping ? 6 : 4)), d = r * 2 + 1;
@@ -156,8 +155,7 @@ function drawCalloutsMap(ptx, pty, s, vp) {
       ctx.fillRect(mx - r, my - r, d, 1); ctx.fillRect(mx - r, my + r, d, 1);
       ctx.fillRect(mx - r, my - r, 1, d); ctx.fillRect(mx + r, my - r, 1, d);
     }
-    if (CALLS[c.k].ping) { ctx.globalAlpha = Math.max(0, callFade(c)); drawPingGlyph(ctx, c.k, mx, my, 1, CALLS[c.k].ink); }
+    if (CALLS[c.k].ping) { ctx.globalAlpha = Math.max(0, callFade(c)); drawPingGlyph(ctx, c.k, mx, my, 1, CALLS[c.k].ink, CHART_DARK); }
   }
   ctx.globalAlpha = 1;
-  ctx.restore();
 }

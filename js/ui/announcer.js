@@ -7,7 +7,7 @@
 // in the queue, so two never overlap, and the plate hangs under the rail, top
 // centre, where the fight never is.
 //
-// And under the news plates beside the minimap, the KILL FEED: every kill as
+// And under the news plates in the top-right corner, the KILL FEED: every kill as
 // a row of two faces and a chevron in the killer's colour, no words, newest on
 // top, each row gone after FEED_LIFE.
 //
@@ -144,7 +144,7 @@ function drawAnnPlate(c, t) {
 }
 
 // ---- the feed ---------------------------------------------------------------
-// right-aligned on the minimap's edge like the news plates, starting where
+// right-aligned on the news plates' edge (noteLaneRight), starting where
 // they end (noteLaneBottom, js/ui/notices.js) and stopping at the lane's floor
 function drawFeedRow(e, x, y) {
   const c = e.c, S = FEED_FACE, rh = S + 4, w = feedRowW();
@@ -167,7 +167,7 @@ function drawFeed() {
   let y = noteLaneBottom() + 2;
   for (let i = annFeed.length - 1; i >= 0 && y + rh <= floor; i--) {
     const e = annFeed[i];
-    const x = MM_CX + MM_R - w + Math.round((1 - easeOut(e.t / FEED_IN)) * (w + 8));
+    const x = noteLaneRight() - w + Math.round((1 - easeOut(e.t / FEED_IN)) * (w + 8));
     ctx.globalAlpha = Math.min(1, FEED_LIFE - e.t);
     drawFeedRow(e, x, y);
     ctx.globalAlpha = 1;

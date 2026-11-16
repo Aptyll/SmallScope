@@ -1,4 +1,4 @@
-# Notices: the plates under the minimap
+# Notices: the plates in the top-right corner
 
 The HUD's corner for news from where you are NOT: the `notices` banner in [js/ui/notices.js](../../../../js/ui/notices.js),
 raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. Two kinds
@@ -45,9 +45,10 @@ stamped under a `globalAlpha` goes blotchy ([text over the world](../text-over-t
 holds the palettes, and the roost's is handed straight to `logEvent` as its colour override, so the
 plate and the feed line can never disagree.
 
-`noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
-under its rim, so the column follows the minimap wherever the size dial and the view put it and
-never lands on the clock. **The newest plate is slot `k = 0`**, hard under the disc, and its
+`noteRect(k)` places slot `k` in the top-right corner — right edge on `noteLaneRight()`, the first
+slot `MM_GAP` under the top edge, the gap the minimap and the rail keep to theirs — and the lane
+stops at `noteLaneFloor()`, the minimap's top or the strip's, whichever is higher. **The newest
+plate is slot `k = 0`**, in the corner, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
 (0.55 s) while the plates below ease down a whole `notePitch` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.

@@ -11,7 +11,7 @@ answers is the ping and back-off rungs in [js/ai/ai-ladder.js](../../../js/ai/ai
 
 One button, `ping` (`KEY_ACTIONS`): the **right button** on WASD, **G** on CLICK. `openPingWheel` (js/app/input.js)
 opens a `state.wheel` of kind `'ping'` on the exact world point under the pointer (`wx`/`wy`) -
-or over the chart or the minimap disc, pinned to the press (`sx`/`sy`, through `ckPoint`).
+or over the chart or the minimap, pinned to the press (`sx`/`sy`, through `ckPoint`).
 
 - **A tap is GO HERE.** The wheel draws nothing until the button has been held `PING_HOLD`
   (0.18 s) or the pointer has left the hub (`pingWheelShown`), so a tap never flashes a wheel.
@@ -37,8 +37,8 @@ the bots' own callout limits (`callFree`, `aiAnswerStep`).
 - **On the world** (`drawPingMark`): two pulses ring out from the spot, the spot's tick, and the
   7x7 glyph (`CALL_GLYPHS`) on a one-pixel stem over it, rimmed dark, in the ping's ink. No
   plate and no word: the glyph is the message (show, don't label).
-- **On the minimap disc and the chart**: the same glyph at the spot for the whole of its life
-  (`drawCalloutsMap`, `renderWorldMap`), the disc's square pulse under it for the first two beats.
+- **On the minimap and the chart**: the same glyph at the spot for the whole of its life
+  (`drawCalloutsMap`, through `drawChartBodies` on both), a square pulse under it for the first two beats.
 - **On the wheel**: the glyph at twice its size, gold under the pick, its name under the wheel.
 - **The cue**: `SFX.ping(k)` - two quick notes up, a DANGER's two notes down - for the side's
   screens only.

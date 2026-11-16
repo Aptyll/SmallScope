@@ -92,7 +92,7 @@ overlay forces the zoom back to base — the fixed-size panels fit at any zoom.
 what `matchHandOver` uses.
 `DBG.setK(k, snap)` sets the rung directly, `DBG.setZoom(z, snap)` lands on the nearest rung,
 and `DBG.getZoom()` reports `k`, `devScale`, `exact` and the whole `rungs` ladder. The scroll
-wheel is zoom only (over the minimap it steps the disc's zoom instead).
+wheel is zoom only, over the minimap too (it shows the whole map and never zooms).
 
 **Mouse coords are divided by `scale` on the way in**, landing in screen space. Round positions
 when drawing (`Math.round`) or sprites smear across subpixels.
@@ -100,7 +100,7 @@ when drawing (`Math.round`) or sprites smear across subpixels.
 **Canvas size changed → `fitCanvas()` then `relayout()`** (both
 resize paths do it; both listeners live in canvas.js). `relayout()`
 (js/sim/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
-`applyMinimapSize()` (the disc's anchors), `fitMapSlab()` (the chart's size, below), the
+`applyMinimapSize()` (the minimap's square), `fitMapSlab()` (the chart's size, below), the
 map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
 `fitFlakes()` (see [Snow](render-pass-order.md#snow)), `renderBars()` (re-bakes the pillarbox frame) and
 `layoutReplay()`. Those panel `let`s are **declared together in js/app/canvas.js** (the file after

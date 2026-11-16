@@ -312,7 +312,7 @@ window.DBG = {
   setK: (k, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), k | 0)); if (snap) applyZoom(0, true); },
   getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, worldDev, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
     rungs: (() => { const r = []; for (let k = kMin(); k <= kMax(); k++) r.push(+(k / devScale).toFixed(4)); return r; })(),
-    wv: [WV_W, WV_H], mm: mmScale() }),
+    wv: [WV_W, WV_H] }),
   cam: () => ({ x: camX, y: camY }),
   // the day's weather: weather('blizzard') pins one (fading to it like a dawn
   // would; weather() lets the day decide again), wx the dials in force now,
@@ -348,7 +348,7 @@ window.DBG = {
     return { tab: setTab, tabs: L.tabs, rows, scroll: L.scroll, maxScroll: L.maxScroll,
       x: SL_X, w: SL_W, panel: { x: SET_X, y: SET_Y, w: SET_W, h: SET_H } };
   },
-  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
+  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_X, MM_Y, MM_W }),
   hideUI: false,
   showMarks: false, // ...but the basic attack's rings on the snow stay (drawClickMarks), for a staged still
   // director mode (js/app/director.js): its state, and its keys as pressed

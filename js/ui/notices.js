@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ notices
 // News as something you SEE, not something you read in a log: a PLATE that
-// flies in top-right, hard under the minimap beside the clock, for anything
+// flies in at the top-right corner (the minimap is bottom right), for anything
 // that happens where you are NOT looking. Two things raise one today - your
 // roost under attack (`raiseNotice`, js/sim/eagle.js) and your own stat sheet
 // moving (the stat ledger, below).
@@ -32,7 +32,6 @@ const NOTE_SLIDE = 30;   // px it travels, in and out
 // over the 30 the mark's well and the tail's gutter take, and the rest is air.
 const NOTE_W = 78, NOTE_H = 22;
 const NOTE_AIR = 4;      // the air between two plates in the lane
-const NOTE_GAP = 18;     // below the disc's clock, which ends 14px under it
 const notices = [];      // {kind, txt, t}; ageNotices runs the clock
 // A PLATE IS ITS KIND'S SIZE. Every kind but one is the 78x22 card; the STATS kind is the same card grown to seat
 // a ledger, and nothing in the lane is special-cased for it - the stack sums
@@ -253,10 +252,10 @@ function ageNotices(dt) {
   }
 }
 
-// The slot a plate rests in, newest first: k = 0 sits under the disc's clock
-// row, and every plate is RIGHT-ALIGNED on the disc's own right edge, so a
-// taller or wider one still reads as the same lane. Off MM_* so the lane
-// follows the minimap wherever the size dial and the view put it. The y is a
+// The slot a plate rests in, newest first: k = 0 sits in the top-right
+// corner, MM_GAP off both edges like the minimap and the rail, and every
+// plate is RIGHT-ALIGNED on that edge (noteLaneRight), so a taller or wider
+// one still reads as the same lane. The y is a
 // SUM of what stands above the slot rather than k * a pitch, because the
 // stats plate is not the height of a price.
 function noteKindAt(k) {
@@ -265,26 +264,28 @@ function noteKindAt(k) {
 }
 function noteRect(k) {
   const K = noteKindAt(k), w = noteW(K);
-  let y = MM_CY + MM_R + NOTE_GAP;
+  let y = MM_GAP;
   for (let j = 0; j < k; j++) y += notePitch(noteKindAt(j));
-  return { x: MM_CX + MM_R - w, y, w, h: noteH(K) };
+  return { x: noteLaneRight() - w, y, w, h: noteH(K) };
 }
+function noteLaneRight() { return VIEW_W - MM_GAP; }
 // Where the lane's plates end right now, for whatever hangs under them (the
 // kill feed, js/ui/announcer.js): the plates up and still holding, summed the
 // way noteRect sums them; a plate on its way out has given its room back.
 function noteLaneBottom() {
-  let y = MM_CY + MM_R + NOTE_GAP;
+  let y = MM_GAP;
   const n = Math.min(NOTE_MAX, notices.length);
   for (let k = 0; k < n; k++) if (notices[notices.length - 1 - k].t < NOTE_LIFE - NOTE_OUT) y += notePitch(noteKindAt(k));
   return y;
 }
-// The lane's floor: the top of the hud strip's xp numbers, at whatever size
-// its dial holds (hudSc). Three plates of a price's height never came near it, but the
+// The lane's floor: the minimap's top under it, or the top of the hud
+// strip's xp numbers at whatever size its dial holds (hudSc), whichever is
+// higher. Three plates of a price's height never came near it, but the
 // stats sheet is five of them, so on a short view the lane can reach the
 // bottom edge - and a plate drawn half under the strip is worse than one not
 // drawn. renderNotices lays them newest first and stops here, which drops the
 // OLDEST news: the right one to lose.
-function noteLaneFloor() { return VIEW_H - Math.round((AB_H + XP_TAG) * hudSc()) - 4; }
+function noteLaneFloor() { return Math.min(VIEW_H - Math.round((AB_H + XP_TAG) * hudSc()), mmFrameRect().y) - 4; }
 
 // Drawn from renderUI (js/ui.js) after the counter and the character sheet:
 // news that arrives mid-trade must not hide behind the thing it is about.

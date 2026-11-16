@@ -329,10 +329,11 @@ const scratch = document.createElement('canvas');
 scratch.width = 128; scratch.height = 128; // the biggest thing that flashes is a bear's 112x76 frame
 const sctx = scratch.getContext('2d');
 
-// offscreen minimap canvas (1px per world tile)
-let MM_R = 24;                   // minimap radius in px (1px = 1 tile)
-let MM_CX = VIEW_W - 35;         // minimap center (applyMinimapSize, core.js, sets the real ones)
-let MM_CY = 35;
+// the minimap's square: the chart's top-left and side in view px
+// (applyMinimapSize, core.js, sets the real ones)
+let MM_W = 112;
+let MM_X = VIEW_W - MM_W - 7;
+let MM_Y = VIEW_H - MM_W - 7;
 
 // Panel layout anchors. These live here rather than in the map/settings
 // sections because relayout() assigns them on every canvas resize —
@@ -341,7 +342,7 @@ let MM_CY = 35;
 // offsets *within* each baked panel stay in their own sections.
 // The map slab FITS THE VIEW: the chart takes every row the view gives it,
 // up to CHART_MAX (what a monitor's 360 rows seat under the header; the
-// match's WORLD tiles fold into it by priority, chartSpan), while a window at fitCanvas()'s
+// match's WORLD tiles fold into it by priority, chartSize), while a window at fitCanvas()'s
 // 240-row floor still seats the whole slab with a 200 chart.
 // fitMapSlab() sizes it (relayout, core.js); the chart's buffers and the
 // slab's bake follow the size (mapAlloc, panels.js).
@@ -350,16 +351,13 @@ const MAP_SIDE = 10;    // the parchment either side of the chart
 const MAP_HEAD = 26;    // rows over it: the header row and its margins
 const MAP_FOOT = 8;     // rows under it
 let MAP_W = 192;             // the chart's slot — the played part of the world scales into it
-let MAP_T0 = 0, MAP_N = WORLD; // the square of tiles the chart shows: from MAP_T0, MAP_N a side (chartFit, panels.js)
-let MAP_S = MAP_W / MAP_N;   // tiles -> map px
+let MAP_T0 = 0, MAP_N = WORLD; // the square of tiles the chart shows: from MAP_T0, MAP_N a side (chartFit, minimap.js)
 let PANEL_W = MAP_W + MAP_SIDE * 2, PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 let PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);   // relayout() recenters these
 let PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
 let MAP_X = PANEL_X + MAP_SIDE, MAP_Y = PANEL_Y + MAP_HEAD;
-let MAP_OX = MAP_X, MAP_OY = MAP_Y; // where world tile 0 lands on screen: everything on the chart projects off these
 function fitMapSlab() {
   MAP_W = Math.max(96, Math.min(CHART_MAX, MAP_N, VIEW_H - MAP_HEAD - MAP_FOOT - 6));
-  MAP_S = MAP_W / MAP_N;
   PANEL_W = MAP_W + MAP_SIDE * 2; PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 }
 
@@ -375,6 +373,8 @@ const SL_W = 100;  // slider track
 // in panels.js, off SET_X/SET_Y/SL_X alone.
 let SET_MUTE_X = SL_X - 14; // the speaker button: 9x9, hard against the master track
 
+// offscreen terrain picture, 1px per world tile (updateMinimap): the bot
+// log's and the arena's map, not the minimap's (the minimap is a chart)
 const mmCv = document.createElement('canvas');
 mmCv.width = WORLD; mmCv.height = WORLD;
 const mmCtx = mmCv.getContext('2d');

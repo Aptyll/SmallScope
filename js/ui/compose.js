@@ -9,8 +9,7 @@ function renderUI(now) {
   if (endScreen()) return; // a victory or defeat screen owns the whole frame
 
   // title -> play: the HUD slides in over the last part of the intro - the
-  // minimap from the top, the hud strip from
-  // below.
+  // team rail from the top, the minimap and the hud strip from below.
   // The TOP LEFT is deliberately empty: the gold that sat left of the
   // minimap lives in the hud strip's purse now, which is why nothing slides
   // in from the left any more. Health lives on the in-world
@@ -20,8 +19,8 @@ function renderUI(now) {
   const out = state.mode === 'dead'; // the local wallet is moot once you are out
 
   ctx.save();
-  ctx.translate(0, Math.round(-slide * (MM_R * 2 + 40)));
-  // minimap with day/night ring
+  ctx.translate(0, Math.round(slide * (mmFrameRect().h + MM_GAP + 2)));
+  // the minimap, bottom right, with its day band
   renderMinimap(now);
   ctx.restore();
 

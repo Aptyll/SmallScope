@@ -124,8 +124,8 @@ function hudInT() {
 function hudHome() { return hudInT() >= 1; }
 // THE HUD SIZE DIALS (the ESC panel's GAME page): one per widget, so each
 // part of the HUD is sized on its own - the strip (settings.hudScale) and
-// the team rail along the top (settings.hudRail); the minimap has its own radius dial
-// (settings.mmR, applyMinimapSize, js/sim/core.js). Each widget keeps ALL its
+// the team rail along the top (settings.hudRail); the minimap has its own size dial
+// (settings.mmSize, applyMinimapSize, js/sim/core.js). Each widget keeps ALL its
 // geometry in 1x space and its draw bakes it at 1x and blits it scaled about
 // its anchor (drawHudScaled, drawRailScaled); the pointer is
 // mapped back through the same anchor (stripMouse), so every hit
@@ -175,8 +175,13 @@ function hudPick(want, cap) {
 // the cap a widget `w` x `h` view px at 1x passes: the size at which it would
 // reach the view's edges, on the device grid so a crisp size can sit there
 function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 8) / h)); }
-// THE SCALES. The strip's caps where its plate would outgrow the view. The rail's is railSc (js/ui/rail.js), capped by its own width.
-function stripCap() { return hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG); }
+// THE SCALES. The strip's caps where its plate would outgrow the view, or
+// reach the minimap beside it (MM_GAP short of its frame): the minimap is
+// the League corner and keeps its place. The rail's is railSc (js/ui/rail.js), capped by its own width.
+function stripCap() {
+  const r = hudStripRect(), half = r.x + r.w - VIEW_W / 2; // the strip's right half at 1x, from the centre it scales about
+  return Math.min(hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG), hudSnapDown((mmFrameRect().x - MM_GAP - VIEW_W / 2) / half));
+}
 function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
 // a view coordinate put on the device grid, where a scaled HUD bake has to
 // land for its pixels to stay whole

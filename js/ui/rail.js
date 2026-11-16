@@ -18,7 +18,7 @@
 // stays the minimap's job.
 // It scales with its own TOP BAR size dial about its top-centre anchor
 // (drawRailScaled), capped so the plate clears the view's edge (railSc),
-// rides the intro slide down from above with the minimap, and stays up while
+// rides the intro slide down from above, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
 const RAIL_CHIP = 16;               // a chip: the 14px face in its 1px ink rim
 const RAIL_BAR = 3;                 // the hp bar under a chip: 1px air, the 2px bar
@@ -32,7 +32,7 @@ const RAIL_WAIT = '#d4d7dc';        // a waiting chip's seconds
 const RAIL_HOV = '#6a6f79';         // the rim of the chip under the pointer, and the score's colon
 const RAIL_WAIT_DIM = 'rgba(7,8,10,0.6)'; // over a waiting face, under its seconds
 const RAIL_OUT_DIM = 'rgba(7,8,10,0.75)'; // over a face that is not coming back
-const RAIL_Y = MM_GAP;              // the plate's top edge: level with the minimap's outline
+const RAIL_Y = MM_GAP;              // the plate's top edge: the gap the minimap keeps to its edges
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
@@ -98,12 +98,10 @@ function railLayout() {
 }
 // the size the rail is drawn at: its own dial (settings.hudRail, the stops
 // hudSizes offers, js/ui/strip.js), capped on the device grid where the plate
-// would reach the view's edge or the minimap's outline, MM_GAP short of it
-// (railCap); no layout yet = no cap but the dial's
+// would reach the view's edges (railCap); no layout yet = no cap but the dial's
 function railCap(L) {
   if (!L) return HUD_MAX;
-  const mmLeft = MM_CX - MM_R - MM_OUT - MM_GAP;
-  return hudSnapDown(Math.min((VIEW_W - 2 * 4) / (L.span + 2), (mmLeft - VIEW_W / 2) / (L.span / 2 + 1)));
+  return hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2));
 }
 function railSc(L) { return hudPick(settings.hudRail || 1, railCap(L)); }
 // the rail's bottom edge in view px (0 while there is no rail): what the

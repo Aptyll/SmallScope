@@ -98,10 +98,9 @@ at 7 read apart in the corner of an eye mid-fight, where two bars part-way down 
 the **one shape every wait on the HUD is drawn in** — an ability's cooldown, a potion's drink, a
 rail chip's respawn — so only the speed of the hand tells one clock from another.
 
-Two things it does not do the obvious way. It is **rasterised a pixel at a time**, for the reason
-`mmRing` rasterises every curve of the minimap ([UI panels are baked once](../ui-panels-are-baked-once.md)):
+Two things it does not do the obvious way. It is **rasterised a pixel at a time**:
 a canvas path anti-aliases, and a soft diagonal across a 32px well is blur on a screen where every
-other edge is hard. Unlike the minimap's chrome this one **cannot be baked** — the hand moves every
+other edge is hard. Unlike a frame this one **cannot be baked** — the hand moves every
 frame — so it stays cheap on size: the well is 32×32 (1024 angle tests), each row is walked once
 and its covered pixels coalesced into ONE `fillRect` per run instead of one per pixel, and only
 a well actually on cooldown is walked at all (about 30 µs a well).

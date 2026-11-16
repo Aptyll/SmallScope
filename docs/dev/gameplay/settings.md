@@ -56,7 +56,7 @@ patch, state, seat counts, code and `seek` into the lobby's data, and the list h
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudRail`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmSize`, `hudScale`, `hudRail`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](../multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -84,9 +84,9 @@ and `relay`, what this PC's screen and GPU want) rides it. `PROFILE.putSettings`
 last change; `PROFILE.cloudSync`, once at boot, adopts the cloud's copy when its `at` is newer, else
 writes this screen's up. Until that boot read answers, no save here counts as newer, so a fresh PC
 saving its defaults never beats the account's. With no wrapper, or the cloud off for the app
-(Steamworks' Cloud page needs a quota) or the account, nothing happens. `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
-call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
+(Steamworks' Cloud page needs a quota) or the account, nothing happens. `applyMinimapSize()` must be called after changing `mmSize` (the MINIMAP SIZE slider, default **1**, 0.6..1.5 in 5% steps) —
+it recomputes `MM_X`/`MM_Y`/`MM_W`. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
+call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`; one from before the square minimap (`v` < 5) turns the old disc's `mmR` into `mmSize` (`mmR / 24`) and drops it and the disc's `mmZoom`; `mmSize` is clamped to `MM_SIZE_MIN`..`MM_SIZE_MAX`
 ([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). (Old saves may still carry `res`, `fps`, `seed`, `paths`, `hudCorner` or `haptics` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
@@ -219,8 +219,9 @@ has no ESC-menu row, only the `. HITBOX` line in the WASD scheme's CONTROLS bloc
 leaves it out); the rest is in
 [Debug overlays](../rendering/debug-overlays-hitboxes-and-routes.md).
 
-Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There
-is no alive count: a match does not end on bodies. Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
+While no team rail is up, `renderMinimap()` prints the elapsed clock alone over the minimap's right
+edge. There is no alive count: a match does not end on bodies. In the top-right corner runs the
+notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-sheet-as-a-notice.md).
 

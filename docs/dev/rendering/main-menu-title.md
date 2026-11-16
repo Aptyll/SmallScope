@@ -242,11 +242,11 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
   the camera easing from `state.introFrom` on the same curve instead of the play lerp.
 - **Match intro**: `matchHandOver` (js/sim/eagle.js) sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
   with `introFrom` at the opening framing, so `renderUI` (js/ui/compose.js) slides the HUD in
-  (the minimap and the team rail down from the top, and the hud strip up from the bottom by `HUD_SLIDE`)
+  (the team rail down from the top, and the minimap and the hud strip up from the bottom)
   while the camera settles onto the play framing.
 
 `DBG` exposes `menu`, `hubLayout`, `roomHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
-`lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
+`lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_X`/`MM_Y`/`MM_W` anchors) for driving all of this headlessly.
 
 ## The skins screen
 

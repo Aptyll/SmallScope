@@ -76,9 +76,9 @@ const SAVE_ROOTS = [
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
   ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
-  // the view: where the camera and both zooms stood, so the first frame is the saved one
+  // the view: where the camera and its zoom stood, so the first frame is the saved one
   // (boot frames the camera on the player after this runs, so saveBootView puts it back again)
-  ['view', () => [camX, camY, kWant, zoomCur, mmCur], (v) => { saveView = v; camX = v[0]; camY = v[1]; kWant = v[2]; zoomCur = v[3]; mmCur = v[4]; }],
+  ['view', () => [camX, camY, kWant, zoomCur], (v) => { saveView = v; camX = v[0]; camY = v[1]; kWant = v[2]; zoomCur = v[3]; }],
 ];
 
 let saveView = null; // the loaded match's camera, until boot has finished moving it

@@ -36,7 +36,7 @@ const CALL_ROOST_R = 240;   // px round a bird that counts as at it (the brain's
 // something), `icon` the glyph beside it (CALL_GLYPHS, js/draw/callouts.js)
 // and `ink` its accent. `pin` marks a call whose spot is the caller itself:
 // no ground ping, the plate is the whole call. `t` is a life other than
-// CALL_T, and `map: false` keeps a call off the minimap disc.
+// CALL_T, and `map: false` keeps a call off the two maps.
 const CALLS = {
   bird:   { word: () => 'BIRD!', icon: 'bird', ink: '#ff9a4d' },
   help:   { word: () => 'HELP!', icon: 'help', ink: '#6be38a', pin: true },

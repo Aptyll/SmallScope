@@ -8,11 +8,11 @@ item bought both rewrite the kit silently: the floater over the body names the *
 key press and a pause in the middle of a fight.
 
 **It does not stand on the HUD, it arrives.** A change flies the sheet in off the right edge into
-the lane under the disc on the same ease, the same white frame pulse and the same lane as a roost
+the top-right lane on the same ease, the same white frame pulse and the same lane as a roost
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
 plate was in the lane down under it exactly as a roost plate does. When nothing has changed there is
 nothing on screen at all. The only thing about it that is not a roost plate is its **size**
-(`STAT_W` 100 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
+(`STAT_W` 100 wide, `statPlateH()` tall), and every plate is right-aligned on the lane's right
 edge, so the wider one still reads as the same lane.
 
 **Every row of the sheet is on it, dim, and the rows that moved are lit**: label and number to

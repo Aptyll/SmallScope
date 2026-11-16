@@ -196,6 +196,7 @@ function botMatchSummary() {
 // minimap's terrain (1 px a tile) to draw it on and the goal table its words
 // are filed by (AI_GOALS: word to kind) (docs/dev/botview.md)
 function botLogExport() {
+  updateMinimap();
   return { kind: 'softfall-botlog', v: 1, seed: BOTLOG.seed, len: Math.round(BOTLOG.t), world: WORLD * TILE, map: mmCv.toDataURL(),
     goals: AI_GOALS, sides: botSides(), bots: players.filter(botIsBot).map(botRow), people: botPeople(), events: BOTLOG.events, samples: BOTLOG.samples,
     kills: BOTLOG.kills, birds: BOTLOG.birds, matches: BOTLOG.matches };
@@ -346,7 +347,7 @@ function drawBotPanel() {
   const sides = [0, 1].map((t) => bots.filter((p) => p.team === t)).filter((g) => g.length);
   const lv = botLevelRows(bots);
   const h = 17 + bots.length * BOT_ROW + (sides.length - 1) * 3 + 6 + lv.length * 8 + 3;
-  const x = VIEW_W - BOT_PANEL_W - MM_GAP, y = MM_CY + MM_R + MM_OUT + 6;
+  const x = VIEW_W - BOT_PANEL_W - MM_GAP, y = MM_GAP;
   botFrame(x, y, BOT_PANEL_W, h);
   // head: the columns, right-aligned numbers
   const C_LV = 70, C_GOAL = 74, C_K = 128, C_D = 140;

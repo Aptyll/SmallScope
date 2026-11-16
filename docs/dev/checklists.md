@@ -226,12 +226,12 @@ it: `solid` (does it block a walker), `work` (whether E reaches for it) and `rea
 reaching *right now* — a rock's regrowth, a snowdrop's rest), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice does; a
 rival building needs no flag — `autoWorks` asks `STRUCTS` and `ownsStruct`), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
-paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
+paints it — `mm` an `[r, g, b]` for the bot log's per-tile map, `map` a `CH_*` class the chart files it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
 out for anything that stands alone on its tile — a stump — since at the chart's
 scale a speck is noise, and read [rendering](rendering/ui-panels-are-baked-once.md) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
-gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
+gate, `drawWorkHint()`, `updateMinimap()` and `chartClasses()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
 generically, the same rule buildings answer through `ownsStruct`.
@@ -406,7 +406,7 @@ and its `init`/`built`/`tick` hooks) and stand it with `createStruct` from whate
 `placeTowers` does, or the merchant). Nobody builds by hand, so there is no list or wheel to add
 it to. Art of its own needs a grid baked into the per-team `teamBuild` sets (see
 [sprites.md](sprites.md)), and both maps colour it from the entry's `mm`/`map` — every building
-wears its side's ink (`mmTeam`/`chTeam`, world.js), and `updateMinimap`/`buildWorldMapImg`
+wears its side's ink (`mmTeam`/`chTeam`, world.js), and `updateMinimap`/`chartClasses`
 resolve a multi-tile footprint's `part` fillers through `structOf()` first, so the anchor's entry
 colours the whole building. `isSolidTile()` is generic (`!!STRUCTS[o.type] || ...`) — a new
 `STRUCTS` entry is solid for free. `hitObject()`, the draws pass (via `structSprite`),
@@ -440,7 +440,7 @@ card (its name and line as `beast.*` keys in js/app/text.js), its sprite set in 
 overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 
-**Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
+**Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `chartGround()` (js/ui/minimap.js),
 give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/target rates — ice is
 the template; a ground that should walk like snow needs none, because only ice and holes are
 special-cased — [the road](world.md#the-lanes), `3`, is the live example of one that walks like
@@ -580,7 +580,7 @@ Code that is dead **on purpose** is the next section.
   lifetime tally is not rewound ([saved matches](gameplay/saved-matches.md)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
-  say, while every body stands still; the match clock under the minimap ticks on behind the
+  say, while every body stands still; the match clock on the rail ticks on behind the
   panel.
 - **A loaded match's snow is untrodden.** The trampled-snow field (`trPack`/`trChurn`,
   js/draw/trample.js) is visual and not in `SAVE_ROOTS`, so the paths a match packed are gone
