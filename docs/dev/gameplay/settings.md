@@ -6,20 +6,26 @@ profile or wiki all land here. The page hosts its own party at once (`beginParty
 relay, or a Steam lobby). League's client home in Graphite, flat and opaque: YOU (your face,
 name, rank badge and rating, your record and the last ten results as pips, the purse that opens
 the skins, the gear that opens the settings, QUIT in the desktop build) and MATCH HISTORY down the
-left; the party's strip, HEROES and ITEMS in the middle; FRIENDS and LADDER down the right. A
+left; PARTY, HEROES and ITEMS in the middle; FRIENDS (Steam's; not there off Steam) and LADDER down
+the right. A
 panel's click opens its whole page (the profile and its tabs, the wiki, the skins), and that
 page's way out comes back here. HEROES walks every hero with its arrows: the four ability wells
 (each raises the ability's card), the numbers, and the lit ability's words; ITEMS is that hero's
 build (`buildsRec`). LADDER is everyone this screen has met, by rating, you lit.
-Your side's seats stand in the strip with you in the middle and the others filling outward: a
-person's seat is a card with a portrait, a name, the rank badge, a guest's READY tick and link
-bars (green, amber, red as the round trip grows), a crown over the leader's portrait; an empty
+PARTY's head names it with the count (people of `partyCap`, three: the 3v3's side) and the party's
+four-letter code in gold behind a copy mark (a click copies it, white for a moment; dim with a red
+dot blinking before it while the link is down). Your side's three seats stand under it with you
+in the middle: a person's seat is a card with a portrait, the rank badge, a name, a guest's READY
+tick and link bars (green, amber, red as the round trip grows), a crown over the leader's portrait; an empty
 seat is a well with a gold + that invites (the code copied, or Steam's overlay). The leader's
 pointer on a guest's card shows a red X that shows them out (`seatKick`). PLAY stands at the
 strip's right end: a guest's READY, or the leader's PLAY, dim and flashing the seats it waits on
-until every guest is ready (`partyFind`), with an X under it that leaves while you are in a party
-with people, and a one-line chat under the seats (js/ui/roomtalk.js: Enter or a click starts a
-line, Enter sends it, Esc drops it). There is one mode, RANKED. A profile that has never seen a
+until every guest is ready (`partyFind`). Under the seats runs one row of plates as tall as each
+other: while you are alone JOIN and four slots (type or paste, Ctrl+V, a friend's four letters to
+join their party: `partySeek` looks the code up on the relay's list, or in a Steam lobby's data,
+which carries the same code: `steamCode`, js/net/transport-steam.js; a code nobody answers to
+rattles the slots); with people, the chat (js/ui/roomtalk.js: the ENTER key and the newest line;
+Enter or a click starts a line, Enter sends it, Esc drops it) and under PLAY the X that leaves. There is one mode, RANKED. A profile that has never seen a
 match through plays its first PLAY alone as FIRST MATCH (`roomGo`): straight to bots, pinned
 EASY (`NET.botLv` 0), with the coach, and its rematch is RANKED. RANKED looks for another party
 doing the same (js/ui/matchmaking.js): PLAY becomes a gold clock with an X (a press stops
@@ -32,12 +38,7 @@ guest's presses go through the leader as `draft` messages); the count after the 
 leader's; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`).
-FRIENDS lists your Steam friends (js/ui/friends.js) and at its foot the party's four-letter code
-in gold (a click copies it, white for a moment; dim with a red dot blinking after it while the
-link is down); while you are alone JOIN and four slots stand under it: type or paste (Ctrl+V) a
-friend's four letters to join their party (`partySeek` looks the code up on the relay's list, or
-in a Steam lobby's data, which carries the same code: `steamCode`, js/net/transport-steam.js); a
-code nobody answers to rattles the slots. Off Steam the panel is the code and JOIN alone. The
+FRIENDS lists your Steam friends (js/ui/friends.js). The
 keys walk the seats, right onto PLAY, down onto its X, right into the friends; Esc opens the
 settings. The practice field is off the hub and kept for the tools that stage on it
 ([practice arena](../world.md#the-practice-tool)): a leader's page there hosts the party's code

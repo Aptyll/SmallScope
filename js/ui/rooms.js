@@ -25,8 +25,10 @@
 // its first PLAY alone as FIRST MATCH (roomGo): EASY bots with the coach
 // (js/ui/guide.js), straight to bots, no matchmaking
 const PARTY_MODES = { ranked: 'RANKED', guide: 'FIRST MATCH' };
-// people on your side at most: a side's seats
-function partyCap() { return MAX_PLAYERS / 2; }
+// people on your side at most: three, the 3v3's side (a side's seats while the
+// match still seats more: the rest are bots at the drop)
+const PARTY_MAX = 3;
+function partyCap() { return Math.min(PARTY_MAX, MAX_PLAYERS / 2); }
 const RM_CODE_N = 4;                   // letters in a code (makeCode, app/server.js; steamCode, js/net/transport-steam.js)
 const SEEK_T = 6;                      // s a typed code is looked for on the list before it rattles
 // RANKED: a rating per profile (PROFILE.rank, js/app/profile.js), RANK_STEP
@@ -268,8 +270,14 @@ function beginRoom() {
 function roomHost() { return players[NET.isClient ? NET.hostSlot : localId]; }
 // the five seats of side t, in slot order: the same five, the same order, on every screen
 function roomSide(t) { return players.filter((p) => p.team === t); }
-// your side's seats on the hub
-function partySide() { return roomSide(player.team); }
+// your side's seats on the hub: partyCap of them, the people first and then
+// the empty seats a friend would take, in slot order on every screen
+function partySide() {
+  const s = roomSide(player.team), cap = partyCap();
+  if (s.length <= cap) return s;
+  const keep = new Set(s.filter(isHuman).concat(s.filter((p) => !isHuman(p))).slice(0, cap));
+  return s.filter((p) => keep.has(p));
+}
 // what a click on seat s does from this screen: 'invite' (an empty seat),
 // 'kick' (the leader shows a friend out) or null
 function seatAct(s) {
@@ -341,7 +349,7 @@ function roomKey(k, e) {
     else codeType(e && e.char && e.char.length === 1 ? e.char : k);
     return;
   }
-  if (talkKey(k, e)) return; // a chat line being typed takes every key (js/ui/roomtalk.js)
+  if ((m.talkOn || hubTalking()) && talkKey(k, e)) return; // the chat, in a party with people: a line being typed takes every key (js/ui/roomtalk.js)
   if (k === 'escape') { openMenuPanel('settings'); return; }
   m.rkeys = true;
   const d = moveDir(k);
@@ -524,22 +532,6 @@ function drawRelayPip(x, y, ok, now) {
   ctx.fillStyle = ok ? '#7fd88a' : '#e0524f';
   ctx.fillRect(x, y, 4, 4);
   ctx.globalAlpha = a0;
-}
-// The slots a friend's code goes in: JOIN and four on a plate, the letters
-// typed so far in them, a gold rim and a blinking caret while it is lit, a
-// rattle on a code no room answers to.
-function drawCodeBox(r, m, now, hot) {
-  const dx = m.codeShake > 0 ? Math.round(Math.sin(m.codeShake * 60) * 2 * (m.codeShake / NAME_SHAKE_T)) : 0;
-  const x = r.x + dx, y = r.y;
-  ctx.fillStyle = m.codeOn ? '#c89a3c' : hot ? SC_LBL : SC_EDGE; ctx.fillRect(x, y, r.w, r.h);
-  ctx.fillStyle = m.codeOn ? SC_YOU : SC_PLATE; ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
-  const pitch = 14, word = 'JOIN', ww = pixelTextWidth(word, 2) + 12, x0 = x + ((r.w - pitch * RM_CODE_N + 6 + ww) >> 1), ty = y + ((r.h - 10) >> 1);
-  drawPixelText(ctx, word, x0 - ww, ty, m.codeOn || hot ? SC_TXT : SC_DIM, 2);
-  for (let i = 0; i < RM_CODE_N; i++) {
-    const cx = x0 + i * pitch, ch = m.code[i];
-    if (ch) drawPixelText(ctx, ch, cx, ty, m.codeShake > 0 ? '#e0524f' : SC_GOLD, 2);
-    else { ctx.fillStyle = i === m.code.length && m.codeOn && Math.floor(now * 2.5) % 2 ? SC_GOLD : hot ? SC_LBL : SC_DIM; ctx.fillRect(cx, ty + 9, 8, 1); }
-  }
 }
 // In a match, a client whose socket is down: a red pip blinking top-centre
 // while the transport redials, and nothing at all while the link is good

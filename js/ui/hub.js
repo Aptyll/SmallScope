@@ -28,13 +28,17 @@
 const HUB_PAD = 8, HUB_GAP = 8;          // the page's margin, the air between panels
 const HUB_SIDE = 160, HUB_SIDE_MIN = 112; // a side column at its widest and narrowest
 const HUB_CARD_H = 84;                   // YOU
-const HUB_STRIP_H = 96, HUB_TALK_H = 24; // the party's strip, and what the chat adds under the seats
-const HUB_PLAY_MIN = 64, HUB_PLAY_MAX = 96, HUB_LEAVE_H = 12; // PLAY's width, and the X under it that leaves a party
+const HUB_SEAT_H = 72, HUB_SEAT_H_N = 52; // a seat's height, and on a view under 340 tall
+const HUB_CTRL_H = 18;                   // the PARTY panel's foot row: JOIN, or the chat and the X
+const HUB_PLAY_MIN = 64, HUB_PLAY_MAX = 96; // PLAY's width
+const HUB_ITEMS_H = 72;                  // ITEMS: the head, the wells and their prices
+const HUB_HERO_H = 114;                  // HEROES: the hero, the wells, the lit ability's name and two lines of it
 const HUB_HEAD = 20;                     // a panel's head
 const HUB_ROW = 35;                      // a match's row
 const HUB_LAD_ROW = 18;                  // a ladder's row (a badge is BADGE_PX tall)
 const HUB_WELL = 32, HUB_WELL_GAP = 4;   // an ability's well, an item's
-const HUB_FACE_MAX = 56;                 // a seat's face at its largest
+const HUB_FACE_MAX = 48;                 // a seat's face at its largest
+const HUB_COPY = ['####.', '#..##', '#..##', '####.', '.####'];  // two sheets: the code copies
 const HUB_LAST = 10;                     // results in YOU's strip of pips
 const HUB_WIN = '#7fd88a', HUB_LOSS = '#e0675a', HUB_WIN_BG = '#14201a', HUB_LOSS_BG = '#22161a';
 const HUB_STAT = [['hub.hp', 'hp'], ['hub.dmg', 'dmg'], ['hub.armor', 'armor'], ['hub.speed', 'ms']];
@@ -62,37 +66,46 @@ function hubBuild(h) {
 
 // ---- layout -----------------------------------------------------------------
 // every rect on the page, one call: the panels, the seats, PLAY and the X,
-// the chat line, the code and JOIN; draw, hit test and keys all read it
+// the chat line, the code and JOIN; draw, hit test and keys all read it.
+// PARTY is one panel: its head names it with the count and the code; the
+// seats with PLAY beside them; and a foot row of plates as tall as each other
+// under them: JOIN while you are alone, the chat with the X that leaves under
+// PLAY once there are people. FRIENDS (Steam's) shares the right column with
+// LADDER, and off Steam LADDER takes it all.
+function hubTalking() { return NET.role === 'client' || NET.peers.size > 0; }
 function hubLayout() {
   const W = VIEW_W, H = VIEW_H, p = HUB_PAD, g = HUB_GAP;
   const side = Math.max(HUB_SIDE_MIN, Math.min(HUB_SIDE, Math.floor((W - 2 * p - 2 * g) / 4)));
   const lx = p, rx = W - p - side, mx = p + side + g, mw = W - 2 * p - 2 * side - 2 * g, bot = H - p;
   const card = { x: lx, y: p, w: side, h: HUB_CARD_H };
   const hist = { x: lx, y: p + HUB_CARD_H + g, w: side, h: bot - (p + HUB_CARD_H + g) };
-  const talking = NET.role === 'client' || NET.peers.size > 0;
-  const strip = { x: mx, y: p, w: mw, h: HUB_STRIP_H + (talking ? HUB_TALK_H : 0) };
-  const restY = strip.y + strip.h + g, rest = bot - restY - g;
-  const hero = { x: mx, y: restY, w: mw, h: Math.round(rest * 0.62) };
-  const items = { x: mx, y: hero.y + hero.h + g, w: mw, h: bot - (hero.y + hero.h + g) };
-  const boxed = codeBoxShown() || state.menu.joining; // JOIN under the code while you are alone
-  const fh = FRIENDS.on ? Math.round((bot - p - g) / 2) : HUB_HEAD + SOCIAL_CODE + (boxed ? 36 : 6); // off Steam: the code (and JOIN) alone, the ladder takes the rest
+  // the seats take what HEROES and ITEMS leave, so no panel stands half empty
+  const frame = HUB_HEAD + 6 + 4 + HUB_CTRL_H + 8;
+  const sh = H >= 340 ? Math.max(HUB_SEAT_H, bot - p - frame - 2 * g - HUB_HERO_H - HUB_ITEMS_H) : HUB_SEAT_H_N;
+  const strip = { x: mx, y: p, w: mw, h: frame + sh };
+  const restY = strip.y + strip.h + g;
+  const items = { x: mx, y: bot - HUB_ITEMS_H, w: mw, h: HUB_ITEMS_H };
+  const hero = { x: mx, y: restY, w: mw, h: items.y - g - restY };
+  const fh = FRIENDS.on ? Math.round((bot - p - g) / 2) : 0;
   const friends = { x: rx, y: p, w: side, h: fh };
-  const ladder = { x: rx, y: p + fh + g, w: side, h: bot - (p + fh + g) };
-  // the strip: the seats, PLAY at its right end, the X under PLAY while you are in a party with people
+  const ladder = fh ? { x: rx, y: p + fh + g, w: side, h: bot - (p + fh + g) } : { x: rx, y: p, w: side, h: bot - p };
+  // PARTY's body: the seats, PLAY at its right end
+  const talking = hubTalking(), leaving = talking && seekClock() == null; // while it looks, the clock's own X is the one way out
+  const top = strip.y + HUB_HEAD + 6, fy = top + sh + 4;
   const pw = Math.max(HUB_PLAY_MIN, Math.min(HUB_PLAY_MAX, Math.round(mw * 0.3)));
-  const sh = HUB_STRIP_H - 16, leaving = talking && seekClock() == null; // while it looks, the clock's own X is the one way out
-  const go = { x: strip.x + strip.w - 8 - pw, y: strip.y + 8, w: pw, h: sh - (leaving ? HUB_LEAVE_H + 3 : 0) };
-  const leave = leaving ? { x: go.x, y: go.y + go.h + 3, w: pw, h: HUB_LEAVE_H } : null;
+  const go = { x: strip.x + strip.w - 8 - pw, y: top, w: pw, h: leaving ? sh : sh + 4 + HUB_CTRL_H };
+  const leave = leaving ? { x: go.x, y: fy, w: pw, h: HUB_CTRL_H } : null;
   const side0 = player ? partySide() : roomSide(0), n = side0.length, mid = n >> 1;
   const at = [mid]; // the positions, nearest the middle first
   for (let d = 1; at.length < n; d++) { if (mid - d >= 0) at.push(mid - d); if (mid + d < n && at.length < n) at.push(mid + d); }
   const order = side0.filter((q) => q === player).concat(side0.filter((q) => q !== player));
-  const area = go.x - 8 - (strip.x + 8), sg = 4, sw = Math.floor((area - (n - 1) * sg) / Math.max(1, n));
-  const fs = Math.max(16, Math.min(HUB_FACE_MAX, sw - 8, sh - 30));
-  const sx = strip.x + 8 + ((area - n * sw - (n - 1) * sg) >> 1);
-  const seats = order.map((q, i) => ({ x: sx + at[i] * (sw + sg), y: strip.y + 8, w: sw, h: sh, fs, p: q, k: side0.indexOf(q) })).sort((a, b) => a.x - b.x);
-  const talk = talking ? { x: strip.x + 8, w: strip.w - 16, ty: strip.y + strip.h - 8 - TALK_H, th: TALK_H, lines: 1 } : { x: strip.x + 8, w: strip.w - 16, ty: -99, th: 0, lines: 0 };
-  const box = { x: friends.x + 8, y: friends.y + friends.h - 8 - 22, w: friends.w - 16, h: 22 }; // JOIN, at the FRIENDS panel's foot
+  const area = go.x - 6 - (strip.x + 8), sg = 4, sw = Math.floor((area - (n - 1) * sg) / Math.max(1, n));
+  const fs = Math.max(16, Math.min(HUB_FACE_MAX, sw - 12, sh - 28));
+  const sx = strip.x + 8;
+  const seats = order.map((q, i) => ({ x: sx + at[i] * (sw + sg), y: top, w: sw, h: sh, fs, p: q, k: side0.indexOf(q) })).sort((a, b) => a.x - b.x);
+  const foot = { x: sx, y: fy, w: n * sw + (n - 1) * sg, h: HUB_CTRL_H }; // under the seats: the chat, or JOIN
+  const talk = talking ? foot : null;
+  const box = foot;
   return { card, hist, strip, hero, items, friends, ladder, seats, go, leave, talk, box, label: hubGoLabel() };
 }
 // what PLAY says: a guest's READY, the leader's PLAY, or the clock while it looks
@@ -120,6 +133,8 @@ function hubArrows(L) { const R = L.hero; return [{ d: -1, x: R.x + R.w - 44, y:
 // QUIT, the desktop build's (the bridge, desktop/preload.js: it opens fullscreen,
 // so the app needs its own way out; a browser tab has its X): left of the gear
 function hubQuitRect(L) { return window.steamBridge && steamBridge.quit ? { x: L.card.x + L.card.w - 31, y: L.card.y + L.card.h - 16, w: 7, h: 7 } : null; }
+// the party's code in PARTY's head, right-aligned behind the copy mark: a click copies it
+function hubCodeRect(L) { const c = roomCode(), R = L.strip; if (!c) return null; const w = 9 + pixelTextWidth(c); return { x: R.x + R.w - 8 - w, y: R.y + 6, w, h: 7 }; }
 function hubPurseRect(L) { const s = String(PROFILE.coins()), w = 11 + pixelTextWidth(s); return { x: L.card.x + 8, y: L.card.y + L.card.h - 16, w, h: 9 }; }
 
 // ---- the pointer ------------------------------------------------------------
@@ -129,12 +144,12 @@ function roomHit() {
   if (!mouse.inside) return null;
   if (overRect(L.go, 1)) return { kind: 'go' };
   if (L.leave && overRect(L.leave, 1)) return { kind: 'leave' };
-  const cr = socialCodeRect(L);
+  const cr = hubCodeRect(L);
   if (cr && overRect(cr, 3)) return { kind: 'code' };
-  if (codeBoxShown() && overRect(L.box, 2)) return { kind: 'box' };
+  if (codeBoxShown() && overRect(L.box, 1)) return { kind: 'box' };
   const fh = friendsHit(L);
   if (fh) return fh;
-  if (L.talk.th && overRect(talkLayout(L.talk), 2)) return { kind: 'talk' };
+  if (L.talk && overRect(L.talk, 1)) return { kind: 'talk' };
   if (!m.joining) for (const s of L.seats) if (overRect(s)) {
     if (isHuman(s.p) && seatPid(s.p.id)) return { kind: 'profile', id: s.p.id }; // a person's seat: their profile (js/ui/profile.js)
     const act = seatAct(s);
@@ -239,33 +254,36 @@ function drawHubHistory(L, hit) {
     its.forEach((id, k) => { const ix = r.x + r.w - 4 - (3 - k) * 18; ctx.fillStyle = SC_INK; ctx.fillRect(ix - 1, r.y + 12, 18, 18); ctx.drawImage(itemIcon(id), ix, r.y + 13); });
   }
 }
-// a seat in the strip: an empty one a well with the gold + that invites;
-// a person's card with the side's paint, the face, the name, rank, READY and link
+// a seat: an empty one a dark well with the gold + that invites; a person's
+// card with the side's paint along its top, the face, the name, the crown
+// over the leader, a guest's READY tick (top left) and link (top right)
 function drawHubSeat(s, act, flash) {
-  const p = s.p, me = p === player, x = s.x, y = s.y, w = s.w, h = s.h, fs = s.fs, fx = x + ((w - fs) >> 1), fy = y + 6;
+  const p = s.p, me = p === player, x = s.x, y = s.y, w = s.w, h = s.h, fs = s.fs, fx = x + ((w - fs) >> 1), fy = y + 8;
   if (!isHuman(p)) {
     ctx.fillStyle = flash ? '#3a3e46' : act ? SC_HOT : SC_ROW_B; ctx.fillRect(x, y, w, h);
     hubRim(x, y, w, h, act ? SC_LBL : SC_EDGE);
-    if (seatsOpen()) drawPlusMark(x + ((w - 5) >> 1), y + ((h - 5) >> 1), act ? '#ffd95c' : SC_GOLD);
+    ctx.fillStyle = act ? SC_LBL : SC_EDGE; // the face's place, dotted
+    for (let i = 0; i < fs; i += 2) { ctx.fillRect(fx + i, fy, 1, 1); ctx.fillRect(fx + i, fy + fs - 1, 1, 1); ctx.fillRect(fx, fy + i, 1, 1); ctx.fillRect(fx + fs - 1, fy + i, 1, 1); }
+    if (seatsOpen()) drawPlusMark(fx + ((fs - 5) >> 1), fy + ((fs - 5) >> 1), act ? '#ffd95c' : SC_GOLD);
     return;
   }
-  ctx.fillStyle = flash ? '#3a3e46' : act ? SC_HOT : me ? SC_YOU : SC_PLATE; ctx.fillRect(x, y, w, h);
-  hubRim(x, y, w, h, me ? '#c89a3c' : SC_EDGE);
-  ctx.fillStyle = TEAMS[skin(p.team)].mark; ctx.fillRect(x, y, w, 2);
-  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: fs >= 44 ? 3 : 2 });
+  ctx.fillStyle = flash ? '#3a3e46' : act ? SC_HOT : me ? SC_YOU : SC_ROW_B; ctx.fillRect(x, y, w, h);
+  hubRim(x, y, w, h, me ? '#c89a3c' : act ? SC_LBL : SC_EDGE);
+  ctx.fillStyle = TEAMS[skin(p.team)].mark; ctx.fillRect(x + 1, y + 1, w - 2, 2);
+  drawScoreFace(fx, fy, fs, { id: p.id, you: me, team: p.team, level: p.level || 1, sc: fs >= 40 ? 3 : 2 });
   if (p === roomHost()) drawCrown(fx + (fs >> 1) - 2, fy - 4);
   let nm = p.name || '';
-  while (nm.length > 1 && pixelTextWidth(nm) > w - 4) nm = nm.slice(0, -1);
-  const ny = fy + fs + 4;
-  hubT(nm, x + ((w - pixelTextWidth(nm)) >> 1), ny, me ? SC_GOLD : SC_LIT);
+  while (nm.length > 1 && pixelTextWidth(nm) > w - 6) nm = nm.slice(0, -1);
+  hubT(nm, x + ((w - pixelTextWidth(nm)) >> 1), y + h - 10, me ? SC_GOLD : SC_LIT);
   const card = me ? null : NET.cards[p.id] || {}; // what they told the party of themselves (js/app/history.js)
-  if (wearsFounder(card)) drawFounderBadge(x + 3, y + 3); // js/ui/badges.js
-  if (wearsRank(card) && y + h - ny - 8 >= BADGE_PX && w >= BADGE_PX + 4) drawRankBadge(x + ((w - BADGE_PX) >> 1), ny + 8, seatRank(p));
-  if (p !== roomHost()) { // a guest: READY's tick and the link to the leader, in the card's top corner
-    if (NET.ready.has(p.id)) drawTick(x + 3, y + 5, RM_OK);
-    drawPingBars(x + w - 11, y + 4, NET.pings[p.id]);
+  const by = fy + fs + 2; // the rank's badge between the face and the name, where the seat is tall enough
+  if ((me ? PROFILE.rankedN() > 0 : wearsRank(card)) && by + BADGE_PX <= y + h - 12) drawRankBadge(x + ((w - BADGE_PX) >> 1), by, seatRank(p));
+  if (wearsFounder(card)) drawFounderBadge(x + 3, y + h - 22); // js/ui/badges.js
+  if (p !== roomHost()) { // a guest: READY's tick and the link to the leader, in the card's top corners
+    if (NET.ready.has(p.id)) drawTick(x + 4, y + 6, RM_OK);
+    drawPingBars(x + w - 12, y + 5, NET.pings[p.id]);
   }
-  if (act === 'kick') drawXMark(x + w - 8, y + h - 8, '#e0524f');
+  if (act === 'kick') drawXMark(x + w - 9, y + h - 22, '#e0524f');
 }
 // PLAY, the leader's: gold, dim until every friend is READY; while it
 // looks, the clock in gold with the X that stops it. A guest's READY, green once said
@@ -277,7 +295,7 @@ function drawHubPlay(L, hot) {
     ctx.fillStyle = hot ? SC_HOT : SC_ROW_B; ctx.fillRect(g.x, g.y, g.w, g.h);
     hubRim(g.x, g.y, g.w, g.h, ready ? RM_OK : '#c89a3c');
     hubT(word, g.x + ((g.w - pixelTextWidth(word, k)) >> 1), g.y + ((g.h - 7 * k) >> 1), ready ? RM_OK : SC_GOLD, k);
-    if (seeking) drawXMark(g.x + g.w - 9, g.y + 4, hot ? RM_BAD : SC_DIM);
+    if (seeking) drawXMark(g.x + g.w - 10, g.y + 5, hot ? RM_BAD : SC_DIM);
     return;
   }
   ctx.fillStyle = dim ? SC_EDGE : '#7a5a1e'; ctx.fillRect(g.x, g.y + g.h - 2, g.w, 2);
@@ -285,24 +303,72 @@ function drawHubPlay(L, hot) {
   if (!dim) { ctx.fillStyle = '#f2cc6a'; ctx.fillRect(g.x, g.y, g.w, 1); }
   hubT(word, g.x + ((g.w - pixelTextWidth(word, k)) >> 1), g.y + ((g.h - 2 - 7 * k) >> 1), dim ? SC_DIM : SC_INK, k);
 }
-// the strip: the seats, PLAY and its X, and the party's chat line under them
+// a foot plate: the one shape the chat, the X and JOIN share
+function hubPlate(r, hot, on) {
+  ctx.fillStyle = on ? SC_YOU : hot ? SC_HOT : SC_ROW_B; ctx.fillRect(r.x, r.y, r.w, r.h);
+  hubRim(r.x, r.y, r.w, r.h, on ? '#c89a3c' : hot ? SC_LBL : SC_EDGE);
+}
+// the chat: at rest the ENTER key and the newest line, typing the line and its caret
+function drawHubTalk(r, now, hot) {
+  const m = state.menu, ty = r.y + ((r.h - 5) >> 1);
+  hubPlate(r, hot, m.talkOn);
+  ctx.save(); ctx.beginPath(); ctx.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); ctx.clip();
+  if (m.talkOn) {
+    let t = m.talk;
+    while (t && pixelTextWidth(t) > r.w - 14) t = t.slice(1); // a long line scrolls: its end stays in view
+    hubT(t, r.x + 6, ty, SC_LIT);
+    if (Math.floor(now * 2.5) % 2) { ctx.fillStyle = SC_GOLD; ctx.fillRect(r.x + 7 + pixelTextWidth(t), ty - 1, 1, 7); }
+  } else {
+    const key = tr('hub.enter');
+    drawKeyCap(ctx, r.x + 4, r.y + ((r.h - 10) >> 1), key, false, hot);
+    const c = NET.chat[NET.chat.length - 1], lx = r.x + 16 + pixelTextWidth(key);
+    if (c) { const nm = c.name + ':'; hubT(nm, lx, ty, TEAMS[skin(c.team)].mark); hubT(c.s, lx + pixelTextWidth(nm) + 5, ty, SC_TXT); }
+  }
+  ctx.restore();
+}
+// JOIN: the four slots a friend's code goes in, gold while it is looked for, a rattle on a code nobody answers to
+function drawHubJoin(r, now, hot) {
+  const m = state.menu, on = m.codeOn || m.joining || !!m.seek;
+  const dx = m.codeShake > 0 ? Math.round(Math.sin(m.codeShake * 60) * 2 * (m.codeShake / NAME_SHAKE_T)) : 0;
+  const b = { x: r.x + dx, y: r.y, w: r.w, h: r.h };
+  hubPlate(b, hot, on);
+  const word = tr('hub.join'), ty = b.y + ((b.h - 5) >> 1);
+  hubT(word, b.x + 6, ty, on || hot ? SC_TXT : SC_LBL);
+  const pitch = 14, x0 = b.x + b.w - 6 - pitch * RM_CODE_N + 4, cy = b.y + ((b.h - 10) >> 1);
+  for (let i = 0; i < RM_CODE_N; i++) {
+    const cx = x0 + i * pitch, ch = m.code[i];
+    if (ch) hubT(ch, cx, cy, m.codeShake > 0 ? RM_BAD : SC_GOLD, 2);
+    else { ctx.fillStyle = i === m.code.length && m.codeOn && Math.floor(now * 2.5) % 2 ? SC_GOLD : hot ? SC_LBL : SC_DIM; ctx.fillRect(cx, cy + 10, 8, 1); }
+  }
+}
+// PARTY: its head (the count, the code), the seats, PLAY, and the foot row
 function drawHubStrip(L, now, hit) {
   const m = state.menu, R = L.strip;
-  ctx.fillStyle = SC_PLATE; ctx.fillRect(R.x, R.y, R.w, R.h); hubRim(R.x, R.y, R.w, R.h, SC_EDGE);
+  hubPanel(R, 'hub.party', '', false, false);
+  const n = roomSide(player.team).filter(isHuman).length;
+  hubT(n + '/' + partyCap(), R.x + 14 + pixelTextWidth(tr('hub.party')), R.y + 7, SC_DIM);
+  const cr = hubCodeRect(L), up = !!(NET.transport && NET.transport.open);
+  if (cr) {
+    const col = !up ? SC_DIM : now - (m.copyAt || -9) < 0.5 ? SC_LIT : hit && hit.kind === 'code' ? '#ffd95c' : SC_GOLD;
+    frBmp(cr.x, cr.y + 1, HUB_COPY, hit && hit.kind === 'code' ? '#ffd95c' : SC_DIM);
+    hubT(roomCode(), cr.x + 9, cr.y + 1, col);
+    if (!up && Math.floor(now * 3) % 2) { ctx.fillStyle = RM_BAD; ctx.fillRect(cr.x - 7, cr.y + 2, 4, 4); } // the link is down: the code would find nothing
+  }
   if (!m.joining) for (const s of L.seats) {
     let act = hit && hit.kind === 'seat' && hit.id === s.p.id ? hit.act : null;
     if (!act && m.rseat === s.p.id && !hit && m.rkeys) act = seatAct(s) || 'none'; // the keys' cursor lights the seat too
     drawHubSeat(s, act === 'none' ? null : act, m.cardFx && m.cardFx[s.p.id] > 0);
-    if (m.rkeys && m.rseat === s.p.id && !hit) { ctx.fillStyle = SC_GOLD; ctx.fillRect(s.x, s.y, s.w, 2); }
+    if (m.rkeys && m.rseat === s.p.id && !hit) { ctx.fillStyle = SC_GOLD; ctx.fillRect(s.x, s.y + s.h - 2, s.w, 2); }
   }
   const keyGo = m.rkeys && m.rseat === -1;
   drawHubPlay(L, hit ? hit.kind === 'go' : keyGo && m.rword === 1);
   if (L.leave) {
     const r = L.leave, hot = hit ? hit.kind === 'leave' : keyGo && m.rword === 0;
-    ctx.fillStyle = hot ? SC_HOT : SC_ROW_B; ctx.fillRect(r.x, r.y, r.w, r.h); hubRim(r.x, r.y, r.w, r.h, hot ? SC_LBL : SC_EDGE);
+    hubPlate(r, hot, false);
     drawXMark(r.x + ((r.w - 5) >> 1), r.y + ((r.h - 5) >> 1), hot ? RM_BAD : SC_LBL);
   }
-  if (L.talk.th) drawTalk(L.talk, now, hit && hit.kind === 'talk');
+  if (L.talk) drawHubTalk(L.talk, now, hit && hit.kind === 'talk');
+  else if (codeBoxShown() || m.joining) drawHubJoin(L.box, now, hit && hit.kind === 'box');
 }
 // HEROES: the hero, its title, four ability wells (one under the pointer gold), its numbers, and the arrows that walk the list
 function drawHubHero(L, hit) {
