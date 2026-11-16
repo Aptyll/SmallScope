@@ -1,7 +1,7 @@
 # Rendering
 
-> The party lobby that QUICKPLAY and RANKED open:
-> [gameplay.md](gameplay/settings.md) (it is a lobby, not a surface of their own).
+> The hub, the landing page with the party and PLAY:
+> [gameplay.md](gameplay/settings.md) (it is the party's screen, not a surface of its own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
 Read this before touching `render()`, adding a draw pass, or changing anything positioned off

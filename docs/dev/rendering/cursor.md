@@ -11,7 +11,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 `{ kind, mode, dim, frac, nock, amb }`:
 
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
-  a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
+  a widget; **hand** — over a hub target (`roomHit()`), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or an ability well or a potion slot (`stripHit()`); any other item slot is read, not
   handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](the-hud-corners.md)); **grab** — dragging a
   slider; **reticle** — everywhere else in play.

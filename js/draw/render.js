@@ -402,8 +402,6 @@ function cursorInfo() {
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
     if (overGear()) return { kind: 'hand' }; // the settings (js/ui/menu.js)
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
-    if (!m.panel && (overProfileTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
-    if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
   if (state.mode === 'dead' && profileUp()) { const h = state.menu.charT >= 1 ? profileHit() : null; return { kind: h && h.kind !== 'slab' && h.kind !== 'off' && h.kind !== 'badge' ? 'hand' : 'arrow' }; }

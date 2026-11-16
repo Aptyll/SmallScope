@@ -274,9 +274,9 @@ The local player's class is its **hero, picked each match** in the lobby's draft
 ([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
 it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from their slot in `initPlayers()`, and in the draft
 take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
-rivals right, their picks face-down until the draft's countdown turns them. The party's leader sets
-the rivals' level on the party screen's head (`botsSet`, js/ui/rooms.js): `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
-IMPOSSIBLE, remembered with the profile), the profile the rivals play by
+rivals right, their picks face-down until the draft's countdown turns them. The bots' level is
+pinned at PLAY (`partyStart`, js/ui/rooms.js): RANKED's read off the party's rating (`rankLevel`), FIRST MATCH's EASY (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
+IMPOSSIBLE), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Every hero is drawn only in its own looks: `drawPlayer`/`drawGhost`
 take the set from `classSet(p)`, which asks `SPRITES.champLook(cls, skin(team), heroSkinOf(p))` for
 the hero's pose set in that team's paint and the look the player wears

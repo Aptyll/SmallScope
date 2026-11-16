@@ -1,6 +1,9 @@
 # Main menu (title)
 
-`state.mode === 'title'` is a real menu, not a splash: the sim's ambient half keeps running
+`state.mode === 'title'` is every screen before a match. Its own screen (`menu.screen = 'menu'`)
+is only passed through, onto the [hub](../gameplay/settings.md) (`hubEnter`, js/ui/hub.js: the landing page,
+flat and opaque), so the world below shows only behind the other screens (the profile, the wiki,
+the notes, the skins) and between them. The sim's ambient half keeps running
 behind it (`updateTitle()` steps the animals - until a room is shared, when they stand still
 for every guest's sake, [online play](../../pvp-architecture.md#the-wire-form) - and advances the menu
 timers; players, arrows and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
@@ -19,64 +22,41 @@ sprites, weapons, shade and team rings. Every `TITLE_FLY_EVERY` s an eagle passe
 (`TITLE_WASH`, thickening to `TITLE_WASH_DEEP` under a panel or a full screen) and two bands behind
 the logo and the words. Everything else lives in the `main menu` banner and on `state.menu`:
 
-- **Items** `menuItems()` (FIRST MATCH on top while `PROFILE.guided()` is false - a profile that has
-  never seen a match to its result nor the coach through - then QUICKPLAY / RANKED / PRACTICE TOOL, and QUIT under them in the desktop build only —
-  and nothing else; `menuActivate` dispatches on the word. FIRST MATCH opens
-  the party in its `guide` mode and goes straight on to the hero pick (`partyFind`; the party screen is an ESC back) ([the coach](../gameplay/settings.md)). QUIT closes the app
-  (`steamBridge.quit`, `win:quit` in desktop/main.js): the build opens fullscreen, and a browser tab has its own X. The first three open the
-  [party lobby](../gameplay/settings.md) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
-  MATCH leads to the [lobby](../rendering.md#lobby)'s hero select, PRACTICE TOOL's START to the
-  [practice tool](../world.md#the-practice-tool) on the match's map;
-  there is no WIKI or SETTINGS item: the [wiki](the-hud-corners/the-wiki-screen.md) opens from a word in the corner of
-  the patch notes, and settings are the ESC panel's in play), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
-  above the view's foot. **`menu.hover` has one cell per item** and its length is
-  a literal in core.js, a file that loads before `menuItems`
-  exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
-  deletes a row - add an item, add a cell. `menuLayout()` is the single source of rects for hit-testing
-  (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
-  when it actually moves (`menu.moved`, set by mousemove), so arrows and hover never fight.
-  Up/Down/W/S move, Enter/Space activate, Esc/Backspace close a panel; `menuKey()` and
-  `menuClick()` are the only entry points (`keydown`/`mousedown` route there in title mode,
-  and `mousedown` re-reads the pointer position from its own event).
+- **The way in**: `hubEnter` (from `updateRooms`, js/ui/rooms.js) turns the title into the hub the
+  moment nothing else holds it (no panel, fade or intro): a party of one hosted at once
+  (`beginParty('ranked')`), or the party this screen is already in (`beginRoom`). The game's first
+  launch skips it once and goes straight into the FIRST MATCH's pick (js/app/boot.js). QUIT is
+  the hub's, on its YOU card in the desktop build (`steamBridge.quit`, `win:quit` in
+  desktop/main.js): the build opens fullscreen, and a browser tab has its own X. `menuKey()` and
+  `menuClick()` are the only entry points (`keydown`/`mousedown` route there in title mode, and
+  `mousedown` re-reads the pointer position from its own event); `menu.moved` (set by mousemove)
+  lets go of the keys' pick (`menu.keyNav`) on the screens that keep one.
 - **Dressing** (all procedural, every piece taking its alpha from the
   caller so it fades with the chrome): `drawTitleBackdrop` replaces the flat tint with one that
   weighs on the top/bottom edges plus a corner vignette, leaving the centre clear;
-  `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items; the
-  logo is `LOGO_IMG` (the picture `docs/media/logos/mainMenuSoftfall.png` keyed and baked to
-  `js/baked/logodata.js` by `app/bake-logo.js`), drawn 1:1 with its top `LOGO_Y` below the view's top edge under a cold pulsing glow,
-  still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
-  decodes. **The boot mark**: the page itself shows the same picture (`#bootmark` in index.html, an
-  `<img>` of `js/baked/logo.png`, which the same bake writes) from its first paint, on the canvas's
-  dark ground stretched over the window, through the seconds the scripts and the world take. An
-  inline script under it stands it exactly where the title will, by working `fitCanvas`'s pick of
-  the scale and `LOGO_Y` out for itself, since it runs before any script file; a change to either
-  changes it there too. The loop takes the mark down behind its first frame (js/app/boot.js), and
-  that first title has its logo at rest with no drop-in (`logoStood`) while the valley fades up
-  under it over `LOGO_DAWN`. Nothing on the title burns and nothing is ruled: `drawGoldRule` lives
-  here for the wiki's header. `PATCH_TXT` prints bottom-right and the
-  profile's picture and name bottom-left (`drawProfileTag`, js/ui/profile.js); both are click targets, and both ride the footer's
-  fade so a panel hides them.
-- **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
-  and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
-  moves (`menu.keyNav`; `menu.hover[i]` eases 0→1 toward it), a press (`menu.pressT`) sinking
-  it a px; at rest nothing is lit. No plank, slab or frame: the end screens' LOBBY is the same
-  bare word. `MENU_BW`×`MENU_BH` at `MENU_Y0` is where the lobby's PLAY and the rooms' HOST stand.
-- **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
-  `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. The `'settings'` kind is the ESC slab via `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` / `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: left of the coin tag on the title, under the add-friend on the party screen's social column; gold under the hand). While a panel is up it takes every key and click before the screen under it, the party screen too; there it stands centred over the room left of the social column (`slabCentre`, through `placeSlab`, js/sim/core.js, which relayout also uses), back to the view's centre once it has slid away
-  (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
-  `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
-  slab closes it. The `PATCH_TXT` tag
-  bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
-  [patch notes screen](the-hud-corners/the-patch-notes-screen.md).
-  The **name tag** bottom-left (`profileTagRect` / `overProfileTag` / `drawProfileTag`,
-  js/ui/profile.js, the mirror of the patch tag: the picture's face, the profile's name and a
-  quill, gold under the hand) opens the [profile](#the-profile) below. The **coin tag**
-  top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
-  the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
-  Any open panel ducks the logo to zero alpha.
+  `drawMenuSlab` is the translucent slab with gilt corner brackets. **The boot mark**: the page
+  shows the logo (`#bootmark` in index.html, an `<img>` of `js/baked/logo.png`, baked by
+  `app/bake-logo.js`) from its first paint, on the canvas's dark ground stretched over the window,
+  through the seconds the scripts and the world take. An inline script under it stands it
+  `LOGO_Y` below the top by working `fitCanvas`'s pick of the scale out for itself, since it runs
+  before any script file. The loop takes the mark down behind its first frame (js/app/boot.js),
+  and the dark ground fades off over `LOGO_DAWN` (`logoStood`) as the hub fades up; no screen
+  draws the logo. `drawGoldRule` lives here for the wiki's header. `PATCH_TXT` names the build;
+  the [patch notes screen](the-hud-corners/the-patch-notes-screen.md) is a tab beside the wiki.
+  `MENU_TXT_SCALE` is the size of the bare words a full screen's foot prints (the post-game's
+  BACK and LOBBY); `MENU_BW`×`MENU_BH` at `MENU_Y0` is where the lobby's PLAY stands.
+- **Panels** slide up from the bottom edge (`menu.panel`, `menu.panelT` over `PANEL_SLIDE_T`,
+  `menu.closing` on the way out). The `'settings'` kind is the ESC slab via
+  `renderSettings(now, { bare, slide })`, opened by the **gear** (`SET_GEAR`, `gearRect` /
+  `overGear` / `drawGear` / `openMenuPanel`, js/ui/menu.js: the bottom-right corner of the hub's
+  YOU card; gold under the hand) or by Esc on the hub. While a panel is up it takes every key and
+  click before the screen under it; it stands centred on the view (`slabCentre`, through
+  `placeSlab`, js/sim/core.js, which relayout also uses), translated by `slide`. Its widgets only
+  take input once `menuPanelReady()`, so a click can never land on a half-slid row, and clicking
+  outside the slab closes it. The hub's YOU card opens the [profile](#the-profile) below, and its
+  purse the [skins screen](#the-skins-screen).
 <a id="lobby"></a>
-- **Lobby** (`menu.screen = 'lobby'`, the HERO SELECT or champ select, entered by a party's FIND MATCH via `beginLobby`): ONE
+- **Lobby** (`menu.screen = 'lobby'`, the HERO SELECT or champ select, entered by a party's PLAY via `beginLobby`): ONE
   screen laid out **the way League's champ select is**, in Graphite and flat (the party room's
   `SC_*` colours, js/ui/lobby.js), over its **own painted night** (`drawLobbyBackdrop` — starfield, two additive aurora
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
@@ -268,7 +248,7 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
   (the minimap and the team rail down from the top, and the hud strip up from the bottom by `HUD_SLIDE`)
   while the camera settles onto the play framing.
 
-`DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
+`DBG` exposes `menu`, `hubLayout`, `roomHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
 `lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
 
 ## The skins screen

@@ -6,7 +6,7 @@
 // (renderTitle, menuKey, menuClick) is js/ui/menu.js.
 
 // ------------------------------------------------------------ lobby
-// The HERO SELECT (menu.screen = 'lobby'), where a party's FIND MATCH lands
+// The HERO SELECT (menu.screen = 'lobby'), where a party's PLAY lands
 // (js/ui/rooms.js) and every member follows (netPhase 'pick'): League's champ
 // select in Softfall's graphite, ONE screen over its own painted night -
 // never the live world - running the DRAFT (js/ui/draft.js: the positions,
@@ -290,7 +290,6 @@ function leaveLobby() {
   state.menu.screen = 'menu';
   state.menu.countT = 0;
   SFX.pickup();
-  SFX.music.play('intro');
 }
 // BAN / LOCK IN at the foot: the draft's confirm (js/ui/draft.js); the
 // count that follows the pick is the draft's, and runs to the end

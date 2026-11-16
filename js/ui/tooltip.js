@@ -143,6 +143,7 @@ function tipAt(mx, my) {
       // own ability card, read at the base cooldown since nobody has levelled
       return !h ? null : h.kind === 'row' ? tipItem(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls) : null;
     }
+    if (m.screen === 'room' && m.roomsT >= 1 && !m.panel) return hubTip(); // the hub's ability and item wells (js/ui/hub.js)
     // the hero pop-up's four ability wells raise the same card
     if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls) : null; }
     if (m.screen === 'lobby' && m.screenT >= 1) {

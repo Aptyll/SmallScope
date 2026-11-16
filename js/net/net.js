@@ -21,13 +21,13 @@ const NET = {
   ready: new Set(),          // the waiting room's: the slots whose person has said READY (the host's to keep; a guest mirrors it off each roster)
   pings: [],                 // the waiting room's: ms to the host per slot, null for a bot or the host itself (pingsHost; a guest mirrors it)
   aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads roomLevel, js/ui/rooms.js)
-  mode: null,                // the party's mode: 'quick' | 'ranked' | 'practice' (PARTY_MODES, js/ui/rooms.js), null with no party open; a guest's comes with the roster
-  botLv: null,               // a host's: RANKED's bots' level, pinned at FIND MATCH (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
+  mode: null,                // the party's mode: 'ranked' | 'guide' (PARTY_MODES, js/ui/rooms.js), 'practice' on the field, null with no party open; a guest's comes with the roster
+  botLv: null,               // a host's: RANKED's bots' level, pinned at PLAY (rankLevel); null leaves it settings.aiLevel (aiProfile, js/ai/ai-skill.js)
   ranks: [],                 // the party's: each person's RANKED rating per slot (their hello's, the host's own PROFILE.rank)
   cards: [],                 // the party's: each person's player card per slot (their hello's, the host's own cardMine; js/app/history.js)
   pos: [],                   // the host's: the draft position each guest asks for per slot (their hello's PROFILE.pos, js/ui/draft.js)
   code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
-  seek: null,                // a host's: FIND MATCH looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
+  seek: null,                // a host's: PLAY looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
   seekAt: null,              // a guest's: when, on its own clock, the party started looking (null while it is not)
   pingT: 0,                  // a host's: s toward the next round of pings
   metaIn: false,             // a guest took the host's build records this connection (js/app/builds.js)
@@ -369,7 +369,7 @@ function seatKick(slot) {
 // What the party shows beyond the seats, the host's to keep and sent with
 // every roster (and the welcome): who has said READY, the bots' level, the
 // mode, the party's code and each person's RANKED rating. READY is a
-// person's word that they are at the keys; the leader's FIND MATCH waits on
+// person's word that they are at the keys; the leader's PLAY waits on
 // every person's (roomAllReady, js/ui/rooms.js). The pings
 // go round every PING_EVERY: the host stamps a `ping` to each peer, the
 // peer sends the stamp straight back, and the round trip (eased) goes out
@@ -385,7 +385,7 @@ function roomInfo() {
 function roomInfoIn(msg) {
   if (msg.ready) NET.ready = new Set(msg.ready);
   if (msg.lvl !== undefined) NET.aiLevel = msg.lvl | 0;
-  if (msg.mode !== undefined && msg.mode !== NET.mode) { if (NET.mode) state.menu.modeFx = 0.25; NET.mode = msg.mode; } // the leader turned the mode: the head flashes
+  if (msg.mode !== undefined) NET.mode = msg.mode; // the leader's mode: RANKED, or FIRST MATCH set at its PLAY
   if (msg.code) NET.code = String(msg.code);
   if (Array.isArray(msg.ranks)) NET.ranks = msg.ranks;
   if (Array.isArray(msg.cards) && msg.cards.length <= MAX_PLAYERS) { NET.cards = msg.cards.map(peopleClean); peopleNote(msg.cards); } // the party's player cards (js/app/history.js)

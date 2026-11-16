@@ -77,23 +77,8 @@ function profileLayout() {
   return { col, pic, field, badges, statsY, tabs, search, body: pfBody(), tab: m.pfTab };
 }
 
-// ---- the name tag on the title --------------------------------------------
-function profileTagRect() {
-  return { x: 6, y: VIEW_H - 14, w: 10 + 4 + pixelTextWidth(PROFILE.name()) + 4 + 6, h: 10 };
-}
-function overProfileTag() { return overRect(profileTagRect(), 3, 3); }
-// the picture's face small, the name and its quill: gold under the hand
-function drawProfileTag() {
-  const hot = !state.menu.panel && overProfileTag();
-  const r = profileTagRect(), nm = PROFILE.name();
-  pfFace(profilePic(), r.x, r.y, 10, 1, true);
-  if (hot) { ctx.fillStyle = '#c89a3c'; pfRim(r.x - 1, r.y - 1, 12, 12); }
-  drawPixelTextShadow(ctx, nm, r.x + 14, r.y + 3, hot ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
-  stampGrid(PC_QUILL, hot ? PC_QUILL_HOT : PC_QUILL_PAL, r.x + 14 + pixelTextWidth(nm) + 4, r.y + 3, 1);
-}
-
 // ---- in and out -----------------------------------------------------------
-// Open from the title (the name tag), from the party screen (a seat's face,
+// Open from the hub (the YOU card, a match row, the ladder, a seat's face:
 // back to 'room' on the way out) or OVER A MATCH that has ended (an end
 // screen's row or the post-game's face: menu.pfOver, the match running on
 // under it, its own ease and keys - nothing of the match's screens moves).

@@ -114,24 +114,6 @@ function skinArt(tab, r, t) {
   return { img: cv, sx: 0, sy: 0, w: cv.width, h: cv.height };
 }
 
-// ---- the coin tag -----------------------------------------------------------
-// top-right of the title: the coin and the purse, the way into the screen
-function coinTagRect() {
-  const s = String(PROFILE.coins());
-  const w = 8 + 3 + pixelTextWidth(s);
-  return { x: VIEW_W - 5 - w, y: 5, w, h: 8 };
-}
-function overCoinTag() {
-  const r = coinTagRect();
-  return overRect(r, 3);
-}
-function drawCoinTag() {
-  const hot = !state.menu.panel && overCoinTag();
-  const r = coinTagRect();
-  stampGrid(SK_COIN, SK_COIN_PAL, r.x, r.y, 1);
-  drawPixelTextShadow(ctx, String(PROFILE.coins()), r.x + 11, r.y + 1, hot ? '#ffd95c' : '#cfe0ff', 'rgba(15,22,50,0.9)');
-  if (hot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(r.x + 11, r.y + 9, r.w - 11, 1); }
-}
 
 // ---- the screen -------------------------------------------------------------
 // the navbar's tabs left to right from the grid's left edge (glyph, gap,
@@ -243,7 +225,6 @@ function beginSkins() {
 function leaveSkins() {
   state.menu.screen = 'menu';
   SFX.pickup();
-  SFX.music.play('intro');
 }
 // what the pointer is on: { kind: 'tab'|'card', i } or null
 function skinsHit() {

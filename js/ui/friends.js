@@ -1,7 +1,6 @@
 // ------------------------------------------------------------ friends
-// The party lobby's social column (League's, down the right edge; the
-// pixels under `the column` below) and, under the wrapper with Steam up, the
-// Steam friends in it, read every FR_POLL s off the bridge
+// The hub's FRIENDS panel (js/ui/hub.js; the pixels under `the panel`
+// below) and, under the wrapper with Steam up, the Steam friends in it, read every FR_POLL s off the bridge
 // (desktop/steam-friends.js), and the people you played with. A friend's row
 // is a face (the hero they last locked in while they are in Softfall), a dot
 // on its corner and a line under the name in the colour of where they are -
@@ -16,7 +15,7 @@
 // request itself). The person-plus at the column's head opens Steam's
 // friends list. A friend's patch that is not yours shows in red where their
 // party's count would be, and no step: that join would be refused. The keys
-// reach the column from a seat with right, walk it with up and down (Enter
+// reach the panel from PLAY with right, walk it with up and down (Enter
 // on a group folds it), and leave it with left.
 //
 // THE CARD: a friend's invite while this screen is on the title - their
@@ -26,20 +25,16 @@
 // (friendsPresence): the `status` line Steam's own friends list shows, its
 // Join Game (`connect`) whenever this screen's party takes a friend (on any
 // menu: the standing party, js/ui/rooms.js; never in a match or a hero
-// select), and the sf_* keys the column
+// select), and the sf_* keys the panel
 // above reads on a friend's row (sf_hero: their face). A minute into a match with people, the
 // lobby's other members are marked played with (friendsPlayed).
 //
 // No bridge, no friends call, or a bridge that answers `ok: false` (koffi
-// missing): FRIENDS.on stays false, the column keeps only its head (you and
-// your code), and an empty seat's + still opens
-// Steam's own invite.
+// missing): FRIENDS.on stays false, the panel keeps only the party's code
+// and JOIN, and an empty seat's + copies the code.
 const FR_POLL = 3;          // s between reads of the list while the title is up
-const SOCIAL_W = 156;         // the social column down the right edge (drawSocial); the party's seats centre in what is left
-const SOCIAL_W_N = 120;       // ...on a view under 600 wide (a 5:4 screen), so the row of seats still fits beside it
-function socialW() { return VIEW_W >= 600 ? SOCIAL_W : SOCIAL_W_N; }
-const SOCIAL_PAD = 8;         // px inside the column's edges
-const SOCIAL_HEAD = 46;       // the column's head (you and the code) ends on the page's head line
+const SOCIAL_PAD = 8;         // px inside the panel's edges
+const SOCIAL_CODE = 16;       // the code's line over JOIN (or at the panel's foot)
 const FR_ROW = 20, FR_GROUP_H = 13; // a friend's row (face, name, what they are doing), a group's head
 const FR_FACE = 16;         // a friend's face
 const FR_TOP = 4;           // px between the head's line and the first group
@@ -101,7 +96,7 @@ function friendsPresence(b) {
   const hero = PROFILE.hero(), key = [st, lobby, open, NET.mode || '', n, hero].join('|');
   if (key === FRIENDS.rp) return;
   FRIENDS.rp = key;
-  const mode = PARTY_MODES[NET.mode] || PARTY_MODES.quick, word = mode.charAt(0) + mode.slice(1).toLowerCase();
+  const mode = PARTY_MODES[NET.mode] || PARTY_MODES.ranked, word = mode.charAt(0) + mode.slice(1).toLowerCase();
   const status = st === 'match' ? 'In a match' : st === 'pick' ? 'Picking heroes' : st === 'practice' ? 'Practice Tool' : st === 'room' || n > 1 ? word + ' party, ' + n + ' of ' + partyCap(NET.mode) : 'In the menus';
   b.presence({ status, connect: open ? '+connect_lobby ' + lobby : '', sf_lobby: open ? lobby : '', sf_mode: NET.mode || '', sf_n: String(n), sf_state: st, sf_patch: PATCH_TXT, sf_hero: hero });
 }
@@ -130,30 +125,30 @@ function friendDo(f) {
   if (act === 'fold') { FRIENDS.fold[f.group] = !FRIENDS.fold[f.group]; SFX.pickup(); return; }
   if (act === 'add') { b.overlayUser('friendadd', f.id); SFX.place(); return; }
   if (act === 'join') { steamJoinRequested(f.lobby); return; }
-  b.inviteFriend(friendsLobby(), f.id, { mode: NET.mode || 'quick', n: partySize(), patch: PATCH_TXT });
+  b.inviteFriend(friendsLobby(), f.id, { mode: NET.mode || 'ranked', n: partySize(), patch: PATCH_TXT });
   FRIENDS.sent[f.id] = FR_SENT;
-  FRIENDS.invites = FRIENDS.invites.filter((q) => q.id !== f.id).concat({ id: f.id, name: f.name }); // listed over INVITE (drawRoomInvite, rooms.js)
+  FRIENDS.invites = FRIENDS.invites.filter((q) => q.id !== f.id).concat({ id: f.id, name: f.name }); // the friends asked into this party
   SFX.place();
 }
 
-// ---- the column ------------------------------------------------------------
-// One plate down the party screen's right edge, top to foot: YOU at its
-// head (your face, your name, and under it the party's code in gold - a
-// click copies it; dim, with a red dot blinking after it, while the link is
-// down), and your friends down the rest of it. Without Steam the friends
-// are not there and the column is your head alone.
-function socialRect() { const w = socialW(); return { x: VIEW_W - w, y: 0, w, h: VIEW_H }; }
-function socialCodeRect() {
-  const R = socialRect(), code = roomCode();
-  return code ? { x: R.x + SOCIAL_PAD + 34, y: 24, w: pixelTextWidth(code, 2), h: 10 } : null;
+// ---- the panel -------------------------------------------------------------
+// The hub's FRIENDS (L.friends): the head with the person-plus that opens
+// Steam's friends list, your friends down it, and at its foot the party's
+// code in gold (a click copies it; dim, with a red dot blinking after it,
+// while the link is down) over JOIN, the slots a friend's code goes in,
+// while you are a party of one. Without Steam the friends are not there.
+function socialFoot(L) { return codeBoxShown() || state.menu.joining ? L.box.y - SOCIAL_CODE : L.friends.y + L.friends.h - SOCIAL_CODE - 2; }
+function socialCodeRect(L) {
+  const code = roomCode();
+  return code ? { x: L.friends.x + SOCIAL_PAD, y: socialFoot(L) + 3, w: pixelTextWidth(code, 2), h: 10 } : null;
 }
-// Steam's friends list: the person-plus at the head's far end, level with your name
-function socialAddRect() { const R = socialRect(); return { x: R.x + R.w - SOCIAL_PAD - 8, y: 12, w: 8, h: 7 }; }
+// Steam's friends list: the person-plus at the head's far end
+function socialAddRect(L) { const R = L.friends; return { x: R.x + R.w - SOCIAL_PAD - 8, y: R.y + 7, w: 8, h: 7 }; }
 // the rows under the head, FRIENDS.scroll rows down
 function friendsLayout(L) {
   if (!FRIENDS.on || !L.seats.length || state.menu.joining) return null;
-  const R = socialRect(), x = R.x + SOCIAL_PAD, w = R.w - 2 * SOCIAL_PAD, y = SOCIAL_HEAD;
-  const bottom = VIEW_H - 10;
+  const R = L.friends, x = R.x + SOCIAL_PAD, w = R.w - 2 * SOCIAL_PAD, y = R.y + HUB_HEAD;
+  const bottom = socialFoot(L) - 2;
   const on = FRIENDS.list.filter((f) => frGroup(f) < 3), off = FRIENDS.list.filter((f) => frGroup(f) === 3);
   const rows = [];
   const group = (key, list) => {
@@ -169,10 +164,10 @@ function friendsLayout(L) {
   for (let i = FRIENDS.scroll; i < rows.length; i++) {
     const h = H(rows[i]);
     if (yy + h > bottom) break;
-    out.push({ x: R.x, y: yy, w: R.w, h, f: rows[i] });
+    out.push({ x: R.x + 1, y: yy, w: R.w - 2, h, f: rows[i] });
     yy += h;
   }
-  return { x, y, w, bottom, rows: out, more: FRIENDS.scroll + out.length < rows.length, add: socialAddRect() };
+  return { x, y, w, bottom, rows: out, more: FRIENDS.scroll + out.length < rows.length, add: socialAddRect(L) };
 }
 function friendsScrollBy(d) { FRIENDS.scroll = Math.max(0, FRIENDS.scroll + d); }
 function friendsOver() { const F = state.menu.screen === 'room' ? friendsLayout(roomLayout()) : null; return !!F && mouse.x >= F.x && mouse.y >= F.y && mouse.y < F.bottom; }
@@ -184,13 +179,13 @@ function friendsHit(L) {
   return null;
 }
 function friendHeadDo() { const b = friendsBridge(); if (b) { b.overlayFriends(); SFX.place(); } }
-// the keys: right from a seat enters the column, up and down walk its rows, left goes back
+// the keys: right from PLAY enters the panel, up and down walk its rows, left goes back
 function friendsKey(k, L) {
   const m = state.menu, F = friendsLayout(L), d = moveDir(k);
   if (!F || !F.rows.length) { m.fcur = -1; return false; }
   const rows = F.rows;
   const at = Math.max(0, Math.min(rows.length - 1, m.fcur));
-  if (d === 'left' || k === 'escape') { m.fcur = -1; m.rseat = L.seats[L.seats.length - 1].p.id; SFX.pickup(); return true; }
+  if (d === 'left' || k === 'escape') { m.fcur = -1; m.rseat = -1; m.rword = 1; SFX.pickup(); return true; } // back onto PLAY
   if (d === 'up' || d === 'down') {
     const to = at + (d === 'down' ? 1 : -1);
     if (to < 0 && FRIENDS.scroll > 0) friendsScrollBy(-1);
@@ -211,8 +206,8 @@ function frBmp(x, y, rows, col) {
 function frStatus(f) {
   const g = frGroup(f);
   if (g === 0) {
-    if (f.state === 'room' || (f.state === 'menu' && f.n > 1)) return { t: (PARTY_MODES[f.mode] || PARTY_MODES.quick) + ' ', n: f.patch === PATCH_TXT ? f.n + '/' + partyCap(f.mode) : frPatch(f.patch), bad: f.patch !== PATCH_TXT };
-    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'pick' ? 'PICKING' : f.state === 'practice' ? PARTY_MODES.practice : 'SOFTFALL' };
+    if (f.state === 'room' || (f.state === 'menu' && f.n > 1)) return { t: (PARTY_MODES[f.mode] || PARTY_MODES.ranked) + ' ', n: f.patch === PATCH_TXT ? f.n + '/' + partyCap(f.mode) : frPatch(f.patch), bad: f.patch !== PATCH_TXT };
+    return { t: f.state === 'match' ? 'IN A MATCH' : f.state === 'pick' ? 'PICKING' : f.state === 'practice' ? 'PRACTICE' : 'SOFTFALL' };
   }
   return { t: ['', 'ONLINE', 'AWAY', 'OFFLINE'][g] };
 }
@@ -230,17 +225,15 @@ function drawFriendFace(x, y, f) {
   ctx.fillStyle = frColor(f); ctx.fillRect(x + s - 4, y + s - 4, 4, 4);
 }
 function drawSocial(L, now, hit) {
-  const m = state.menu, R = socialRect(), x = R.x + SOCIAL_PAD;
-  ctx.fillStyle = SC_ROW_B; ctx.fillRect(R.x, R.y, R.w, R.h);
-  ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, R.y, 1, R.h);
-  // the head: you, and the party's code behind the link's pip
-  drawScoreFace(x, 10, 26, { id: localId, you: true, team: player.team, level: player.level || 1 });
-  drawPixelText(ctx, (player.name || '').slice(0, 14), x + 34, 12, SC_LIT, 1);
-  const cr = socialCodeRect(), up = !!(NET.transport && NET.transport.open);
+  const m = state.menu, R = L.friends, x = R.x + SOCIAL_PAD;
+  hubPanel(R, 'hub.friends', '', false, false); // no page of its own: the person-plus opens Steam's list
+  if (FRIENDS.on) { const a = socialAddRect(L); frBmp(a.x, a.y, FR_ICON.add, hit && hit.f && hit.f.head ? '#ffd95c' : SC_GOLD); }
+  // the foot: the party's code behind the link's pip, and JOIN while you are alone
+  const cr = socialCodeRect(L), up = !!(NET.transport && NET.transport.open);
+  if (FRIENDS.on && (cr || codeBoxShown() || m.joining)) { ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, socialFoot(L), R.w, 1); } // under the friends' rows
   if (cr) drawPixelText(ctx, roomCode(), cr.x, cr.y, !up ? SC_DIM : now - (m.copyAt || -9) < 0.5 ? SC_LIT : hit && hit.kind === 'code' ? '#ffd95c' : SC_GOLD, 2);
-  if (!up && Math.floor(now * 3) % 2) { ctx.fillStyle = RM_BAD; ctx.fillRect(x + 34 + (cr ? cr.w + 4 : 0), 27, 4, 4); } // the link is down: the code would find nothing
-  if (FRIENDS.on) { const a = socialAddRect(); frBmp(a.x, a.y, FR_ICON.add, hit && hit.f && hit.f.head ? '#ffd95c' : SC_GOLD); }
-  ctx.fillStyle = SC_EDGE; ctx.fillRect(R.x, SOCIAL_HEAD, R.w, 1);
+  if (!up && Math.floor(now * 3) % 2) { ctx.fillStyle = RM_BAD; ctx.fillRect(x + (cr ? cr.w + 4 : 0), socialFoot(L) + 6, 4, 4); } // the link is down: the code would find nothing
+  if (codeBoxShown() || m.joining) drawCodeBox(L.box, m.joining || m.seek ? Object.assign({}, m, { codeOn: true }) : m, now, hit && hit.kind === 'box');
   if (!m.joining) drawFriends(L, hit && hit.kind === 'friend' ? hit : null);
 }
 function drawFriends(L, hit) {
@@ -311,7 +304,7 @@ function drawFriendCard() {
   ctx.fillStyle = SC_GOLD; ctx.fillRect(x, y, 2, r.h);
   frBmp(x + 7, y + 8, FR_ICON.invite, SC_GOLD);
   drawPixelText(ctx, talkClean(c.name).slice(0, 18) || '?', x + 19, y + 5, SC_LIT, 1);
-  const sub = (PARTY_MODES[c.mode] || PARTY_MODES.quick) + '  ';
+  const sub = (PARTY_MODES[c.mode] || PARTY_MODES.ranked) + '  ';
   drawPixelText(ctx, sub, x + 19, y + 13, SC_DIM, 1);
   drawPixelText(ctx, c.patch === PATCH_TXT ? c.n + '/' + partyCap(c.mode) : frPatch(c.patch), x + 19 + pixelTextWidth(sub), y + 13, c.patch === PATCH_TXT ? SC_DIM : RM_BAD, 1);
   drawPixelText(ctx, 'JOIN', r.join.x, r.join.y + 2, h === 'join' ? '#ffd95c' : SC_GOLD, 1);

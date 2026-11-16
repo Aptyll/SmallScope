@@ -38,6 +38,7 @@ const MOVED = [
   'js/ui/panels.js',
   'js/ui/select.js',
   'js/ui/wiki.js',
+  'js/ui/hub.js',
 ];
 
 // a hero found by its name (heroIndex, js/sim/player.js) is a lookup, not a word printed
