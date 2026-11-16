@@ -13,7 +13,9 @@ contextBridge.exposeInMainWorld('steamBridge', {
   joinLobby: (id) => ipcRenderer.invoke('steam:joinLobby', String(id)),
   leaveLobby: (id) => ipcRenderer.invoke('steam:leaveLobby', String(id)),
   lobby: (id) => ipcRenderer.invoke('steam:lobby', String(id)),
-  lobbies: () => ipcRenderer.invoke('steam:lobbies'),
+  lobbies: (ask) => ipcRenderer.invoke('steam:lobbies', ask), // ask: { patch, seek, near } narrows Steam's list (steam-friends.js, lobbyFilter)
+  pingLoc: () => ipcRenderer.invoke('steam:pingLoc'), // this machine's ping location as text ('' until Steam has one; steam-messages.js)
+  pingTo: (loc) => ipcRenderer.invoke('steam:pingTo', String(loc)), // ms to another machine's location, -1 when it cannot be told
   setLobbyData: (id, data) => ipcRenderer.invoke('steam:setLobbyData', String(id), data),
   invite: (id) => ipcRenderer.invoke('steam:invite', String(id)),
   log: (line) => ipcRenderer.invoke('steam:log', String(line)), // a line into softfall-steam.log beside the exe

@@ -205,3 +205,18 @@ function drawRailScaled(now, slide) {
   ctx = o;
   ctx.drawImage(railScaleCv, hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s), slideY, hudPx(bw * s), hudPx(bh * s));
 }
+// ------------------------------------------------------------ the host stall mark
+// A client whose host has gone quiet (no snapshot for HOST_STALL_T: its
+// upload or its machine fell behind, or the link dropped) sees it at once:
+// the party's link bars, one red bar blinking, on a small plate under the
+// rail - not a frozen screen it has to guess at. Gone the moment a
+// snapshot lands (NET.snapAt, js/net/net.js).
+const HOST_STALL_T = 1.0; // s without a snapshot before the mark shows
+function hostStalled() { return NET.isClient && NET.synced && (state.mode === 'play' || state.mode === 'drop' || state.mode === 'dead') && !state.over && (performance.now() - NET.snapAt) / 1000 > HOST_STALL_T; }
+function drawHostStall(now) {
+  if (!hostStalled()) return;
+  const w = 15, h = 12, x = Math.round(VIEW_W / 2 - w / 2), y = railBottom() + 3;
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = SC_PLATE; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+  if (Math.floor(now * 3) % 2) drawPingBars(x + 3, y + 3, 999); else drawPingBars(x + 3, y + 3, null);
+}

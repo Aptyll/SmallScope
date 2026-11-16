@@ -28,6 +28,8 @@ const RESULT_OK = 1;          // k_EResultOK
 const MSG_HEAD = 32, MSG_SIZE_AT = 8, MSG_IDTYPE_AT = 16, MSG_STEAMID_AT = 24;
 const STATUS_SIZE = 256;      // room for SteamNetConnectionRealTimeStatus_t (its first two ints: state, ping)
 const STATE_NAMES = { 0: 'none', 1: 'connecting', 2: 'finding route', 3: 'connected', 4: 'closed', 5: 'problem' };
+const PING_LOC_SIZE = 512;    // sizeof(SteamNetworkPingLocation_t): an opaque m_data[512]
+const PING_TEXT_MAX = 1024;   // k_cchMaxSteamNetworkingPingLocationString
 
 function dllPath() {
   if (process.env.SF_STEAM_API) return process.env.SF_STEAM_API; // a stand-in library, for a check off Steam
@@ -62,6 +64,14 @@ function steamMessages() {
     ids = new Map();
     recv = Buffer.alloc(8 * RECV_MAX); // Steam writes RECV_MAX message pointers here
     M.ok = true;
+    // ping locations, for matchmaking (js/ui/matchmaking.js): on their own, so a miss leaves the messages working
+    try {
+      api.locHere = lib.func('float SteamAPI_ISteamNetworkingUtils_GetLocalPingLocation(void *self, void *result)');
+      api.locText = lib.func('void SteamAPI_ISteamNetworkingUtils_ConvertPingLocationToString(void *self, void *loc, void *buf, int size)');
+      api.locParse = lib.func('bool SteamAPI_ISteamNetworkingUtils_ParsePingLocationString(void *self, const char *text, void *result)');
+      api.locPing = lib.func('int SteamAPI_ISteamNetworkingUtils_EstimatePingTimeFromLocalHost(void *self, void *loc)');
+      api.utilsSelf = utils;
+    } catch (e) { api.locHere = null; }
   } catch (e) { M.error = e.message; api = null; }
 
   // one identity buffer per SteamID, kept: Steam reads it on every call
@@ -119,6 +129,29 @@ function steamMessages() {
     const st = Buffer.alloc(STATUS_SIZE);
     const state = api.info(self, idOf(steamId), null, st);
     return { state: STATE_NAMES[state] || String(state), ping: st.readInt32LE(4) };
+  };
+  // this machine's ping location as text, for its lobby's data: '' until
+  // Steam has measured the relays (a few seconds after InitRelayNetworkAccess)
+  M.pingLoc = () => {
+    if (!api || !api.locHere || !api.utilsSelf) return '';
+    try {
+      const loc = Buffer.alloc(PING_LOC_SIZE);
+      if (!(api.locHere(api.utilsSelf, loc) >= 0)) return '';
+      const buf = Buffer.alloc(PING_TEXT_MAX);
+      api.locText(api.utilsSelf, loc, buf, PING_TEXT_MAX);
+      const end = buf.indexOf(0);
+      return buf.toString('utf8', 0, end < 0 ? PING_TEXT_MAX : end);
+    } catch (e) { return ''; }
+  };
+  // Steam's estimate of the round trip from here to a machine at that location (ms), -1 when it cannot tell
+  M.pingTo = (text) => {
+    if (!api || !api.locHere || !api.utilsSelf || !text || text.length >= PING_TEXT_MAX) return -1;
+    try {
+      const loc = Buffer.alloc(PING_LOC_SIZE);
+      if (!api.locParse(api.utilsSelf, String(text), loc)) return -1;
+      const ms = api.locPing(api.utilsSelf, loc);
+      return ms >= 0 ? ms : -1;
+    } catch (e) { return -1; }
   };
   return M;
 }

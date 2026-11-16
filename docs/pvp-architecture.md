@@ -357,9 +357,9 @@ wire: the handshake is `PATCH_TXT` and the `world` in the `hello` (a snapshot ca
 
 | `t` | Dir | Form | Body |
 | --- | --- | --- | --- |
-| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `world` (`worldKind()`: 0 the match's map, 1 the practice tool, 2 the arena), `name`, `cls` (the profile's hero as a `CLASSES` index, `profileHero()`), `rank` (its RANKED rating), `pos` (the draft position it asks for, `PROFILE.pos`; -1 any), and from a page crossing to meet another party `party` (its own party's code) and `pn` (how many people it brings) |
+| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `world` (`worldKind()`: 0 the match's map, 1 the practice tool, 2 the arena), `name`, `cls` (the profile's hero as a `CLASSES` index, `profileHero()`), `rank` (its RANKED rating), `pos` (the draft position it asks for, `PROFILE.pos`; -1 any), and from a page crossing into a match `party` (its own party's code) and `pn` (how many people it brings) |
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `tick`, `roster`, `phase` (the waiting room's page: `room` or `pick`), `ready`, `lvl` (as on a `roster`) |
-| `refuse` | h→c | JSON | `why`: `VERSION` / `WORLD` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host did not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
+| `refuse` | h→c | JSON | `why`: `VERSION` / `WORLD` / `LATE` / `FULL` / `KICKED` / `BUSY` / `MATCHED` (a crossing party the host could not seat) from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since FIND MATCH while the party is looking, else -1), `roomInfo` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `draft` | c→h | JSON | `k` (`hover`, `lock`, `role` or `skin`), `h`, `id`: the guest's press in the draft - a hero pointed at or confirmed, its seat moved to position `h`, or look `id` worn on hero `h` (`draftAct`, js/ui/draft.js); the host answers with a `draft` |
@@ -372,7 +372,7 @@ wire: the handshake is `PATCH_TXT` and the `world` in the `hello` (a snapshot ca
 | `meta` | c→h, h→c | JSON | `recs`: up to `BUILDS_SEND` build records (js/app/builds.js). A guest sends its own on its welcome; the host merges them once a seating (`netMetaIn`) and answers that guest with its own, so every join leaves both ends knowing both. Each record is checked for being possible (`buildsClean`), at most `BUILDS_TAKE` new ones are kept from one join each way (`NET.metaIn` on a guest), and each is kept once a match and seat |
 | `said` | h→c (`*`) | JSON | `slot`, `s`: a line of the room's chat, the host's own and every guest's it kept, cleaned to the pixel font's letters (`talkClean`); while the draft is on only to the speaker's own side |
 | `rematch` | h→c (`*`) | JSON | no body: the room plays again, sent once the moment a match ends (`rematchOffer`, js/ui/rooms.js, `NET.rematchSent`) and again on the host's LOBBY. A guest's LOBBY reloads for a fresh world on the same map and joins the same code; once the host has gone after it, the guest drops whatever else the old socket brings and does not end on HOST LEFT |
-| `cross` | h→c (`*`) | JSON | `room`, `code`, `n`: the leader's party is crossing to meet another (`seekCross`, js/ui/matchmaking.js); each guest saves its party and reloads to join that room with `party`/`pn` in its hello |
+| `cross` | h→c | JSON | `room`, `code`, `n`: the leader's room is crossing to the match its plan names (`seekCross`, js/ui/matchmaking.js), sent to each guest with its own party's code and size; the guest keeps its party (`homeParty`) and joins that room in place with `party`/`pn` in its hello (`crossGo`) |
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the hero select's draft) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
@@ -500,26 +500,39 @@ The same screens and the same protocol ride either transport; only the list and 
    so a code typed on a title page reloads onto the right one, and a page on the wrong one is
    refused (`WORLD`). The
    leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
-10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY and RANKED's FIND MATCH sets `NET.seek`,
-   lists the room with `seek: mode` and `hs`, how well its leader's machine hosts (`seekPower`: a
-   fixed load through `snapEncode`, timed once a page at the press, ~19% per step), and reads the list.
-   Of the parties looking in one mode, the one with the highest `hs` hosts, the lowest code among equals: it waits `MATCH_WAIT` (8 s, plus `MATCH_HOLD` while one it hosts over is still
-   listed); every other party crosses to the one it sees hosting over all (`seekHosts`, `seekCross`): the leader saves its
-   party (`sessionStorage` `softfall.home`: code, mode, guests' slots), sends `cross`, and every
-   page of it reloads as `?join=ROOM&back=1&party=CODE&pn=N` (`CROSS`). The host
-   seats the first crossing party's hellos on its rival side (`crossAdmit`) and refuses any other
-   `MATCHED`; it starts once all `pn` are in or after `MATCH_GATHER` (20 s), and with nobody found
-   at `MATCH_WAIT` it starts with bots. A page that has not been welcomed ignores what the host says
-   to the whole room. A crossed page goes home on LOBBY after the match, on a refusal, after
-   `MATCH_JOIN` (6 s) of failed tries, or when its host walks out (`partyLost`): its leader hosts
-   the party's code again and its guests join it (`crossHomeUrl`). The
-   rival party's people are left out of the host's rematch seats (`pr.cross`).
-   On Steam the list is `steamRooms`, which hands on every key of the lobby's data (`seek`
-   included: a list that dropped it let no two Steam parties meet, each going to its own draft
-   with bots). The wrapper asks Steam for every region's lobbies, not only the caller's
-   (`worldwide`, desktop/steam-friends.js), and every page starts holding no lobby (`steam:fresh`
-   from preload.js), so a page that reloaded mid-seek, to cross, or for a rematch never leaves a
-   lobby behind on the list still saying it looks, or carrying a code a friend's lookup finds.
+10. **Matchmaking** (js/ui/matchmaking.js). QUICKPLAY, RANKED and 1V1's FIND MATCH sets `NET.seek`
+   and lists the room with `seek: mode`, `fill` (each side's people plus the seats it holds for a
+   party on its way in), `hub` (it has taken a party in), `hs` (how well it hosts, `seekScore`: the
+   machine's speed through `snapEncode`, `seekPower`, less `PROFILE.hostLag` times `HOST_LAG_W`, its
+   record of falling behind its people when it last hosted, `netHostLag`) and on Steam `pl`, its
+   leader's ping location. Every looking leader packs the same list the same way (`seekPlan`): rooms
+   taking parties in first, fullest first, then the best `hs`, the lowest code among equals; each
+   party goes into the first room before it with a side it fits on whole (`seekSide`: the emptier
+   side, never past the mode's party cap), and a room taking parties in merges into a fuller one when
+   both its sides fit (`seekFits`); anything else hosts. While its search is younger than
+   `MATCH_NEAR` (20 s) a party passes over rooms Steam estimates further than `MATCH_PING` (150 ms).
+   A leader whose plan names another room crosses (`seekCross`): every guest gets `cross` naming the
+   room and its own party (a friend of the leader the leader's code; in a merging room each party
+   that crossed in its own code again), and after `MATCH_LEAVE` the leader follows. Crossing is in
+   place (`crossGo`): the page leaves its room and joins the other with `party` and `pn` in the hello
+   (`CROSS`), no reload, trying it for `MATCH_JOIN` (6 s). The host's door (`crossAdmit`) holds the
+   party's seats on the side it fits and seats its people there as they come, for `MATCH_GATHER`
+   (20 s), and refuses a party that no longer fits `MATCHED`. A room starts once both sides are
+   full; otherwise after `MATCH_WAIT` (8 s), held `MATCH_HOLD` (6 s) past the last party it saw
+   coming, and never past `MATCH_MAX` (30 s), when it takes no more; the empty seats go to bots. A
+   page that has not been welcomed ignores what the host says to the whole room. A crossed page
+   remembers its party (`homeParty`): after the match its LOBBY takes it home (`crossHomeUrl`: its
+   leader hosts the party's code again, its guests join it); refused, out of tries, or its host gone
+   before the match, it goes home and its leader looks again once its guests are back
+   (`seekResume`, `MATCH_RESUME`), the clock carrying on. The other parties' people are left out of
+   the host's rematch seats (`pr.cross`).
+   On Steam the list is `steamRooms`, which hands on every key of the lobby's data (`seek`, `fill`,
+   `hs`, `pl` included). Its poll asks the wrapper for this patch's lobbies only, and while the party
+   looks only those looking in its mode, up to 100, near regions first while the search is young
+   (`seekAsk` -> `steam:lobbies` -> `lobbyFilter`, desktop/steam-friends.js); a code lookup reaches
+   every region. Every page starts holding no lobby (`steam:fresh` from preload.js), so a page that
+   reloaded for a rematch never leaves a lobby behind on the list still saying it looks, or carrying a
+   code a friend's lookup finds.
 
 ### Joins, leaves, reconnects
 

@@ -30,6 +30,7 @@ function renderUI(now) {
   // (railSc), and stays up while you are out - who is up is what a spectator reads
   drawRailScaled(now, slide);
   drawVotePanel(); // the surrender vote, under the rail (js/ui/vote.js)
+  drawHostStall(now); // a host gone quiet: the link mark under the rail (js/ui/rail.js)
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/ui/shop.js), and exactly what a
   // trade is made of stays lit above the wash: the counter itself and the

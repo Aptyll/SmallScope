@@ -111,11 +111,13 @@ function renderScoreboard() {
       drawPixelTextOutline(ctx, lv, x + SB_LVL - pixelTextWidth(lv, 2), ry + 4, SC_LIT, SC_INK, 2);
       // the hero at 2x in the numbers' white, and under it the person playing it (a bot is its hero alone),
       // cut to the column so a long name never runs under the wells
-      const hero = CLASSES[p.cls] ? CLASSES[p.cls].name : p.name, two = boardName(p) !== hero;
+      // a bot wears the bots' level bars there instead (drawBotBars, js/ui/rooms.js): never mistaken for a person
+      const hero = CLASSES[p.cls] ? CLASSES[p.cls].name : p.name, bot = !isHuman(p), two = bot || boardName(p) !== hero;
       let nm = boardName(p);
       while (nm.length > 1 && pixelTextWidth(nm) > SB_ITEMS - SB_NAME - 4) nm = nm.slice(0, -1);
       drawPixelTextOutline(ctx, hero, x + SB_NAME, ry + (two ? 0 : 4), you ? SC_GOLD : SC_LIT, SC_INK, 2);
-      if (two) drawPixelText(ctx, nm, x + SB_NAME, ry + 13, SC_LBL, 1); // bare, under the hero's own outline
+      if (bot) drawBotBars(x + SB_NAME, ry + 13, roomLevel(), false);
+      else if (two) drawPixelText(ctx, nm, x + SB_NAME, ry + 13, SC_LBL, 1); // bare, under the hero's own outline
       if (gone) drawPixelTextOutline(ctx, tr('board.out'), x + SB_NAME + 4 + pixelTextWidth(hero, 2), ry + 6, SC_LBL, SC_INK, 1);
       // what it carries: six wells, a part's rim or a finished item's (itemMetal), the strip's own
       for (let i = 0; i < 6; i++) {

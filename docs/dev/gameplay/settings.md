@@ -19,7 +19,7 @@ middle and the others filling outward: a person's seat is a card with a 3x portr
 hero they last locked in, the rating in RANKED, a guest's READY tick and link bars (green, amber, red as the round trip grows),
 a crown over the leader's portrait; an empty seat is a bare dotted well with a gold + that invites
 (the code copied, or Steam's overlay). The leader's pointer on a guest's card shows a red X that
-shows them out (`seatKick`). The rival side is never shown here: it is another party met by
+shows them out (`seatKick`). The rival side is never shown here: it is people met by
 matchmaking, or bots. While you are alone JOIN and four slots fill the head's right plate: type or paste (Ctrl+V) a friend's four letters to join their
 party (`partySeek` looks the code up on the relay's list, or in a Steam lobby's data, which
 carries the same code: `steamCode`, js/net/transport-steam.js); a code nobody answers to
@@ -32,12 +32,13 @@ the friends invited from the column listed over it, a green tick once they are i
 one button, League's, with an X attached before it that leaves: a
 guest's READY or the leader's FIND MATCH, dim and flashing the seats it waits on until every
 guest is ready (`partyFind`). FIRST MATCH goes straight to bots, pinned EASY (`NET.botLv` 0), and its
-rematch comes back as QUICKPLAY. In QUICKPLAY and RANKED the party then looks for another party doing the
+rematch comes back as QUICKPLAY. In QUICKPLAY, RANKED and 1V1 the party then looks for people doing the
 same (js/ui/matchmaking.js): the word becomes a gold clock (a press stops looking) and the clock
-also shows after the mode's name on every member's screen. Two parties that find each other play each
-other, the one with the higher code reloading into the other's room as its rival side; with
-nobody found within 8 s, bots take the rival side. After the match each party goes back to its
-own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
+also shows after the mode's name on every member's screen. Solo players and parties looking at
+once are packed into whole 5v5s, each party kept on one side, the best host hosting and the others
+joining its room in place; a room starts once both sides are full, or with bots in the empty seats
+after 8 s (longer while more people are on their way, 30 s at most). After the match each party
+goes back to its own party lobby. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/champ-select.js), which every member sees as the
 leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
 guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the

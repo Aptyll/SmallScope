@@ -122,6 +122,9 @@
       // the FIRST MATCH's coach was seen through or turned off: the title
       // stops offering it (js/ui/guide.js)
       guided: false,
+      // how often this machine fell behind its people when it hosted, 0..1
+      // (netHostLag, js/net/net.js): matchmaking picks other hosts first (seekScore)
+      hostLag: 0,
       owned: [],
       worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
@@ -226,6 +229,7 @@
         profile.rankedN = typeof s.rankedN === 'number' && isFinite(s.rankedN) && s.rankedN >= 0 ? Math.floor(s.rankedN) : profile.rank !== RANK_START ? 1 : 0;
         // a profile from before the coach is not offered it once it has played
         profile.guided = typeof s.guided === 'boolean' ? s.guided : profile.stats.matches > 0;
+        if (typeof s.hostLag === 'number' && s.hostLag >= 0 && s.hostLag <= 1) profile.hostLag = s.hostLag;
         if (Array.isArray(s.owned)) {
           for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
         }
@@ -408,6 +412,9 @@
     // ---- new players ----------------------------------------------------------
     guided() { return profile.guided; },
     setGuided(on) { on = on !== false; if (profile.guided !== on) { profile.guided = on; saveNow(); } },
+    // ---- hosting ----------------------------------------------------------------
+    hostLag() { return profile.hostLag; },
+    setHostLag(f) { profile.hostLag = Math.max(0, Math.min(1, +f || 0)); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 

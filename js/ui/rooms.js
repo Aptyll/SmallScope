@@ -56,7 +56,7 @@ function roomsFeedOpen() {
   if (roomsFeed) return;
   const m = state.menu;
   m.rooms = [];
-  roomsFeed = (netSteam() ? steamRooms : (cb) => wsRooms(netRelay(), cb))((rooms) => { m.rooms = rooms; });
+  roomsFeed = netSteam() ? steamRooms((rooms) => { m.rooms = rooms; }, seekAsk) : wsRooms(netRelay(), (rooms) => { m.rooms = rooms; });
 }
 function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
 
@@ -72,7 +72,7 @@ function leaveRoom() {
   roomsFeedClose();
   netLeave();
   NET.mode = null;
-  homeParty = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
+  homeParty = null; CROSS = null; // walked out of a match met by matchmaking: no party to go back to (js/ui/matchmaking.js)
   const m = state.menu;
   m.screen = 'menu'; m.seek = null; m.joining = false;
   FRIENDS.invites = []; // the names over INVITE belong to the party just left
@@ -145,6 +145,7 @@ function rankLevel() {
 // profile's rating, and any match seen through stops the title offering FIRST MATCH
 function rankResult(won) {
   if (NET.mode === 'ranked') PROFILE.addRank(won ? RANK_STEP : -RANK_STEP);
+  hostLagSave(); // how well this machine hosted it, for the next match's pick (js/net/net.js)
   if (!PRACTICE) PROFILE.setGuided();
 }
 
@@ -240,7 +241,8 @@ pageListen(window, 'paste', (e) => {
 });
 function updateRooms(dt) {
   const m = state.menu;
-  updateSeek(dt); // the leader's FIND MATCH looking for another party (js/ui/matchmaking.js)
+  updateSeek(dt); // the leader's FIND MATCH looking for a match (js/ui/matchmaking.js)
+  seekResume(dt); // ...and looking again, home from a room that turned the party away
   if (m.codeShake > 0) m.codeShake = Math.max(0, m.codeShake - dt);
   if (m.modeFx > 0) m.modeFx = Math.max(0, m.modeFx - dt);
   // a code being looked for: joined the moment the list names it, a rattle when it never does
@@ -251,26 +253,26 @@ function updateRooms(dt) {
   }
   // a join answered: the party's seats on a welcome, our own party again on a refusal
   if ((m.screen === 'room' || PRACTICE) && NET.role === 'client' && m.joining) {
-    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.codeOn = false; m.code = ''; if (!PRACTICE) beginRoom(); }
+    if (NET.welcomed) { m.joining = false; m.joinWait = 0; m.joinTo = null; m.codeOn = false; m.code = ''; if (!PRACTICE) beginRoom(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) {
-      const why = NET.refused || NET.transport.error;
+      const refused = NET.refused, why = refused || NET.transport.error;
       netLeave();
       // back from a match: the leader may not have reopened the party yet, so
       // the join is tried again for a while before it counts as a refusal
-      if (m.joinWait > 0 && why !== 'KICKED' && why !== 'VERSION' && why !== 'MATCHED') m.joinRetry = REMATCH_RETRY;
+      if (m.joinWait > 0 && !(CROSS && refused) && why !== 'KICKED' && why !== 'VERSION' && why !== 'MATCHED') m.joinRetry = REMATCH_RETRY; // a crossing page turned away goes home at once
       else { m.joining = false; m.codeShake = NAME_SHAKE_T; SFX.deny(); partyGiveUp(); }
     }
   }
   if (m.joinWait > 0) {
     m.joinWait -= dt;
-    if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(JOIN_AT_BOOT);
-    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; partyGiveUp(); }
+    if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(m.joinTo || JOIN_AT_BOOT); // a room crossed to (crossGo), or the one this page came up to join
+    if (m.joinWait <= 0 && NET.role === 'solo') { m.joining = false; m.joinTo = null; partyGiveUp(); }
   }
 }
 // a join that never landed: our own party again on the title, or the field
 // alone on the practice page
 function partyGiveUp() {
-  if (homeParty) { crossHome(); return; } // a party that crossed to meet another and was turned away: home (js/ui/matchmaking.js)
+  if (homeParty) { crossHome(true); return; } // a party that crossed to a match and was turned away: home, to look again (js/ui/matchmaking.js)
   if (PRACTICE) { NET.mode = null; return; }
   beginParty(NET.mode || 'quick');
 }
@@ -486,7 +488,7 @@ function roomLevel() { return NET.isClient ? NET.aiLevel : NET.botLv != null ? N
 const REMATCH_KEY = 'softfall.rematch';
 const REMATCH_WAIT = 180; // s a guest back from a match keeps trying the party's code (the leader may still be reading the stats)
 const REMATCH_RETRY = 1;  // s between those tries
-let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the last match
+let rematchCarry = null;  // a reopened party's: { seats: uid -> slot } from the last match, and `seek`: the seconds a search ran when a match turned it away (seekResume, js/ui/matchmaking.js), else null
 
 function rematchUrl() {
   if (homeParty) return crossHomeUrl(); // a party that crossed over for this match goes back to its own (js/ui/matchmaking.js)
@@ -525,12 +527,11 @@ function rematchBootHost() {
   let c = null;
   try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
   NET.mode = (c && PARTY_MODES[c.mode]) && c.mode !== 'guide' ? c.mode : 'quick'; // after the FIRST MATCH the party plays for real
-  rematchCarry = { seats: (c && c.seats) || {} };
+  rematchCarry = { seats: (c && c.seats) || {}, seek: c && typeof c.seek === 'number' && NET.mode !== 'practice' ? c.seek : null };
   beginRoom();
 }
 function rematchBootJoin() {
-  // a party crossing to meet another joins a room that is already up: a few tries, then home (js/ui/matchmaking.js)
-  if (/[?&]back=1/.test(location.search)) state.menu.joinWait = CROSS ? MATCH_JOIN : REMATCH_WAIT;
+  if (/[?&]back=1/.test(location.search)) state.menu.joinWait = REMATCH_WAIT;
 }
 
 // ------------------------------------------------------------ the practice field
@@ -599,7 +600,7 @@ function practiceBootHost() {
   let c = null;
   try { c = JSON.parse(sessionStorage.getItem(REMATCH_KEY) || 'null'); sessionStorage.removeItem(REMATCH_KEY); } catch (e) { }
   NET.mode = 'practice';
-  rematchCarry = { seats: (c && c.seats) || {} };
+  rematchCarry = { seats: (c && c.seats) || {}, seek: c && typeof c.seek === 'number' && NET.mode !== 'practice' ? c.seek : null };
 }
 function practiceBootJoin(code) {
   const m = state.menu;
