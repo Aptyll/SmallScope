@@ -288,9 +288,9 @@ the bots' `BOT_BUILDS` if a class should buy it. A **stack** item (`stack: n`, t
 built from nothing and into nothing, sits in one slot with its count in `p.potions`, and needs its
 own buy, sell and use branches (`buyPotion`, `takePotion`, `useItem`).
 
-**Adding a class** — a hero goes through the `new-hero` skill
-([.claude/skills/new-hero/](../../.claude/skills/new-hero/SKILL.md)), which runs this list in order
-with Noah's picks around it. The tables make most of it mechanical, and every screen picks the new
+**Adding a class** — a hero goes through the `hero` skill
+([.claude/skills/hero/](../../.claude/skills/hero/SKILL.md)), which runs this list in order
+with Noah's picks around it (a rework of a hero already here is that skill too). The tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the champ select's grid grows a cell (give the entry its `pos` list, so the position filters and the bots' pick know it), the strip, the hero
 pop-up's preview/ledger, the wiki's hero page, the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) and the names a bot's `low` call may say
@@ -323,7 +323,15 @@ table does. What a new hero needs written:
    `icon` (on `AB32_PAL`, one palette across every big icon), any world entities it leaves and
    their tick and draw through the `HERO_*` tables, and **a `bot` row on all four** saying when a
    bot presses it. `abBotKey` asks it only for a key that is bought and ready (`abUnlocked`,
-   `abReady`), so a key still locked at level 0 is never tried;
+   `abReady`), so a key still locked at level 0 is never tried. Each row also carries its `tip`
+   (the tooltip's one line, at most 40 characters) and, when the picture alone does not say what
+   the key does, a `mark`; a `rank` key the tooltip has no words for gets a line in
+   `AB_RANK_STAT` (js/ui/tooltip.js). A blow that lands after `use()` has returned (a dash, a
+   shot, a ground zone) passes `ab: '<row id>'` to `hurtUnit`, or the death recap shows an unnamed
+   ability, and anything a cast leaves in the world copies its rank numbers when it is cast, joins
+   `SAVE_ROOTS` (js/sim/save.js) and is packed in js/net/snapshot.js. A kit that needs a kind of
+   hook none of the `HERO_*` tables is adds a new table in js/sim/heroes.js or js/draw/heroes.js,
+   never a hero-named call in shared code;
 5. a 12×12 hero **`emblem`** in its `heroArt` row (same palette), drawn by hand (never a
    shrink), which the [team rail](rendering/the-hud-corners/the-team-rail.md), the rooms and the
    tooltips wear (`classIcon12`, js/ui/champ-select.js);

@@ -4,7 +4,7 @@ How a sprite is drawn, looked at and improved, and why it is done this way. The 
 every kind of visual asset, is the `art` skill ([.claude/skills/art/](../../.claude/skills/art/SKILL.md):
 see, brief, draw, judge, options to Noah, ship); what differs for a creature, a hero, a building, a
 place, an icon, a HUD part or an effect is in its
-[kinds.md](../../.claude/skills/art/kinds.md). The tools are in `app/art/`. A hero is `new-hero`,
+[kinds.md](../../.claude/skills/art/kinds.md). The tools are in `app/art/`. A hero is `hero`,
 which draws with this.
 
 ## What was tried

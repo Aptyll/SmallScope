@@ -10,7 +10,7 @@ reads, read [lore](docs/dev/lore.md). To find code, start at [code-map](docs/dev
 (which file and banner owns a thing). Read docs by section, never whole: a doc with a Pages index,
 only the pages you need; any other, its `## ` headings first, then the one section.
 A change that spans many files has a list in [checklists](docs/dev/checklists.md). Procedures are
-skills: `new-hero`, `art` (any new look or redraw), `shorts` and `media`, `kitchen`.
+skills: `hero`, `art` (any new look or redraw), `media` (stills, clips, Shorts), `kitchen`.
 
 ## How the code is built
 

@@ -158,6 +158,11 @@ if last and 'freeze' in E:
         emit(im)
 if last and 'card' in E:
     cd = E['card']; i, cx, cy, k = last
+    # the standing end card: the logo, the pixel Discord mark, a small white JOIN THE over a
+    # big blue DISCORD, no line under it. A card with its own `cta`, or `mark: 'steam'`
+    # (WISHLIST ON STEAM), says so itself
+    if 'cta' not in cd and cd.get('mark', 'discord') == 'discord':
+        cd = dict({'mark': 'discord', 'cta': [[('JOIN THE', 'white')], [('DISCORD', 'discord')]], 'cta_s': [20, 34], 'line': 0}, **cd)
     bg = card_bg(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE))
     CTA, MARK = cd.get('cta'), cd.get('mark', None if cd.get('cta') else 'steam')
     LOGO, STEAM = game_logo(4), steam_mark(11, MARK or 'steam'); Y = SIZE[1] / 1920   # laid out on a 1920-tall frame

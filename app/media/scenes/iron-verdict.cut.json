@@ -1,0 +1,11 @@
+{
+  "size": [1080, 1920],
+  "shots": [
+    { "name": "raise", "from": "cast-6", "to": "slam",    "k": [9, 10], "focus": "mix:hero,rival,0.5", "oy": -6, "ease": "linear" },
+    { "name": "slam",  "from": "slam",   "to": "slam+70", "k": [10, 7], "focus": "rival", "oy": -10, "ease": "out" }
+  ],
+  "texts": [
+    { "shot": "raise", "from": -2, "lines": [[["IRON VERDICT", "gold"]]], "s": 12, "y": 300 }
+  ],
+  "end": { "card": { "frames": 150 } }
+}
