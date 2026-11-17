@@ -10,7 +10,8 @@ which draws with this.
 ## What was tried
 
 The same beast was drawn by each method and shown unnamed to a reader who knew nothing about it
-(the blind read, below). Rounds are kept in the project files under `art-pipeline/proof/`.
+(the blind read, below). Rounds are kept in the project files under `art-pipeline/proof/`. The two
+worked examples of modelled surfaces are `art-quality/work/boss.py` and `ice.py`.
 
 | method | what it gave | verdict |
 | --- | --- | --- |
