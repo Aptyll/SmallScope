@@ -141,20 +141,28 @@ Its side's cable on its lane runs only as far as the furthest of its towers stil
 
 Each side's merchant — the old trader in the wide fur hat with the team-cloth crown and the white
 beard ([sprites.md](../sprites.md)'s own 16 × 18 grids, built so it never reads as a player on
-either side, with a bar in its side's paint over it and no word: its stall and the B SHOP prompt
-say what it is, `drawMerchant`) — keeps its side's **stall** beside the perch, the shop players
-walk to (the `merchant` banner, js/sim/robots.js). It raises nothing and fells nothing.
+either side, with no word over it: its tent and the B SHOP prompt
+say what it is, `drawMerchant`) — keeps its side's **trading post** in its court behind the perch,
+the shop players walk to (the `merchant` banner, js/sim/robots.js). It never walks anywhere.
 
-**The stall** (`OBJECTS.stall`, world.js) stands from boot at a written-down spot behind the perch
-on the top lane's side (`MERCH_STALL`, mirrored for BLUE; `placeStalls`): the anchor is the
-front-left tile (the row the y-sort reads), parts east and north. It carries its `team` and
-nothing else: no `tool`, no hp and no place in `structures`, so nothing swings at it, shoots it or
-sieges it. The merchant stands at its counter from the first second of a match (`spawnMerchants`
-at `beginMatch`; `merchPost`).
+**The post** (`OBJECTS.stall`, world.js) stands from boot on the perch's centre line, behind the
+bird (`MERCH_STALL` tiles from the world's edge, mirrored for BLUE; `placeStalls`), in the court the
+map cuts for it ([world](../world.md): a bay of the plaza's stones with two wings of pines round
+it), so both lanes are the same walk from it. It faces the field the way its bird does: RED's as
+drawn, BLUE's mirrored. The anchor is the front-left tile (the row the y-sort reads), parts east
+and north; the merchant's **sled** (`OBJECTS.sled`) is parked a tile off it. It carries its `team`
+and nothing else: no `tool`, no hp and no place in `structures`, so nothing swings at it, shoots it
+or sieges it.
 
-It keeps to its post a step in front of its counter, strolling a step or two either way now and then. **Wherever it is, it keeps shop** too: its own body is a
-[counter](the-merchants-counter.md) as well as its stall, open to either team, and it stands still
-and faces a customer served at its body for as long as the sale takes.
+**It builds the post itself.** A match starts with the merchant in its bird's saddle
+(`spawnMerchants` at `beginMatch`). It hops off the back to its seat (`hopT`, `MERCH_HOP` seconds,
+a straight arc of its own: no nav), then raises the tent a step every `MERCH_STEP` seconds
+(`built` 0 to `MERCH_BUILT`: its load set down, the counter, the frame, open), with a puff and a
+hammer's knock a step, and from then on it **sits** at its counter (`merchPost`), drawn as part of
+the open tent's own grid. `stallBuilt(team)` is the step a post stands at, whole with no match on.
+The post **trades from the first second**, built or not, and the body is a
+[counter](the-merchants-counter.md) too once it has landed. A seated merchant takes no part in
+`separateUnits`: it stands inside its own footprint.
 
 A hero can set bodies of its own in `robots` too: FABER's small guns and old engine
 (js/sim/faber.js) are a `robotBody` with his side, his id and a `kind` that `HERO_MACHINE`

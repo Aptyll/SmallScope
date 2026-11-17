@@ -872,7 +872,10 @@ const CASTERS = {
               art: (c) => { const k = c - STUMP_CODE, r = k % 400; return whole(SPRITES.stumps[Math.floor(k / 400)], Math.floor(r / 20) - 9, 4 + r % 20 - 9); } },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
-  stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides
+  // the trading post's code is the way it faces and the step it is built to (126..133; stallShade, js/draw/footings.js, repaints on a new step)
+  stall:    { code: (o) => 126 + o.team * 4 + stallBuilt(o.team),
+              art: (c) => { const side = (c - 126) >> 2, s = SPRITES.teamBuild[0].stall[side][(c - 126) & 3]; return whole(s, side ? OBJECTS.stall.w * TILE + SPRITES.stallBack - s.width : -SPRITES.stallBack, TILE - s.height); } },
+  sled:     { code: (o) => 134 + o.team, art: (c) => { const s = SPRITES.teamBuild[0].sled[c - 134]; return whole(s, (TILE >> 1) - (s.width >> 1), TILE - s.height); } },
 };
 
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top

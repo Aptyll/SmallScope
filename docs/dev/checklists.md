@@ -112,8 +112,7 @@ declare victory. The affordances:
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
   `DBG.merchants.length` is 2, the mode is `play` and the crew has leapt off,
-  then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
-  before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
+  then `warp` onto the rug before its post (`counterPt(stalls[team])`) — the merchant sits in its post and never moves. `DBG.openShop()`,
   `shopHit(x, y)`, `buyItem(id, p?)`/`sellItem(slot, p?)`
   and `shopLayout()` drive the panel without a pointer; `DBG.itemCost(id, p?)`, `botNextItem` and
   `botItemBuy` read what an item costs a seat and what a bot would buy, and `BUILD_ITEMS` is the

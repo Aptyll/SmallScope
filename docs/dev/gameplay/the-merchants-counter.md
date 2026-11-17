@@ -1,7 +1,7 @@
 # The merchant's counter
 
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
-**stall** (the stall its [merchant](robots.md#the-merchant) pitches beside the road's head) or to the
+**trading post** (the tent its [merchant](robots.md#the-merchant) raises in its court behind the perch) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
 mould. It sells three **starters** and 64 items in League's four tiers (**basic**, **epic**, **boots** and
 **legendary**, built out of each other) into [six item slots](#the-items), and the **health potion** (50, stacked up to 5 in one slot,
@@ -21,12 +21,12 @@ at all and draws no health bar.
 `merchNear(p)` is the resolver — the nearest **counter** within `SHOP_REACH` (34 px) of a body,
 either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured by
 `counterDist` (from the body itself, or from the nearest edge of the stall's footprint, so its back
-and sides count as well as its front; the cap and a click's walk go to `counterPt`, the middle of
-the stall's front edge) — and the `B SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is a proximity
+and sides count as well as its counter; the cap and a click's walk go to `counterPt`, the middle of
+the rug before the post's counter, on the side it faces) — and the `B SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is a proximity
 prompt. **The counter has a key of its own**, the SHOP action
-(`b` on both schemes, `keyPress`, js/app/input.js), never the work key's: a stall stands under its
-lane zipline's first pylon, and when E was both, E at that spot opened the counter every time the
-rope was wanted. So E there clips onto the cable or swings, and the cursor's
+(`b` on both schemes, `keyPress`, js/app/input.js), never the work key's: a counter can stand
+where a zipline is boarded, and when E was both, E at that spot opened the counter every time the
+rope was wanted. So E clips onto the cable or swings, and the cursor's
 [lock ring](../rendering/cursor.md) promises whatever E would do. The counter is a **panel, not a held wheel**:
 the SHOP key opens it and the SHOP key, Escape, the X or **walking out of reach** shuts it (`updateShop`
 re-checks `inReach` every step). It is HUD like the character sheet — **the sim runs
@@ -52,11 +52,8 @@ bars it covered rather than the whole song. Any ordinary `music.play`/`music.sto
 clears the hold, so a track that takes the layer for its own reason — a victory, the lobby — can
 never be undone by a release arriving after it. See the `music` banner, js/app/audio.js.
 
-The merchant **stands still and faces you** while a counter is open on its own body (`shopServing`,
-read by `updateMerchant`): it drops the bays, the felling and the loiter for as long as the sale
-takes. A counter open at the **stall** holds nobody, so its keeper goes on working. It is gated on
-the OPEN PANEL rather than on proximity because everybody lands at the roost together, and a
-merchant that stopped for anyone standing near it would never raise its stall.
+The merchant **never leaves its counter**: it sits in its post for the whole match
+([the merchant](robots.md#the-merchant)), so a counter open on it or on its post stays where it is.
 
 ## The items
 

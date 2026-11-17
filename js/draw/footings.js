@@ -1,6 +1,6 @@
 // ---- footings ---------------------------------------------------------------
-// What is built stands ON something: a road tower and the merchant's
-// stall each stand on a round of the lane's own flagstones - the same stones
+// What is built stands ON something: a road tower stands on a round of the
+// lane's own flagstones - the same stones
 // on the same grid (roadStoneAt, js/draw/ground.js), so where a round meets
 // the lane or the base's paving it is one piece - laid whole under a lip of
 // snow like the lane's edge. Drawn on the snow under every body (render,
@@ -12,7 +12,6 @@
 // down-right, under a pixel of snow lip, the lane's paving meeting it.
 const FOOTINGS = {
   tower: { rx: 50, ry: 25, at: (o) => towerFoot(o), kerb: true },
-  stall: { rx: 56, ry: 24, at: (o) => ({ x: (o.tx + OBJECTS.stall.w / 2) * TILE, y: (o.ty + 1) * TILE - 8 }) }, // its anchor is the front-left tile
 };
 const FOOT_PAD = 4; // px round the round for its lip
 const FOOT_KERB = 3; // px a kerbed round's ring of blocks is wide...
@@ -108,5 +107,29 @@ function drawFooting(o, ex, ey) {
 }
 function drawFootings(ex, ey) {
   for (const o of structures) if (FOOTINGS[o.type] && !o.dead) drawFooting(o, ex, ey);
-  for (const b of robots) if (b.merchant && stallUp(b.stall)) drawFooting(b.stall, ex, ey);
+  for (const s of stalls) if (stallUp(s)) drawStallRug(s, ex, ey);
+}
+// The merchant's RUG: rolled out before its counter once the tent is open,
+// on the stones of its court (the court is the map's own paving: COURT,
+// js/sim/field.js), its middle where a customer stands (counterPt,
+// js/ui/shop.js). Under every body, like a footing.
+function drawStallRug(o, ex, ey) {
+  if (stallBuilt(o.team) < MERCH_BUILT) return;
+  const spr = SPRITES.teamBuild[skin(o.team)].rug, c = counterPt(o);
+  const x = Math.round(c.x - ex) - (spr.width >> 1), y = Math.round(c.y - ey) - (spr.height >> 1);
+  if (x < -spr.width || x > WV_W || y < -spr.height || y > WV_H) return;
+  ctx.drawImage(spr, x, y);
+}
+// The tent throws the shade of the step it stands at, and the ground bakes a
+// caster's shade into its tiles (paintCastShade, js/draw/ground.js): when the
+// step this screen last painted is not the step it stands at now, the tiles
+// its shade can reach are painted again
+const stallShaded = [-1, -1];
+function stallShade(o, st) {
+  if (stallShaded[o.team] === st) return;
+  stallShaded[o.team] = st;
+  const d = OBJECTS.stall;
+  for (let ty = o.ty - d.h + 1 + CAST_REACH[1]; ty <= o.ty + CAST_REACH[3]; ty += 2) {
+    for (let tx = o.tx + CAST_REACH[0]; tx <= o.tx + d.w - 1 + CAST_REACH[2]; tx += 2) if (inWorld(tx, ty)) repaintGround(tx, ty);
+  }
 }
