@@ -6,16 +6,19 @@
 #   HEAD = {'side': (x0, y0, x1, y1)}             the head's box per view (optional; checks the face has room)
 #   DETAIL = 'ew'                                 letters allowed to be single pixels (eye, glint)
 #   TEAM = 'tT'                                   letters that wear the team colour (heroes)
+#   BARE = 'sSw'                                  letters that lie on the ground with no outline (a drift's snow)
 #   VS = [('TODAY', 'old.png')]                   what to show it beside: today's sprite, the rejected one
+#   NEAR = [('PINE', 'refs/tree.0.png')]            today's neighbours for the bench (app/art/cut.js saves them)
 #   REFS = 'hero,wolf,rabbit,bear'                  today's sprites standing in the game frame with it
 # Writes beside the asset, in <asset>/now/: <view>.png (1x), <view>.txt (the grid, as the game
-# takes it), checks.txt, board.png, and with --frame the real game frames (needs app/server.js).
+# takes it), checks.txt, board.png, bench.png (app/art/bench.py: the pixels with a ruler, beside VS
+# and NEAR), and with --frame the real game frames (needs app/server.js).
 # --keep also copies now/ to the next r<N>/, and the board shows the last kept round beside the
 # new one, so each round is judged against the one before it.
 import sys, os, glob, shutil, subprocess, importlib.util, json
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import check
+import check, bench
 from board import board
 
 
@@ -34,7 +37,7 @@ def main(argv):
         png = os.path.join(now, v + '.png'); a.image().save(png); pngs.append(png)
         open(os.path.join(now, v + '.txt'), 'w').write(a.js(name + v.capitalize()))
         hexes = lambda letters: tuple(a.pal[c] for c in letters if a.pal.get(c))
-        m = check.measure(a.image(), heads.get(v), hexes(getattr(M, 'DETAIL', '')), hexes(getattr(M, 'TEAM', '')))
+        m = check.measure(a.image(), heads.get(v), hexes(getattr(M, 'DETAIL', '')), hexes(getattr(M, 'TEAM', '')), hexes(getattr(M, 'BARE', '')))
         bad = check.judge(m, kind)
         fails += sum(l == 'FAIL' for l, *_ in bad)
         report.append('%s  %s' % (v, ' '.join('%s=%s' % kv for kv in m.items())))
@@ -58,6 +61,8 @@ def main(argv):
         else:
             report.append('  no game frame: ' + (r.stderr.strip().splitlines() or ['is node app/server.js running?'])[-1])
     board(os.path.join(now, 'board.png'), vs + items, title=name.upper() + ('  STAGED' if frames else ''), scale=getattr(M, 'SCALE', 8), frames=frames)
+    near = [(n + '!', os.path.join(os.path.dirname(src), f)) for n, f in getattr(M, 'NEAR', [])]
+    bench.save(os.path.join(now, 'bench.png'), [(n, f) for n, f in vs] + [(v, a) for v, a in views.items()] + near, scale=getattr(M, 'SCALE', 8) + 4)
     open(os.path.join(now, 'checks.txt'), 'w').write('\n'.join(report) + '\n')
     print('\n'.join(report)); print(os.path.join(now, 'board.png'))
     if '--keep' in argv:

@@ -6,7 +6,9 @@
 # certain whoever looks (it melts into snow, it is the wrong size, the side cannot be read), a
 # WARN is a place to look, and a pass means nothing more than "now look at it".
 #   python3 app/art/check.py sprite.png [--kind big|pack|hero|prop] [--head x0,y0,x1,y1]
-#                            [--detail #rrggbb,...] [--team #rrggbb,...] [--json]
+#                            [--detail #rrggbb,...] [--team #rrggbb,...] [--bare #rrggbb,...] [--json]
+# --bare names the colours that lie on the ground with no outline (a drift's snow): they are
+# left out of the border tests, since snow on snow has no edge to ink.
 # Exit 1 when a FAIL line prints.
 import sys, json
 import numpy as np
@@ -21,7 +23,7 @@ def L(rgb):
     return (0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]) / 255
 
 
-def measure(im, head=None, detail=(), team=()):
+def measure(im, head=None, detail=(), team=(), bare=()):
     a = np.asarray(im.convert('RGBA'))
     op = a[..., 3] > 127
     ys, xs = np.where(op)
@@ -59,11 +61,13 @@ def measure(im, head=None, detail=(), team=()):
         seen |= grow; cur = grow; d += 1
     dist[op & ~seen] = d
     dark = lum[op].min()
+    bkeys = [int(c[1:], 16) for c in bare]                 # colours that lie on the ground with no outline (snow on snow)
+    edge = edge & ~np.isin(key, bkeys)
     ink = edge & (lum <= dark + 0.14)
     m = {
         'w': int(x1 - x0 + 1), 'h': int(y1 - y0 + 1), 'px': int(op.sum()), 'colours': len(cols),
         'heroes_tall': round((y1 - y0 + 1) / HERO_H, 2),
-        'outline': round(float(ink.sum() / edge.sum()), 3),
+        'outline': round(float(ink.sum() / max(1, edge.sum())), 3),
         'lone': int(lone.sum()), 'lone_pct': round(float(lone.sum() / op.sum() * 100), 2),
         'melts_snow': round(float((np.abs(lum[edge] - L(SNOW)) < 0.14).mean()), 3),
         'melts_dirt': round(float((np.abs(lum[edge] - L(DIRT)) < 0.10).mean()), 3),
@@ -127,12 +131,12 @@ def judge(m, kind):
 
 def main(argv):
     if not argv or argv[0].startswith('--'):
-        print('usage: python3 app/art/check.py sprite.png [--kind big|pack|hero|prop] [--head x0,y0,x1,y1] [--detail #hex,..] [--team #hex,..] [--json]')
+        print('usage: python3 app/art/check.py sprite.png [--kind big|pack|hero|prop] [--head x0,y0,x1,y1] [--detail #hex,..] [--team #hex,..] [--bare #hex,..] [--json]')
         return 1
     f = argv[0]; o = dict(zip(argv[1::2], argv[2::2])) if '--json' not in argv else dict(zip([a for a in argv[1:] if a != '--json'][0::2], [a for a in argv[1:] if a != '--json'][1::2]))
     kind = o.get('--kind', 'prop')
     head = tuple(int(v) for v in o['--head'].split(',')) if '--head' in o else None
-    m = measure(Image.open(f), head, tuple(o.get('--detail', '').split(',')) if o.get('--detail') else (), tuple(o.get('--team', '').split(',')) if o.get('--team') else ())
+    m = measure(Image.open(f), head, tuple(o.get('--detail', '').split(',')) if o.get('--detail') else (), tuple(o.get('--team', '').split(',')) if o.get('--team') else (), tuple(o.get('--bare', '').split(',')) if o.get('--bare') else ())
     bad = judge(m, kind)
     if '--json' in argv:
         print(json.dumps({'measures': m, 'faults': [dict(level=l, measure=n, value=v, fix=s) for l, n, v, s in bad]}))
