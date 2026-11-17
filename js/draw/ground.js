@@ -306,7 +306,7 @@ function bakeLakes() {
   const first = [], styleOf = new Map();
   const seed = (c, r, inside, s) => {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const x = c.tx + dx, y = c.ty + dy;
+      const x = Math.round(c.tx) + dx, y = Math.round(c.ty) + dy; // a tile's: the middle may sit between two
       if (isLake(x, y) && inside(x, y)) { first.push(idx(x, y)); styleOf.set(idx(x, y), s); }
     }
   };

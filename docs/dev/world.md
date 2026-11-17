@@ -19,11 +19,14 @@ stable per tile.
   images but the top and bottom halves differ; `FIELD_WAYS` and a clearing round every camp and the
   pump stay open whatever the wander does); a creek of rough ice runs down the middle column from the
   top hollow's frozen pool, round the middle's grove, to the bottom hollow's (`fieldCreek`,
-  `HOLLOW_POOL`); no pits or dens open off the lanes; and a pine border at least `FIELD_EDGE` tiles deep stands round it
+  `HOLLOW_POOL`); one pit opens off a lane, the orca's COVE above the top one, on the middle column
+  (`COVE`, `fieldCove`, top only: an oval bowl with a ledge up from the lane on either side,
+  `COVE_LEDGE`, and a waterfall at its back, `COVE_FALL`); and a pine border at least `FIELD_EDGE` tiles deep stands round it
   all. RED (team 0) holds the west end, BLUE the east. Nothing rolls.
 - `genWorld()` (first at boot, js/app/boot.js) stands a wall pine (`wall: true`, which never falls:
   `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
-  is negative, and freezes the orca's pool and the creek (ground `1`, `orcaLakeAt`, `fieldCreek`). It reads the
+  is negative, and freezes the orca's pool and the creek (ground `1`, `orcaLakeAt`, `fieldCreek`); the cove's waterfall
+  tiles stand as `OBJECTS.waterfall`, solid water drawn whole by `drawCoveFall` (js/draw/cove.js). It reads the
   open tiles off `fieldGrid`, which also closes any open tile no `FIELD_PATH`-wide square covers and
   any pocket a walk from the perch never reaches, so every way through is at least `FIELD_PATH` wide.
   All three ices are rough (`fieldRough`, read by `slickUnder`): they hold a foot like snow. The camps, towers, stalls,
@@ -133,10 +136,11 @@ same walk away. `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
 
 The neutral monsters stand at fixed, mirrored sites (`CAMP_SITES`, js/sim/camps.js), written for
 RED's top quarter and folded to the other three like the field (`campSites`): a site on the middle
-row or column is its own twin. Per side: two SCRAP PILES of stray robots in the bottom half
-(`scrap`, brass walkers: the jungle's farm, `farm`), nothing in the top half's two sites, and a rabbit WARREN in deep
-snow by the base mouth (`meadow`). The orca's pool is the pit above the top lane and the black
-bear's den the pit below the bottom one, one each for the whole map. Nothing rolls. What lives
+row or column is its own twin. Every camp but the orca's is a SCRAP PILE of stray robots (`scrap`,
+brass walkers: the jungle's farm, `farm`): per side one at each hall's outer end and one by the
+base mouth, and one in each hollow on the middle column, shared. The orca's pool is the cove above
+the top lane, one for the whole map, with nothing below; the black bear and the rabbit warren have
+no site. Nothing rolls. What lives
 in them: [wildlife](gameplay/wildlife.md#camp-monsters-neutral-until-hit). The gold pumps stand
 one each side of the middle (`PUMP_SPOT`, js/sim/pumps.js).
 

@@ -1,0 +1,243 @@
+'use strict';
+// ------------------------------------------------------------ the orca's cove, drawn
+// The pixels of the epic camp's pit (COVE, COVE_FALL: js/sim/field.js).
+//   the rim      a face of cut stone hanging down from every pine wall that
+//                has the cove's open ground south of it (the 3/4 view shows
+//                a wall's face only there), in strata wavering along it,
+//                darkening to its foot, a line of its own darkest stone where
+//                it meets the ground and a band of shade under that, and
+//                icicles off its lip. In the GROTTO - the waterfall's tiles,
+//                the notch in the back wall - the face runs all the way down
+//                to the plunge pool. Baked once (coveRimBuild) off the
+//                tiles as they stand, its edge smoothed between tile centres
+//                and roughened a little so it never runs in steps; laid flat
+//                under everything that stands (drawCoveRim), so the pines
+//                and the bodies cover it.
+//   the falls    a curtain of water down the grotto, widening as it falls, its
+//                edges frozen, a curl of white over the lip; per column a
+//                streak of its own speed, period and length scrolling down;
+//                foam churning at its foot; a plunge pool of open water the
+//                falls keep from freezing, with rings spreading and spray
+//                lifting. Every pixel is a pure function of the loop's frame
+//                (COVE_FRAMES of them, each period dividing the loop), baked
+//                once into its own canvas and drawn y-sorted at the grotto's
+//                foot (coveDraws), so a body south of the pool stands over it.
+// The view's own clock picks the frame: it is scenery, no sim reads it.
+const COVE_FRAMES = 12;      // frames in the falls' loop
+const COVE_FRAME_S = 0.09;   // s a frame
+const COVE_FALL_V = 2;       // px a frame the slow streaks drop (the fast ones twice it)
+const COVE_FACE = 12;        // px of stone face under a wall
+const COVE_CUT_Y = 33.2;     // field y past which the lane keeps its own pines: no face
+const COVE_STONE = ['#465066', '#606a84', '#808aa2', '#343a50']; // the face, its lit band, its top edge, its deep (and its foot line)
+const COVE_SHADE = 'rgba(16,24,56,0.22)'; // the face's shade on the ground under it
+const COVE_ICE = ['#cdeeff', '#96d2f0', '#60a0cd']; // ice: lit, mid, its own dark
+const COVE_SNOW = '#f0f5fb';
+const COVE_WATER = ['#26548c', '#4a8cc4', '#8ccef0', '#d6f4ff', '#ffffff']; // deep .. foam
+const COVE_RGB = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+// the grotto's box in world px: the waterfall's tiles
+function coveGrotto() {
+  const F = COVE_FALL.tiles;
+  return { x0: F[0] * TILE, y0: F[1] * TILE, x1: (F[2] + 1) * TILE, y1: (F[3] + 1) * TILE };
+}
+
+// ---- the rim ---------------------------------------------------------------
+let coveRimCv = null; // { cv, x0, y0 }
+// a tile the face hangs off: a pine of the wall (the grotto counts as open:
+// its own face is the back of it)
+function coveWall(tx, ty) {
+  const o = inWorld(tx, ty) ? objects[idx(tx, ty)] : null;
+  return !inWorld(tx, ty) || (!!o && o.type === 'tree');
+}
+function coveRimBuild() {
+  const pad = 3, cx = COVE[0], cy = COVE[1];
+  const tx0 = Math.floor(cx - COVE[2] - COVE_LEDGE[0]) - pad, tx1 = Math.ceil(cx + COVE[2] + COVE_LEDGE[0]) + pad;
+  const ty0 = Math.floor(COVE_FALL.top) - pad, ty1 = Math.ceil(COVE_CUT_Y) + 1;
+  const x0 = tx0 * TILE, y0 = ty0 * TILE, W = (tx1 - tx0) * TILE, H = (ty1 - ty0) * TILE;
+  // open ground per pixel: the tiles' open-ness between their centres, and
+  // a little of the map's noise so the edge never runs in steps
+  const open = new Uint8Array(W * H);
+  const op = (tx, ty) => coveWall(tx, ty) ? 0 : 1;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const x = (x0 + i + 0.5) / TILE - 0.5, y = (y0 + j + 0.5) / TILE - 0.5;
+    const a = Math.floor(x), b = Math.floor(y), fx = x - a, fy = y - b;
+    const v = op(a, b) * (1 - fx) * (1 - fy) + op(a + 1, b) * fx * (1 - fy) + op(a, b + 1) * (1 - fx) * fy + op(a + 1, b + 1) * fx * fy;
+    open[j * W + i] = v + (hash2(((x0 + i) >> 1) + 9001, ((y0 + j) >> 1) + 61) - 0.5) * 0.25 > 0.5 ? 1 : 0;
+  }
+  const G = coveGrotto();
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const put = (i, j, c) => { if (i >= 0 && j >= 0 && i < W && j < H) penDot(g, c, i, j); };
+  for (let i = 0; i < W; i++) {
+    const wx = x0 + i, grotto = wx >= G.x0 && wx < G.x1;
+    let n = 999;
+    for (let j = 0; j < H; j++) {
+      n = open[j * W + i] ? n + 1 : 0;
+      const wy = y0 + j, fx = (wx + 0.5) / TILE, fy = (wy + 0.5) / TILE;
+      // in the grotto the face runs from wherever its wall stands down to the
+      // pool, wherever that is: its foot is the grotto's own
+      const face = grotto ? n + G.y1 - 1 - wy : COVE_FACE;
+      if (!n || n > face + (grotto ? 0 : 3)) continue; // the grotto's foot is its pool's rim
+      if (!(grotto && wy < G.y1) && (fy > COVE_CUT_Y || fieldCove(fx, fy) > 1.2)) continue;
+      if (n > face + 1) { put(i, j, COVE_SHADE); continue; }       // its shade on the ground
+      if (n === face + 1) { put(i, j, COVE_STONE[3]); continue; }  // its foot, in its own darkest stone
+      let c;
+      if (grotto) c = coveRock(wx, wy, n, face);
+      else {
+        const stra = (wy + Math.round(3 * Math.sin(wx / 9))) % 5;     // strata, wavering along the wall
+        c = n <= 1 ? COVE_STONE[2] : stra === 0 ? COVE_STONE[1] : COVE_STONE[0];
+        if (n > face * 0.65) c = stra ? COVE_STONE[3] : COVE_STONE[0];
+        if ((wx * 7 + wy * 3) % 23 === 0 && n > 2) c = COVE_STONE[3];                       // a chip
+        if (wx % 11 === Math.floor(hash2(Math.floor(wx / 11), 1) * 9) && n > 2 && n < face - 1) c = COVE_STONE[3]; // a joint
+      }
+      put(i, j, c);
+    }
+  }
+  // icicles off the lip, either side of the falls
+  for (let k = 0; k < 22; k++) {
+    const i = Math.round((cx - 8 + k * 0.75) * TILE) - x0 + Math.floor(hash2(k, 5) * 3);
+    if (i < 0 || i >= W || (x0 + i >= G.x0 - 2 && x0 + i < G.x1 + 2)) continue;
+    let top = -1;
+    for (let j = 1; j < H; j++) if (open[j * W + i] && !open[(j - 1) * W + i]) { top = j; break; }
+    if (top < 0 || fieldCove((x0 + i + 0.5) / TILE, (y0 + top + 0.5) / TILE) > 1.2) continue;
+    const L = 3 + Math.floor(hash2(k, 6) * 6);
+    for (let j = 0; j < L; j++) { put(i, top + j, j < L - 1 ? COVE_ICE[0] : COVE_SNOW); if (j < L - 1) put(i + 1, top + j, COVE_ICE[2]); }
+  }
+  // the grotto's own icicles: a fringe off the notch's lip, broken where the water pours
+  for (let i = G.x0 - x0; i < G.x1 - x0; i += 3) {
+    const wx = x0 + i, d = Math.abs(wx + 1.5 - COVE_FALL.x * TILE);
+    if (d < COVE_FALL.half * TILE + 4) continue;
+    const L = 2 + Math.floor(hash2(wx, 77) * 7), top = G.y0 - y0 + 1;
+    for (let j = 0; j < L; j++) { put(i, top + j, j < L - 1 ? COVE_ICE[0] : COVE_SNOW); if (j < L - 2) put(i + 1, top + j, COVE_ICE[1]); }
+  }
+  penFlush();
+  coveRimCv = { cv, x0, y0 };
+}
+// the grotto's back at a world px: broken rock, one block per cell of a
+// jittered grid (COVE_ROCK px), each its own tone, a crack of the deep stone
+// between two, the lit top edge of each and snow on a few of them, the whole
+// darkening toward the pool - `n` px down from its wall, of `face`
+const COVE_ROCK = [10, 8];
+function coveRock(wx, wy, n, face) {
+  const [cw, ch] = COVE_ROCK, gx = Math.floor(wx / cw), gy = Math.floor(wy / ch);
+  let d1 = 1e9, d2 = 1e9, best = 0, by = 0;
+  for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+    const X = gx + i, Y = gy + j, px = (X + 0.15 + 0.7 * hash2(X + 700, Y + 31)) * cw, py = (Y + 0.15 + 0.7 * hash2(X + 41, Y + 703)) * ch;
+    const d = Math.hypot((wx - px) / cw, (wy - py) / ch * 1.3);
+    if (d < d1) { d2 = d1; d1 = d; best = X * 7919 + Y; by = py; } else if (d < d2) d2 = d;
+  }
+  if (n <= 1) return COVE_STONE[2];
+  if (d2 - d1 < 0.09) return COVE_STONE[3];                                  // a crack between two blocks
+  const k = hash2(best, 88), low = n / face;
+  if (wy < by - ch * 0.3 && d2 - d1 < 0.3) return k > 0.72 && low < 0.7 ? COVE_SNOW : COVE_STONE[2]; // a block's lit top, snow on a few
+  const tone = k + low * 0.9 - 0.45;                                       // each its own tone, darker down
+  return tone > 0.75 ? COVE_STONE[3] : tone > 0.2 ? COVE_STONE[0] : COVE_STONE[1];
+}
+// flat, under all that stands (drawFlatPass, js/draw/passes.js)
+function drawCoveRim(ex, ey) {
+  if (!coveRimCv) coveRimBuild();
+  const R = coveRimCv, x = R.x0 - ex, y = R.y0 - ey;
+  if (x > WV_W || y > WV_H || x + R.cv.width < 0 || y + R.cv.height < 0) return;
+  ctx.drawImage(R.cv, x, y);
+}
+
+// ---- the falls -------------------------------------------------------------
+const coveFallCvs = [];
+let coveFallBox = null; // { x0, y0, w, h }: world px every frame is drawn into
+// one frame of the loop, `t` 0..COVE_FRAMES-1, into its own canvas
+function coveFallFrame(t) {
+  const G = coveGrotto(), B = coveFallBox, W = B.w, H = B.h;
+  const rgb = new Float32Array(W * H * 3), al = new Float32Array(W * H);
+  const sx = (wx) => Math.round(wx) - B.x0, sy = (wy) => Math.round(wy) - B.y0;
+  const ink = COVE_WATER.map(COVE_RGB), ice = COVE_ICE.map(COVE_RGB), stone = COVE_RGB(COVE_STONE[3]);
+  const mix = (x, y, c, a) => {
+    if (x < 0 || y < 0 || x >= W || y >= H || a <= 0) return;
+    const k = y * W + x, oa = al[k], na = a + oa * (1 - a);
+    for (let q = 0; q < 3; q++) rgb[k * 3 + q] = (c[q] * a + rgb[k * 3 + q] * oa * (1 - a)) / na;
+    al[k] = na;
+  };
+  const put = (x, y, c) => mix(x, y, c, 1);
+  const h = (a, b) => hash2(a + 4111, b + 977);
+  const mid = sx(COVE_FALL.x * TILE), top = sy(COVE_FALL.top * TILE), foot = sy(COVE_FALL.foot * TILE);
+  const half = Math.round(COVE_FALL.half * TILE), height = foot - top;
+  // the curtain
+  for (let j = -2; j <= height; j++) {
+    const y = top + j, gr = Math.max(0, j) / height;
+    const wl = half + Math.floor(gr * 5 + 1.2 * Math.sin(j / 5 + 1)), wr = half + Math.floor(gr * 5 + 1.2 * Math.sin(j / 4 + 2.5)); // it widens as it falls, its sides wavering each its own way
+    for (let i = -wl - 1; i <= wr + 1; i++) {
+      const x = mid + i, u = (i + wl) / (wl + wr);
+      if (i === -wl - 1 || i === wr + 1) { if (j >= 0) put(x, y, (Math.floor(j / 3) + i) % 4 ? stone : ice[2]); continue; } // its ragged frozen edges
+      if (i === -wl || i === wr || ((i === -wl + 1 || i === wr - 1) && (j * 7 + i + 99) % 5 === 0)) { if (j >= 0) put(x, y, i < 0 ? ice[0] : ice[1]); continue; }
+      const curl = 2 - Math.floor(2 * Math.pow(i / Math.max(wl, wr), 2)); // the lip bulges out in the middle
+      if (j < curl) { if (j >= -2 + (Math.abs(i) < half - 3 ? 0 : 2)) put(x, y, j < curl - 1 ? ink[4] : ink[3]); continue; }
+      let c = u < 0.3 ? ink[2] : u < 0.72 ? ink[1] : ink[0];
+      // long thin streaks, each column its own speed, period and length, all looping on the frames
+      const col = i + 40;
+      if (h(col, 9) > 0.3) {
+        const v = h(col, 10) > 0.5 ? 2 * COVE_FALL_V : COVE_FALL_V;
+        const P = v > COVE_FALL_V ? [24, 48][Math.floor(h(col, 11) * 2)] : [12, 24][Math.floor(h(col, 11) * 2)];
+        const L = Math.floor(P * (0.3 + 0.25 * h(col, 12)));
+        const s = (((j - t * v + Math.floor(h(col, 13) * P)) % P) + P) % P;
+        if (s < L) c = s >= L - 1 ? ink[4] : s >= L - 4 || u < 0.3 ? ink[3] : ink[2];
+      }
+      put(x, y, c);
+    }
+  }
+  // the plunge pool: open water across the grotto's foot, rimmed in ice
+  const px = mid, py = foot + 5, rx = Math.round((G.x1 - G.x0) / 2) - 2, ry = 8;
+  for (let j = -ry - 2; j <= ry + 2; j++) for (let i = -rx - 2; i <= rx + 2; i++) {
+    const e = (i / rx) ** 2 + (j / ry) ** 2;
+    if (e <= 1) put(px + i, py + j, e < 0.5 ? ink[0] : ink[1]);
+    else if (e <= 1.22) put(px + i, py + j, j < 0 ? ice[0] : ice[2]);
+  }
+  // the foam at its foot, a churn of white blobs, each swelling and settling on the loop
+  for (let k = 0; k < 11; k++) {
+    const bx = mid + Math.floor((h(k, 21) - 0.5) * 2 * (half + 7)), by = foot + Math.floor(h(k, 22) * 4) - 1;
+    const r = 3.5 + 2 * h(k, 24) + 1.4 * Math.sin(2 * Math.PI * t / COVE_FRAMES + h(k, 23) * 2 * Math.PI);
+    for (let j = -Math.floor(r) - 1; j <= Math.floor(r) + 1; j++) for (let i = -Math.floor(r) - 1; i <= Math.floor(r) + 1; i++) {
+      if ((i * i + j * j) / (r * r) <= 1) put(bx + i, by + j, j < r * 0.3 ? ink[4] : ink[3]);
+    }
+  }
+  // rings spreading from the foot, a third of the loop apart
+  for (let k = 0; k < 3; k++) {
+    const f = ((t + k * COVE_FRAMES / 3) % COVE_FRAMES) / COVE_FRAMES, rr = 0.25 + f * 0.75;
+    for (let n = 0; n < 64; n++) {
+      if (h(n, k + 30) < 0.25) continue;
+      const a = n / 64 * 2 * Math.PI;
+      mix(px + Math.trunc(Math.cos(a) * rx * rr), py - 2 + Math.trunc(Math.sin(a) * ry * rr * 0.8), ink[4], (1 - f) * 0.9);
+    }
+  }
+  // spray: drops lift off the foot, drift and fade on the loop
+  for (let k = 0; k < 26; k++) {
+    const f = ((t + h(k, 1) * COVE_FRAMES) % COVE_FRAMES) / COVE_FRAMES;
+    const x = px + Math.trunc((h(k, 2) - 0.5) * 2 * half + (h(k, 3) - 0.5) * 10 * f), y = foot + 2 - Math.trunc(f * (10 + h(k, 4) * 14));
+    mix(x, y, ink[4], (1 - f) * 0.9);
+    if (h(k, 5) > 0.6) mix(x + 1, y, ink[3], (1 - f) * 0.6);
+  }
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), im = g.createImageData(W, H);
+  for (let k = 0; k < W * H; k++) {
+    if (!al[k]) continue;
+    for (let q = 0; q < 3; q++) im.data[k * 4 + q] = Math.round(rgb[k * 3 + q]);
+    im.data[k * 4 + 3] = Math.round(al[k] * 255);
+  }
+  g.putImageData(im, 0, 0);
+  return cv;
+}
+// the falls' entry in the y-sorted list (gatherDraws, js/draw/passes.js): at
+// the grotto's foot, so the pines behind it are covered and a body in front
+// stands over its pool
+function coveDraws(draws, ox, oy) {
+  const G = coveGrotto();
+  if (G.x1 + 16 < ox || G.x0 - 16 > ox + WV_W || G.y1 + 16 < oy || G.y0 - 32 > oy + WV_H) return;
+  if (!coveFallBox) coveFallBox = { x0: G.x0 - 8, y0: G.y0 - 8, w: G.x1 - G.x0 + 16, h: G.y1 - G.y0 + 16 };
+  const B = coveFallBox;
+  draws.push({ y: G.y1, fn: drawCoveFall, bx: B.x0, by: B.y0, bw: B.w, bh: B.h });
+}
+function drawCoveFall(d, ex, ey, now) {
+  const t = Math.floor(now / COVE_FRAME_S) % COVE_FRAMES;
+  if (!coveFallCvs[t]) coveFallCvs[t] = coveFallFrame(t);
+  ctx.drawImage(coveFallCvs[t], coveFallBox.x0 - ex, coveFallBox.y0 - ey);
+}

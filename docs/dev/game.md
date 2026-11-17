@@ -33,11 +33,12 @@ Every hero, you included, stands in a ring of its side's colour under a bar of t
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
-**A walled jungle fills the inside of the loop**, and two pits open off the lanes: the
-**orca's pool** above the top lane, its own frozen pond where the orca lives — anyone can walk
+**A walled jungle fills the inside of the loop**, and one pit opens off a lane: the
+**orca's cove** above the top lane, a frozen pond under a waterfall, ringed in cut stone, with a
+ledge up from the lane on either side, where the orca lives — anyone can walk
 over it, but the orca under the ice locks on a player out on it, stalks them while a 3 2 1 counts
 down over their head, and then it comes up through the ice and they go down
-([the orca](gameplay/wildlife.md#the-orca)) — and the **black bear's den** below the bottom lane.
+([the orca](gameplay/wildlife.md#the-orca)).
 
 The world is 140 tiles of 16 px — a 2240×2240 px field inside a pine border, symmetric both ways
 by construction. Every match plays this one map.
@@ -146,18 +147,16 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 
 **Pine groves make the field a jungle** (js/sim/field.js): groves with ragged edges, mirrored left to
 right, the top and bottom halves grown their own way, and a creek of rough ice down the middle.
-**The camps are the jungle, and the jungle is symmetric left to right.** Each side has two **SCRAP
-PILES** of stray robots in the bottom half, paying gold, and a rabbit warren by its base mouth; the
-top half's halls are open snow. The
-**BLACK BEAR** keeps its den below the bottom lane: first out at 5:00 and back 5:00 after each
-kill, which pays the whole team, gives it the BLACK BUFF, and adds a black bear to the side's count:
-+5% on every blow for the rest of the match, up to four. Its twin above the top lane is the
-**ORCA'S POOL**: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 20:00 up in a hole
-in the middle to be fought (back 6:00 after each kill). Its kill gives the whole team the ORCA BUFF for
+**The camps are the jungle, and the jungle is symmetric left to right.** Each side has three **SCRAP
+PILES** of stray robots, paying gold: one at each hall's outer end and one by its base mouth, and
+each hollow on the middle column holds one more for both sides to fight over. The epic camp is the
+**ORCA'S POOL** in the cove above the top lane: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 6:00 up in a hole
+in the middle to be fought (back 6:00 after each kill). Its first coming is everyone's to know: the
+countdown hangs under the top rail's clock and on both maps until it is up. Its kill gives the whole team the ORCA BUFF for
 3 minutes: the side's soldiers near a hero wearing it hit buildings twice as hard.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and runs home fast, healing and untouchable — and every site sits off the lanes, so a lane is never a
-wolf's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
+camp's. [Camps](world.md#camps), [camp monsters](gameplay/wildlife.md#camp-monsters-neutral-until-hit).
 
 **The lanes are where the match is fought.** The waves are the match's clock: a column that is not
 met on its lane reaches the rival bird, and a scrapped soldier pays its killer gold and every

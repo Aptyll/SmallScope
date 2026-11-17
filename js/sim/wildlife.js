@@ -473,7 +473,7 @@ function animalDies(a) {
 // world.js), whose kill pays the killer's whole team, gives it the bear's own
 // `buff` (animalDies, worn in `buffCol`), adds one to the side's black bears
 // (state.bearStacks) and names it as `feed` in the feed and the announcer's
-// call (callBeast). The ORCA (`orca`, the ORCA'S POOL, first up at 20:00:
+// call (callBeast). The ORCA (`orca`, the ORCA'S POOL, first up at 6:00:
 // CAMPS.orca) is the other: `still`, it keeps the hole it broke in the middle
 // of its pool (`hole`, drawn under it) and never walks - its lunge reaches
 // across the ice (`reach`) and past that it SPOUTS at whoever it hunts inside

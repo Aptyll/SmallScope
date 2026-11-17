@@ -23,6 +23,9 @@
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
 //   farm        a jungler farms it (aiDenSpot, js/ai/ai-farm.js)
+//   epic        the camp is an epic objective: its clock rides the top rail
+//               (railEpic, js/ui/rail.js), and its first coming is public
+//               (updateCampSight)
 //   pool        the camp is the ORCA'S POOL: its pit is a frozen pond
 //               (orcaLakeAt, js/sim/field.js), and what lives there is the
 //               orca under the ice (js/sim/orca.js) until its camp monster,
@@ -33,7 +36,7 @@
 // buff:     the black bear in its den below the bottom lane: first out at 5:00,
 //           the whole team paid and given the BLACK BUFF for the kill, and the
 //           side's black bears count up (state.bearStacks, wildlife.js)
-// orca:     the orca's pool in its pit above the top lane
+// orca:     the orca's pool in its cove above the top lane, the epic camp
 // meadow:   the WARREN: three rabbits in a round pool of deep snow (layMeadowDrifts,
 //           depth.js), brush the rabbits never leave, and snowdrops that each
 //           shield the picker's whole company and then rest on their own
@@ -61,7 +64,8 @@ const CAMPS = {
     name: "ORCA'S POOL",
     r: 6, mark: '#7fd4ff', pool: true, // the pit's pond and a tile of shore
     icon: [[3, 0, 1, 1], [3, 1, 2, 1], [3, 2, 3, 1], [0, 3, 7, 1], [1, 4, 5, 1], [0, 5, 7, 1]], // a fin over the water
-    kind: 'orca', pop: 1, repop: 360, first: 1200, // up at 20:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
+    epic: true, // its clock rides the top rail (railEpic, js/ui/rail.js)
+    kind: 'orca', pop: 1, repop: 360, first: 360, // up at 6:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
     props: [],
     spots: [],
   },
@@ -85,6 +89,7 @@ const CAMP_SITES = [
   { top: 'scrap', bot: 'scrap', tx: 28, ty: 52 },   // the hall's outer end, by the grove wall
   { top: 'scrap', bot: 'scrap', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
   { top: 'scrap', bot: 'scrap', tx: 35, ty: 69 },   // the base mouth
+  { top: 'orca', bot: null, tx: 69, ty: 24 },       // the orca's cove above the top lane (COVE, js/sim/field.js): on the middle column, its own twin, and none below
 ];
 function campSites() {
   const out = [];
@@ -214,6 +219,10 @@ function updateCampSight() {
     if (!C.spec.pop) continue;
     if (!C.seen) C.seen = [0, 0];
     if (!C.look) C.look = [-1, -1];
+    // a timed camp's first coming is the match clock's, so every side knows
+    // it (`pub`); once it is out, that is forgotten like any sighting
+    if (C.spec.first > 0 && !C.out) { const due = state.tick + Math.ceil(C.repopT / TICK_DT); C.seen[0] = C.seen[1] = due; C.pub = true; continue; }
+    if (C.pub) { C.seen[0] = C.seen[1] = 0; C.pub = false; }
     const m = campMark(C), x = (m.tx + 0.5) * TILE, y = (m.ty + 0.5) * TILE;
     for (const team of [0, 1]) {
       if (!sightAt(team, x, y)) continue;

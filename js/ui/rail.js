@@ -37,6 +37,23 @@ const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
 const RAIL_TRACK = '#25282d';       // an hp bar's empty track
+// THE EPIC CLOCK: an epic camp's countdown (CAMPS' `epic`: the orca) on a
+// small plate hung just under the score well - the camp's glyph in its ink
+// and the seconds until it is up, as the watched side knows them
+// (campClockShown, js/draw/marks.js). Its first coming is everyone's to know
+// (updateCampSight, js/sim/camps.js); after that a side times it only off a
+// kill it saw, like any camp. No number known, no plate.
+const RAIL_EPIC_GAP = 1;            // the air between the rail and the plate
+const RAIL_EPIC_ICON = 9;           // the glyph's 7px box and its 1px rim
+// the epic camp whose clock the rail wears, and its text, or null
+function railEpic() {
+  for (const C of camps) {
+    if (!C.spec.epic) continue;
+    const n = campClockShown(C);
+    if (n) return { C, txt: clockTxt(n) };
+  }
+  return null;
+}
 // the roster: your side then the rival's, each by id, you first on yours.
 // Null unless the rival side has a body.
 function railSides() {
@@ -94,7 +111,15 @@ function railLayout() {
   const sep = { x: sx + kw[0] + 2, y: sy };
   x += wellW + RAIL_SEP;
   row(1, x);
-  return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, sep, clock: clk };
+  // the epic clock's plate, centred under the well
+  const ep = railEpic();
+  let epic = null;
+  if (ep) {
+    const ew = RAIL_PAD + RAIL_EPIC_ICON + 2 + pixelTextWidth(ep.txt) + RAIL_PAD, eh = RAIL_PAD + RAIL_EPIC_ICON + RAIL_PAD - 2;
+    epic = { C: ep.C, txt: ep.txt, x: Math.round(well.x + (wellW - ew) / 2), y: RAIL_Y + RAIL_H + RAIL_EPIC_GAP, w: ew, h: eh };
+  }
+  const bottom = epic ? epic.y + epic.h : RAIL_Y + RAIL_H;
+  return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, sep, clock: clk, epic, bottom };
 }
 // the size the rail is drawn at: its own dial (settings.hudRail, the stops
 // hudSizes offers, js/ui/strip.js), capped on the device grid where the plate
@@ -108,7 +133,7 @@ function railSc(L) { return hudPick(settings.hudRail || 1, railCap(L)); }
 // top-centre headlines - the spectate control, the vote, the announcer - hang under
 function railBottom() {
   const L = railLayout();
-  return L ? Math.round((RAIL_Y + RAIL_H) * railSc(L)) : 0;
+  return L ? Math.round(L.bottom * railSc(L)) : 0;
 }
 function headlineY() { const b = railBottom(); return b ? b + 6 : 14; }
 // where the top-centre note (the announcer's plate, js/ui/announcer.js) starts: under the rail
@@ -171,6 +196,14 @@ function drawRail(now, L) {
   drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: true, tr: true, bl: true, br: true } });
   drawRailScore(L);
   for (const c of L.chips) drawRailChip(c, now, hov && hov.p === c.p);
+  if (L.epic) drawRailEpic(L.epic);
+}
+// the epic clock's plate: the glyph, then the seconds beside it
+function drawRailEpic(E) {
+  drawHudFrame(E.x, E.y, E.w, E.h, { corners: { tl: true, tr: true, bl: true, br: true } });
+  const ix = E.x + RAIL_PAD - 1, iy = E.y + RAIL_PAD - 1;
+  drawCampIcon(ctx, E.C, ix + 4, iy + 4, E.C.spec.mark, HUD_INK);
+  drawPixelText(ctx, E.txt, ix + RAIL_EPIC_ICON + 2, iy + 2, '#f4f7ff');
 }
 // The rail at the size its dial holds: drawHudScaled's deal, the bake
 // blitted about the TOP-centre anchor. `slide` is the intro's 0..1 (1 away).
@@ -188,7 +221,7 @@ function drawRailScaled(now, slide) {
     ctx.restore();
     return;
   }
-  const bx = L.x - 1, bw = L.w + 2, bh = RAIL_Y + RAIL_H + 1;
+  const bx = L.x - 1, bw = L.w + 2, bh = L.bottom + 1;
   if (railScaleCv.width !== bw || railScaleCv.height !== bh) {
     railScaleCv.width = bw; railScaleCv.height = bh;
     railScaleCtx.imageSmoothingEnabled = false;

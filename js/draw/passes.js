@@ -84,6 +84,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
+  drawCoveRim(ex, ey);      // the orca's cove: its cut-stone face under the pines (js/draw/cove.js)
   drawRecallGround(ex, ey); // each roost's reach: its floor lit where its bird heals, under a pale rim (js/draw/recall.js)
   drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)
   drawCampLeashes(ex, ey, now); // an awake camp's leash: the edge of its ground, where the hunt gives up (js/draw/marks.js)
@@ -126,8 +127,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     for (let tx = tx0; tx <= tx1; tx++) {
       let o = objects[idx(tx, ty)];
       // stumps and holes are both drawn flat, above, and never y-sorted; an
-      // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'eagle') continue;
+      // eagle's hitbox tiles have no pixels of their own (drawEagle draws the
+      // bird), nor a waterfall's (coveDraws draws the whole curtain)
+      if (!o || o.type === 'stump' || o.type === 'eagle' || o.type === 'waterfall') continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -151,6 +153,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
   // the orca out of its ice (drawOrcaBreach, js/draw/orca.js)
   if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: (d, ex, ey) => drawOrcaBreach(ex, ey) });
+  coveDraws(draws, ox, oy); // the orca cove's waterfall, at its grotto's foot (js/draw/cove.js)
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   campClockDraws(draws, tx0, ty0, tx1, ty1); // the clocks of the camps with no anchor prop (js/draw/marks.js)
   draws.sort((a, b) => a.y - b.y);

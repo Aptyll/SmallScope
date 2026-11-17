@@ -708,7 +708,7 @@ party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`)
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
 then the camp rung (4) fights it. The kill pays the whole side and gives it the bear's buff, which opens the window:
 bear, then push, is a loop that comes out of the rules rather than a script. The **orca**, once it is up in its pool
-(from 20:00), comes first: a side whose bots average level `AI_ORCA_LV` (12), its bird quiet and
+(from 6:00), comes first: a side whose bots average level `AI_ORCA_LV` (12), its bird quiet and
 no rival seen by the pool, sends as many of `AI_ORCA_N` (5) as its guards leave, never fewer than
 three, taking them off the push (`aiSideOrca`; a party already out on the bear finishes it). It is
 nobody's own, so both sides go and the fight for it is a fight between them. The camp rung reads

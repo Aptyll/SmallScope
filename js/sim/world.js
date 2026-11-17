@@ -83,6 +83,11 @@ const OBJECTS = {
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
   eagle:    { solid: true,  work: true, verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
+  // the orca cove's WATERFALL and its plunge pool (COVE_FALL, genWorld,
+  // js/sim/field.js): open water down the back wall, solid to everything.
+  // No pixels of its own in the object pass - drawCoveFall (js/draw/cove.js)
+  // draws the whole curtain at once - and on the chart it is open water
+  waterfall: { solid: true, mm: [74, 140, 196], map: CH_HOLE },
   // a multi-tile building's (or a wide prop's) filler tiles: solid, and
   // structOf() has resolved them to their anchor long before either map sees one
   part:     { solid: true },

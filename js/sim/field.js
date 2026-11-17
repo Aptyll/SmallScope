@@ -134,6 +134,26 @@ function laneLoop(x, y) {
   const qx = Math.abs(x - FIELD_C) - (LANE_HX - LANE_R), qy = Math.abs(y - FIELD_C) - (LANE_HY - LANE_R);
   return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - LANE_R;
 }
+// THE ORCA'S COVE: the epic camp's pit, cut north of the top lane on the
+// middle column (top only: the bottom lane has none). An oval bowl of ice
+// under a cut-stone rim (drawCoveRim, js/draw/cove.js), a waterfall at its
+// back (COVE_FALL), and a ledge either side climbing up from the lane, so
+// the pit has two doors and a wood between them (K, Noah's pick: round 12).
+// Field units, in the whole field (not a quarter): middle x y, half w h.
+const COVE = [70, 24.5, 7.5, 6.5];
+const COVE_LEDGE = [11, 36, 6.5, 2.6]; // a ledge: from (middle +-x, y) on the lane up to (+-x, the cove's middle + 2), half-wide
+// ...its WATERFALL: a curtain of water down the back wall, from `top` to its
+// `foot` on the pool, `half` tiles either side of x at the top (it widens
+// as it falls), into a plunge pool the falls keep open. The tiles it covers,
+// x0 y0 x1 y1, stand as OBJECTS.waterfall: water nothing walks into, drawn
+// whole by drawCoveFall (js/draw/cove.js)
+const COVE_FALL = { x: 70, top: 15.4, foot: 19.3, half: 0.95, tiles: [67, 15, 72, 19] };
+function fieldCove(x, y) {
+  if (y > FIELD_C) return 1e9;
+  const cx = COVE[0], cy = COVE[1], rx = COVE[2], ry = COVE[3], L = COVE_LEDGE;
+  const d = (Math.hypot((x - cx) / rx, (y - cy) / ry) - 1) * ry;
+  return fieldSmin(d, fieldCap(Math.abs(x - cx), y, L[0], L[1], L[2], cy + 2, L[3], L[3]), 1.5);
+}
 // THE FIELD: signed tiles from the nearest edge of walkable ground, negative on it
 function fieldOpen(x, y) {
   const fx = fieldFold(x), fy = fieldFold(y);
@@ -142,6 +162,7 @@ function fieldOpen(x, y) {
   const base = Math.hypot(fx - BASE_X, fy - FIELD_C) - BASE_R;
   let d = fieldSmin(jungle, band, 2);
   d = fieldSmin(d, base, 2);
+  d = fieldSmin(d, fieldCove(x, y), 1.5);
   // ...and never within FIELD_EDGE of the world's edge: a pine border stands
   // round everything, met in a smooth corner like any other wall
   d = -fieldSmin(-d, -(FIELD_EDGE - Math.min(fx, fy)), 2);
@@ -250,9 +271,9 @@ function baseAt(tx, ty, pad) {
 // ---- worldgen -----------------------------------------------------------
 // The whole map from the one distance: every tile off the field a wall pine
 // (`wall`: none of them ever falls, treeFells), the lanes' road packed earth,
-// the orca's pit a frozen pool. Runs first at boot (js/app/boot.js); the
+// the orca's cove a frozen pool under its falls. Runs first at boot (js/app/boot.js); the
 // camps, the towers and the pumps stand on it after.
-const LAIR_POOL = [HOLLOW_POOL[2], HOLLOW_POOL[3]]; // the top hollow's pool, as the orca's (orcaLakeEdge)
+const LAIR_POOL = [COVE[2] - 0.7, COVE[3] - 0.9]; // the orca's pool: the cove's floor all but a shore of snow (orcaLakeEdge)
 const ORCA_LAKE_R = LAIR_POOL[0]; // ...the longer of them: what a reach round the pool is sized by
 function genWorld() {
   ground.fill(0); objects.fill(null);
@@ -262,6 +283,10 @@ function genWorld() {
     if (!open[i]) { objects[i] = { type: 'tree', tx, ty, hp: 1, flash: 0, shake: 0, wall: true }; continue; }
     if (laneDist(tx, ty) < 0) ground[i] = 3;
     else if (orcaLakeAt(tx, ty) || fieldCreek(x, y)) ground[i] = 1;
+  }
+  const F = COVE_FALL.tiles;
+  for (let ty = F[1]; ty <= F[3]; ty++) for (let tx = F[0]; tx <= F[2]; tx++) {
+    objects[idx(tx, ty)] = { type: 'waterfall', tx, ty, flash: 0, shake: 0 };
   }
 }
 // the open tiles (1) off the one distance, and then NO SLIVERS: a tile of
@@ -293,11 +318,11 @@ function fieldGrid() {
   return seen;
 }
 // the orca's pool, its middle in tile-index coordinates
-function orcaPool() { return { tx: FIELD_C - 0.5, ty: HOLLOW_POOL[1] - 0.5 }; }
+function orcaPool() { return { tx: COVE[0] - 0.5, ty: COVE[1] - 0.5 }; }
 // ...and signed tiles from its rim (negative inside), in tile-index
 // coordinates; 99 well clear of it
 function orcaLakeEdge(fx, fy) {
-  const x = fx + 0.5 - FIELD_C, y = fy + 0.5 - HOLLOW_POOL[1];
+  const x = fx + 0.5 - COVE[0], y = fy + 0.5 - COVE[1];
   const d = (Math.hypot(x / LAIR_POOL[0], y / LAIR_POOL[1]) - 1) * LAIR_POOL[1];
   return d > 4 ? 99 : d;
 }
