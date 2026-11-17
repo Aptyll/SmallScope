@@ -9,7 +9,7 @@ ARMATOS, the Last Standard (PR #348, PATCH 0.504) is the worked example: read
 `js/sim/armatos.js`, `js/draw/armatos.js` and `js/sprites/armatos.js` before writing a line, and
 copy their shape. The mechanical list of what a hero needs is **Adding a class** in
 [docs/dev/checklists.md](../../../docs/dev/checklists.md); this skill is the order and the loop
-with Noah around it. New art follows the `concept-art` skill; this skill never restates it.
+with Noah around it. New art follows the `art` skill; this skill never restates it.
 
 Say "hero", never "champion". Say "bots", never "AI".
 
@@ -84,20 +84,13 @@ LOOKS (optional): default look name, first buyable skin name
      `HERO_TEN`, `HERO_MOVE`, `HERO_DASH`, `HERO_TICK`, `HERO_GROUND`, `HERO_MARK`, `HERO_COVER`,
      `HERO_AIR`) and js/draw/heroes.js (`HERO_BLADES`, `HERO_STAVES`, `HERO_SHOTS`, `HERO_BODY_FX`, `HERO_FADE`). A hero file pushes into them at load. When a kit needs a kind of hook none
      of them is, add a new list there rather than a hero-named call in shared code.
-3. **Concept sheet of in-game visuals.** Through the `concept-art` skill: 3 bodies and 3 weapons
-   as real 16px grids, staged live in a real game frame beside players (Armatos round 4,
-   `/mnt/project-files/armatos/round4/`). Noah rejected 3D renders and 32px art: show what the
-   game will draw, lettered, with a pick marked. Wait for his pick before step 4.
-4. **Own body and skins.** The picked looks become `<HERO>_BODY` grids and a `<HERO>_SKINS` list
-   (default look `price: 0`, first buyable skin `rarity: 'rare'`, 200 coins, as Armatos), a doll
-   per look in `app/bake-player/bodies.py`, then `python app/bake-player/bake.py`. The rebake
-   must only add lines to js/baked/motion.js: every other hero's frames stay byte-identical.
-   Point the hero's `heroArt` row's `looks`/`pal` at them. The weapon is held naturally in all
-   four facings (a `HERO_BLADES` row: flat and slanted art, the `hilt` on the flat art and the grip on the slanted, the hip by facing; a mage's
-   staff is a `HERO_STAVES` row named by `staff:` on the `CLASSES` row, IGNIA's crook). The side run
-   comes off the drawn side frame (`heroRunSide`): keep the head as wide as the front and the body
-   about 2px narrower (ARMATOS: front body 10, side 8), or the run reads fat;
-   a look the doll's front run does not match takes `run: 'drawn'` on its skins row (IGNIA).
+3. **Options for the look.** Through the `art` skill, its
+   [Heroes](../art/kinds.md#heroes) section: three bodies and three weapons as real 16 px grids,
+   staged in a real game frame beside players, lettered, with a pick marked. Wait for Noah's pick
+   before step 4.
+4. **Own body and skins.** The picked looks ship as that Heroes section says (the body grids and
+   skins list, the doll per look and the rebake, the weapon held in all four facings, the side
+   run). Point the hero's `heroArt` row's `looks`/`pal` at them.
 5. **Verify headless** (`node app/server.js` + Playwright, [how](../../../docs/dev/checklists.md#verifying-a-change)):
    each ability hits the other team's heroes, soldiers, wildlife and towers and spares its own;
    a bot playing the hero spends all four keys; the four facings, running, rolling, both looks;

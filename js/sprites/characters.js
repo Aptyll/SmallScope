@@ -157,7 +157,7 @@
   // coat, with the hat and the trim in the team's colour so the side reads
   // Not another player: its own grids, 16 x 18 - two rows taller than a slot
   // - picked off a concept sheet (docs/media/concepts/merchant-concepts-2,
-  // look D; the `concept-art` skill is how such a sheet is made): an old
+  // look D; the `art` skill is how such a sheet is made): an old
   // trader in a wide flat FUR HAT with a team-cloth crown (the one team ink,
   // and all of it), a white beard down the chest, a khaki wool coat hanging
   // straight to the hem, boots under it. Three directions like a slot (the

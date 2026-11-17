@@ -1,9 +1,11 @@
 # Making art
 
-How a sprite is drawn, looked at and improved, and why it is done this way. The procedure is the
-`pixel-art` skill ([.claude/skills/pixel-art/](../../.claude/skills/pixel-art/SKILL.md)); the tools
-are in `app/art/`. Picking a look with Noah is the `concept-art` skill, a hero is `new-hero`; both
-draw with this.
+How a sprite is drawn, looked at and improved, and why it is done this way. The procedure, for
+every kind of visual asset, is the `art` skill ([.claude/skills/art/](../../.claude/skills/art/SKILL.md):
+see, brief, draw, judge, options to Noah, ship); what differs for a creature, a hero, a building, a
+place, an icon, a HUD part or an effect is in its
+[kinds.md](../../.claude/skills/art/kinds.md). The tools are in `app/art/`. A hero is `new-hero`,
+which draws with this.
 
 ## What was tried
 

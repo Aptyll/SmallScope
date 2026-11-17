@@ -8,7 +8,7 @@ description: Turn Noah's rough idea into a Softfall YouTube Short with him in th
 Viewers decide in about a second, mostly on the first frame, so the first frame is designed and
 picked **before** anything is recorded. Noah steers every round; Claude never records a frame he
 has not picked. This skill owns the idea, the first frame, the hook and the YouTube package.
-Filming belongs to the `media` skill and new sprites to `concept-art`: follow them, never restate
+Filming belongs to the `media` skill and new sprites to `art`: follow them, never restate
 or rebuild them ([docs/dev/media.md](../../../docs/dev/media.md)).
 
 ## The loop
@@ -30,13 +30,13 @@ reading and say which in one line.
 ### 2. Round of first frames
 
 Make three first frames, lettered A, B, C, **genuinely different** (another subject, moment or
-framing, not one shot nudged). Letters run on across rounds (D, E, F), as `concept-art` does, so
+framing, not one shot nudged). Letters run on across rounds (D, E, F), as `art` does, so
 "B" always means one frame.
 
 - **Real stills, not paintings.** Stage each in the game with the media kit (`still.js`, or a
   quick scene and `rec.js --at`) at 9:16, HUD hidden (`DBG.hideUI`). The Short must show what the
   game does, so its first frame must too. If the idea needs a creature or prop the game lacks,
-  that sprite goes through `concept-art` first and Noah picks it before any frame uses it.
+  that sprite goes through `art` first and Noah picks it before any frame uses it.
 - **Opening text**, if a frame has any, is drawn on the still the way the cut will draw it
   (`look.py` `text` and `stamp`: game font, integer scale, outline, no box, at most 2 lines).
 - Each frame must pass, at phone size: **one subject** anyone names in a word, big enough to read;
