@@ -89,13 +89,20 @@ function seekFill() {
   if (s && s.parties) for (const [code, pt] of s.parties) f[pt.side] += Math.max(0, pt.n - seekArrived(code));
   return f;
 }
-// the side a party of n takes in a room filled `fill`: the emptier one it
-// fits on whole (side 1 on a tie), or -1 when it fits on neither. The host
-// seats by this and every plan predicts by it, so both agree
+// the side a party of n takes in a room filled `fill`, or -1 when it fits
+// whole on neither: the one that leaves the biggest gap open, so a bigger
+// party coming later still fits (two solos beside a pair go on the pair's
+// side, never one a side, which would shut a second pair out); the emptier
+// side when both leave the same (side 1 on a tie). The host seats by this and
+// every plan predicts by it, so both agree
 function seekSide(fill, n, cap) {
-  const order = fill[0] < fill[1] ? [0, 1] : [1, 0];
-  for (const t of order) if (fill[t] + n <= cap) return t;
-  return -1;
+  let best = -1, gap = -1;
+  for (const t of fill[0] < fill[1] ? [0, 1] : [1, 0]) {
+    if (fill[t] + n > cap) continue;
+    const g = Math.max(cap - fill[t] - n, cap - fill[1 - t]);
+    if (g > gap) { best = t; gap = g; }
+  }
+  return best;
 }
 // the parties on the list looking in our mode right now, ours left out
 function seekRivals() {
