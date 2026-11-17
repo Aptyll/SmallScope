@@ -52,6 +52,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `stage.js` | page side, injected: `MEDIA.boot` flies the drop, cuts the local input, hides the HUD, sets zoom, weather and time, and lifts the fog of war unless `o.fog`; `park`, `track`, `mark`, `drive`; `M.speed` slows the sim (0 freezes it: `still` runs only the snow and the effects); logs hits and the sound cues heard near the camera |
 | `rec.js` | records a scene: every frame as `fNNNN.png` plus `log.json` (`--dry` no pixels, `--at f,f` only those) |
 | `still.js` | one clean frame anywhere (`--find open` picks open snow under pines, `--player dx,dy` adds one for scale) |
+| `../see/see.js` | not the kit's, but built on it: a named place at the real zooms, by hour, today beside new, the whole map ([see.md](see.md)) |
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the end card; writes the mp4 and `map.json` |
 | `view.py` | any camera off a recorded frame, pixel-exact (nearest blow-up, then area-average down) |
 | `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam and Discord marks (`steam-mark.png`, `discord-mark.png`), `drain`, `freeze` |

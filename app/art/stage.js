@@ -43,7 +43,7 @@ const { openGame, args } = require('../media/browser');
         let ok = true, on = 0;
         for (let dy = -3; dy <= 2 && ok; dy++) for (let dx = 0; dx < tilesW && ok; dx++) {
           const i = (ty + dy) * WORLD + tx + dx, g = ground[i];
-          if (objects[i] || waterAt(tx + dx, ty + dy) || g === 1 || g === 2) ok = false;
+          if (objects[i] || waterAt(tx + dx, ty + dy) || g === 1 || g === 2 || deepAt((tx + dx + 0.5) * TILE, (ty + dy + 0.5) * TILE)) ok = false; // the reeds are no object, and they bury a line-up
           else if (!road && g !== 0) ok = false;
           else if (road && dy >= -1 && dy <= 0 && g === 3) on++;
         }
@@ -61,9 +61,9 @@ const { openGame, args } = require('../media/browser');
     if (!rows.length) return { error: 'no open ground found' };
     // the whole line-up in one view: step the zoom down by whole numbers until it fits
     for (let kk = o.k; kk > 1 && total + TILE > WV_W; ) { DBG.setK(--kk, true); M.tick(); }
-    // the camera can hold one row: the first ground is the frame, the others are further frames
-    const out = [];
-    for (const R of rows) {
+    // the camera can hold one row, so each ground is its own frame: the line-up is stood on a
+    // row only when that row is about to be shot (stageRow, called from Node before each shot)
+    window.stageRow = (R) => {
       M.park(animals.filter((a) => a.staged || a.ref), -4000, -4000);
       for (let i = animals.length - 1; i >= 0; i--) if (animals[i].staged || animals[i].ref) animals.splice(i, 1);
       let x = R.x + TILE;
@@ -79,10 +79,9 @@ const { openGame, args } = require('../media/browser');
       if (!o.refs.includes('hero')) { player.x = -4000; player.y = -4000; }
       M.cam = [R.x + R.w / 2, R.y - 8];
       M.speed = 0; for (let i = 0; i < 12; i++) M.tick();
-      R.cam = [camX, camY]; R.view = [WV_W, WV_H];
-      out.push(R);
-      if (out.length === 1 && rows.length > 1) window.__rows = rows;
-    }
+      return true;
+    };
+    const out = rows;
     // today's sprites at 1x, for the board
     const cut = {};
     if (o.cut) {
@@ -96,7 +95,7 @@ const { openGame, args } = require('../media/browser');
   const shots = [];
   for (let i = 0; i < info.rows.length; i++) {
     const R = info.rows[i];
-    if (i > 0) await pg.eval((R) => { MEDIA.cam = [R.x + R.w / 2, R.y - 8]; for (let j = 0; j < 12; j++) MEDIA.tick(); return true; }, R);
+    await pg.eval((R) => stageRow(R), R);
     if (A.out) { const f = A.out.replace(/\.png$/, '-' + R.ground + '.png'); await pg.shot(f); shots.push({ ground: R.ground, file: f }); }
   }
   if (A.cut) {

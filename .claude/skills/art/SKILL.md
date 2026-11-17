@@ -39,12 +39,17 @@ rejected is not polished again: bring a new design or a new subject.
 Look at today's game before a pixel.
 
 ```
+node app/see/see.js --spots                              # every named place on the map
+node app/see/see.js --spot wolf-den --time day,night --out W/see   # the place far, as played (HUD on) and close
+node app/see/see.js --map --out W/map                    # the whole map and a chart of every place
 node app/server.js &
-node app/art/stage.js --cut W/refs --out W/today.png     # today's hero, wolf, rabbit, bear at game size
+node app/art/stage.js --cut W/refs --out W/today.png     # today's hero, wolf, rabbit, bear as 1x PNGs
 node app/art/cut.js --out W/refs scrap.left.idle tree.0  # any sprite in the game at 1x, by name (--list shows the names)
-node app/media/still.js --out W/place.png --tile TX,TY   # a clean frame of any spot
 python3 app/art/review.py wall W/wall.png                # everything Noah has kept and rejected
 ```
+
+Open each picture at its own size, one at a time: `far` for the shape, `play` for what a player
+has, `close` for the pixels ([docs/dev/see.md](../../../docs/dev/see.md)).
 
 Take sizes from what you see and colours from the game's own ramps (`GAME` in `app/art/px.py`). A
 redraw starts from the cut sprite itself: `Art.from_png` turns it into a grid to edit. If Noah gave a picture, fit to the picture: every
@@ -88,6 +93,10 @@ Every kept round, before Noah sees anything:
 - **The board**, at full size: the SHAPE row first, then the GREYS row.
 - **A real game frame**: beside the hero and the bear, on snow and on the road, both teams, every
   facing it has. For a place or a HUD part, the real screen at the zoom a player uses.
+- **Where it will live, today beside new**, before it is built:
+  `node app/see/see.js --spot wolf-den --swap wolf=W/<name>/now/side.png --time day,night --out W/vs`
+  (`--put FILE.png@dx,dy:ground|stand|beast` for a thing with no sprite yet). Read the `vs-*`
+  sheets and the count of pixels that differ; `NO PIXEL DIFFERS` means look at another spot.
 - **`check.py`** runs inside the round. A FAIL is a certain fault: fix it. A WARN is a place to look.
 - **The gates.** Walk the five gates of [the bar](../../../docs/dev/art-bar.md#the-five-gates)
   (IDEA, READ, LIFE, CRAFT, FIT; for a place, [its seven rules](../../../docs/dev/art-bar.md#a-place))

@@ -49,6 +49,8 @@ class Page {
         console.log('page:', m.params.args.map((a) => a.value !== undefined ? a.value : a.description).join(' '));
       }
     });
+    // a socket that shuts takes its unanswered calls with it, so nothing waits on a browser that is gone
+    ws.addEventListener('close', () => { for (const p of this.pending.values()) p.reject(new Error('browser closed')); this.pending.clear(); });
   }
   send(method, params) {
     const id = ++this.id;
@@ -82,7 +84,8 @@ class Page {
     fs.writeFileSync(file, Buffer.from(r.data, 'base64'));
   }
   async close() {
-    try { await this.send('Browser.close'); } catch (e) { /* already gone */ }
+    // Chrome can shut the socket before it answers its own close: wait for the answer, not for ever
+    try { await Promise.race([this.send('Browser.close'), sleep(2000)]); } catch (e) { /* already gone */ }
     try { this.proc.kill(); } catch (e) { /* already gone */ }
     await sleep(200);
     try { fs.rmSync(this.profile, { recursive: true, force: true }); } catch (e) { /* Windows holds it a moment */ }

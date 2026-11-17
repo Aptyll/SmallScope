@@ -22,7 +22,7 @@ const { openGame, args } = require('./browser');
     if (o.at) c = o.at.split(',').map(Number);
     else if (o.tile) c = o.tile.split(',').map((v) => (+v + 0.5) * TILE);
     else if (o.find) {
-      const free = (x, y) => !objects[y * WORLD + x] && !waterAt(x, y) && ground[y * WORLD + x] !== 1;
+      const free = (x, y) => !objects[y * WORLD + x] && !waterAt(x, y) && ground[y * WORLD + x] !== 1 && !deepAt((x + 0.5) * TILE, (y + 0.5) * TILE); // open snow: no reeds either
       for (let ty = 20; ty < WORLD - 20 && !c; ty++) for (let tx = 20; tx < WORLD - 20 && !c; tx++) {
         let ok = true; for (let dy = -3; dy <= 3 && ok; dy++) for (let dx = -6; dx <= 6 && ok; dx++) if (!free(tx + dx, ty + dy)) ok = false;
         if (!ok) continue;
