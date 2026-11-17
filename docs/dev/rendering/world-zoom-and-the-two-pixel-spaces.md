@@ -28,8 +28,10 @@ Consequences a new pass has to respect:
 
 - **A world pass bounds itself against `WV_W`/`WV_H`, never `VIEW_W`/`VIEW_H`.** Below zoom 1
   the world view is *wider* than the canvas, and culling to the canvas eats the edges.
-- `worldCv` is allocated at the most zoomed-out size (`ZOOM_FLOOR`) once per
-  canvas size, and each frame uses the `WV_W`×`WV_H` corner — never resize it per frame.
+- `worldCv` is allocated at the most zoomed-out size (`zoomFloor()`: the far rung, or the shows'
+  framing if a narrow frame puts it farther) once per canvas size, and each frame uses the
+  `WV_W`×`WV_H` corner — never resize it per frame. `sizeWorldView()` never lets `zoomCur` past
+  that floor, so the view can never ask for more world than the buffer holds.
 - Anything **UI-layer but anchored to a world point** (the radial wheel, the gold arrow over your seat on the
   wing) converts through `wToSX`/`wToSY`, and
   keeps its own pixel size.
@@ -50,18 +52,22 @@ on a 16×16 sprite is exactly what "stretched" looks like. So the zoom the playe
 not stored as a float at all:
 
 - **`kWant` is that whole number** — device px per world px — and the wheel steps it by **±1**,
-  clamped to `kMin()`…`kMax()` (`ZOOM_MIN` … `ZOOM_MAX` × `worldDev`, the default UI's scale,
-  [one camera](one-camera-fullscreen-pixel-rendering.md)). `zoomWantOf()` derives the float
+  clamped to `kMin()`…`kMax()` by `rungK()`, which every way of setting it goes through.
+  `kMax()` is `ZOOM_MAX` × `worldDev` (the default UI's scale,
+  [one camera](one-camera-fullscreen-pixel-rendering.md)); `kMin()` is the nearest rung that
+  shows no more than `ZOOM_OUT_ROWS` of the frame's real device rows, **ceiled**: rounded, a
+  720p, 1200p or 1800p frame got a rung past the range (720 rows at 720p), more vision than a
+  1080p rival. `zoomWantOf()` derives the float
   scale as `kWant / devScale`, and the fixed framings below go through `zu()` the same way.
 - **The range is authored in rows of world on screen**, not in scale: `ZOOM_OUT_ROWS` (540, the
-  whole clearing) and `ZOOM_IN_ROWS` (75, a face), and `ZOOM_MIN`/`ZOOM_MAX` are
-  `TARGET_ROWS` over each (0.67 … 4.8 at 360 rows), so a taller frame neither hands out more
-  vision at max-out nor loses the face at max-in.
+  whole clearing) and `ZOOM_IN_ROWS` (75, a face; `ZOOM_MAX` is `TARGET_ROWS` over it, 4.8), so
+  a taller frame neither hands out more vision at max-out nor loses the face at max-in. The far
+  rung by frame: 720p 2 (360 rows), 1080p 2 (540), 1200p 3 (400), 1440p 3 (480), 4K 4 (540).
 - **A match opens at `ZOOM_REST` (2)**: every world pixel two canvas pixels, 180 rows of world on
   screen, so the 16 px art reads twice its old size by scale alone (no art was redrawn for it).
   `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3), and re-rungs it from `kWant` itself on
   a resize, never from `zoomCur`, which a show may be holding elsewhere. The wheel still
-  steps out to `ZOOM_MIN`.
+  steps out to `kMin()`.
 - **The title holds `ZOOM_TITLE`** (`ZOOM_REST`: its ten heroes stand at the size they are played
   at, [main menu](main-menu-title.md)). **The shows hold `ZOOM_SHOW` (1)**, the framing they were
   composed at: the driven-off ceremony (`applyZoom`'s `show`, js/sim/sim.js), then ease back to the wheel's

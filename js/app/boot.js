@@ -310,8 +310,8 @@ window.DBG = {
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.
-  setZoom: (z, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), Math.round((+z || 1) * worldDev))); if (snap) applyZoom(0, true); }, // z at the default UI SIZE
-  setK: (k, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), k | 0)); if (snap) applyZoom(0, true); },
+  setZoom: (z, snap) => { kWant = rungK(Math.round((+z || 1) * worldDev)); if (snap) applyZoom(0, true); }, // z at the default UI SIZE
+  setK: (k, snap) => { kWant = rungK(k | 0); if (snap) applyZoom(0, true); },
   getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, worldDev, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
     rungs: (() => { const r = []; for (let k = kMin(); k <= kMax(); k++) r.push(+(k / devScale).toFixed(4)); return r; })(),
     wv: [WV_W, WV_H] }),
