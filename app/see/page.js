@@ -6,7 +6,7 @@
 // piece, and sheets that set two looks side by side with what differs between them.
 window.SEE = (function () {
   const D = window.DBG, M = window.MEDIA;
-  const S = { puts: [], hold: false, focus: [0, 0] };
+  const S = { puts: [], focus: [0, 0] };
   // the hours worth a look, in state.time's seconds (the darkness curve, js/sim/sim.js)
   S.TIMES = { dawn: CYCLE - 5, morning: DAY_LEN * 0.15, day: DAY_LEN * 0.35, noon: DAY_LEN * 0.5, dusk: DAY_LEN - 5, night: DAY_LEN + NIGHT_LEN * 0.4 };
   const INK = '#12161f', PAPER = '#e8eef8', GOLD = '#f2cc6a', MARK = '#ff2ee6';
@@ -15,7 +15,7 @@ window.SEE = (function () {
   // see.js pins performance.now before the game loads (window.__seeT), so a pine
   // sways only when a tick is run: two shots of one moment are the same pixels
   const tick0 = M.tick;
-  M.tick = function () { if (!S.hold && window.__seeT != null) window.__seeT += 1000 / 60; return tick0(); };
+  M.tick = function () { if (window.__seeT != null) window.__seeT += 1000 / 60; return tick0(); };
   S.run = function (n, speed) { M.speed = speed == null ? 1 : speed; for (let i = 0; i < n; i++) M.tick(); M.speed = 0; };
   // one frame painted with nothing stepped, not even the wind: what a capture reads
   S.frame = function () { const c = M.cam || [player.x, player.y]; camX = Math.round(c[0] - WV_W / 2); camY = Math.round(c[1] - WV_H / 2); render(); };
@@ -23,7 +23,7 @@ window.SEE = (function () {
   // ---- the places ----------------------------------------------------------------
   // Every name comes off a live registry (camps, structures, the lanes, the perches,
   // the merchants), so a moved camp moves its name with it. A name that several
-  // things share takes the quarter it stands in (nw, e ...) and counts outward.
+  // things share takes its side of the map (w, nw ...) and counts outward.
   S.spots = function () {
     const raw = [], mid = WORLD * TILE / 2;
     const slug = (s) => String(s).toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -62,7 +62,7 @@ window.SEE = (function () {
     }
     return out.map((s) => ({ name: s.name, x: s.x, y: s.y, tile: [Math.floor(s.x / TILE), Math.floor(s.y / TILE)], r: s.r, also: s.also }));
   };
-  // 'orca', 'wolf-den-nw+40,-16', '@1104,400' (world px), 't69,25' (a tile)
+  // 'orca', 'wolf-den-w+40,-16', '@1104,400' (world px), 't69,25' (a tile)
   S.find = function (q) {
     const m = /^(.*?)([+-]\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(String(q)), name = (m ? m[1] : String(q)).toLowerCase();
     const dx = m ? +m[2] : 0, dy = m ? +m[3] : 0;
@@ -112,19 +112,25 @@ window.SEE = (function () {
     return { k: D.getZoom().k, devScale, view: [VIEW_W, VIEW_H], world: WORLD * TILE };
   };
 
-  // open ground beside a point: the nearest of a few offsets with no scenery on it or
-  // hanging over it, no water, and no beast or hero already standing there
+  // open ground beside a point: the nearest spot with no scenery on it or hanging over
+  // it, no water, no reeds, and no beast or hero already standing there
   S.open = function (at, taken) {
     const free = (x, y) => {
       const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
       for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) if (!inWorld(tx + dx, ty + dy) || objects[idx(tx + dx, ty + dy)] || waterAt(tx + dx, ty + dy)) return false;
+      if (deepAt(x, y)) return false; // the reeds are not objects, and they hide a body
       return !animals.some((a) => Math.hypot(a.x - x, a.y - y) < 28) && !taken.some((h) => Math.hypot(h.x - x, h.y - y) < 28);
     };
-    for (const [dx, dy] of [[-40, 16], [40, 16], [-56, 0], [56, 0], [-24, 32], [24, 32], [0, 36], [-56, 28], [56, 28], [-40, -20], [40, -20], [-64, 12], [64, 12]]) if (free(at[0] + dx, at[1] + dy)) return [at[0] + dx, at[1] + dy];
-    return [at[0] - 40, at[1] + 16];
+    // rings round the point, flattened to the close look's 16:9, the near and the low side first
+    for (const r of [44, 60, 76]) for (const deg of [160, 20, 200, 340, 130, 50, 230, 310, 90, 270]) {
+      const x = Math.round(at[0] + Math.cos(deg * Math.PI / 180) * r), y = Math.round(at[1] + Math.sin(deg * Math.PI / 180) * r * 0.55);
+      if (free(x, y)) return [x, y];
+    }
+    return [at[0] - 44, at[1] + 16];
   };
-  // heroes round the focus: 'ARMATOS' (on open ground beside it), 'VELOX@40,0:foe:left'. The first is the
-  // local player (the HUD is theirs); every seat nobody asked for leaves the frame.
+  // heroes round the focus: 'ARMATOS' (on open ground beside it), 'VELOX@40,0:foe:left'.
+  // The first is the local player (the HUD is theirs); every seat nobody asked for
+  // leaves the frame.
   S.heroes = function (list, at) {
     const used = new Set();
     const seat = (foe) => (!used.size ? player : players.find((p) => p !== player && !used.has(p) && (p.team !== player.team) === foe));

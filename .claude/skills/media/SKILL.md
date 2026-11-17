@@ -18,6 +18,7 @@ or font renderer: extend `app/media/`, in the same PR as the media if the change
 | a GIF, a clip, a trailer piece | the mp4 or GIF and its storyboard | steps 1 to 5 |
 | a YouTube Short | the mp4 and its YouTube package | [shorts.md](shorts.md) first: it picks frame 0 with Noah, then hands its beats to steps 2 to 5 |
 | "I just want to see" | stills only, no PR | step 2 |
+| a look at a place for yourself (to check a change, to see where art will live) | far, as played and close PNGs, by hour, today beside new | not this skill: `node app/see/see.js`, [docs/dev/see.md](../../../docs/dev/see.md) |
 
 ## The steps
 

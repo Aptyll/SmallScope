@@ -77,7 +77,8 @@ the box. **`NO PIXEL DIFFERS` means the change cannot be seen at that spot**: pi
 shows. Two loads of one tree paint the same pixels (`--vs HEAD` reads 0 on every look), so a count
 is the change and nothing else.
 
-A picture with art the game does not have is STAGED. Say so wherever it is shown.
+A picture with art the game does not have is STAGED. The sheets say so in their headline; say so
+wherever you show a bare look.
 
 ## The whole map
 

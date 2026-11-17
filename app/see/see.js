@@ -5,13 +5,13 @@
 //
 //   node app/see/see.js --spots                         every named place, off the live map
 //   node app/see/see.js --spot orca --out W/orca        three looks of one place:
-//       far-<hour>.png    the world layer, 1 px a world px: the widest a player zooms out
+//       far-<hour>.png    the world layer, 1 px a world px: the place in its surroundings
 //       play-<hour>.png   the screen at the resting zoom, HUD and all (4 px a world px)
 //       close-<hour>.png  the world layer round the spot, 8 px a world px
 //   node app/see/see.js --map --out W/map               the whole map in one piece, its
 //       quarters at 1 px a world px, and a half-size chart with every place named
 //
-//   --spot NAME[+dx,dy]   a place off --spots ('orca', 'wolf-den-nw', 'lane-top-mid+0,-40'),
+//   --spot NAME[+dx,dy]   a place off --spots ('orca', 'wolf-den-w', 'lane-top-mid+0,-40'),
 //                         '@X,Y' world px or 'tTX,TY' a tile; a part of a name is enough
 //   --time day,night      hours to shoot: dawn morning day dusk night, or seconds (default day)
 //   --hero A@dx,dy,...    heroes round the spot: NAME[@dx,dy][:foe][:left|right|up|down], the
@@ -179,7 +179,8 @@ async function shootSpot(A, sides, dir) {
     }
     got.push(row);
   }
-  const now = got[got.length - 1], pg = now.side.st.pg, spot = now.side.st.spot.name.toUpperCase();
+  // art the game does not have yet is STAGED, and every sheet that shows it says so
+  const now = got[got.length - 1], pg = now.side.st.pg, spot = (now.side.st.art.length ? 'STAGED  ' : '') + now.side.st.spot.name.toUpperCase();
   if (hours.length > 1) {
     const sh = await pg.eval((p, t) => SEE.sheet(p, 2, t), hours.map((h) => ({ url: now.by[h].view.url, label: h })), spot + '   THE HOURS, 2 PX A WORLD PX');
     out.files.push(save(path.join(dir, 'hours.png'), sh.url));
