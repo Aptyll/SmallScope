@@ -10,7 +10,7 @@ which draws with this.
 ## What was tried
 
 The same beast was drawn by each method and shown unnamed to a reader who knew nothing about it
-(the blind read, below). Rounds are kept in the project files under `art-pipeline/proof/`. The two
+(the blind read). Rounds are kept in the project files under `art-pipeline/proof/`. The two
 worked examples of modelled surfaces are `art-quality/work/boss.py` and `ice.py`.
 
 | method | what it gave | verdict |
@@ -35,9 +35,10 @@ Two things that were measured and are worth knowing:
   flat grid is already near its ceiling: the headlamp redrawn with modelled brass was not visibly
   better. What lifts a small sprite is its design, its motion and how it sits in the snow. From
   about 24 px up the surfaces carry it, and a flat grid there is the fault.
-- **The blind read tests the read, not the craft.** Every flat round passed "what is it". Ask the
-  reader to rank the tiles best-drawn to worst with today's neighbours among them (the pine, the
-  pump): a new sprite that ranks under its neighbours is not ready, whatever it reads as.
+- **The blind read tests the read, not the craft.** Every flat round passed "what is it". So the
+  judge (`review.py`) also asks whether each tile is finished or a placeholder and ranks them with
+  today's neighbours among the tiles (`--beside`: the pine, the pump): a new sprite that ranks
+  under its neighbours is not ready, whatever it reads as.
 
 Every creature Noah has kept so far (deer, rabbit, bears) began from a picture he supplied. This
 method is for when there is no picture. When there is one, fit to it. The surface tools are proven
@@ -46,7 +47,9 @@ polygons), which no tool here draws for you.
 
 ## The style
 
-One family, on today's sprites. Measure against them in a real frame, never from memory.
+One family, on today's sprites. Measure against them in a real frame, never from memory. When a
+piece is good enough to show Noah is [the bar](art-bar.md): five gates, and a judge step that
+stands it among what he kept and rejected.
 
 - **Drawn at 1x.** Every edge lands on a pixel the first time. Nothing is scaled, rotated or blurred.
 - **Shape first.** The flat silhouette alone must say what it is: legs apart with ground showing
@@ -100,14 +103,14 @@ One family, on today's sprites. Measure against them in a real frame, never from
 | `board.py` | the board: each sprite big on snow, on road earth, as a flat shape, in greys, then all at 1x and 2x, then the game frames |
 | `stage.js` | the art standing in a real game frame beside today's hero, wolf, deer and bear, on snow and on the road, drawn by the game with its shade and health frame. `--cut DIR` saves today's sprites at 1x |
 | `check.py` | the certain faults: touches the canvas, wrong size for its kind, over 24 colours, border not ink, melts into snow, head too small, under 16 team pixels. The rest are WARN |
-| `blind.py` | numbered, unnamed, shuffled tiles for a reader with no brief, and the key beside them |
+| `review.py` | the judge step ([the bar](art-bar.md)): new art among pieces Noah kept and rejected (`docs/media/bar/`) for one fresh reader briefed by `reviewer.md`, the pass or fail from the reader's answer, and `add` to file his next verdict |
 
 ```
 node app/server.js &                                        # the game, for --frame and cut.js
 node app/art/cut.js --out W/refs tree.0 pumpAnim.0 scrap.left.idle.0   # today's neighbours, and the sprite to start from
 python3 app/art/round.py W/boar.py --frame                  # look at W/boar/now/board.png
 python3 app/art/round.py W/boar.py --frame --keep           # a round worth keeping: W/boar/r1/
-python3 app/art/blind.py W/tiles.png W/old.png W/boar/r1/side.png
+python3 app/art/review.py sprite W/rv W/boar/r1/side.png --is "wild boar" --kind beast   # the judge step
 ```
 
 An asset file (`W/boar.py`) holds `KIND`, `PAL`, `views()`, and optionally `HEAD`, `DETAIL`,

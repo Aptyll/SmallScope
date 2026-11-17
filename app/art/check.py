@@ -2,7 +2,7 @@
 # Measured on today's deer, bear, rabbit, wolf and on the rejected camp and snow beast rounds:
 # no number here tells liked art from rejected art (the deer has more lone pixels than the
 # rejected boar). What sinks a sprite is its drawing, and only an eye reads that: the SHAPE row
-# of the board and the blind read (app/art/blind.py). So a FAIL here is only a fault that is
+# of the board and the judge (app/art/review.py). So a FAIL here is only a fault that is
 # certain whoever looks (it melts into snow, it is the wrong size, the side cannot be read), a
 # WARN is a place to look, and a pass means nothing more than "now look at it".
 #   python3 app/art/check.py sprite.png [--kind big|pack|hero|prop] [--head x0,y0,x1,y1]

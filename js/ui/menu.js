@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.980';
+const PATCH_TXT = 'PATCH 0.982';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.982', 'UNDER THE HOOD: NEW ART IS NOW JUDGED BESIDE THE ART NOAH KEPT AND THE ART HE TURNED DOWN BEFORE HE SEES IT. NOTHING IN A MATCH CHANGES.'],
   ['0.980', 'UNDER THE HOOD: THE GUIDES FOR MAKING VIDEOS AND HEROES ARE TIDIED, AND THE VIDEO KIT\'S EXAMPLE SCENE RUNS ON THE 3V3 MAP AGAIN. NOTHING IN A MATCH CHANGES.'],
   ['0.979', 'BEHIND THE SCENES: NEW DRAWING TOOLS FOR THE GAME\'S ART. NOTHING IN A MATCH CHANGES YET.'],
   ['0.978', 'UNDER THE HOOD: THE TWO GUIDES FOR MAKING THE GAME\'S ART ARE ONE NOW. NOTHING IN A MATCH CHANGES.'],
