@@ -1,6 +1,6 @@
 ---
 name: art
-description: Make or change anything a player sees in Softfall: a creature, a hero body or weapon, a soldier, a machine or building, a prop, terrain or a whole place (a camp, a base, a shop), an icon, a HUD or menu part, an ability's effect. One loop for all of them: see today's game, brief it, draw it at 1x, judge it in a real game frame and by a blind read, give Noah lettered options, ship only his pick. Use whenever a new look is asked for, something is redrawn or "looks bad", "awful" or "like slop", a look is rejected, or Noah asks for options, concepts or "let me pick"; the new-hero and shorts skills send their art here.
+description: Make or change anything a player sees in Softfall: a creature, a hero body or weapon, a soldier, a machine or building, a prop, terrain or a whole place (a camp, a base, a shop), an icon, a HUD or menu part, an ability's effect. One loop for all of them: see today's game, brief it, draw it at 1x, judge it in a real game frame and by a blind read, give Noah lettered options, ship only his pick. Use whenever a new look is asked for, something is redrawn or "looks bad", "awful" or "like slop", a look is rejected, or Noah asks for options, concepts or "let me pick"; the hero and media skills send their art here.
 ---
 
 # Making anything a player sees
