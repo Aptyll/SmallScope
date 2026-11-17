@@ -38,10 +38,12 @@ Look at today's game before a pixel.
 ```
 node app/server.js &
 node app/art/stage.js --cut W/refs --out W/today.png     # today's hero, wolf, rabbit, bear at game size
+node app/art/cut.js --out W/refs scrap.left.idle tree.0  # any sprite in the game at 1x, by name (--list shows the names)
 node app/media/still.js --out W/place.png --tile TX,TY   # a clean frame of any spot
 ```
 
-Take sizes and palette ramps from what you see. If Noah gave a picture, fit to the picture: every
+Take sizes from what you see and colours from the game's own ramps (`GAME` in `app/art/px.py`). A
+redraw starts from the cut sprite itself: `Art.from_png` turns it into a grid to edit. If Noah gave a picture, fit to the picture: every
 creature he has kept began from one. `W` is a work folder outside the repo, in the project files:
 `/mnt/project-files/<thing>/round<N>/`, painters in its `src/`.
 
@@ -59,11 +61,20 @@ At 1x, on the game's own grid, in this order. Do not move on while the step abov
 
 1. **Shape.** One flat colour. Does the black shape alone say what it is?
 2. **Masses.** The big dark and light shapes, placed on purpose, three to six tones.
-3. **Face and accent.** Hand-set pixels for what must read at 1x; the one accent colour.
-4. **Grounds.** It holds on snow and on the road, in greys, at the size a player sees.
+3. **Surfaces**, for anything bigger than a hero (about 24 px up): a flat block there reads as a
+   placeholder beside the pump and the pine. Name each material as a ramp (`a.ramp('brass',
+   'bHhgGW')`), lay its form's light over the mass you set (`a.model('brass', cyl_h(6, 17))`: a
+   barrel, a ball, a sloped face), then add by hand what a hand leaves: straps, seams, cracks, and
+   the glints, pixel by pixel. At hero size and under skip this: flat is right there, and the
+   quality is the design.
+4. **Face and accent.** Hand-set pixels for what must read at 1x; the one accent colour.
+5. **Outline and ground.** Ink on what is built, its own darkest colour on what grows or freezes,
+   none on snow lying on snow (`outline_by`). It holds on snow and on the road, in greys, at the
+   size a player sees.
 
 For a sprite each round is `python3 app/art/round.py W/<name>.py --frame`, then look at
-`now/board.png` at full size; `--keep` saves a round worth judging. Kinds that are not one sprite
+`now/bench.png` (the pixels with a ruler, beside today's neighbours at the same zoom: name them in
+`NEAR`) and `now/board.png` at full size; `--keep` saves a round worth judging. Kinds that are not one sprite
 (a place, a HUD part, an effect) are built in the running game and captured as frames.
 
 ## 4. Judge
@@ -77,11 +88,13 @@ Every kept round, before Noah sees anything:
 - **The blind read.** `python3 app/art/blind.py W/tiles.png W/old.png W/<name>/r1/side.png [today's
   sprites, other rounds]`. Give only `tiles.png`, copied to a path that names nothing, to a fresh
   subagent with no context. Ask per tile: what is it, how sure, which way it faces, what the flat
-  shape alone looks like, the single biggest thing wrong; then a ranking best to worst. One reader,
-  one image, told to be blunt and to read no other file. Then open `tiles.key.json`.
+  shape alone looks like, whether it looks finished or like a placeholder, the single biggest
+  thing wrong; then a ranking best-drawn to worst. Put today's neighbours among the tiles (the
+  pine, the pump, a headlamp). One reader, one image, told to be blunt and to read no other file.
+  Then open `tiles.key.json`.
 
 It passes when the reader names the right thing with high confidence, says its shape alone reads,
-and ranks it above the old one. Otherwise the reader's own words ("a loaf", "a toy") are the next
+and ranks it above the old one and no lower than the neighbours it will stand beside. Otherwise the reader's own words ("a loaf", "a toy") are the next
 round's brief: redraw from the shape down. Three rounds without a pass means the design is wrong,
 not the pixels: change the pose or the feature, or ask Noah for a reference picture.
 

@@ -16,7 +16,8 @@ date is his own; change it only when he says so.
 ## Creatures
 
 - **Drawn** as flat shapes on the 1x grid with `app/art/px.py`, face by hand-set `patch`. Not lit
-  tubes (`app/media/paint.py`): rejected twice for living things.
+  tubes (`app/media/paint.py`): rejected twice for living things. The game mirrors a beast to face
+  left, so its light comes from straight above, never from one side.
 - **Size.** `KIND = 'pack'` 11 to 22 px tall, `'big'` 26 to 48, `'hero'` (a hero-sized beast) 14
   to 22. A hero's body is 16.
 - **Lives** as hand grids in `js/sprites/beasts.js`; a beast with many frames keeps a baker
@@ -63,8 +64,11 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
 ## Soldiers, machines and buildings
 
 - **Drawn** with the cutout painter `app/media/paint.py` (parts at 8x, banded to locked ramps):
-  right for things made of tubes and plates, as the pump and the tower. Small robots may be hand
-  grids with `app/art` instead, as the headlamp.
+  right for things made of tubes and plates, as the pump and the tower. A robot is drawn with
+  `app/art/px.py`: a flat hand grid at hero size and under, as the headlamp; above that its masses
+  are set by hand and its surfaces modelled on the same grid (`ramp`, `model`, `glint`: a boiler
+  is `cyl_h`, a lens is `ball`), lit from straight above because the game mirrors it. The worked
+  example is `/mnt/project-files/art-quality/work/boss.py`.
 - **Camera.** A big building is drawn in the game's own view: its top and its south wall. Never a
   side or front view unless Noah asks.
 - **Lives.** Its painter is a baker, `app/bake-<thing>/`, writing `js/baked/`. What it *is* lives
@@ -74,7 +78,12 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
 
 ## Props and scenery
 
-- **Drawn** as flat shapes with `app/art/px.py`, `KIND = 'prop'`.
+- **Drawn** as flat shapes with `app/art/px.py`, `KIND = 'prop'`, in the game's own materials
+  (`GAME`: ice, snow, pine, wood, stone). A prop never turns round, so it is lit up-left. Above
+  hero size its faces are modelled (`model` with `slope` for a flat face, a bright ridge between a
+  lit face and a shaded one). It is outlined in its own darkest colour, not ink, and the snow at
+  its foot has no outline, so it stands in the scene (`outline_by`; name the snow letters in
+  `BARE`). The worked example is `/mnt/project-files/art-quality/work/ice.py`.
 - **Lives** as grids in `js/sprites/terrain.js` or `landmarks.js`, with an `OBJECTS` entry saying
   what it is, placed through `placeObj`. A sheet of many same-sized sprites bakes through
   `SPR.bakeSheet`. Variety between tiles reads `hash2`/`vnoise`, never the local machine.
