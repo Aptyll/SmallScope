@@ -484,7 +484,7 @@ plus `merchFeet` — **16 × 18**, two rows taller than a player — an old trad
 team ink and all of it), a white **beard** (`w`/`W`) down the chest, a khaki wool coat
 (`r`/`R`/`d`) hanging straight to the hem, boots under it, three frames a direction (the boots
 walk, the coat hangs; the side grid faces right and flips), under `merchantPal`. It is look **D**
-off the concept sheet in `docs/media/concepts/merchant-concepts-2.png` (the `concept-art` skill
+off the concept sheet in `docs/media/concepts/merchant-concepts-2.png` (the `art` skill
 in `.claude/skills/` is how a sheet is made and picked). Nothing on it is a player's coat or hat,
 so the side reads off the crown, the nameplate and the bar.
 

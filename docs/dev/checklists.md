@@ -6,13 +6,13 @@ should not "clean up".
 
 ## Concepting a new look
 
-A new sprite (a character, an NPC, a creature, a building, a plant) is **picked off a concept sheet
-before anything goes into `js/sprites/`**: two to four candidate looks drawn with the `pixel-art`
-skill ([art.md](art.md): flat shapes on the game's own pixel grid, `app/art/`), shown big and in a
-real game frame beside a player at each size in question, lettered, and handed to Noah to choose
-from. The procedure is the `concept-art` skill in
-[.claude/skills/concept-art/](../../.claude/skills/concept-art/SKILL.md); the sheet kit is
-[media.md](media.md). Machines and buildings may still use `app/media/paint.py`.
+A new look (a character, a creature, a building, a plant, a place, an icon, a HUD part, an effect)
+is **picked off a sheet of options before anything ships**: two to four candidates, drawn at 1x
+([art.md](art.md)), shown big and in a real game frame at each size in question, lettered, and
+handed to Noah to choose from. The procedure is the `art` skill in
+[.claude/skills/art/](../../.claude/skills/art/SKILL.md), and its
+[kinds.md](../../.claude/skills/art/kinds.md) says how each kind is drawn and where it lives; the
+sheet kit is [media.md](media.md).
 
 ## Verifying a change
 

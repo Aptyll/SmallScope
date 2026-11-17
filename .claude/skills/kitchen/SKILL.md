@@ -1,6 +1,6 @@
 ---
 name: kitchen
-description: Add to the Softfall Kitchen, the public website where people watch the game get made (Aptyll/softfall-kitchen): a new idea on the board, a round of art or a Short storyboard Noah has answered, or a dish he says to serve. Use after every concept-art or shorts round he answers, and whenever Noah says "add it to the kitchen", "put it on the board" or "serve it".
+description: Add to the Softfall Kitchen, the public website where people watch the game get made (Aptyll/softfall-kitchen): a new idea on the board, a round of art or a Short storyboard Noah has answered, or a dish he says to serve. Use after every art or shorts round he answers, and whenever Noah says "add it to the kitchen", "put it on the board" or "serve it".
 ---
 
 # The Kitchen
@@ -16,7 +16,7 @@ the page shows is `kitchen.js` plus `art/<dish id>/`.
 
 ## When to add
 
-- **A round:** after Noah answers a concept-art sheet or a Short's first-frame round (a letter, or
+- **A round:** after Noah answers an `art` sheet of options or a Short's first-frame round (a letter, or
   "none of these"). Never before: a round's note says what he picked. One sheet, one round.
 - **An idea:** when Noah names one for the board. His words for the name.
 - **Serving:** only when Noah says so ("serve it"), never because a PR merged. Then the dish gets

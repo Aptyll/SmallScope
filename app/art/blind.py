@@ -5,7 +5,7 @@
 #   python3 app/art/blind.py out.png [--scale 3] [--seed 1] sprite.png ...
 # Writes out.png and out.key.json ({"1": "boar/now/side.png", ...}). Hand ONLY out.png to a
 # fresh reader (a subagent with no context, or a person) with the questions in
-# .claude/skills/pixel-art/SKILL.md, then compare the answers with the key.
+# .claude/skills/art/SKILL.md, then compare the answers with the key.
 import sys, os, json, random
 import numpy as np
 from PIL import Image
