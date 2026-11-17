@@ -99,10 +99,8 @@ const TARGET_ROWS = 360;
 // out more vision at max-out or lose the face at max-in.
 const ZOOM_OUT_ROWS = 540;  // the whole clearing and then some
 const ZOOM_IN_ROWS = 75;    // close enough to read a face
-const ZOOM_MIN = TARGET_ROWS / ZOOM_OUT_ROWS; // 0.67 at 360 rows
 const ZOOM_MAX = TARGET_ROWS / ZOOM_IN_ROWS;  // 4.8 at 360 rows
 const ZOOM_EASE = 16;     // per second, frame-rate independent
-const ZOOM_FLOOR = ZOOM_MIN; // widest world buffer we ever need
 // The view a match opens at: every world pixel two canvas pixels, so the
 // 16px art reads twice its old size and the screen holds 180 rows of world.
 // Whole, so it is a rung on every display; the wheel still zooms out from it.
@@ -119,15 +117,26 @@ let zoomCur = ZOOM_TITLE;  // applied scale, eased toward the wanted zoom every 
 let WV_W = 640, WV_H = 360; // the world view in world px
 let wOX = 0, wOY = 0;       // this frame's world buffer corner in world px: the camera floored, the shake folded in (render())
 
-// the rungs kWant may sit on, clamped so the ends of the range are reachable
-// on any display (a devScale of 1 or 2 has very few whole numbers to offer)
-function kMin() { return Math.max(1, Math.round(ZOOM_MIN * worldDev)); }
+// the rungs kWant may sit on. The far end is the nearest rung that shows no
+// more than ZOOM_OUT_ROWS of the frame's real rows: CEIL, never round, or a
+// frame between the 360-row steps (720p, 1200p, 1800p) is handed a rung past
+// the authored range - more vision than a 1080p rival in a ranked match. The
+// near end is kept a rung past it so the wheel always has somewhere to go.
+let frameRows = 360; // device rows the frame shows (fitCanvas)
+function kMin() { return Math.max(1, Math.ceil(frameRows / ZOOM_OUT_ROWS - 1e-9)); }
 function kMax() { return Math.max(kMin() + 1, Math.round(ZOOM_MAX * worldDev)); }
+// every way to set kWant lands it on the ladder through this
+function rungK(k) { return Math.max(kMin(), Math.min(kMax(), k)); }
 // a zoom authored as canvas px per world px at the default UI SIZE (every
 // ZOOM_* above, the ride's DROP_*), in this canvas's px: a smaller UI makes
 // the canvas more px across, and the world must cover the same device px
 function zu(z) { return z * worldDev / devScale; }
 function zoomWantOf() { return kWant / devScale; }
+// the widest scale anything may ask for, in canvas px per world px: the far
+// rung, or the shows' fixed framing (the title's is nearer) on a frame so narrow its
+// worldDev sits under that rung. The world buffer is sized off it, and the
+// view never asks past it, so the buffer always covers the canvas.
+function zoomFloor() { return Math.min(kMin() / devScale, zu(ZOOM_SHOW)); }
 
 // WV from the current scale, in world px. CEIL, never round: WV * k must
 // COVER the canvas or a sliver of stale pixels survives down the right edge.
@@ -138,7 +147,8 @@ function zoomWantOf() { return kWant / devScale; }
 // up to a world px up-left of the corner (render()), and the frame must still
 // cover the canvas after it.
 function sizeWorldView() {
-  const k = Math.max(0.05, zoomCur * devScale);
+  zoomCur = Math.max(zoomCur, zoomFloor()); // a resize or a loaded save can leave it past the new floor
+  const k = zoomCur * devScale;
   WV_W = Math.max(16, Math.ceil(VIEW_W * devScale / k) + 1);
   WV_H = Math.max(16, Math.ceil(VIEW_H * devScale / k) + 1);
 }
@@ -191,6 +201,7 @@ function fitCanvas() {
   const zWas = kWant ? kWant / worldDev : ZOOM_REST; // the wheel's zoom before this fit, as a default-UI scale
   devScale = dev;    // the replay window captures at this resolution
   worldDev = wd;
+  frameRows = devH;
   // cover the window exactly: ceil leaves at most one game px of overflow,
   // which the body's flex centering splits and overflow:hidden clips
   VIEW_H = Math.ceil(devH / dev);
@@ -208,12 +219,13 @@ function fitCanvas() {
   // re-rung the wheel's zoom onto the new ladder at the nearest scale to what
   // it was - off kWant, never zoomCur, which a ride or a show is holding
   // elsewhere. A UI SIZE change leaves worldDev, so kWant stays put
-  kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zWas * wd)));
+  kWant = rungK(Math.round(zWas * wd));
   // world buffer at the most zoomed-out size we can ever ask for, so it is
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
-  const wMax = Math.ceil(VIEW_W / zu(ZOOM_FLOOR)) + 1, hMax = Math.ceil(VIEW_H / zu(ZOOM_FLOOR)) + 1; // + the sub-pixel camera's spare (sizeWorldView)
+  // Sized by sizeWorldView's own sum at zoomFloor(), so the two cannot drift apart.
+  const wMax = Math.ceil(VIEW_W / zoomFloor()) + 1, hMax = Math.ceil(VIEW_H / zoomFloor()) + 1; // + the sub-pixel camera's spare (sizeWorldView)
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
   airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;

@@ -52,7 +52,7 @@ function directorKey(e) {
   if (k === 'Home') { director.free = false; director.flash = DIR_FLASH; return true; }
   if (k === 'PageUp' || k === 'PageDown') {
     const k0 = kWant;
-    kWant = Math.max(kMin(), Math.min(kMax(), kWant + (k === 'PageUp' ? 1 : -1)));
+    kWant = rungK(kWant + (k === 'PageUp' ? 1 : -1));
     if (kWant !== k0) SFX.notch();
     return true;
   }

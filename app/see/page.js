@@ -206,7 +206,7 @@ window.SEE = (function () {
   // foot is off the view is not drawn at all, and the tallest stands 144 px over its
   // foot), all on one held clock, at the farthest zoom the world buffer holds.
   const EDGE = { l: 96, r: 96, t: 48, b: 168 };
-  const farK = () => Math.max(kMin(), Math.ceil(ZOOM_FLOOR * devScale - 1e-6));
+  const farK = kMin;
   // the view whose kept piece starts at world (x, y): where that piece sits in worldCv
   const view = (x, y) => { M.cam = [x - EDGE.l + WV_W / 2, y - EDGE.t + WV_H / 2]; S.frame(); return [x - wOX, y - wOY]; };
   // what belongs to a view and not to the world (the noon shafts, the night's dark rim)

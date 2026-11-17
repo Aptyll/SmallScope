@@ -79,7 +79,7 @@ const SAVE_ROOTS = [
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
   // the view: where the camera and its zoom stood, so the first frame is the saved one
   // (boot frames the camera on the player after this runs, so saveBootView puts it back again)
-  ['view', () => [camX, camY, kWant, zoomCur], (v) => { saveView = v; camX = v[0]; camY = v[1]; kWant = v[2]; zoomCur = v[3]; }],
+  ['view', () => [camX, camY, kWant, zoomCur], (v) => { saveView = v; camX = v[0]; camY = v[1]; kWant = rungK(v[2]); zoomCur = v[3]; }],
 ];
 
 let saveView = null; // the loaded match's camera, until boot has finished moving it

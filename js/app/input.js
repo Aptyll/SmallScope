@@ -815,7 +815,7 @@ pageListen(canvas, 'wheel', (e) => {
 // what you pick while dead is still yours when you are back.
 function wheelZoom(e) {
   const k0 = kWant;
-  kWant = Math.max(kMin(), Math.min(kMax(), kWant + (e.deltaY > 0 ? -1 : 1)));
+  kWant = rungK(kWant + (e.deltaY > 0 ? -1 : 1));
   if (kWant !== k0) SFX.notch(); // ...and nothing at the ends of the range, where the notch does nothing
 }
 
