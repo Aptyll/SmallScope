@@ -1,0 +1,258 @@
+{
+ "about": "What Noah kept and what he rejected, at the game's own pixels. Every row has a verdict he gave himself: `kept` is a pick or a yes, `rejected` a no. `words` say what he said and what exactly he judged; `why` is Claude's reading and may be wrong. Read by app/art/review.py; add a row with `review.py add`.",
+ "items": [
+  {
+   "id": "deer",
+   "file": "deer.png",
+   "kind": "beast",
+   "verdict": "kept",
+   "date": "2026-09",
+   "words": "his own reference picture (docs/media/new_media3)",
+   "why": "a line of action from hoof to antler, fur shaded in small clusters that follow the body, one warm ramp"
+  },
+  {
+   "id": "bunny",
+   "file": "bunny.png",
+   "kind": "beast",
+   "verdict": "kept",
+   "date": "2026-09",
+   "words": "his own reference picture (docs/media/new_media3)",
+   "why": "a crouch with weight in it, ears as the one feature, a dark eye on light fur"
+  },
+  {
+   "id": "bear",
+   "file": "bear.png",
+   "kind": "beast",
+   "verdict": "kept",
+   "date": "2026-10-04",
+   "words": "maybe we shouldn't change the silhouette or face shape",
+   "why": "rolling shoulders and a low head: it walks. Fitted to his reference picture"
+  },
+  {
+   "id": "armatos",
+   "file": "armatos.png",
+   "kind": "hero",
+   "verdict": "kept",
+   "date": "2026-10-20",
+   "words": "picked body F and the J greatsword from the sheet, then OK'd the look",
+   "why": "the hero bar: a face, a banner and a blade you can name at 16 px, flat lit and shade planes"
+  },
+  {
+   "id": "bella",
+   "file": "bella.png",
+   "kind": "hero",
+   "verdict": "kept",
+   "date": "2026-10-20",
+   "words": "looks great, add to game",
+   "why": "one signature shape (the ponytail) and one colour on Armatos's frame"
+  },
+  {
+   "id": "fossor",
+   "file": "fossor.png",
+   "kind": "hero",
+   "verdict": "kept",
+   "date": "2026-11-10",
+   "words": "look great",
+   "why": "a robot that is a person: one lamp eye is the face, the spade says the job"
+  },
+  {
+   "id": "portitor",
+   "file": "portitor.png",
+   "kind": "hero",
+   "verdict": "kept",
+   "date": "2026-11-10",
+   "words": "look great",
+   "why": "the pack on its back is the whole idea and shows from every side"
+  },
+  {
+   "id": "strider",
+   "file": "strider.png",
+   "kind": "machine",
+   "verdict": "kept",
+   "date": "2026-11-16",
+   "words": "looks great",
+   "why": "one idea in five words (a lamp box on stilts), a lean, a lit eye that says where it looks"
+  },
+  {
+   "id": "headlamp",
+   "file": "headlamp.png",
+   "kind": "machine",
+   "verdict": "kept",
+   "date": "2026-11-16",
+   "words": "let the camp just be 3 headlamps",
+   "why": "he asked for lights that are intentional, with persona: cyan is sight, amber is anger, nothing else glows"
+  },
+  {
+   "id": "pump",
+   "file": "pump.png",
+   "kind": "machine",
+   "verdict": "kept",
+   "date": "2026-10-13",
+   "words": "picked the gold pump from rounds A to N: \"add it to the game\"",
+   "why": "a real machine anyone can name, drawn in the game's camera (top and south wall), a part that moves"
+  },
+  {
+   "id": "boar",
+   "file": "boar.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "this is still not up to my standard",
+   "why": "a table: level back, four legs in a comb, flat panels split by seam lines, a decal for a shoulder"
+  },
+  {
+   "id": "bruma-side",
+   "file": "bruma-side.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "this is still not up to my standard",
+   "why": "a plush toy: round, short legs, a saddle cloth doing the work the animal should"
+  },
+  {
+   "id": "bruma-front",
+   "file": "bruma-front.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "this is still not up to my standard",
+   "why": "a symmetric toy face; nothing in the shape says bear"
+  },
+  {
+   "id": "ibex",
+   "file": "ibex.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "none (of round 2)",
+   "why": "the horns read, the animal does not: a box body in panels, stiff legs, dull tan on snow"
+  },
+  {
+   "id": "badger",
+   "file": "badger.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "none (of round 2)",
+   "why": "a striped wedge: no neck, no feet, no eye"
+  },
+  {
+   "id": "owl",
+   "file": "owl.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-11-10",
+   "words": "none (of round 2)",
+   "why": "an egg with a scarf: white on snow, the scarf is the only shape"
+  },
+  {
+   "id": "wolf-timber",
+   "file": "wolf-timber.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-10-14",
+   "words": "I don't like (any of round 1)",
+   "why": "painted big and shrunk: faceted fur, soft fringes, a red eye; another game's wolf"
+  },
+  {
+   "id": "bear-hump",
+   "file": "bear-hump.png",
+   "kind": "beast",
+   "verdict": "rejected",
+   "date": "2026-10-04",
+   "words": "really bad",
+   "why": "a verdict on the change, not the drawing: it altered the silhouette and face of a bear he liked. Not used as an anchor",
+   "anchor": false
+  },
+  {
+   "id": "scout-heroic",
+   "file": "scout-heroic.png",
+   "kind": "hero",
+   "verdict": "rejected",
+   "date": "2026-09-29",
+   "words": "horrible",
+   "why": "outline and shading put on by a program: a stiff, symmetric mannequin"
+  },
+  {
+   "id": "siege-e",
+   "file": "siege-e.png",
+   "kind": "machine",
+   "verdict": "rejected",
+   "date": "2026-11-16",
+   "words": "E/F/G do not look good",
+   "why": "a block of team colour seen from a different camera than the rest of the game"
+  },
+  {
+   "id": "siege-f",
+   "file": "siege-f.png",
+   "kind": "machine",
+   "verdict": "rejected",
+   "date": "2026-11-16",
+   "words": "E/F/G do not look good",
+   "why": "a toy tank: one fat tube on a box, nothing that looks at you"
+  },
+  {
+   "id": "siege-g",
+   "file": "siege-g.png",
+   "kind": "machine",
+   "verdict": "rejected",
+   "date": "2026-11-16",
+   "words": "E/F/G do not look good",
+   "why": "parts laid side by side, no one shape leads"
+  },
+  {
+   "id": "place-perch",
+   "file": "place-perch.png",
+   "kind": "place",
+   "verdict": "kept",
+   "date": "2026-10-13",
+   "words": "picked the bird (D, then H): build. The stone round under it came later and he has not judged it",
+   "why": "the bird is the landmark: the biggest, darkest, most saturated thing in view, on its own floor with a worn edge"
+  },
+  {
+   "id": "place-lair-ring",
+   "file": "place-lair-ring.png",
+   "kind": "place",
+   "verdict": "rejected",
+   "date": "2026-10-19",
+   "words": "really bad; the lair walls and details don't make sense",
+   "why": "masonry nobody built, on open snow: the props are louder than the bear"
+  },
+  {
+   "id": "place-lair-fall",
+   "file": "place-lair-fall.png",
+   "kind": "place",
+   "verdict": "rejected",
+   "date": "2026-10-20",
+   "words": "dislikes all of round 4: think about how League shows its camps",
+   "why": "a prop set down in a field: nothing encloses it, the health bar sits on the rock"
+  },
+  {
+   "id": "place-lair-snag",
+   "file": "place-lair-snag.png",
+   "kind": "place",
+   "verdict": "rejected",
+   "date": "2026-10-20",
+   "words": "dislikes all of round 4: think about how League shows its camps",
+   "why": "a ring of pines with one sign in it: no floor of its own, no mouth, no reason to look"
+  },
+  {
+   "id": "layout-organic",
+   "file": "layout-organic.png",
+   "kind": "layout",
+   "verdict": "kept",
+   "date": "2026-11-16",
+   "words": "picked natural shapes on the same layout",
+   "why": "groves of different sizes, a creek, a pond: every corner is a place you could name"
+  },
+  {
+   "id": "layout-grid",
+   "file": "layout-grid.png",
+   "kind": "layout",
+   "verdict": "rejected",
+   "date": "2026-11-16",
+   "words": "picked natural shapes on the same layout",
+   "why": "rectangles on a ruler: clean to walk, nothing to remember"
+  }
+ ]
+}
