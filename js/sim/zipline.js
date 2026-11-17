@@ -3,7 +3,9 @@
 // takes on it (drawn by js/draw/zipline.js).
 // ------------------------------------------------------------ zipline
 // THE ZIPLINE: one cable per side down each lane, strung on pylons along the
-// lane's outer edge from beside its perch out to just past its OUTER tower
+// lane's outer edge from beside its perch out past its OUTER tower, where no
+// post stands: the strand runs on past the tower to a landing on the snow and
+// slants down to a stake in the ground, the ramp a rider comes off by
 // (placeZips) - so the middle stretch where the waves meet is cable-free and
 // is always walked into. The walk out of a base is dead time with no
 // decisions in it; the fight is not; the cable compresses exactly the first
@@ -31,7 +33,8 @@
 // zipBoard/zipRide/zipEnd as a player, minus the hands.
 const ZIP_START = 11;      // tiles along the lane from the perch the first pylon stands: past the stall, so the counter and the cable never share a spot
 const ZIP_OFF = 3;         // tiles off the lane's centreline, outward, the cable's track runs: the lane's last open row, never the road
-const ZIP_PAST = 3;        // tiles along the lane past a tower's middle the cable's end pylon stands, so a ride lets go clear of the stone
+const ZIP_LAND = 4;        // tiles along the lane past a tower's middle a cable cut there lets go: the ramp, on open snow clear of the stone
+const ZIP_STAKE = 2;       // tiles past the landing the strand is staked into the ground (drawn only: drawZipStakes)
 const ZIP_SPAN = 10;       // tiles between pylons along the lane
 const ZIP_SPD = 220;       // px/s - 3x walk
 const ZIP_GRAB = 32;       // px off the cable's ground track a body may clip on from: two tiles, so the press works from the road
@@ -65,25 +68,33 @@ function zipTowerAlong(team, lane, o) {
   return best;
 }
 // boot, after placeTowers: a cable for each side down each lane, from
-// ZIP_START out to ZIP_PAST beyond its outer tower. RED's top cable is laid
+// ZIP_START out past its outer tower. RED's top cable is laid
 // off the lane and the towers; the other three are it mirrored tile for tile
 // (fieldFour's fold, as the towers are), so the four are exactly alike
 function placeZips() {
   zips.length = 0; zipWhole.length = 0;
   const towers = structures.filter((o) => o.type === 'tower' && o.team === 0 && o.lane === 0)
-    .map((o) => ({ o, d: zipTowerAlong(0, 0, o) + ZIP_PAST })).sort((a, b) => a.d - b.d);
-  // pylons evenly spaced, at most ZIP_SPAN apart, with one exactly at each
-  // tower's end: the points the cable is cut back to
+    .map((o) => zipTowerAlong(0, 0, o)).sort((a, b) => a - b);
+  // pylons evenly spaced, at most ZIP_SPAN apart, with one beside each tower:
+  // the last pylon of a cable cut back to that tower
   const stops = [ZIP_START], at = [];
-  for (const t of towers) {
-    const a = stops[stops.length - 1], n = Math.max(1, Math.ceil((t.d - a) / ZIP_SPAN));
-    for (let k = 1; k <= n; k++) stops.push(a + (t.d - a) * k / n);
+  for (const d of towers) {
+    const a = stops[stops.length - 1], n = Math.max(1, Math.ceil((d - a) / ZIP_SPAN));
+    for (let k = 1; k <= n; k++) stops.push(a + (d - a) * k / n);
     at.push(stops.length - 1);
   }
   const tiles = stops.map((d) => { const q = zipTrack(0, 0, d); return [Math.round(q.x), Math.round(q.y)]; });
+  // past each tower no post: the strand runs on and down to a landing on the
+  // snow and a stake in the ground beyond it, the ramp a rider comes off and
+  // climbs on by (tile-index space, RED's top, mirrored like the pylons)
+  const tile = (q) => ({ x: Math.round(q.x), y: Math.round(q.y) }); // on a tile's centre, so the mirror is exact
+  const ramps = towers.map((d) => ({ land: tile(zipTrack(0, 0, d + ZIP_LAND)), stake: tile(zipTrack(0, 0, d + ZIP_LAND + ZIP_STAKE)) }));
   for (const lane of [0, 1]) for (const team of [0, 1]) {
-    const L = zips.length;
-    zipWhole[L] = zipLay(team, lane, tiles.map(([x, y]) => [team ? WORLD - 1 - x : x, lane ? WORLD - 1 - y : y]));
+    const L = zips.length, fx = (x) => team ? WORLD - 1 - x : x, fy = (y) => lane ? WORLD - 1 - y : y;
+    const w = zipWhole[L] = zipLay(team, lane, tiles.map(([x, y]) => [fx(x), fy(y)]));
+    const px = (q) => ({ x: (fx(q.x) + 0.5) * TILE, y: (fy(q.y) + 0.5) * TILE - 4 }); // a body position, like a pylon's
+    w.land = []; w.stake = [];
+    ramps.forEach((m, k) => { w.land[at[k]] = px(m.land); w.stake[at[k]] = px(m.stake); });
     zips.push(null);
     // its towers, inner then outer, as RED's top pair mirrored
     const mine = structures.filter((o) => o.type === 'tower' && o.team === team && o.lane === lane)
@@ -119,8 +130,11 @@ function zipSync(sim) {
     const z = zips[L];
     if (far < 1) { if (z) { zips[L] = null; if (sim) zipDrop(L, -1); } return; }
     if (z && z.cut === far) return;
-    zips[L] = Object.assign({}, w, { pts: w.pts.slice(0, far + 1), cum: w.cum.slice(0, far + 1), len: w.cum[far], cut: far });
-    if (sim) zipDrop(L, w.cum[far]);
+    // ...to the pylon beside that tower, then on past it to its landing (the ramp)
+    const land = w.land[far], pts = w.pts.slice(0, far + 1).concat([land]), cum = w.cum.slice(0, far + 1);
+    cum.push(w.cum[far] + Math.hypot(land.x - w.pts[far].x, land.y - w.pts[far].y));
+    zips[L] = Object.assign({}, w, { pts, cum, len: cum[cum.length - 1], cut: far, stake: w.stake[far] });
+    if (sim) zipDrop(L, w.cum[far]); // past the tower the ramp need not lie on the old line
   });
 }
 // a cable cut back under its riders: whoever hangs past the new end (all of

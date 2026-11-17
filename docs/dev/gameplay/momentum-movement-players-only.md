@@ -122,7 +122,9 @@ met. A side's own riders pass through each other. Players (any seat) and soldier
 surface model to spend, so a hop-off is a dash (snow kills
 it in under a second) and shift on landing carves a slide; a body coming down over a solid tile
 (a pylon, or a pine at the lane's edge) is set beside it (`nearestDryTile`). Every cable ends on a
-pylon `ZIP_PAST` tiles past a tower, so the ride never lets go inside the stone. Riders draw lifted
+landing `ZIP_LAND` tiles past a tower, on the snow, so the ride never lets go inside the stone: no
+post stands there, and the strand slants on down to a stake in the ground (`drawZipStakes`), the
+ramp a rider comes off by and climbs on by. Riders draw lifted
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every

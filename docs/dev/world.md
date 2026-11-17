@@ -104,12 +104,14 @@ The road's pixels are `paintRoadOverlay` (js/draw/paving.js).
 
 Each side strings a cable down each lane (`placeZips`, js/sim/zipline.js, at boot after
 `placeTowers`): pylons along the lane's outer edge, `ZIP_OFF` tiles off the centreline, from
-`ZIP_START` tiles out of the perch to `ZIP_PAST` tiles beyond the side's outer tower, at most
-`ZIP_SPAN` apart and one exactly past each tower. RED's top cable is laid off the lane and the
+`ZIP_START` tiles out of the perch to the side's outer tower, at most `ZIP_SPAN` apart and one
+beside each tower. Past the tower the cable ends without a post: the strand runs on to a landing
+`ZIP_LAND` tiles past it, on the snow, and slants down to a stake `ZIP_STAKE` tiles beyond (each
+cable's `land`/`stake`), the ramp a rider comes off and climbs on by. RED's top cable is laid off the lane and the
 towers and the other three are it mirrored tile for tile, so all four are alike. A pylon takes
 the tile of any pine on it. A cable runs only as far as its side's furthest standing tower on
-the lane (`zipSync`, each tower's `zl`/`zi`): back to the inner tower once the outer falls, and
-gone once both have. The ride is [the zipline](gameplay/momentum-movement-players-only.md#the-zipline).
+the lane (`zipSync`, each tower's `zl`/`zi`): back to the inner tower's ramp once the outer falls,
+and gone once both have. The ride is [the zipline](gameplay/momentum-movement-players-only.md#the-zipline).
 
 ## The bases
 

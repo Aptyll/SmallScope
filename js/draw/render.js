@@ -122,6 +122,7 @@ function render() {
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
   drawYards(ex, ey); // the trodden yard at a wolf den's mouth (js/draw/yards.js)
   drawFootings(ex, ey); // the paved round a tower or the stall stands on, under the bodies (js/draw/footings.js)
+  drawZipStakes(ex, ey); // where a cut cable comes down past its tower, under the bodies (js/draw/zipline.js)
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
   drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
