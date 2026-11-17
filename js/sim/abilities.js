@@ -151,8 +151,9 @@ function buyAbilityLv(p, i) {
 // Returns 'busy' when the hands are taken (a roll, a cast, a dash): the
 // caller keeps that press for AB_BUF_T and tries it again (abBufStep).
 function tryAbility(p, i) {
-  if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 || p.zip >= 0) return;
-  if (p.dodgeT > 0 || p.castT > 0) return 'busy'; // a zipline's handle occupies the hands the way a cast does
+  if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0) return;
+  if (p.zip >= 0) return; // a zipline's handle occupies the hands: let go first
+  if (p.dodgeT > 0 || p.castT > 0) return 'busy';
   const ab = abOf(p, i);
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already
