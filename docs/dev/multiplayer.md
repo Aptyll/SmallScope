@@ -156,8 +156,10 @@ input.js). A press on a rival body, building or roosting bird (`atkPick`: the bo
 the nearest within `ATK_PICK_R`, then the bird's box, then a building by the shape it is drawn
 in) makes it the mark (`ck.lock`, `atkPress`): the feet walk into the weapon's range by route
 and the sim strikes it on its own ([the basic attack](gameplay/the-basic-attack.md#the-attack)).
-Nothing is aimed or held. Under WASD a walk key calls the chase off and keeps the mark, so
-letting go inside range strikes again (League's kite: step, stop, hit), and a press on open
+Nothing is aimed or held. Under WASD the newest order wins: walk keys already down at the press
+stand aside (`ck.gate`, `wasdGate`) so the hero stops, walks in and strikes while they stay down,
+and a walk key pressed after it (a fresh one, or one let go and pressed again) calls the chase off
+and keeps the mark, so letting go inside range strikes again (League's kite: step, stop, hit), and a press on open
 ground drops it (`wasdStep`). The lock breaks the way the CLICK scheme's does (`ckSees`). **What
 the eye gets** (`drawClickMarks`, js/draw/marks.js): a red ring under the mark and a faint one
 under a hovered rival, and the weapon's range drawn round the hero's feet while a rival is
@@ -317,7 +319,8 @@ unhurt animal that hunts nobody (`relevelAnimal`) —
 Each level also grants **one skill point** (`p.skillPts`, starting with one at level 1), and a
 point buys exactly one thing: **a rank on one of the four abilities**
 ([gameplay.md](gameplay/class-abilities-keys-1-4.md)), spent on the hud strip's floating buy
-plates or by pressing the ability's own key while the point is unspent. The keys start **locked at rank 0** — the first point on one is what makes it castable
+plates, or by pressing a still-locked key (rank 0) while the point is unspent; a key that already
+casts always casts, so a level-up never eats a press. The keys start **locked at rank 0** — the first point on one is what makes it castable
 at all — and they hold exactly 18 ranks (5 on each of keys 1-3, 3 on the ultimate), so eighteen
 points by level 18 cap all four with nothing stranded; what a build chooses is the ORDER, since you
 land with one point, four dark keys and a match to spend the rest across. Bots spend each

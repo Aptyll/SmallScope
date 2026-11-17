@@ -96,6 +96,9 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['CONTROLS: a click on a rival beats a held walk key', '0.976'],
+    ['CONTROLS: ability keys always cast; points go on the +', '0.976'],
+    ['CONTROLS: a key pressed early fires when the roll or cast ends', '0.976'],
     ['DEATH: live and lightly grey; one bar shows who downed you; watch allies', '0.975'],
     ['CAMERA: Y for a free camera that pans at the edge, F back to you', '0.975'],
     ['CAMPS: the robot camps are HEADLAMPS; amber lamps mean they are after you', '0.974'],

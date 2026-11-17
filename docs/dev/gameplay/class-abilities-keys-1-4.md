@@ -44,11 +44,17 @@ is a locked ability — and a locked well stands dim (dark rim, the icon in grey
 digit), as an empty item slot does; a press on one reddens and shakes
 it (`abDenied`, the twin of `itemDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
-well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`). The plate press buys — and so does **the key itself while a point is unspent**: the sim
-consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise
-(js/sim/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
-next press casts it; a maxed key casts straight through an unspent point. That reaches every
-controller and the well click alike, since all of them set the one field. Hover lights the plate
+well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`). The plate press buys. **The key itself buys only a LOCKED key** (rank 0, nothing to cast yet):
+the sim consumes `p.input.ability` as a buy when `p.abLv[i] === 0` and `abLvCanBuy(p, i)` holds,
+and as a cast otherwise (js/sim/sim.js, beside the other edge intents), so a key that already casts
+always casts through an unspent point and a level-up mid-fight can never eat the press. That
+reaches every controller and the well click alike, since all of them set the one field.
+
+**An early press waits.** A key pressed while the hands are busy (a roll, another cast, a dash:
+`tryAbility` answers `'busy'`) is kept on the player (`p.abBufI`, `p.abBufT`) for `AB_BUF_T`
+(0.25 s) and cast the first step the hands are free, at that step's aim (`abPress`, `abBufStep`,
+js/sim/abilities.js). The newest press replaces a kept one; a stun drops it. Before it, a combo
+pressed a beat early simply vanished. Hover lights the plate
 and the tooltip carries the numbers, kept to what a mid-fight glance needs: the cooldown and the
 one number a rank raises (a `rank` key given as a list; plain numbers stay off it) at the rank
 held, and the row's one-line `tip`; Shift (or ABILITY DETAILS on ALWAYS) shows every rank's,

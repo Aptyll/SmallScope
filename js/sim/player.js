@@ -841,6 +841,7 @@ class Player {
     clearUnitStatus(this);
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0;
+    this.abBufI = -1; this.abBufT = 0;             // an ability pressed while the hands were busy, and how long it still waits (AB_BUF_T, js/sim/abilities.js)
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/sim/abilities.js)
     this.buffT = 0;                                // s of a bear buff left (campBuff, wildlife.js): harder blows, a quicker walk
     this.pushT = 0;                                // s of the orca buff left (animalDies, wildlife.js): the side's soldiers near hit buildings harder
