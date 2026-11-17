@@ -501,6 +501,10 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/media/`**: the media kit: staged headless takes, a cut editor, the game's sound rendered
   offline, storyboards, GIFs, stills, and the 2D painted cutout painter for concept sheets
   ([media.md](media.md)). Node with no packages plus Python (pillow, numpy, imageio-ffmpeg).
+- **`app/see/`**: looking at the game: `see.js` stages a named place on the map and writes it at
+  the real zooms, by hour, with unbuilt art standing in it, today beside new, or the whole map
+  stitched with its joins checked; `page.js` is its page side ([see.md](see.md)). Node with no
+  packages, on the media kit's browser.
 - **`app/bake-bots.js`** — reads `bots/*.js`, writes `js/baked/bot-lib.js` (the example bots as source text).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/baked/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/baked/bears.js`.

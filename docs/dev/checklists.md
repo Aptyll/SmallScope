@@ -44,6 +44,11 @@ declare victory. The affordances:
     nothing: a player dropped into a pine's tile has nearly every shot it fires die in the tile it
     spawned in (a shot's first step strikes the solid its bow is inside unless it is leaving over
     the near edge - `shotContacts`), which reads as "the bow is broken" - test `objects[ty * WORLD + tx]` for the stand tile and the line of fire first.
+- **Looking at it** — `node app/see/see.js --spot <place> --out W` ([see.md](see.md)) stages a
+  named place and writes it three ways (1 px a world px, the real screen with its HUD, 8 px a world
+  px), by hour, with `--vs origin/main` today beside new and the changed pixels counted, or the
+  whole map with `--map`. `--do FILE.js` adds staging of your own. It serves the tree itself, so
+  nothing else has to be running. Look at every picture at its own size, one at a time.
 - **The wire** — the `DBG.net*` handles, the proofs behind [the match](../pvp-architecture.md):
   - `netEcho()` writes the wire's quantum into the world (`snapQuantize`: positions to eighths
     of a px, the one designed loss), snapshots the match, blanks every singleton, applies the

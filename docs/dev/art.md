@@ -113,6 +113,11 @@ python3 app/art/round.py W/boar.py --frame --keep           # a round worth keep
 python3 app/art/review.py sprite W/rv W/boar/r1/side.png --is "wild boar" --kind beast   # the judge step
 ```
 
+To look at a place in the game, or at art standing where it will live (a named spot at the real
+zooms, by hour, today beside new, the whole map), use `node app/see/see.js`: [see.md](see.md).
+`stage.js` is the line-up on a clean strip that `round.py --frame` puts on the board; `see.js` is
+the art at its own camp, base or lane, with the HUD over it.
+
 An asset file (`W/boar.py`) holds `KIND`, `PAL`, `views()`, and optionally `HEAD`, `DETAIL`,
 `TEAM`, `BARE`, `VS`, `NEAR`, `REFS`, `SCALE`; `round.py`'s header says what each is. Work folders live outside the
 repo, in the project files.

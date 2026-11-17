@@ -101,8 +101,11 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
 
 A place (a camp, a base, a shop, a pit) is judged as a frame, never as a sprite.
 
-- **Built** in the running map, not on a board: stage it with `window.DBG`, then capture it with
-  `node app/media/still.js --tile TX,TY` at the zoom a player uses and once pulled back.
+- **Built** in the running map, not on a board. See it with
+  `node app/see/see.js --spot <place> --time day,night --out W` (far, as played, close;
+  [see.md](../../../docs/dev/see.md)); try a look before building it with
+  `--put FILE.png@dx,dy:ground|stand`; after a code change add `--vs origin/main`. `--map` is the
+  whole map with every place named.
 - **Lives.** Ground paint is `js/draw/ground.js`; a ground edit goes through `repaintGround`. A
   worldgen pass rolls on its own `worldRng(name)`, so the map is the same on every screen.
 - **Judge** (step 4) by [the seven rules of a place](../../../docs/dev/art-bar.md#a-place): the
@@ -111,7 +114,8 @@ A place (a camp, a base, a shop, a pit) is judged as a frame, never as a sprite.
   map: `--kind layout`): the reader says what the eye lands on first and whose place it is. The
   library holds one kept place, so the reader's call is weak and the rules decide. Turn on
   hitboxes (`.`) and check the art agrees with what the sim tests. Both bases mirror.
-- **Options** are stills of the real spot, A beside B, labelled STAGED, with today's first.
+- **Options** are stills of the real spot, A beside B, labelled STAGED, with today's first: the
+  `vs-*` sheets `see.js` writes are that pair.
 - **Noah.** Camps and lairs have no built props: the world's own pines and ground make the pocket
   ("think about how League shows its camps"). His words on places are in
   [the bar](../../../docs/dev/art-bar.md#noahs-words).
