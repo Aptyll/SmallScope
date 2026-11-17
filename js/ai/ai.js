@@ -285,6 +285,40 @@ function aiRoamPick(p, leash) {
   ai.wy = toward.y + rand(-14, 14) * TILE * w;
 }
 
+// ---- the ride ---------------------------------------------------------------
+// A bot rides the zipline (the `zipline` banner, js/sim/zipline.js) the way a hand
+// does, through the same hop intent: every walk the ladder orders goes
+// through steerTo, and steerTo asks aiZipWorth first - would walking to
+// either side's cable, riding to the point nearest the goal and walking the
+// rest beat the feet by ZIP_AI_GAIN seconds? (The better of the two, if both
+// would.) If so it walks to the mount
+// (zipMount, js/sim/zipline.js: the nearest point of the cable whose ground a body can stand
+// on), presses the hop under it, holds the stick along the cable toward the
+// exit while it rides, and presses the hop again ZIP_AI_OFF short of the
+// exit. The goal is re-read every think, so a rider called home mid-cable
+// simply holds the other way. Nothing here decides WHERE a bot goes - the
+// rungs do - only how it covers the ground; and a ride with no rung wanting
+// it (aiThink returned without a walk) is let go of at once, so a bot never
+// coasts to the terminus by accident. A fight (rung 3) and a camp on it
+// (rung 4) let go first: nobody rides past an enemy holding the handle.
+const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
+const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
+// the feet's time over a straight line, at the bot's own walk
+function aiWalkT(p, d) { return d / statOf(p, 'ms'); }
+// the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
+// feet: { z, d0, d1 } (px along at the mount and the exit), else null
+function aiZipWorth(p, x, y) {
+  const feet = aiWalkT(p, Math.hypot(x - p.x, y - p.y));
+  let best = null, bt = feet - ZIP_AI_GAIN;
+  for (const z of zips) {
+    if (!z) continue;
+    const nb = zipNearest(z, p.x, p.y), ng = zipNearest(z, x, y);
+    const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
+    if (ride <= bt) { bt = ride; best = { z, d0: nb.d, d1: ng.d }; }
+  }
+  return best;
+}
+
 // the camp monster nearest of those in a fight this bot is in. A camp is
 // neutral until hit (updateCampMonster, wildlife.js), so one standing by
 // is nothing to a bot - only a hunting one is: one hunting this bot, in
@@ -393,11 +427,14 @@ function aiSpend(p, inp, steerTo) {
 
 function updateAI(p, dt) {
   const ai = p.ai;
+  ai.zipUsed = false;
   if (p.dead) ai.packGo = false;
   aiThink(p, dt); // the ladder (js/ai/ai-ladder.js)
   if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
   if (!p.dead) skillStrike(p, aiProfile(p), dt); // ...and the mark it named is struck in the hands' own rhythm
   aiRecall(p); // over the ladder: the walk home when low, and the wait in the roost ring (below)
+  // riding with no rung wanting the ride this think: let go (the ride, above)
+  if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
 // THE HEAL a bot takes, as a human takes it: it drinks a potion under
 // AI_POTION_HP - early, since the heal comes over POTION_T and a level-1 body
@@ -422,7 +459,7 @@ const AI_RECALL_FAR = 30 * TILE; // px from its bird past which the channel beat
 const AI_RECALL_SAFE = 150;     // px: a rival this close and the bot fights or runs instead
 const AI_RING_FULL = 0.9;       // share of max health a bot waits in its ring for
 function aiRecall(p) {
-  if (p.dead) return;
+  if (p.dead || p.zip >= 0) return;
   const e = state.drop && state.drop.eagles[p.team];
   if (!e || e.state !== 'down') return;
   if (unitsNear(p, p.x, p.y, AI_RECALL_SAFE).some((q) => (q instanceof Player || robots.includes(q)) && inSight(p.team, q))) return; // what its side sees, as a player would

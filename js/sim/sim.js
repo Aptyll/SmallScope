@@ -459,6 +459,8 @@ function updatePlay(dt) {
 
   // every player steps through the same code, each off its own input struct
   for (const p of players) {
+    // on or off a cable: read before anything else moves the body (zipToggle, js/sim/zipline.js)
+    if (p.input.jump) { p.input.jump = false; if (p.active && !p.dead) zipToggle(p); }
     if (!p.active) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);
@@ -560,6 +562,7 @@ function updatePlay(dt) {
   for (const b of robots) updateRobot(b, dt);
   updateSoldierShots(dt); // their snowballs and bolts in the air (js/sim/robots.js)
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
+  zipCrash(); // rivals meeting on a cable (js/sim/zipline.js): every rider has stepped
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)
   separateUnits(dt);
@@ -613,11 +616,12 @@ function clampWorld(p) {
 }
 // the input's heading, normalised, and its length before (0: no input); the
 // body faces it
-function walkHeading(p, mx, my) {
+function walkHeading(p, mx, my, auto) {
   const len = Math.hypot(mx, my);
   p.moving = len > 0;
   if (len > 0) {
     mx /= len; my /= len;
+    if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, js/sim/zipline.js)
     if (p.swingT <= 0 && p.faceT <= 0) faceToward(p, mx, my);
   }
   return { mx, my, len };
@@ -801,6 +805,11 @@ function playerMove(p, dt, mx, my, len, onIce, kit) {
     p.vy = p.rushNY * hd.spd * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
     hd.step(p, mv, dt);
+  } else if (p.zip >= 0) {
+    // ZIPLINE: the cable owns the position outright - no moveEntity, so
+    // nothing under it stops a rider - and sets the velocity the exit keeps
+    // (zipStep/zipEnd, js/sim/zipline.js). Knockback decays above and is never spent.
+    zipStep(p, dt, mx, my, len);
   } else {
     walkStep(p, dt, mx, my, len, onIce, kit);
   }
@@ -858,7 +867,7 @@ function playerStamina(p, dt, kit) {
 // slide's carved double trail
 function playerTrails(p, dt, onIce) {
   const spNow = Math.hypot(p.vx, p.vy);
-  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding) { // a rider's feet are off the snow
+  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && p.zip < 0) { // a rider's feet are off the snow
     // the stride keeps time with the snow going by: a drawn bow's creep
     // steps slower, an ice run a little quicker (nothing but the
     // drawn stride reads it: drawPlayer, js/draw/bodies.js)
@@ -942,7 +951,7 @@ function playerAttack(p, dt) {
   // (attackStep, js/sim/attack.js). A body mid-ability, mid-roll, falling
   // or on a cable has no hand free for it.
   const free = p.fallT <= 0 && p.stunT <= 0 && (p.swingT <= 0 || p.autoSwing) && p.castT <= 0 && p.shieldT <= 0 &&
-    p.rushT <= 0 && p.dodgeT <= 0;
+    p.rushT <= 0 && p.zip < 0 && p.dodgeT <= 0;
   attackStep(p, dt, free);
 }
 
@@ -966,8 +975,13 @@ function updatePlayer(p, dt) {
   // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
   updateRecall(p, dt);
 
-  const hd = walkHeading(p, inp.mx, inp.my), len = hd.len;
-  let mx = hd.mx, my = hd.my;
+  // input - or the walk to the zipline holding the stick for the player
+  // (zipWalkStep, js/sim/zipline.js: any input of their own ends it), which leaves
+  // lastMx/lastMy alone so the clip-on still reads the walk before the press
+  let mx = inp.mx, my = inp.my, auto = false;
+  if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
+  const hd = walkHeading(p, mx, my, auto), len = hd.len;
+  mx = hd.mx; my = hd.my;
 
   kbDecay(p, dt);
 

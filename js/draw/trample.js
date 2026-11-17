@@ -131,7 +131,7 @@ function trBody(e, foot, r, pack) {
 function trampleStep(dt) {
   if (state.mode === 'title') return;
   for (const p of players) {
-    if (!p.active || heroHeld(p) || !fogShown(p)) continue; // one carried (HERO_HELD) leaves none; one in the fog none you see
+    if (!p.active || p.zip >= 0 || heroHeld(p) || !fogShown(p)) continue; // a rider on a cable leaves none; one carried (HERO_HELD) leaves none; one in the fog none you see
     // the same reads the footprint emitter makes (updatePlayer, sim.js): a
     // slide rides two runners, a walk presses a stride
     const pack = p.sliding ? TR_SLIDE : TR_WALK;
@@ -142,7 +142,7 @@ function trampleStep(dt) {
     const r = unitRadius(a), big = !!(MONSTER[a.kind] && MONSTER[a.kind].big);
     trBody(a, 0, r, big ? TR_WALK * 1.4 : r < 3 ? TR_WALK * 0.35 : TR_WALK);
   }
-  for (const b of robots) if (fogShown(b)) trBody(b, 0, unitRadius(b), TR_WALK * 0.8);
+  for (const b of robots) if (!(b.zip >= 0) && fogShown(b)) trBody(b, 0, unitRadius(b), TR_WALK * 0.8);
   trRefill(dt);
   trDustSync(dt);
 }

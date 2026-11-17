@@ -64,8 +64,29 @@ function aiRead(p, dt) {
     inp.mx = n.dx; inp.my = n.dy;
     return n.d;
   };
-  // every walk the ladder orders (a rung reads progress off its distance)
-  const steerTo = walkTo;
+  // every walk the ladder orders: by the zipline when the cable is worth it
+  // (the ride, js/ai/ai.js), else the feet. Riding, it holds the stick along the
+  // cable toward the exit nearest the goal and lets go there; on the ground,
+  // a worthwhile ride is a walk to the mount and the hop under the cable.
+  // Returns the straight-line distance to the goal either way, so a rung
+  // reads progress, or walkTo's -1 for a goal with no way to it at all.
+  const steerTo = (x, y, reach, budget) => {
+    if (p.zip >= 0) {
+      const z = zips[p.zip], d1 = zipNearest(z, x, y).d;
+      ai.zipUsed = true;
+      if (Math.abs(d1 - p.zipD) <= ZIP_AI_OFF) inp.jump = true; // the exit: let go (zipToggle, next step)
+      else { const q = zipPoint(z, p.zipD), s = d1 > p.zipD ? 1 : -1; inp.mx = q.tx * s; inp.my = q.ty * s; }
+      return Math.hypot(x - p.x, y - p.y);
+    }
+    const w = aiZipWorth(p, x, y);
+    if (w) {
+      const nr = zipNear(p);
+      if (nr && nr.z === w.z) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
+      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (js/sim/zipline.js)
+      if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
+    }
+    return walkTo(x, y, reach, budget);
+  };
   const aimAt = (x, y) => { inp.aimX = x; inp.aimY = y; };
 
   ai.thinkT -= dt;
@@ -219,6 +240,7 @@ function aiFight(k) {
     const foe = engage;
     const d = foeD;
     aiNote(p, 'FIGHT', foe === mark ? 'YOU AGAIN' : siege ? 'AT THEIR BIRD' : foe === fq ? 'FOCUS FIRE' : caller ? 'HELPING ' + caller.name.slice(0, 11) : 'IN SIGHT', foe);
+    if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const aim = skillAim(p, prof, foe, dt); // its read of them, led, with its wobble
     aimAt(aim.x, aim.y);
     // a key winding up at somewhere that is not them (a row's `botAim`: AURA's step away,
@@ -305,6 +327,7 @@ function aiCampFight(k) {
   //    length, a bow to ~90 px with the line open
   if (wolf) {
     aiNote(p, bj && wolf === bj.fight ? 'HUNT' : 'WOLF', bj && wolf === bj.fight ? (wolf.kind === 'orca' ? 'THE ORCA' : 'THE BEAR') : wolf.target === p ? 'ON ME' : 'HELPING', wolf);
+    if (p.zip >= 0) inp.jump = true; // off the zipline first
     // a beast that never walks (the orca in its hole) is measured to its hide,
     // not its middle (unitRadius): it never closes, so the bot must, and the
     // melee cone already reaches for that hide. A walking beast comes to the

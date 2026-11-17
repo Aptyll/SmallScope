@@ -96,6 +96,7 @@ function botObserve(p) {
     hp: botR(p.hp), maxHp: p.maxHp, dead: p.dead, respawnT: botR(p.respawnT), eliminated: p.eliminated,
     level: p.level, xp: p.xp, gold: p.gold, skillPts: p.skillPts,
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
+    zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
     attack: attackOf(p).cut ? 'cut' : 'shot', // the basic attack: a blade's blow or a missile (js/sim/attack.js)
     range: attackOf(p).range, attackReady: p.nockT <= 0, // px it strikes from (to the mark's edge), and whether the next is due
@@ -221,7 +222,7 @@ const botNum = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) ? Math.ma
 function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, attack: botAtkId(a.attack), work: !!a.work, slide: !!a.slide,
-    goTo: null, dodge: !!a.dodge,
+    goTo: null, dodge: !!a.dodge, jump: !!a.jump,
     ability: -1, useItem: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
@@ -374,7 +375,7 @@ function botStep(p, dt) {
   inp.atk = botAtkRef(p, a.attack); inp.work = a.work; inp.slide = a.slide;
   if (r.edge) {
     r.edge = false;
-    inp.dodge = inp.dodge || a.dodge;
+    inp.dodge = inp.dodge || a.dodge; inp.jump = inp.jump || a.jump;
     if (a.ability >= 0) inp.ability = a.ability;
     if (a.useItem >= 0) inp.useItem = a.useItem;
     if (a.cmd) inp.cmd = a.cmd;

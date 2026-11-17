@@ -39,7 +39,8 @@ function roostRing(p) {
 function recallBlocked(p) {
   if (p.dead) return 'busy';
   if (!roostTile(p)) return 'nobird';
-  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0) return 'busy';
+  if (p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 || p.rushT > 0 ||
+    p.zip >= 0 || p.zipWalk) return 'busy';
   return null;
 }
 // the cmd: start the channel, or say why not (me.lastCmd for a bot)

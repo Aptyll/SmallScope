@@ -186,7 +186,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
     if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.fall) { drawFall(d.fall, ex, ey); continue; }
-    if (d.p && !d.ghost && (heroDashOver(d.p))) { airRiders.push(d.p); continue; } // over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
+    if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below
     // a body under a big hit is drawn held where it was struck, then 1 px back (hitNudge, js/draw/hitfx.js)
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else { const n = hitNudge(d.p, now); drawPlayer(d.p, ex - n.x, ey - n.y, now); } continue; }
     if (d.a) { const n = hitNudge(d.a, now); drawAnimal(d.a, ex - n.x, ey - n.y, now); continue; }
@@ -251,6 +251,8 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const spr = SPRITES.teamBuild[skin(o.team)].stall;
     drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
     drawHourLit(spr, px + sh, py + TILE - spr.height);
+  } else if (o.type === 'pylon') {
+    drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'snowdrop') {
     // a warren's clump: open until picked, then the snapped stem, then the
     // shut bud as it comes back (snowdropLeft, world.js) - and hovered while
@@ -415,8 +417,8 @@ function drawSwingArcs(ex, ey, now) {
 }
 
 function renderAirLayer(now) {
-  // the air layer (airCv, js/app/canvas.js): a bird driven off and a hero
-  // dashing over the pines, off the EXACT camera so the body the camera rides
+  // the air layer (airCv, js/app/canvas.js): a bird driven off, a player on
+  // a zipline's handle and a hero dashing over the pines, off the EXACT camera so the body the camera rides
   // holds still on the screen while the ground slides under it; the day's
   // grade laid over it the way renderLighting laid it over the world. Only the
   // box round what it holds is graded and blitted (airBox): a bird's shadow

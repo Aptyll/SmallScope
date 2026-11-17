@@ -39,7 +39,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // adding a name here is proven harmless or caught as pixels
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'burnTick', // (not swingCd: the axe is drawn out until it runs down, drawHeldTool)
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeGoal', 'goal',
-  'avoidT', 'pingLog',
+  'avoidT', 'zipLast', 'pingLog',
   'hitFoe', // a soldier's mark this step, read only by the host's bots (aiFarmHold)
   'shedT', // a pine's rest between two sheds (js/sim/shed.js): the puff itself crosses as a burst
   'mvx', 'mvy', // a walker's heading (nav): only the sim steers by it, `dir` is what is drawn
@@ -303,6 +303,9 @@ function snapApplyTiles(s) {
     }
   }
   if (s.structs) { structures.length = 0; for (const i of s.structs) if (objects[i]) structures.push(objects[i]); }
+  // ...and each cable cut to the towers just sent (zipSync, js/sim/zipline.js), now, so
+  // nothing drawn before the cables this frame (the zipline's E) reads last frame's
+  zipSync();
   // the ground: only tiles that changed are repainted - the whole array is
   // a boot-time bake (repaintGround, js/draw/ground.js)
   if (s.ground) {
@@ -817,7 +820,7 @@ function snapBuildSeen(full) {
 const SNAP_Q = 8;                     // quanta per px
 const SNAP_Q_MAX = 32767 / SNAP_Q;    // the int16's reach in px
 const SNAP_QPOS = new Set(['x', 'y']);                                  // floored
-const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby']); // all of them; kbx/kby are a knockback's velocity, same unit as vx
+const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'zipD']); // all of them; kbx/kby are a knockback's velocity, same unit as vx; zipD is px along a zipline
 function snapQable(k, v) { return SNAP_QUANT.has(k) && typeof v === 'number' && v >= -SNAP_Q_MAX && v <= SNAP_Q_MAX; } // NaN/Infinity fail the range
 function snapQi(k, v) { return SNAP_QPOS.has(k) ? Math.floor(v * SNAP_Q) : Math.round(v * SNAP_Q); } // the int16 on the wire
 function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } // what the client will hold for field k

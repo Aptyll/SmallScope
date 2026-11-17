@@ -122,6 +122,7 @@ function render() {
   drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now); // the ice's sky, the flat objects, the rings
   drawYards(ex, ey); // the trodden yard at a wolf den's mouth (js/draw/yards.js)
   drawFootings(ex, ey); // the paved round a tower or the stall stands on, under the bodies (js/draw/footings.js)
+  drawZipStakes(ex, ey); // where a cut cable comes down past its tower, under the bodies (js/draw/zipline.js)
 
   const draws = gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now);
   drawHitPuffs(ex, ey, now); // a big hit's snow puff, under the bodies (js/draw/hitfx.js)
@@ -134,6 +135,8 @@ function render() {
   drawBuildBars(ox, oy); // construction progress bars
   drawParticles(ex, ey);
   drawHitFx(ex, ey, now); // a big hit's spark, over the bodies (js/draw/hitfx.js)
+
+  drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
 
   drawArrows(ex, ey, now);
   drawSoldierShots(ex, ey, now); // the soldiers' snowballs and bolts, over the bodies (js/draw/soldiershots.js)
@@ -155,6 +158,7 @@ function render() {
   drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim/weather.js)
   drawEagles(ex, ey, now, false); // a bird on its perch (one driven off: the air layer, below)
   drawLooseFeathers(ex, ey); // ...and the feathers knocked off it, over it (js/draw/recall.js)
+  drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   drawCallouts(ex, ey); // the bots' calls, above the night like all world text (js/draw/callouts.js)
   // the two debug views, above the lighting on purpose - see the banner

@@ -213,7 +213,7 @@ function netInClean(m) {
   const idx = (v, n) => (Number.isInteger(v) && v >= 0 && v < n ? v : -1);
   const W = WORLD * TILE;
   return { mx: num(m.mx, -1, 1, 0), my: num(m.my, -1, 1, 0), aimX: num(m.aimX, -W, 2 * W, 0), aimY: num(m.aimY, -W, 2 * W, 0), // a cursor past the map's edge still aims
-    work: !!m.work, slide: !!m.slide, dodge: !!m.dodge,
+    work: !!m.work, slide: !!m.slide, dodge: !!m.dodge, jump: !!m.jump,
     atk: netAtkIn(m.atk), // the mark as the host's own entity, or none
     ability: idx(m.ability, AB_KEYS), useItem: idx(m.useItem, ITEM_SLOTS), cmd: m.cmd && typeof m.cmd === 'object' ? m.cmd : null };
 }
@@ -228,7 +228,7 @@ function netAtkIn(k) {
   return t && (atkIsStruct(t) || atkIsEagle(t) || players.includes(t) || robots.includes(t) || animals.includes(t)) ? t : null;
 }
 function netInEdges(i, m) {
-  i.dodge = i.dodge || m.dodge;
+  i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump;
   if (m.ability >= 0) i.ability = m.ability;
   if (m.useItem >= 0) i.useItem = m.useItem;
   if (m.cmd) i.cmd = m.cmd;
@@ -476,11 +476,11 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, atk: netAtkOut(i.atk), work: i.work, slide: i.slide, dodge: i.dodge, jump: i.jump, ability: i.ability, useItem: i.useItem, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
-    i.dodge = false; i.ability = -1; i.useItem = -1; i.cmd = null;
+    i.dodge = false; i.jump = false; i.ability = -1; i.useItem = -1; i.cmd = null;
   }
   netClientLerp();
   netClientStats();
@@ -739,7 +739,7 @@ const PRED = { on: false, hist: [], srv: null, ox: 0, oy: 0 };
 // may this body walk ahead of the host: on its feet, in play, nothing else
 // moving it. Read off the host's word, never off the prediction
 function netPredictable(p) {
-  return state.mode === 'play' && !p.dead &&
+  return state.mode === 'play' && !p.dead && !p.zipWalk && p.zip < 0 &&
     p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0;
 }
 // one step of the walk, as updatePlayer takes it, on our own body

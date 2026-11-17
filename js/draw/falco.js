@@ -30,7 +30,7 @@ function falcoHasHawk(p) { return CLASSES[p.cls].passive === 'hawk' && unitAlive
 // box, looking outward in every facing, so its pale breast always shows. The glove stays up,
 // empty, while the hawk is out on TALONS or cut down. HERO_BODY_FX, over the body.
 function drawFalcoPerch(p, ax, ay, now, front) {
-  if (!front || CLASSES[p.cls].passive !== 'hawk' || p.falcoSkyT > 0 || p.dodgeT > 0) return;
+  if (!front || CLASSES[p.cls].passive !== 'hawk' || p.zip >= 0 || p.falcoSkyT > 0 || p.dodgeT > 0) return;
   const lead = p.dir === 'down' || p.dir === 'right', side = p.dir === 'left' || p.dir === 'right', rc = heroReach(p);
   const bob = !p.moving ? 0 : -runBob(p);
   // the glove: 3 px of tan on the off side, its outline outside and under it; the hawk stands on its outer px, so its head clears his hat

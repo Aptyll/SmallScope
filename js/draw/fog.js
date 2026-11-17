@@ -27,6 +27,7 @@ const FOG_JOIN = 64;
 const FOG_REACH = 64;
 
 const fogEyesDraw = [];
+const fogBands = []; // the cables' eyes joined pair by pair, for the mask (fogBand)
 let fogNow = -1, fogTeam = -1;
 const fogShownMap = new Map();
 const fogMaskCv = document.createElement('canvas'), fogMaskCtx = fogMaskCv.getContext('2d');
@@ -42,7 +43,23 @@ function fogView(now) {
   fogTeam = fogUp() ? viewPlayer().team : -1;
   if (fogTeam < 0) return false;
   sightSources(fogTeam, fogEyesDraw);
+  fogBands.length = 0;
+  for (const s of fogEyesDraw) if (s.next) fogBand(s, s.next);
   return true;
+}
+
+// Two eyes in a row on one cable, drawn as ONE straight band between them and
+// not as two circles: a row of circles has a cusp between every pair, and a
+// cable's worth of cusps read as a saw edge. The band is as wide as the two
+// circles are where they cross, so it lies wholly inside what the side sees:
+// the mask dims at most the cusps' own depth (under FOG_BAND) of seen ground
+// and lights nothing unseen. Only the mask reads it; who is shown (fogShown)
+// and the maps still ask the eyes themselves.
+function fogBand(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, half = Math.hypot(dx, dy) / 2, r = Math.min(a.r, b.r);
+  if (half >= r) return; // too far apart to touch: two circles
+  a.banded = b.banded = true;
+  fogBands.push({ ax: a.x, ay: a.y, dx, dy, len2: dx * dx + dy * dy || 1, r: Math.sqrt(r * r - half * half) });
 }
 
 // signed px from (x, y) to the side's nearest fog edge, up to FOG_CLAMP: >= 0 lit
@@ -88,7 +105,22 @@ function fogCorners(gx0, gy0) {
   if (!fogGrid || fogGrid.length < fogGW * fogGH) fogGrid = new Float32Array(fogGW * fogGH);
   const g = fogGrid, W = fogGW;
   g.fill(-FOG_REACH, 0, W * fogGH);
+  for (const s of fogBands) {
+    const r = s.r + FOG_REACH;
+    const i0 = Math.max(0, Math.floor((Math.min(s.ax, s.ax + s.dx) - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((Math.max(s.ax, s.ax + s.dx) + r) / FOG_CELL) - gx0);
+    const j0 = Math.max(0, Math.floor((Math.min(s.ay, s.ay + s.dy) - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((Math.max(s.ay, s.ay + s.dy) + r) / FOG_CELL) - gy0);
+    for (let j = j0; j <= j1; j++) {
+      const py = (gy0 + j) * FOG_CELL - s.ay, row = j * W;
+      for (let i = i0; i <= i1; i++) {
+        if (g[row + i] >= FOG_CLAMP) continue;
+        const px = (gx0 + i) * FOG_CELL - s.ax;
+        const t = Math.max(0, Math.min(1, (px * s.dx + py * s.dy) / s.len2)), ex = px - s.dx * t, ey = py - s.dy * t;
+        g[row + i] = fogJoin(g[row + i], s.r - Math.sqrt(ex * ex + ey * ey));
+      }
+    }
+  }
   for (const s of fogEyesDraw) {
+    if (s.banded) continue; // drawn by its band
     const r = s.r + FOG_REACH, inner = s.r - FOG_CLAMP;
     const i0 = Math.max(0, Math.floor((s.x - r) / FOG_CELL) - gx0), i1 = Math.min(W - 1, Math.ceil((s.x + r) / FOG_CELL) - gx0);
     const j0 = Math.max(0, Math.floor((s.y - r) / FOG_CELL) - gy0), j1 = Math.min(fogGH - 1, Math.ceil((s.y + r) / FOG_CELL) - gy0);

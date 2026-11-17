@@ -167,6 +167,10 @@ function drawChartGround(ch, v, now, k) {
     ctx.fillRect(x0, y0, x1 - x0, 1); ctx.fillRect(x0, y1 - 1, x1 - x0, 1);
     ctx.fillRect(x0, y0 + 1, 1, y1 - y0 - 2); ctx.fillRect(x1 - 1, y0 + 1, 1, y1 - y0 - 2);
   }
+  // the ziplines under everything that moves: each side's cable pylon to
+  // pylon in its ink, clipped to the square
+  const inV = (x, y) => x >= v.x && y >= v.y && x < v.x + v.w && y < v.y + v.w;
+  for (const z of zips) if (z) drawMapZip(ctx, z, (x) => chartX(v, x), (y) => chartY(v, y), TEAMS[skin(z.team)].mark, inV);
   drawMapStructs(ctx, (x, y) => [chartX(v, x), chartY(v, y)], CHART_DARK, k);
 }
 // the camps: the glyph in its camp's ink (a cleared one's gives way to its

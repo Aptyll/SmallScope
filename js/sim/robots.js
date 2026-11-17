@@ -12,6 +12,7 @@ function robotBody(sx, sy, hp, team, owner, animT) {
     tgt: null, atkCd: 0, nav: null,
     atkAim: null, // what a soldier is swinging at right now (drawRobot reads it)
     animT, flash: 0, kbx: 0, kby: 0, dead: false, moving: false,
+    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/sim/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a bot takes every state a player can be put under - snared, netted,
   // marked, alight - written by the same setters (`status effects`,
@@ -97,6 +98,13 @@ function updateRobot(b, dt) {
     if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, 3);
     b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
     b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
+    return;
+  }
+  if (b.zip >= 0) {
+    // on the zipline's handle: the cable carries it (zipRide, js/sim/zipline.js), the
+    // brain waits for the end, and nothing is swung on the way
+    zipRide(b, dt);
+    b.moving = false; b.atkAim = null;
     return;
   }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
@@ -318,10 +326,61 @@ function makeSoldier(team, lane, type) {
   b.faceL = team === 1; // facing left (updateSoldier turns it): toward the rival base first
   b.lane = lane; // the lane it marches: 0 the top, 1 the bottom
   b.wayI = 0;
+  b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
   b.way = laneWaypoints(team, lane); // the rival roost itself is read live
   return b;
 }
 
+// the ride: its own side's cable of its own lane within SOLDIER_ZIP_REACH of
+// the soldier, whose end nearer the rival bird is SOLDIER_ZIP_GAIN nearer it
+// than the soldier stands. Under it (inside ZIP_GRAB) it clips on, riding
+// toward that end; short of it, it walks to the mount (zipMount,
+// js/sim/zipline.js - the point a player's walk and a bot's stand on too).
+// True while the cable has the soldier, walking or on
+const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
+const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the lane's width, so a column on the lane finds the line beside it
+function soldierGoal(b) {
+  const rival = state.drop && state.drop.eagles[1 - b.team];
+  return rival || (b.way.length ? b.way[b.way.length - 1] : null);
+}
+function soldierBoard(b, walkToward) {
+  const g = soldierGoal(b);
+  if (!g) return false;
+  const here = Math.hypot(g.x - b.x, g.y - b.y);
+  for (const z of zips) {
+    if (!z || z.lane !== b.lane || z.team !== b.team) continue; // never off to another lane, and never the rival's, which would skip its towers
+    const n = zipNearest(z, b.x, b.y);
+    if (n.dist > SOLDIER_ZIP_REACH) continue;
+    const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];
+    const d0 = Math.hypot(g.x - p0.x, g.y - p0.y), d1 = Math.hypot(g.x - p1.x, g.y - p1.y);
+    if (Math.min(d0, d1) > here - SOLDIER_ZIP_GAIN) continue;
+    if (n.dist <= ZIP_GRAB) {
+      zipBoard(b, z, n.d, d1 < d0 ? 1 : -1);
+      b.rode = true;
+      b.moving = false;
+      return true;
+    }
+    const m = zipMount(z, n.d);
+    if (m && walkToward(m.x, m.y, 0) >= 0) return true;
+  }
+  return false;
+}
+// off the cable - at its end, or knocked off - the route is read again from
+// where the soldier now stands: the leg of it (waypoint to waypoint, the last
+// one on to the bird) it stands nearest is the leg it is on, and the
+// waypoint ending that leg is next. Never back down the route
+function soldierRejoin(b) {
+  b.rode = false;
+  const g = soldierGoal(b), pts = g ? b.way.concat([g]) : b.way;
+  let best = b.wayI, bd = Infinity;
+  for (let k = Math.max(1, b.wayI); k < pts.length; k++) {
+    const a = pts[k - 1], c = pts[k], lx = c.x - a.x, ly = c.y - a.y, L2 = lx * lx + ly * ly || 1;
+    const t = Math.max(0, Math.min(1, ((b.x - a.x) * lx + (b.y - a.y) * ly) / L2));
+    const d = Math.hypot(b.x - a.x - lx * t, b.y - a.y - ly * t);
+    if (d < bd) { bd = d; best = k; }
+  }
+  b.wayI = Math.max(b.wayI, Math.min(best, b.way.length));
+}
 function updateSoldier(b, dt) {
   let moving = false;
   const walkToward = (px, py, reach) => {
@@ -331,6 +390,7 @@ function updateSoldier(b, dt) {
     return n.d;
   };
   b.atkAim = null; b.hitFoe = null;
+  if (b.rode) soldierRejoin(b); // just off a zipline (the ride branch in updateRobot carries it while it is on)
   const T = soldierType(b), x0 = b.x, y0 = b.y;
   const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = T.cd; hit(); } };
   const rival = state.drop && state.drop.eagles[1 - b.team];
@@ -369,7 +429,9 @@ function updateSoldier(b, dt) {
       else { swing(pt, () => robotStrike(b, st, pt)); busy = true; }
     }
   }
-  // 4. the march: the next waypoint down its lane, then the roost
+  // 4. the march: by a zipline that carries it closer, else the next
+  //    waypoint down its lane, then the roost
+  if (!busy) busy = soldierBoard(b, walkToward);
   if (!busy) {
     if (b.wayI < b.way.length) {
       const w = b.way[b.wayI];

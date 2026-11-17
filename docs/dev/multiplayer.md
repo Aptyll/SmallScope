@@ -67,6 +67,10 @@ atk           the attack's MARK: a rival body, a rival building or the rival
 work          E held (with it clear, the hands still take a tree, a chest or a snowdrop in reach: autoWork)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
+jump          edge-triggered (read at the top of updatePlay's player loop): the
+              zipline's: clip on under any side's cable, let go while riding,
+              or - out of reach with the aim on a cable as drawn - the walk
+              there that clips on (zipToggle, js/sim/zipline.js; E sets it)
 useItem       edge-triggered, -1 or an item slot (0-5): that slot's key or a click
               on its well - drinks a health potion (useItem, js/sim/items.js;
               see Heals in gameplay.md)
@@ -189,7 +193,10 @@ bot fills, once per step from `sampleHumanInput`.
 - **A right press on open ground walks there by route** (`navTo`, the bots' own walker, so the
   same feet go round the same trees); a route that fails drops the order, per the pathfinding
   rule. Holding the button drags the goal under the pointer (`ck.follow`). A right press on the
-  chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). 
+  chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Riding a zipline it
+  lets go; a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on, or
+  from out of reach walks the body there and clips on (`zipWalkStart`, the channel, ended by any
+  order of your own; a press anywhere else is the walk it always was).
 - **On a tree, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On a merchant it is a walk
   into reach and the counter opening as a panel (`ckUse`).
@@ -394,7 +401,8 @@ rather than a hidden handicap; a hit calls `damagePlayer(target, dmg, dx, dy, sr
 floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow can never hit its
 shooter. `damagePlayer` takes a seventh argument, `crit` (a blow's `crit` through `hurtUnit`, e.g.
 FALCO's STOOP or NIX's WHITEOUT): it runs the damage floater hotter and at double scale. SAGITTA's piercing bolt (`a.pierce`) is the one shot that takes a body and keeps flying — everyone on the
-line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it.
+line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
+riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)).
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
@@ -860,7 +868,14 @@ map's eagle marks and the bird's nerve bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
 ([gameplay.md](gameplay/pathfinding.md)) — it routes around trees, buildings and water,
-and returns **-1 when there is no route** (or the bot has been pinned for a while). The -1, not a
+and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
+the zipline** ([the ride](gameplay/momentum-movement-players-only.md#the-zipline)) the way a hand does, through the same hop
+intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first - would walking to
+any cable, riding to the point nearest the goal and walking the rest beat the feet by
+`ZIP_AI_GAIN` (4 s)? - and if so walks to the mount (`zipMount`, js/sim/zipline.js), presses
+`input.jump` under it, holds the stick along the cable toward the exit while it rides and presses
+the hop again `ZIP_AI_OFF` (6 px) short of the exit. A ride no rung wanted this think is let go
+of at once (`ai.zipUsed`, `updateAI`), and rungs 3 and 4 let go before they fight. The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes

@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['ZIPLINES: E under your cable rides out down the lane past your outer tower', '0.977'],
     ['CONTROLS: a click on a rival beats a held walk key', '0.976'],
     ['CONTROLS: ability keys always cast; points go on the +', '0.976'],
     ['CONTROLS: a key pressed early fires when the roll or cast ends', '0.976'],
@@ -114,7 +115,7 @@ const PATCH_DIGEST = [
     ['CAMPS: wolves up top, scrap robots below, orca and bear in their pits', '0.963'],
     ['The perch stands on the ground from the start', '0.963'],
     ['DOWNED BY: the hero who downed you, under the respawn clock', '0.960'],
-    ['SHOP: its own key, B; E is only for tools', '0.960'],
+    ['SHOP: its own key, B; E is only for tools and ziplines', '0.960'],
     ['ATTACK: click a rival to attack it; shots home in', '0.959'],
     ['ROLL: a rolling hero curls up in their own colours', '0.957'],
     ['CAMPS: a hit camp shows its leash ring, red as it gives up', '0.956'],

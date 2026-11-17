@@ -50,6 +50,7 @@ PROFILE.cloudSync(SETTINGS_LOCAL).then((got) => { if (got) applySettings(); });
 SFX.music.play('intro', { in: 1.5 });
 genWorld();        // the field: lanes, walls, pits and woods from one distance (js/sim/field.js)
 placeTowers();     // ...two towers a lane a side (js/sim/towers.js)
+placeZips();       // ...and each side's cable down each lane, out past its outer tower (js/sim/zipline.js)
 placeStalls();     // ...each side's merchant stall (js/sim/robots.js)
 placeCamps();      // ...the camps' props on their sites
 placePumps();      // ...and the two gold pumps in the jungle (js/sim/pumps.js)
@@ -210,6 +211,7 @@ window.DBG = {
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the bases (js/sim/field.js): whose disc a tile is in, its perch, its radius
   baseAt, basePerch, BASE_R, waterAt,
+  zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (js/sim/zipline.js): every line, a point along one, the nearest point to a body, and the ride's own verbs
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),
   teamEagleDown,

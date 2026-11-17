@@ -59,7 +59,9 @@ bird. A side whose bird is off its perch sends none. `makeSoldier(team, lane, ty
 `robotBody` with `kind: 'soldier'`, `owner: -1` (no cargo, no payout but the bounty), stood
 `WAVE_OUT` tiles out along its lane (`laneOut`, js/sim/field.js), and a **route**: its lane's
 waypoints from its own perch to the rival's (`laneWaypoints`, [the lanes](../world.md#the-lanes),
-every `LANE_STEP` tiles). The rival roost itself is read live each frame. `updateSoldier` is four
+every `LANE_STEP` tiles). The rival roost itself is read live each frame. On the march a
+soldier rides its own side's cable of its lane when its end is `SOLDIER_ZIP_GAIN` nearer the rival
+bird (`soldierBoard`), and reads its route again where it lets go (`soldierRejoin`). `updateSoldier` is four
 rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a hero hidden from it lets a
@@ -132,6 +134,8 @@ one on the straight and one on the bend by the perch (`TOWER_SPOTS`, placed at b
 A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a
 pushing bot only walks in to hit one while its own wave stands in the ring (`aiLaneFort`,
 `towerTanked`, [bots](../multiplayer.md#bots)). Its eye joins the side's fog sight (`STRUCTS.tower.sight`).
+Its side's cable on its lane runs only as far as the furthest of its towers still standing
+([the ziplines](../world.md#the-ziplines)).
 
 ## The merchant
 
