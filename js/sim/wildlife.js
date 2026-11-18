@@ -240,6 +240,8 @@ function fleeGoal(a, from) {
     const gx = a.x + Math.cos(base + k) * dist, gy = a.y + Math.sin(base + k) * dist;
     const tx = Math.floor(gx / TILE), ty = Math.floor(gy / TILE);
     if (!walkable(tx, ty)) continue;
+    const front = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)];
+    if (front && front.type === 'tree') continue; // never to stand behind a pine: the one in front of it would hide it
     const x = tx * TILE + 8, y = ty * TILE + 8;
     if (C && !warrenHolds(C, x, y)) continue;
     if (navLineClear(a.x, a.y, x, y, 5) || findPath(a.x, a.y, x, y, 0, 250)) return { x, y };
@@ -253,7 +255,8 @@ function fleeGoal(a, from) {
 // into trees and stopped them mid-stride wherever the clock ran out. A
 // wander is a goal like any other now, so it goes around what is in the way,
 // it ends where the animal actually stops, and the debug overlay has a real
-// route to draw instead of a stub pointing off into nothing.
+// route to draw instead of a stub pointing off into nothing. It never ends on
+// a tile with a pine just south of it, where the pine would hide the body.
 // null means boxed in - the caller waits a beat and picks again.
 function wanderGoal(a, base, spread, near, far, C) {
   for (let k = 0; k < 8; k++) {
@@ -261,6 +264,8 @@ function wanderGoal(a, base, spread, near, far, C) {
     const d = rand(near, far) * TILE;
     const tx = Math.floor((a.x + Math.cos(ang) * d) / TILE), ty = Math.floor((a.y + Math.sin(ang) * d) / TILE);
     if (!walkable(tx, ty)) continue;
+    const front = inWorld(tx, ty + 1) && objects[idx(tx, ty + 1)];
+    if (front && front.type === 'tree') continue; // never to stand behind a pine: the one in front of it would hide it
     const x = tx * TILE + 8, y = ty * TILE + 8;
     if (C && !warrenHolds(C, x, y)) continue; // a warren's rabbit grazes inside its snow
     if (navLineClear(a.x, a.y, x, y, 5) || findPath(a.x, a.y, x, y, 0, 250)) return { x, y };

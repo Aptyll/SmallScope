@@ -94,7 +94,8 @@ Prey behaviour lives in `updatePrey()`, and **every step of it is a routed goal*
 included, which is what keeps the `.` overlay honest ([rendering.md](../rendering/debug-overlays-hitboxes-and-routes.md#routes)).
 
 - **Grazing.** Idle, then pick one goal and walk it. `wanderGoal(a, base, spread, near, far)`
-  tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
+  tries 8 tiles in an arc, takes the first it can actually route to (never one with a pine just
+  south of it, which would hide the body), and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
   chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
   on it takes short 1–3 tile hops that end on it, so the warren reads as theirs. `navStep` walks it at
