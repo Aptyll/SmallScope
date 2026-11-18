@@ -77,8 +77,9 @@ function drawCampMapClock(g, C, x, y) {
 // Only a side that sees one of the hunters sees it, so it tells nobody in the
 // fog that a camp is being taken.
 const LEASH_INK = '#2f3238'; // the Graphite edge (HUD_EDGE): a dark line reads on snow, ice and dirt
-const LEASH_ALPHA = 0.55;
+const LEASH_ALPHA = 0.9; // bold enough to find at a glance: the ring is for new players (Noah 11-18, E)
 const LEASH_DASH = 6, LEASH_GAP = 4; // px on, px off, round the edge
+const LEASH_W = 2;       // px each dash's pixel is drawn, wide and tall: a 1 px line was lost on snow
 const LEASH_FLOW = 0.35; // dashes a second that pass a point: the slow run round
 const LEASH_IN = 0.3;    // s the ring takes to come up as the camp wakes
 const leashEdges = new Map(); // camp -> { r, px: [dx, dy, turn 0..1] } off its centre px
@@ -86,7 +87,7 @@ function campLeashEdge(C) {
   let E = leashEdges.get(C);
   if (E) return E;
   const P = C.spec.plan, cx = (C.tx + 0.5) * TILE, cy = (C.ty + 0.5) * TILE;
-  const R = (C.r + CAMP_GROUND + (P ? Math.max(P.length, P[0].length) : 0) + 1) * TILE, W = 2 * R + 1;
+  const R = (C.r + campGroundPad(C) + (P ? Math.max(P.length, P[0].length) : 0) + 1) * TILE, W = 2 * R + 1;
   // which px are on the ground, tested at each px's centre
   const on = new Uint8Array(W * W);
   for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) on[y * W + x] = campGround(C, cx - R + x + 0.5, cy - R + y + 0.5) ? 1 : 0;
@@ -125,7 +126,7 @@ function drawCampLeashes(ex, ey, now) {
     ctx.fillStyle = S.drain ? THREAT_COL : LEASH_INK;
     for (let k = 0; k < E.px.length; k += 3) {
       const t = E.px[k + 2] * E.n - run;
-      if (t - Math.floor(t) < on) ctx.fillRect(x0 + E.px[k], y0 + E.px[k + 1], 1, 1);
+      if (t - Math.floor(t) < on) ctx.fillRect(x0 + E.px[k], y0 + E.px[k + 1], LEASH_W, LEASH_W);
     }
   }
   ctx.globalAlpha = 1;

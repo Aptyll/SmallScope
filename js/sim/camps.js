@@ -49,6 +49,7 @@ const CAMPS = {
     r: 4, mark: '#c9b48c',
     icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
     kind: 'scrap', pop: 3, repop: 75, farm: true, // a jungler's round (aiDenSpot): about one lap of a side's camps on the clock
+    ground: 2, // its leash: 2 tiles past r, 6 from the middle, so the whole ring fits a player's screen (campGroundPad, wildlife.js)
     props: [],
     spots: [[-2, -1], [2, -1], [0, 1]],
   },
@@ -86,9 +87,9 @@ const CAMPS = {
 // column is its own twin there. The orca and the bear are each one camp:
 // the orca's pit above the top lane, the bear's den below the bottom one.
 const CAMP_SITES = [
-  { top: 'scrap', bot: 'scrap', tx: 28, ty: 52 },   // the hall's outer end, by the grove wall
+  { top: 'scrap', bot: 'scrap', tx: 28, ty: 54 },   // the hall's outer end, backed into the pocket in the grove wall
   { top: 'scrap', bot: 'scrap', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
-  { top: 'scrap', bot: 'scrap', tx: 35, ty: 69 },   // the base mouth
+  { top: 'scrap', bot: null, tx: 33, ty: 65 },     // the base mouth's north notch, off the walk out of base: one a side
   { top: 'orca', bot: null, tx: 69, ty: 24 },       // the orca's cove above the top lane (COVE, js/sim/field.js): on the middle column, its own twin, and none below
 ];
 function campSites() {

@@ -93,7 +93,7 @@ const PREY_WARY_T = 3;
 const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   wolf: { idle: 0, run: 8 },
-  scrap: { idle: 0, run: 8, lunge: 0, down: 0 }, // the stray robot: `lunge` is the ram (MONSTER.scrap.lunge)
+  scrap: { idle: 0, run: 8, lunge: 0, down: 0, sleep: 0.7 }, // the stray robot: `lunge` is the ram (MONSTER.scrap.lunge), `sleep` its breath at rest (MONSTER.scrap.sleeps)
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10 }, // the bear: patrols at a walk, charges at a gallop
   orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
@@ -505,7 +505,7 @@ const ORCA_SPOUT_R = 15 * TILE; // px the orca spouts at whoever it hunts past i
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  scrap: { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'scrap', lunge: 0.18 }, // the stray robots: the wolves' numbers, the bottom half's farm; `lunge`: seconds its ram frame shows after each blow
+  scrap: { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'scrap', lunge: 0.18, sleeps: true }, // the stray robots: the wolves' numbers, the jungle's farm; `lunge`: seconds its ram frame shows after each blow; `sleeps`: it lies at its spot until hit, no patrol
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME, stack: true }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
   orca:  { bite: 28, lvBite: 3, reach: 80, cd: 1.8, spd: 0, r: 20, foot: 5, mass: 9, big: true, teamPay: true, feed: 'ORCA', buff: 'ORCA BUFF', buffCol: '#7fd4ff', anchor: true, cause: 'orca', lv: ORCA_LV, frame: BEAR_FRAME, still: true, hole: true, spout: ORCA_SPOUT_R, push: true }, // the late fight: up in its pool, a lunge across the ice and a spout at range
 };
@@ -530,14 +530,13 @@ const BEAR_ATTACK_FRAMES = 10;
 const BEAR_STRIKE = 4;
 const BEAR_COMMIT_REACH = 1.5; // x reach: a blow lands up to 22 px past it, one walking step out of the wind-up
 const BEAR_ROAR_FRAMES = 8;
-const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
+const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground, unless its CAMPS entry says `ground`: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
 const CAMP_HOME_MUL = 2;   // x the kind's hunting speed a monster runs home at once its hunt ends
 const CAMP_HOME_HEAL_T = 1; // s to heal from nothing to full on the run home
 const CAMP_HOME_MAX_T = 6; // s the run home may take before it settles where it is
 const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
-const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
 // The kills' rewards past the gold (YIELD, core.js). A bear buff is what a
 // midline camp's kill wears (MONSTER's `buff` and `buffCol`: the BLACK
 // BUFF): CAMP_BUFF_DMG on every blow the player lands
@@ -579,17 +578,24 @@ function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT 
 // (wakeCamp), every monster in it takes the hitter as its quarry at a full
 // leash bar, and they run them down at the kind's speed, biting on the
 // kind's own cooldown. The bar holds while the quarry is on the camp's
-// ground (CAMP_GROUND past its r) and drains anywhere off it, whether or not
+// ground (campGroundPad past its r) and drains anywhere off it, whether or not
 // the monster is at its heels, and it keeps coming while the bar drains;
 // the hunt ends when the bar is empty, and then it goes home and HEALS
 // (CAMP_REGEN_T) - so a fight you break off is a fight reset, never a
-// chip-away. Awake, each monster goes for whoever is NEAREST (campQuarry),
-// not whoever hit it last: it never runs past one body to reach another, so
-// whoever stands closest is the one tanking it. Waking one wakes the camp,
-// which is what makes it a place instead of four animals.
+// chip-away. Awake, each monster goes for WHOEVER HIT IT, League's way: the
+// waker for the whole camp, and after that the last player whose blow landed
+// on that one monster, so a robot you hit is a robot on you. Only when its
+// quarry is gone (dead, or off on its eagle) does it take whoever is nearest
+// on its ground (campQuarry). Waking one wakes the camp, which is what makes
+// it a place instead of four animals. A kind that `sleeps` (the stray robots)
+// waits folded on the snow at its spot until then, and lies down again once
+// it is home.
 function wakeCamp(w, t) {
   if (!t) return;
   if (!w.home) { if (!w.target) { w.target = t; w.threat = 1; } return; }
+  // the one that took the blow turns on whoever dealt it, mid-hunt or not
+  // (one running home is untouchable and stays out of it)
+  if (w.target && w.target !== t && !w.homing && unitAlive(t)) { w.target = t; w.threat = 1; navClear(w); }
   // the cue a waking camp gives: a bear roars (the sound lands with its roar
   // clip), a pack howls. Only a monster not already hunting wakes, so a
   // camp mid-chase stays quiet however often it is hit
@@ -602,31 +608,32 @@ function wakeCamp(w, t) {
   }
   if (cue) sfxAt(cue, w.x, w.y, 260);
 }
-// The quarry an awake monster should be on: the nearest player standing on
-// its camp's ground that it can see (seenAt), or `t` it already has unless
-// another is CAMP_SWITCH nearer, so two bodies side by side never make it
-// dither. With `t` gone (dead, or off on its eagle) it is whoever is nearest,
-// and with nobody on its ground at all the hunt is over.
-function campQuarry(a, t, onGround) {
-  let best = t, bd = t ? Math.hypot(t.x - a.x, t.y - a.y) - CAMP_SWITCH : Infinity;
+// The quarry an awake monster takes when the one it had is gone (dead, or
+// off on its eagle): the nearest player standing on its camp's ground that
+// it can see (seenAt). With nobody there the hunt is over.
+function campQuarry(a, onGround) {
+  let best = null, bd = Infinity;
   for (const p of players) {
-    if (p === t || !unitAlive(p) || !onGround(p)) continue;
+    if (!unitAlive(p) || !onGround(p)) continue;
     const d = Math.hypot(p.x - a.x, p.y - a.y);
     if (d < bd && d <= seenAt(p, CAMP_SEE)) { bd = d; best = p; }
   }
   return best;
 }
 
-// whether world position (x, y) is on camp C's ground: the leash, CAMP_GROUND
+// tiles past a camp's clearing that are its ground: its kind's own `ground`
+// (CAMPS, camps.js), else CAMP_GROUND
+function campGroundPad(C) { return C.spec.ground === undefined ? CAMP_GROUND : C.spec.ground; }
+// whether world position (x, y) is on camp C's ground: the leash, campGroundPad
 // tiles past its clearing (campNear, camps.js). The leash bar holds inside it
 // and drains outside (updateCampMonster), and the ring an awake camp wears on
 // the snow is its edge, baked from this same test (drawCampLeashes, js/draw/marks.js)
-function campGround(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, CAMP_GROUND); }
+function campGround(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, campGroundPad(C)); }
 
 function updateCampMonster(a, dt) {
   const M = MONSTER[a.kind], C = a.home, foot = M.foot || M.r;
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
-  const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
+  const groundR = ((C ? C.r : 5) + (C ? campGroundPad(C) : CAMP_GROUND)) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
   // the camp's ground: its clearing (campGround)
   const onGround = (p) => (C ? campGround(C, p.x, p.y) : Math.hypot(p.x - hx, p.y - hy) < groundR);
@@ -634,11 +641,11 @@ function updateCampMonster(a, dt) {
   let t = a.target;
   const awake = !!t;
   if (t && (!t.active || t.dead)) { t = null; a.threat = 0; navClear(a); }
-  // awake, it turns to whoever is nearest - between blows, never in the
-  // middle of one or of its roar; a quarry that falls hands the hunt on at once
-  if (awake && (!t || !(a.clip === 'roar' || BEAR_ATTACKS.includes(a.clip)))) {
-    const q = campQuarry(a, t, onGround);
-    if (q !== t) { t = q; a.threat = 1; navClear(a); }
+  // a quarry that falls hands the hunt on at once, to the nearest on the
+  // ground (a new hitter is taken in wakeCamp, the moment the blow lands)
+  if (awake && !t) {
+    t = campQuarry(a, onGround);
+    if (t) a.threat = 1;
   }
   if (t) {
     // hunting: the bar holds while the quarry is on the ground and drains
@@ -706,8 +713,9 @@ function updateCampMonster(a, dt) {
       }
       monsterBite(a, t, M);
     } else if (M.spout && d < M.spout && a.biteCd <= 0) { a.biteCd = M.cd; orcaSpout(a, t, M); } // out of its lunge's reach: it spouts
-  } else if (M.still) {
-    // nobody to hunt: it keeps its hole
+  } else if (M.still || M.sleeps) {
+    // nobody to hunt: it keeps its hole, or sleeps on its spot (a shove still moves it)
+    if (M.sleeps && Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, foot);
   } else if (a.goal) {
     // patrolling its camp, on a route like any other walk
     const n = navStep(a, a.goal.x, a.goal.y, foot, 34, dt);
@@ -733,7 +741,7 @@ function updateCampMonster(a, dt) {
   const walks = !!ANIM_CLIPS[a.kind].walk;
   // a kind that rams (`lunge`) is thrown forward for a beat after each blow
   const ram = M.lunge && t && a.biteCd > M.cd - M.lunge;
-  setClip(a, ram ? 'lunge' : moving ? (t || a.homing || !walks ? 'run' : 'walk') : 'idle');
+  setClip(a, ram ? 'lunge' : moving ? (t || a.homing || !walks ? 'run' : 'walk') : M.sleeps && !t ? 'sleep' : 'idle');
   stepClip(a, dt, moving && !walks ? (a.homing ? 2 : t ? 1.5 : 0.75) : a.homing ? CAMP_HOME_MUL * 0.75 : 1);
 }
 

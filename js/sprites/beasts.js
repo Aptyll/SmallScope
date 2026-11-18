@@ -433,7 +433,9 @@
   // The scrap pile's stray robot (CAMPS.scrap, js/sim/camps.js): a brass box on
   // two stilt legs, side view facing right, a slim iron face plate the way it walks.
   // No lights (Noah 11-18: "just the bot with legs"). Its `down` frame, legs
-  // folded, is the one it falls in (fallSpr, js/draw/falls.js). Drawn on the game
+  // folded, is the one it falls in (fallSpr, js/draw/falls.js); `sleep` is
+  // how it waits at its camp until a hit wakes it: folded flat on the snow,
+  // breathing (the box settles a row and a puff leaves its back). Drawn on the game
   // grid with app/art (robot camps rounds 4 and 5 in the project files); the grids are
   // the source now, edited by hand.
   const HLPAL = {
@@ -444,6 +446,7 @@
     'h': '#7a5a2e', // brass shade, the panel seam
     'g': '#b08a48', // brass
     'G': '#d8b870', // brass, lit from above
+    'w': '#c4cfe0', // the breath it lets out asleep: a puff of warm air off its back
   };
   const hlStand = [
     '..oooooooooo...',
@@ -525,8 +528,45 @@
     '...............',
     '...............',
   ];
-  const hlClips = { idle: [hlStand], run: [hlRunA, hlRunB], lunge: [hlLunge], down: [hlDown] };
+  const hlSleepA = [
+    '...............',
+    '...............',
+    '...............',
+    '...............',
+    '...............',
+    '..oooooooooo...',
+    '.oGGGGGGGGgko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '.okkoooooikkko.',
+    'okkoiiooiiikko.',
+    '.oo.ooo.oooooo.',
+  ];
+  const hlSleepB = [
+    '...............',
+    '...............',
+    '...............',
+    '...............',
+    '..w............',
+    '.ww............',
+    '..oooooooooo...',
+    '.oGGGGGGGGgko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '.okkoooooikkko.',
+    'okkoiiooiiikko.',
+    '.oo.ooo.oooooo.',
+  ];
+  const hlClips = { idle: [hlStand], run: [hlRunA, hlRunB], lunge: [hlLunge], down: [hlDown], sleep: [hlSleepA, hlSleepB] };
   const hlSet = bakeClips(hlClips, HLPAL);
+  const hlLeft = mapClips(hlSet, flipH);
+  // asleep its frame comes down with it (`crown`, drawAnimal): the blank rows
+  // over the folded body, so the bar sits as close over it as over the
+  // standing one, and holds still through the breath
+  for (const set of [hlSet, hlLeft]) for (const c of set.sleep) c.crown = 5;
 
   const rabbitSet = bakeClips({ idle: rabbitIdle, hop: rabbitHop, rise: rabbitRise }, RBPAL);
   const wolfSet = bakeClips({ idle: [wolfStand], run: [wolfRunA, wolfRunB] }, WOPAL);
@@ -534,6 +574,6 @@
   Object.assign(SPRITES, {
     rabbit: { right: rabbitSet, left: mapClips(rabbitSet, flipH) },
     wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
-    scrap: { right: hlSet, left: mapClips(hlSet, flipH) },
+    scrap: { right: hlSet, left: hlLeft },
   });
 })();
