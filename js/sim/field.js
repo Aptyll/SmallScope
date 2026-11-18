@@ -58,7 +58,7 @@ const FIELD_GROVES = [
   ['oval', 58.2, 63.2, 4.0, 2.5, 0.45],  // the stand between the pump and the middle
   ['oval', 70, 70, 3.8, 7.8, 0],         // the middle's wood (on the middle: it is its own twin)
 ];
-const FIELD_BRUSH = [[39, 46, 5, 2], [28, 61, 2, 3], [66, 58, 4, 2], [43, 70, 3, 4]]; // the brush (layBrush, js/sim/depth.js): stadiums, middle x y and half w h, in the quarter
+const FIELD_BRUSH = [[37, 44, 3, 2], [30, 66, 2, 2], [62, 46, 2, 2], [43, 70, 2, 3]]; // the brush (layBrush, js/sim/depth.js): stadiums, middle x y and half w h, in the quarter
 // THE WAYS: the ways through that the design is built on, kept open
 // whatever the wander does: strokes from (ax, ay) to (bx, by) in the quarter
 const FIELD_WAYS = [
@@ -275,7 +275,7 @@ function baseAt(tx, ty, pad) {
 // (`wall`: none of them ever falls, treeFells), the lanes' road packed earth,
 // the orca's cove a frozen pool under its falls. Runs first at boot (js/app/boot.js); the
 // camps, the towers and the pumps stand on it after.
-const LAIR_POOL = [COVE[2] - 0.7, COVE[3] - 0.9]; // the orca's pool: the cove's floor all but a shore of snow (orcaLakeEdge)
+const LAIR_POOL = [COVE[2] + 1.2, COVE[3] + 1.2]; // the orca's pool: ice the whole cove's floor, to the foot of its walls (orcaLakeEdge)
 const ORCA_LAKE_R = LAIR_POOL[0]; // ...the longer of them: what a reach round the pool is sized by
 function genWorld() {
   ground.fill(0); objects.fill(null);
@@ -290,6 +290,8 @@ function genWorld() {
   for (let ty = F[1]; ty <= F[3]; ty++) for (let tx = F[0] - (ty === F[3] ? COVE_FALL.flank : 0); tx <= F[2] + (ty === F[3] ? COVE_FALL.flank : 0); tx++) {
     objects[idx(tx, ty)] = { type: 'waterfall', tx, ty, flash: 0, shake: 0 };
   }
+  // ...and the stones and the pool at their foot (js/sim/covefoot.js)
+  for (const [tx, ty] of coveFootTiles()) if (!objects[idx(tx, ty)]) objects[idx(tx, ty)] = { type: 'waterfall', tx, ty, flash: 0, shake: 0 };
 }
 // the open tiles (1) off the one distance, and then NO SLIVERS: a tile of
 // open ground that no FIELD_PATH-wide square of open ground covers is pines

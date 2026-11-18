@@ -103,8 +103,9 @@ function paintGroundTile(g, tx, ty) {
         // cracks - only well inside the ice, so none lands on the bank. A step
         // that would leave the tile is not drawn: a tile paints its own pixels
         // only, or which of two neighbours painted last (a bake's row order, a
-        // repaint's any order) would decide the pixel between them
-        if (inner && h > 0.55) {
+        // repaint's any order) would decide the pixel between them. None on
+        // the orca's pool: its sheet is clear, the orca's shadow under it
+        if (inner && h > 0.55 && !orcaLakeAt(tx, ty)) {
           g.fillStyle = '#a3cbe0';
           const n = 2 + ((h * 7) | 0) % 3;
           let lx = px + 3 + ((h * 100) | 0) % 9, ly = py + 3 + ((h * 53) | 0) % 9;

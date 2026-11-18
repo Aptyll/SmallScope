@@ -27,7 +27,11 @@ stable per tile.
   `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
   is negative, and freezes the orca's pool and the creek (ground `1`, `orcaLakeAt`, `fieldCreek`); the cove's waterfall
   tiles (and its `flank` either side of its foot) stand as `OBJECTS.waterfall`, solid rock and water drawn whole by
-  `drawCoveFall` (js/draw/cove.js); a type whose OBJECTS entry has `sorted: false` puts nothing in the y-sorted pass. It reads the
+  `drawCoveFall` (js/draw/cove.js), and so does every tile a third or more under the stones or the pool at the falls'
+  foot. That pool is not placed: four rules leave it (`coveFootBuild`, js/sim/covefoot.js, on its own `worldRng`): the
+  falls scour a hole, stones fall off the face and tumble out until they hit one another or clear the scour, the hole
+  fills to the lowest gap in what holds it, and the water the falls keep churning stays open while the rest freezes.
+  The orca's pool (`LAIR_POOL`) is ice to the foot of the cove's walls, with no cracks on it; a type whose OBJECTS entry has `sorted: false` puts nothing in the y-sorted pass. It reads the
   open tiles off `fieldGrid`, which also closes any open tile no `FIELD_PATH`-wide square covers and
   any pocket a walk from the perch never reaches, so every way through is at least `FIELD_PATH` wide.
   All three ices are rough (`fieldRough`, read by `slickUnder`): they hold a foot like snow. The camps, towers, stalls,
@@ -212,7 +216,8 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
   (`bakeBanks`), starting a pixel past the shore's own lip, its width off the shore's depth.
 - **Long cracks** through big lakes (`bakeCracks`/`walkCrack`): dark lines with a pale lip,
   branching, kept on `lakeDepth` 2 and in, a few per `CRACK_EVERY` tiles of lake. The short
-  per-tile cracks in `paintGroundTile` still mark every lake.
+  per-tile cracks in `paintGroundTile` still mark every lake. Neither lies on the orca's pool
+  (`orcaLakeAt`): its sheet is clear, so the orca's shadow under it reads.
 - **The weather on the ice**, every frame (`drawLakeSky`, after the reflected stars in `render()`):
   streaks of blown snow drifting across big lakes with the live wind, more in a blizzard; a frosty
   night's glints and its long cracks darkening again; falling snow laying fresh grains from

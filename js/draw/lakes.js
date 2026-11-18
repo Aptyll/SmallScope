@@ -1,7 +1,7 @@
 'use strict';
 // The wind's leavings: the low drifts it piles in the lee of whatever
 // stands, and the frozen lakes' dressing - snow dusted over the ice, a bank
-// along each lake's downwind shore, long cracks through the big lakes - plus
+// along each lake's downwind shore, long cracks through the big lakes (never the orca's pool) - plus
 // the few things on the ice the weather moves every frame. All of it is SCENERY: laid off the seed at
 // the ground bake (every pixel a function of the world and its position, so
 // a repaint lays back exactly what the bake laid), and nothing here is a
@@ -227,7 +227,7 @@ function bakeCracks() {
         const j = list[(hash2(key + tr, 401) * list.length) | 0];
         if (lakeDepth[j] >= 3) at = j;
       }
-      if (at < 0) continue;
+      if (at < 0 || orcaLakeAt(at % WORLD, (at / WORLD) | 0)) continue; // none on the orca's clear pool
       const x = (at % WORLD) * TILE + hash2(key, 409) * TILE, y = ((at / WORLD) | 0) * TILE + hash2(key, 419) * TILE;
       const L = CRACK_LEN[0] + (CRACK_LEN[1] - CRACK_LEN[0]) * hash2(key, 421);
       walkCrack(x, y, hash2(key, 431) * Math.PI * 2, L, 0, id, key);

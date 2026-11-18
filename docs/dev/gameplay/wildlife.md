@@ -243,7 +243,7 @@ lone bot would die to. No bot walks *to* a camp deliberately yet — see
 
 ## The orca
 
-**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond in the cove above the top lane** (`CAMPS.orca`; the cove is `COVE` in the field and the pond is laid by `genWorld`, js/sim/field.js, as `orcaLakeAt` round `orcaPool()`, an oval `LAIR_POOL` tiles across: the cove's floor all but a shore of snow)
+**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond in the cove above the top lane** (`CAMPS.orca`; the cove is `COVE` in the field and the pond is laid by `genWorld`, js/sim/field.js, as `orcaLakeAt` round `orcaPool()`, an oval `LAIR_POOL` tiles across: ice the whole cove's floor, to the foot of its walls)
 ([js/sim/orca.js](../../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). Under the ice it is not an animal: nothing shoots it,
 nothing walks into it, and it never leaves the water (up, from 6:00, it is one: below). `orca` is one `SAVE_ROOTS` singleton
