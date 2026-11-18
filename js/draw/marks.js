@@ -82,6 +82,7 @@ const LEASH_DASH = 6, LEASH_GAP = 4; // px on, px off, round the edge
 const LEASH_W = 2;       // px each dash's pixel is drawn, wide and tall: a 1 px line was lost on snow
 const LEASH_FLOW = 0.35; // dashes a second that pass a point: the slow run round
 const LEASH_IN = 0.3;    // s the ring takes to come up as the camp wakes
+const LEASH_REST = 0.4;  // the alpha of a sleeping camp's ring (CAMPS `restRing`): faint, 1 px and still, so the edge is known before the pull
 const leashEdges = new Map(); // camp -> { r, px: [dx, dy, turn 0..1] } off its centre px
 function campLeashEdge(C) {
   let E = leashEdges.get(C);
@@ -103,16 +104,21 @@ function campLeashEdge(C) {
   leashEdges.set(C, E);
   return E;
 }
-// how awake camp C is to this screen: null while it is asleep or its hunters
-// are out of sight, else how far up the ring is and whether every bar drains
+// how awake camp C is to this screen: null while its monsters are out of
+// sight (or it sleeps and its kind wears no resting ring, CAMPS `restRing`),
+// else how far up the ring is (0: asleep, the faint still ring) and whether
+// every bar drains
 function campLeashState(C, now) {
-  let up = 0, drain = true;
+  let up = 0, drain = true, seen = false;
   for (const a of animals) {
-    if (a.dead || a.home !== C || !a.target || !fogShown(a, now)) continue;
+    if (a.dead || a.home !== C || !fogShown(a, now)) continue;
+    seen = true;
+    if (!a.target) continue;
     up = Math.max(up, Math.min(1, a.senseT / LEASH_IN));
     if (a.threat >= 1) drain = false;
   }
-  return up > 0 ? { up, drain } : null;
+  if (up > 0) return { up, drain };
+  return seen && C.spec.restRing ? { up: 0, drain: false } : null;
 }
 function drawCampLeashes(ex, ey, now) {
   for (const C of camps) {
@@ -121,12 +127,13 @@ function drawCampLeashes(ex, ey, now) {
     if (!S) continue;
     const E = campLeashEdge(C), x0 = (C.tx + 0.5) * TILE - ex, y0 = (C.ty + 0.5) * TILE - ey;
     if (x0 + E.r < 0 || y0 + E.r < 0 || x0 - E.r > WV_W || y0 - E.r > WV_H) continue;
-    const on = LEASH_DASH / (LEASH_DASH + LEASH_GAP), run = now * LEASH_FLOW;
-    ctx.globalAlpha = LEASH_ALPHA * S.up;
+    // asleep: faint, thin and still; waking it runs, thickens and darkens up to the hunt's
+    const on = LEASH_DASH / (LEASH_DASH + LEASH_GAP), run = S.up > 0 ? now * LEASH_FLOW : 0, w = S.up > 0 ? LEASH_W : 1;
+    ctx.globalAlpha = C.spec.restRing ? LEASH_REST + (LEASH_ALPHA - LEASH_REST) * S.up : LEASH_ALPHA * S.up;
     ctx.fillStyle = S.drain ? THREAT_COL : LEASH_INK;
     for (let k = 0; k < E.px.length; k += 3) {
       const t = E.px[k + 2] * E.n - run;
-      if (t - Math.floor(t) < on) ctx.fillRect(x0 + E.px[k], y0 + E.px[k + 1], LEASH_W, LEASH_W);
+      if (t - Math.floor(t) < on) ctx.fillRect(x0 + E.px[k], y0 + E.px[k + 1], w, w);
     }
   }
   ctx.globalAlpha = 1;

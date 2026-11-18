@@ -49,6 +49,7 @@ const CAMPS = {
     r: 4, mark: '#c9b48c',
     icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
     kind: 'scrap', pop: 3, repop: 75, farm: true, // a jungler's round (aiDenSpot): about one lap of a side's camps on the clock
+    restRing: true, // its leash ring lies faint on the snow while it sleeps too (drawCampLeashes, js/draw/marks.js)
     ground: 2, // its leash: 2 tiles past r, 6 from the middle, so the whole ring fits a player's screen (campGroundPad, wildlife.js)
     props: [],
     spots: [[-2, -1], [2, -1], [0, 1]],
