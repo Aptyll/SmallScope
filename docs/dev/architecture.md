@@ -193,7 +193,7 @@ order, so the script tags still interleave them:
 | [js/ui/character.js](../../js/ui/character.js) | ~150 | shared scope, no `window.*` export | the HUD's shared well tones, `overHud` and the character panel (G) |
 | [js/ui/strip.js](../../js/ui/strip.js) | ~310 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, the HUD size dials, every cell rect (the six item slots among them) and refusal flash, and a press on the HUD |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~410 | shared scope, no `window.*` export | drawing the strip: the portrait, the health and stamina bars, the cell plate, the cooldown sweep, the ability/item/gold cells (a potion slot's count, key and drink sweep), `drawHudStrip`, the scaled bake |
-| [js/ui/minimap.js](../../js/ui/minimap.js) | ~350 | shared scope, no `window.*` export | both maps' chart (class map, resample, inks, marks) and the square minimap bottom right, `renderMinimap` |
+| [js/ui/minimap.js](../../js/ui/minimap.js) | ~350 | shared scope, no `window.*` export | both maps' chart (class map, resample, inks, marks) and the round minimap disc in a bottom corner, `renderMinimap` |
 | [js/ui/statpanel.js](../../js/ui/statpanel.js) | ~95 | shared scope, no `window.*` export | the stat panel left of the portrait: its cells and icons, its hit test, the hover breakdown (`tipStat`) |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~220 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
 | [js/ui/vote.js](../../js/ui/vote.js) | ~70 | shared scope, no `window.*` export | the surrender vote's panel top centre under the clock and its YES / NO click |

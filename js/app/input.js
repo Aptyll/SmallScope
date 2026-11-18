@@ -807,6 +807,13 @@ pageListen(canvas, 'wheel', (e) => {
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
   if (shopScrollBy(e.deltaY > 0 ? 1 : -1)) return; // the shop's grid, when its rows run past it (js/ui/shop.js)
+  // over the minimap the wheel zooms the disc instead of the camera
+  if (overMinimap()) {
+    const mz = settings.mmZoom | 0;
+    settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, mz + (e.deltaY > 0 ? -1 : 1)));
+    if (settings.mmZoom !== mz) { SFX.notch(); saveSettings(); }
+    return;
+  }
   wheelZoom(e);
 }, { passive: false });
 

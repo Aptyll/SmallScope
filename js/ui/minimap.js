@@ -1,7 +1,7 @@
 'use strict';
 // Both maps' chart - the class map, its flatten, its resample into a square
-// of any size and the marks over it - and the minimap, the square of the
-// whole map in the bottom-right corner. The M map's slab is js/ui/panels.js;
+// of any size and the marks over it - and the minimap, the round disc round
+// you in a bottom corner. The M map's slab is js/ui/panels.js;
 // the marks' glyphs come from js/draw/marks.js.
 // ------------------------------------------------------------ chart
 // THE CHART IS A DRAWN MAP, NOT A PHOTOGRAPH OF THE TILES (3.32). Every tile
@@ -194,7 +194,9 @@ function campPt(v, L) {
   const m = campMark(L);
   return { lx: v.ox + Math.round((m.tx + 0.5) * v.s), ly: v.oy + Math.round((m.ty + 0.5) * v.s) };
 }
-function drawChartCamps(v) {
+// later = the caller lays the hovered camp's tag itself (the disc, over its
+// rim): it gets { L, lx, ly } back, or null
+function drawChartCamps(v, later) {
   let hov = null, hd = CHART_HOVER_R;
   const pts = camps.map((L) => {
     const { lx, ly } = campPt(v, L);
@@ -203,6 +205,7 @@ function drawChartCamps(v) {
     return { L, lx, ly };
   });
   for (const { L, lx, ly } of pts) drawCampMark(ctx, L, lx, ly);
+  if (later) return hov;
   if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > v.x + v.w / 2);
 }
 // the cleared camps' seconds, stamped over every body (drawCampMapClock)
@@ -259,77 +262,144 @@ function chartWorldAt(v, sx, sy) {
 }
 
 // ------------------------------------------------------------ minimap
-// THE MINIMAP is the whole played map, always, as a square in the
-// bottom-right corner - the League habit: one glance says where everyone is,
-// and nothing scrolls or zooms under the eye. It is the M map's own chart
-// (above) at MM_W px, on the HUD's graphite frame (drawHudFrame, strip.js):
-// the outline, the faint edge, and the chart's own dark rim, flat and with
-// no hover state. Along its top runs the DAY BAND: the day's elapsed part
-// left to right in the day's gold, then the night's blue, on the edge's
-// grey track, a white tip where the clock stands. The size is the MINIMAP
-// SIZE dial (settings.mmSize, applyMinimapSize, core.js).
+// THE MINIMAP is a round disc of the map round the watched body (you, or
+// whoever the camera rides), in a bottom corner (MM_CX/MM_CY, MM_R,
+// applyMinimapSize, core.js). It is the M map's own chart (above) at the
+// disc's zoom (mmScale: the wheel over the disc steps it), with the same
+// layers and marks, clipped to a pixel disc. Round it runs the DAY RING: the
+// day's elapsed part clockwise from 12 o'clock in the day's gold, then the
+// night's blue, on the edge's grey track, a grey dusk tick and a bright tip
+// where the clock stands; then a two-pixel outline and no hover state. The
+// size is the MINIMAP SIZE dial (settings.mmSize).
 const mmChart = chartNew();
-const mmFrameCv = document.createElement('canvas'); // the frame, baked per size
-let mmFrameKey = '';
 const MM_DAY = '#ffd95c', MM_NIGHT = '#7a90d8';
-// the minimap's whole box on the screen, its frame included
-function mmFrameRect() {
-  return { x: MM_X - MM_PAD, y: MM_Y - MM_PAD_TOP, w: MM_W + MM_PAD * 2, h: MM_W + MM_PAD + MM_PAD_TOP };
-}
-function mmView() { return chartView(MM_X, MM_Y, MM_W); }
-function mmFrame() {
-  const r = mmFrameRect(), key = r.w + 'x' + r.h;
-  if (mmFrameKey !== key) {
-    mmFrameKey = key;
-    mmFrameCv.width = r.w; mmFrameCv.height = r.h;
-    const keep = ctx; ctx = mmFrameCv.getContext('2d'); // drawHudFrame paints on ctx
-    // flush in the corner: only the open (top-left) corner is cut
-    try { drawHudFrame(0, 0, r.w, r.h, { corners: { tl: true, tr: false, bl: false, br: false } }); } finally { ctx = keep; }
-    const g = mmFrameCv.getContext('2d');
-    g.fillStyle = HUD_EDGE; g.fillRect(MM_PAD - 1, 1, MM_W + 2, 3); // the day band's track
-    g.fillStyle = CHART_DARK; g.fillRect(MM_PAD - 1, MM_PAD_TOP - 1, MM_W + 2, MM_W + 2); // the chart's rim
+// Every curve here is laid a pixel at a time: canvas arc() anti-aliases, and
+// at game resolution a 1 px rim smeared over two pixels reads as blur.
+// mmRing paints every pixel whose centre lies in [r0, r1) from the centre,
+// optionally only between angles a0..a1 (clockwise from a0, canvas terms).
+function mmRing(g, cx, cy, r0, r1, col, a0, a1) {
+  const span = a1 === undefined ? 7 : ((a1 - a0) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+  const R = Math.ceil(r1);
+  g.fillStyle = col;
+  for (let py = -R; py <= R; py++) for (let px = -R; px <= R; px++) {
+    const dx = px + 0.5, dy = py + 0.5, d = Math.hypot(dx, dy);
+    if (d < r0 || d >= r1) continue;
+    if (a1 !== undefined) {
+      const a = ((Math.atan2(dy, dx) - a0) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      if (a > span) continue;
+    }
+    g.fillRect(cx + px, cy + py, 1, 1);
   }
-  return mmFrameCv;
 }
-// the world point under a screen point on the minimap (null off it): for
-// the CLICK scheme's walk across the map (ckPoint, input.js) and a ping
-function mmWorldAt(sx, sy) { return chartWorldAt(mmView(), sx, sy); }
+// the disc's clip: the same pixel disc as one whole-pixel rect a row, about
+// (0, 0) - a clip made of whole-pixel rects never blurs (cached per radius)
+const mmClips = new Map();
+function mmClip(r) {
+  let c = mmClips.get(r);
+  if (!c) {
+    c = new Path2D();
+    for (let py = -r; py < r; py++) {
+      let w = 0;
+      for (let px = 0; px < r; px++) if (Math.hypot(px + 0.5, py + 0.5) < r) w = px + 1;
+      if (w) c.rect(-w, py, w * 2, 1);
+    }
+    mmClips.set(r, c);
+  }
+  return c;
+}
+// The chrome (the outline, the silhouette, the ring's track) never changes,
+// and the arcs only as fast as the clock, so both are baked: per radius, and
+// per (radius, step of MM_ARC_STEPS) - a per-pixel ring every frame was a
+// third of the whole frame once.
+const mmChromes = new Map();
+function mmChrome() {
+  let c = mmChromes.get(MM_R);
+  if (!c) {
+    const R = MM_R + MM_OUT, S = R * 2 + 2;
+    c = document.createElement('canvas'); c.width = c.height = S;
+    const g = c.getContext('2d'), cc = R + 1;
+    mmRing(g, cc, cc, MM_R + 5, MM_R + 7, HUD_INK);  // the outline, two crisp pixels
+    mmRing(g, cc, cc, 0, MM_R + 5, AB_BG);          // the silhouette, under the map
+    mmRing(g, cc, cc, MM_R + 2, MM_R + 5, HUD_EDGE); // the day ring's track
+    mmChromes.set(MM_R, c);
+  }
+  return c;
+}
+const MM_ARC_STEPS = 512; // the ring's grain: about a pixel of arc a step
+const mmArc = { key: '', cv: document.createElement('canvas') };
+function mmArcBand(prog) {
+  const q = Math.min(MM_ARC_STEPS, Math.floor(prog * MM_ARC_STEPS));
+  const key = MM_R + ':' + q;
+  if (mmArc.key !== key) {
+    mmArc.key = key;
+    const R = MM_R + 6, S = R * 2 + 2;
+    if (mmArc.cv.width !== S) mmArc.cv.width = mmArc.cv.height = S;
+    const g = mmArc.cv.getContext('2d'), cc = R + 1;
+    g.clearRect(0, 0, S, S);
+    const p = q / MM_ARC_STEPS, dayFrac = DAY_LEN / CYCLE, a0 = -Math.PI / 2;
+    const r0 = MM_R + 2, r1 = MM_R + 5;
+    if (p > 0) mmRing(g, cc, cc, r0, r1, MM_DAY, a0, a0 + Math.min(p, dayFrac) * Math.PI * 2);
+    if (p > dayFrac) mmRing(g, cc, cc, r0, r1, MM_NIGHT, a0 + dayFrac * Math.PI * 2, a0 + p * Math.PI * 2);
+    const ba = a0 + dayFrac * Math.PI * 2; // the dusk tick, a little past the band, short of the outline
+    mmRing(g, cc, cc, r0 - 1, r1, '#8a8e96', ba - 0.03, ba + 0.03);
+  }
+  return mmArc.cv;
+}
+// the disc's whole box on the screen, its ring and outline included
+function mmFrameRect() {
+  const e = MM_R + MM_OUT;
+  return { x: MM_CX - e, y: MM_CY - e, w: e * 2, h: e * 2 };
+}
+// the chart's view for the disc: the chart at the disc's zoom, laid so the
+// watched body stands on the disc's centre
+function mmView() {
+  const vp = viewPlayer(), W = Math.max(1, Math.round(MAP_N * mmScale())), s = W / MAP_N;
+  return chartView(MM_CX - Math.round((vp.x / TILE - MAP_T0) * s), MM_CY - Math.round((vp.y / TILE - MAP_T0) * s), W);
+}
+function inDisc(sx, sy) { return Math.hypot(sx + 0.5 - MM_CX, sy + 0.5 - MM_CY) < MM_R; }
+// the world point under a screen point on the disc (null off it): for the
+// CLICK scheme's walk across the map (ckPoint, input.js) and a ping
+function mmWorldAt(sx, sy) { return inDisc(sx, sy) ? chartWorldAt(mmView(), sx, sy) : null; }
 function renderMinimap(now) {
-  chartSize(mmChart, MM_W);
-  const r = mmFrameRect(), v = mmView();
-  ctx.drawImage(mmFrame(), r.x, r.y);
-  // the day band: elapsed day in gold, then night in blue, and the tip
-  const prog = state.time / CYCLE, dayFrac = DAY_LEN / CYCLE;
-  const bx = MM_X - 1, bw = MM_W + 2, by = r.y + 1;
-  const dayW = Math.round(Math.min(prog, dayFrac) * bw), nowW = Math.round(prog * bw), duskX = Math.round(dayFrac * bw);
-  ctx.fillStyle = MM_DAY; ctx.fillRect(bx, by, dayW, 3);
-  if (nowW > duskX) { ctx.fillStyle = MM_NIGHT; ctx.fillRect(bx + duskX, by, nowW - duskX, 3); }
-  ctx.fillStyle = '#8a8e96'; ctx.fillRect(bx + duskX, by, 1, 3); // dusk
-  ctx.fillStyle = state.darkness > 0.5 ? '#cfd8f2' : '#fff2b0';
-  ctx.fillRect(bx + Math.max(0, Math.min(bw - 1, nowW - 1)), by, 1, 3);
-  // the chart and every mark on it, clipped to the square so a mark at the
-  // map's edge stops at the rim (a whole-pixel rect: the clip never blurs)
+  const v = mmView();
+  chartSize(mmChart, v.w);
+  ctx.drawImage(mmChrome(), MM_CX - MM_R - MM_OUT - 1, MM_CY - MM_R - MM_OUT - 1);
+  // the chart and every mark on it, clipped to the pixel disc; a hovered
+  // camp's name tag goes on after, over the ring, so the rim never cuts it
   ctx.save();
-  ctx.beginPath(); ctx.rect(v.x, v.y, v.w, v.w); ctx.clip();
+  ctx.translate(MM_CX, MM_CY); ctx.clip(mmClip(MM_R)); ctx.translate(-MM_CX, -MM_CY);
+  // past the chart's square (a wide zoom, or near the map's edge) the woods
+  // run on in their own ink, so the square's edge never shows
+  ctx.fillStyle = 'rgb(' + CHART_INK[CH_FOREST].join(',') + ')';
+  ctx.fillRect(MM_CX - MM_R, MM_CY - MM_R, MM_R * 2, MM_R * 2);
   drawChartGround(mmChart, v, now, 1);
-  drawChartCamps(v);
+  const hov = drawChartCamps(v, true);
   drawChartBodies(v, now, 1);
   drawChartClocks(v);
   ctx.restore();
-  // over the square, the elapsed play-time alone, on its right edge - but
+  if (hov && inDisc(hov.lx, hov.ly)) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MM_CX);
+  // the day ring (the track is in the chrome; the arcs come baked) and its
+  // tip: a 3x3 block that breathes at night
+  const prog = state.time / CYCLE, ta = -Math.PI / 2 + prog * Math.PI * 2;
+  ctx.drawImage(mmArcBand(prog), MM_CX - MM_R - 7, MM_CY - MM_R - 7);
+  ctx.fillStyle = state.darkness > 0.5 ? '#cfd8f2' : '#fff2b0';
+  ctx.globalAlpha = state.darkness > 0.5 ? Math.sin(now * 6) * 0.15 + 0.85 : 1;
+  ctx.fillRect(Math.round(MM_CX + Math.cos(ta) * (MM_R + 3)) - 1, Math.round(MM_CY + Math.sin(ta) * (MM_R + 3)) - 1, 3, 3);
+  ctx.globalAlpha = 1;
+  // over the disc, the elapsed play-time alone, centred on its axis - but
   // only with no team rail up: a match's clock sits between the two kill
   // totals there (drawRailScore, rail.js), and one clock is enough
   if (!mmClockShown()) return;
   const clock = clockTxt(state.elapsed);
-  drawPixelTextOutline(ctx, clock, r.x + r.w - pixelTextWidth(clock) - 1, r.y - 8, '#f4f7ff', HUD_INK);
+  drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY - MM_R - MM_OUT - 9, '#f4f7ff', HUD_INK);
 }
-// the world point a press on the minimap points the camera at: the pointer
-// clamped onto the square, so a drag that runs off its edge keeps the edge
+// the world point a press on the disc points the camera at: the pointer
+// pulled onto the disc, so a drag that runs off its edge keeps the edge
 function mmCamAt(sx, sy) {
-  const v = mmView();
-  return chartWorldAt(v, Math.max(v.x, Math.min(v.x + v.w - 1, sx)), Math.max(v.y, Math.min(v.y + v.w - 1, sy)));
+  const dx = sx + 0.5 - MM_CX, dy = sy + 0.5 - MM_CY, d = Math.hypot(dx, dy), k = d > MM_R - 1 ? (MM_R - 1) / d : 1;
+  return chartWorldAt(mmView(), Math.floor(MM_CX + dx * k), Math.floor(MM_CY + dy * k));
 }
-// whether the clock stands over the square: only where the rail is not up
+// whether the clock stands over the disc: only where the rail is not up
 function mmClockShown() { return !railLayout(); }
 
 // The terrain as one pixel a tile (mmCv, canvas.js): not the minimap's

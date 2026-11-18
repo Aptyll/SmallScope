@@ -68,19 +68,23 @@ on the minimap), and the one under the pointer (within `CHART_HOVER_R`) lights
 white and wears its name on a small graphite tag running away from the chart's middle
 (`drawChartCamps`/`chartTag`). Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
-**The minimap is the whole played map, always** (since 0.965; the round scrolling disc top right
-went): a square in the **bottom-right corner**, the League place, flush against the right and bottom
-edges (`applyMinimapSize`, core.js: `MM_X`/`MM_Y` the chart's top-left, `MM_W` its side, 112 px at
-the MINIMAP SIZE dial's 100, `settings.mmSize`). Nothing scrolls or zooms under the eye, so the
-wheel over it zooms the camera as anywhere else. `renderMinimap()` draws the chart (`mmChart`) through
-`mmView()` with the same layers as the M map at mark size 1, clipped to the square (a whole-pixel rect
-clip, which never blurs), on a frame baked once per size (`mmFrame`): `drawHudFrame` with only its open
-(top-left) corner cut, the chart's dark rim, and on top the **day band** — a 3 px row whose elapsed day is gold
-and night blue on `HUD_EDGE`, a grey dusk tick and a pale tip where the clock stands. The frame is
-`MM_PAD` px on three sides and `MM_PAD_TOP` on top (`mmFrameRect`); `overMinimap()` is the pointer on
-that whole box and `mmWorldAt` answers only over the chart. It has **no hover state** of its own; a
-camp under the pointer wears its name tag as on the M map. With no team rail up, the clock stands
-over its right edge (`mmClockShown`). The hud strip's size dial stops where the strip would reach it
-(`stripCap`, js/ui/strip.js): the minimap keeps its corner. The 1-px-a-tile terrain picture
+**The minimap is a round disc round the watched body** (the whole-map square of 0.965 went back to the
+disc on Noah's word), in a **bottom corner**: the right by default, the left on the GAME page's
+MINIMAP SIDE row (`settings.mmLeft`), its outline `MM_GAP` off the side and bottom edges
+(`applyMinimapSize`, core.js: `MM_CX`/`MM_CY` its centre, `MM_R` its radius, 24 px at the MINIMAP SIZE
+dial's 100, `settings.mmSize`). The wheel over it steps its zoom (`MM_ZOOMS[settings.mmZoom]`,
+`mmScale`; one px a tile at the default), not the camera's. `renderMinimap()` draws the chart
+(`mmChart`, sized to `MAP_N` times the zoom) through `mmView()`, laid so the watched body stands on the
+centre, with the same layers as the M map at mark size 1, clipped to a pixel disc made of whole-pixel
+row rects (`mmClip`, which never blurs). A hovered camp's tag is laid after the clip, over the rim
+(`drawChartCamps(v, true)` hands it back). Round it, all baked: the chrome per radius (`mmChrome`: a
+two-pixel `HUD_INK` outline, the `AB_BG` silhouette, the `HUD_EDGE` track) and the **day ring** per
+step of the clock (`mmArcBand`: the elapsed day gold clockwise from 12 o'clock, then night blue, a grey
+dusk tick), with a 3x3 tip where the clock stands that breathes at night. Every curve is `mmRing`, a
+pixel at a time. `mmFrameRect` is the disc's whole box; `overMinimap()` is the pointer within the
+outline and `mmWorldAt` answers only over the map itself; `mmCamAt` pulls a drag that runs off onto the
+rim. It has **no hover state** of its own. With no team rail up, the clock stands over the disc
+(`mmClockShown`). The hud strip's size dial stops where the strip would reach it (`stripCap`,
+js/ui/strip.js): the minimap keeps its corner. The 1-px-a-tile terrain picture
 (`updateMinimap`, `mmCv`) is no longer the minimap's: it is the bot log's map and the arena's, taken
 when they ask.

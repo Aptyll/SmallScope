@@ -350,7 +350,7 @@ window.DBG = {
     return { tab: setTab, tabs: L.tabs, rows, scroll: L.scroll, maxScroll: L.maxScroll,
       x: SL_X, w: SL_W, panel: { x: SET_X, y: SET_Y, w: SET_W, h: SET_H } };
   },
-  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_X, MM_Y, MM_W }),
+  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY, MM_R }),
   hideUI: false,
   showMarks: false, // ...but the basic attack's rings on the snow stay (drawClickMarks), for a staged still
   // director mode (js/app/director.js): its state, and its keys as pressed

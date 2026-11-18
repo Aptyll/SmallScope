@@ -264,14 +264,18 @@ const SET_TABS = [
     // one size dial per HUD widget (HUD_DIALS, below), top of the screen first
     { id: 'hudRail', label: 'set.hudRail', kind: 'slider' },
     { id: 'map', label: 'set.map', kind: 'slider' },
+    // which bottom corner the minimap stands in (applyMinimapSize, core.js)
+    { id: 'mmSide', label: 'set.mmSide', kind: 'choice',
+      opts: [{ id: 'left', label: 'set.left' }, { id: 'right', label: 'set.right' }],
+      val: () => (settings.mmLeft ? 'left' : 'right'), pick: (v) => { settings.mmLeft = v === 'left'; applyMinimapSize(); } },
     { id: 'hud', label: 'set.hud', kind: 'slider' },
     { id: 'info', label: 'set.info', kind: 'toggle' },
     { id: 'cursor', label: 'set.cursor', kind: 'toggle', on: 'set.pixel', off: 'set.browser' },
     // LOCKED rides your hero; FREE pans at the screen's edge (the `camera modes` banner, js/app/canvas.js)
     { id: 'camFree', label: 'set.camera', kind: 'toggle', on: 'set.camFree', off: 'set.camLocked' },
     // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
-    // pointer, or parked in the bottom-left corner
-    { id: 'tipFollow', label: 'set.tooltip', kind: 'toggle', on: 'set.followsPointer', off: 'set.bottomLeft' },
+    // pointer, or parked in the bottom corner the minimap leaves free
+    { id: 'tipFollow', label: 'set.tooltip', kind: 'toggle', on: 'set.followsPointer', off: () => tr(settings.mmLeft ? 'set.bottomRight' : 'set.bottomLeft') },
     // an ability's hover: the short card, every rank's numbers while the DETAILS key is held; or every rank's always
     { id: 'tipFull', label: 'set.details', kind: 'toggle', on: 'set.always', off: () => tr('set.hold', { key: keyCap('details') }) },
     // BLUE always, or the roster's colour (skin, player.js)

@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ notices
 // News as something you SEE, not something you read in a log: a PLATE that
-// flies in at the top-right corner (the minimap is bottom right), for anything
+// flies in at the top-right corner (the minimap is in a bottom corner), for anything
 // that happens where you are NOT looking. Two things raise one today - your
 // roost under attack (`raiseNotice`, js/sim/eagle.js) and your own stat sheet
 // moving (the stat ledger, below).
@@ -285,7 +285,7 @@ function noteLaneBottom() {
 // bottom edge - and a plate drawn half under the strip is worse than one not
 // drawn. renderNotices lays them newest first and stops here, which drops the
 // OLDEST news: the right one to lose.
-function noteLaneFloor() { return Math.min(VIEW_H - Math.round((AB_H + XP_TAG) * hudSc()), mmFrameRect().y) - 4; }
+function noteLaneFloor() { return Math.min(VIEW_H - Math.round((AB_H + XP_TAG) * hudSc()), settings.mmLeft ? VIEW_H : mmFrameRect().y) - 4; } // the minimap only under a right-hand lane
 
 // Drawn from renderUI (js/ui.js) after the counter and the character sheet:
 // news that arrives mid-trade must not hide behind the thing it is about.

@@ -7,7 +7,7 @@
 | tuning for one feature (the bow, the roll, a wolf, a tower, a ping, a potion) | **not here** - each block sits above the code that reads it; find it in this file's per-file section | - |
 | determinism: the one map's seed and the match's stream | `mulberry32`, `MAP_SEED` (the map), `SEED`, `rng` (the match), `worldRng` (worldgen's streams) | `rng` (`hash2`/`vnoise`: `ground prerender`, js/draw/ground.js; `treeRare`: `world`, world.js) |
 | the singletons | `state`, `settings`, `perf` | `state` (`players`/`player` + the entity arrays: `players`, player.js) |
-| settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `applyMinimapSize` (the square's `MM_X`/`MM_Y`/`MM_W` from `settings.mmSize`), `overMinimap` | `state` |
+| settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `applyMinimapSize` (the disc's `MM_CX`/`MM_CY`/`MM_R` from `settings.mmSize` and `settings.mmLeft`), `mmScale` (the disc's zoom, `MM_ZOOMS[settings.mmZoom]`), `overMinimap` | `state` |
 | `relayout()` — the resize pair's second half | `relayout`, `placeSlab` (the settings slab's x, its sliders and mute) | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
 | page events held until boot: a listener registers here and boot.js attaches them all | `pageListen`, `pageListenStart`, `PAGE_LISTENERS` | `helpers` |
 | floaters, particles, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `streamTo` (motes from one point to another), `NUM_SUFFIX`/`shortNum` | `helpers` |

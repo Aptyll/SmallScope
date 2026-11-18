@@ -106,7 +106,7 @@ when drawing (`Math.round`) or sprites smear across subpixels.
 **Canvas size changed → `fitCanvas()` then `relayout()`** (both
 resize paths do it; both listeners live in canvas.js). `relayout()`
 (js/sim/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
-`applyMinimapSize()` (the minimap's square), `fitMapSlab()` (the chart's size, below), the
+`applyMinimapSize()` (the minimap disc's place), `fitMapSlab()` (the chart's size, below), the
 map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
 `fitFlakes()` (see [Snow](render-pass-order.md#snow)), `renderBars()` (re-bakes the pillarbox frame) and
 `layoutReplay()`. Those panel `let`s are **declared together in js/app/canvas.js** (the file after

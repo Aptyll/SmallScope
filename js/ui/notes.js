@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MINIMAP: the round disc is back with its day ring; MINIMAP SIDE puts it bottom left', '0.999.3'],
     ['START: your side flies in on the eagle with the merchant and jumps off at the perch', '0.999.2'],
     ['TOWERS: a lane falls outer, inner, then its guard on the court; the eagle opens after one lane', '0.999.2'],
     ['BASE: an open stone court round the perch, a guard tower for each lane', '0.999.2'],

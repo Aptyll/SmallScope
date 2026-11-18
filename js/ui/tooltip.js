@@ -207,7 +207,7 @@ const TIP_OVER = 3;   // air between a card and the rect it stands over
 function tipPos(w, h, over) {
   const clampX = (v) => Math.max(TIP_EDGE, Math.min(v, Math.max(TIP_EDGE, VIEW_W - TIP_EDGE - w)));
   if (over) return { x: clampX(over.x), y: Math.max(TIP_EDGE, over.y - h - TIP_OVER) };
-  if (!settings.tipFollow) return { x: TIP_EDGE, y: VIEW_H - 8 - h };
+  if (!settings.tipFollow) return { x: settings.mmLeft ? VIEW_W - TIP_EDGE - w : TIP_EDGE, y: VIEW_H - 8 - h }; // the bottom corner the minimap leaves free
   const mx = Math.round(mouse.x), my = Math.round(mouse.y);
   let x = mx + TIP_GAP;
   if (x + w > VIEW_W - TIP_EDGE) x = mx - TIP_GAP - w;

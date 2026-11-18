@@ -341,11 +341,11 @@ const scratch = document.createElement('canvas');
 scratch.width = 128; scratch.height = 128; // the biggest thing that flashes is a bear's 112x76 frame
 const sctx = scratch.getContext('2d');
 
-// the minimap's square: the chart's top-left and side in view px
-// (applyMinimapSize, core.js, sets the real ones)
-let MM_W = 112;
-let MM_X = VIEW_W - MM_W - 7;
-let MM_Y = VIEW_H - MM_W - 7;
+// the minimap disc: its centre and radius in view px (applyMinimapSize,
+// core.js, sets the real ones)
+let MM_R = 24;
+let MM_CX = VIEW_W - 35;
+let MM_CY = VIEW_H - 35;
 
 // Panel layout anchors. These live here rather than in the map/settings
 // sections because relayout() assigns them on every canvas resize —
