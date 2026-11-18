@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.997';
+const PATCH_TXT = 'PATCH 0.998';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.998', 'THE LADDER IS GLOBAL ON STEAM: EVERY RANKED PLAYER BY RATING, YOU AMONG YOUR NEIGHBOURS ON THE HOME PAGE AND THE TOP HUNDRED ON YOUR PROFILE\'S RANKED TAB, AND ANY ROW OPENS THAT PLAYER\'S PROFILE.'],
   ['0.997', 'TRACKS IN THE SNOW FADE WITHIN SECONDS: FOOTPRINTS ARE GONE IN 3, AND SCUFFED OR PACKED SNOW FILLS BACK IN WITHIN A FEW SECONDS INSTEAD OF LINGERING FOR MINUTES.'],
   ['0.996', 'STEPPING INTO A BUSH, OR RIGHT UP TO ITS EDGE, TURNS THE WHOLE BUSH SEE-THROUGH, NOT JUST A SMALL RING AROUND YOUR FEET, SO EVERYONE HIDING IN IT IS IN PLAIN VIEW.'],
   ['0.995', 'THE GOLD PUMP STANDS ALONE IN ITS RING: NO MORE TOOLS, PIPES AND SPOIL LYING AROUND IT.'],
