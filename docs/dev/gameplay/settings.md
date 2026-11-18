@@ -86,9 +86,9 @@ and `relay`, what this PC's screen and GPU want) rides it. `PROFILE.putSettings`
 last change; `PROFILE.cloudSync`, once at boot, adopts the cloud's copy when its `at` is newer, else
 writes this screen's up. Until that boot read answers, no save here counts as newer, so a fresh PC
 saving its defaults never beats the account's. With no wrapper, or the cloud off for the app
-(Steamworks' Cloud page needs a quota) or the account, nothing happens. `applyMinimapSize()` must be called after changing `mmSize` (the MINIMAP SIZE slider, default **1**, 0.6..1.5 in 5% steps) —
-it recomputes `MM_X`/`MM_Y`/`MM_W`. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
-call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`; one from before the square minimap (`v` < 5) turns the old disc's `mmR` into `mmSize` (`mmR / 24`) and drops it and the disc's `mmZoom`; `mmSize` is clamped to `MM_SIZE_MIN`..`MM_SIZE_MAX`
+(Steamworks' Cloud page needs a quota) or the account, nothing happens. `applyMinimapSize()` must be called after changing `mmSize` (the MINIMAP SIZE slider, default **1** = 24 px of radius, 0.5..2 in 5% steps) or `mmLeft` (the MINIMAP SIDE row, bottom right or bottom left) —
+it recomputes `MM_CX`/`MM_CY`/`MM_R`. `mmZoom` (default **5**, one px a tile) indexes `MM_ZOOMS`; the wheel over the disc steps it and saves. `hudScale` and `hudRail` (the BOTTOM BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`railSc`) need no apply
+call: the hud strip and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to `hudRail`; one from before the square minimap (`v` < 5) turns the old disc's `mmR` into `mmSize` (`mmR / 24`) and drops it; `mmSize` is clamped to `MM_SIZE_MIN`..`MM_SIZE_MAX`
 ([rendering.md](../rendering/the-hud-corners/the-hud-strip.md)). (Old saves may still carry `res`, `fps`, `seed`, `paths`, `hudCorner` or `haptics` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 

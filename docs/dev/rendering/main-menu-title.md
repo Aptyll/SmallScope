@@ -243,7 +243,7 @@ client profile with op.gg's match list inside, drawn flat in the post-game's gra
   while the camera settles onto the play framing.
 
 `DBG` exposes `menu`, `hubLayout`, `roomHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
-`lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_X`/`MM_Y`/`MM_W` anchors) for driving all of this headlessly.
+`lobbyLayout`, `lobbyHit`, `pressPlay`, `DRAFT`/`draftAct`/`draftPoint`/`draftConfirm`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY`/`MM_R` anchors) for driving all of this headlessly.
 
 ## The skins screen
 

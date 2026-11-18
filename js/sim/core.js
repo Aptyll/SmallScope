@@ -203,7 +203,7 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, mmZoom: 5, hudScale: 1, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/sim/player.js); off = the roster's real colours
   teamBlue: true,
@@ -242,13 +242,13 @@ const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, hudSc
   scheme: 'wasd',
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
   // hudScale the bottom strip, hudRail the team rail along the top; the
-  // minimap's is mmSize above (1 = MM_W_BASE px a side, applyMinimapSize)
+  // minimap's is mmSize above (1 = MM_R_BASE px of radius, applyMinimapSize)
   hudRail: 1,
-  // the minimap's corner: false = bottom right (the League place), true =
-  // bottom left (applyMinimapSize; the MINIMAP row on the GAME page)
+  // the minimap's corner: false = bottom right, true = bottom left
+  // (applyMinimapSize; the MINIMAP SIDE row on the GAME page)
   mmLeft: false };
-// pointer over the minimap's square, its frame included
-function overMinimap() { return mouse.inside && overRect(mmFrameRect()); }
+// pointer over the minimap disc, its ring included
+function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + MM_OUT; } // to the outline's outer edge
 
 // performance monitor: fps averaged over half-second windows from raw
 // (unclamped) frame deltas, so sim clamping can't mask slow frames; sim and
@@ -298,33 +298,35 @@ function loadSettings() {
       settings.v = 4;
     }
     // ...and one from before the square minimap (0.964): the round disc's
-    // radius dial (mmR, 24 = 100) becomes the square's size dial, and the
-    // disc's zoom goes, since the square always shows the whole map
+    // radius dial (mmR, 24 = 100) became one size dial (mmSize, 1 = 24 px
+    // of radius), the one the disc reads again
     if (s && (s.v | 0) < 5) {
       if (s.mmR != null) settings.mmSize = (s.mmR | 0) / 24;
       settings.v = 5;
     }
-    delete settings.mmR; delete settings.mmZoom;
+    delete settings.mmR;
+    settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, settings.mmZoom == null ? 5 : settings.mmZoom | 0));
     settings.mmSize = Math.max(MM_SIZE_MIN, Math.min(MM_SIZE_MAX, Math.round((+settings.mmSize || 1) * 20) / 20));
   } catch (e) { }
 }
-// THE MINIMAP is a square of the whole played map in a bottom corner, the
-// right one by default (the League place) or the left (settings.mmLeft),
-// FLUSH in it: its outline is the view's side and bottom edge, as the strip
-// sits flush on the bottom. MM_X/MM_Y is the chart's own top-left and
-// MM_W/MM_H its size (the played map's rows only, mmCrop, js/ui/minimap.js);
-// the frame round it is MM_PAD px on every side (mmFrameRect).
+// THE MINIMAP is a round disc round your hero, the day ring about it, in a
+// bottom corner: the right by default or the left (settings.mmLeft, the
+// MINIMAP SIDE row). MM_CX/MM_CY is the disc's centre, MM_R its radius (the
+// map's own); the ring and the outline stand MM_OUT past it (mmChrome,
+// js/ui/minimap.js), and the outline keeps MM_GAP to the view's edges.
 const MM_GAP = 4;       // the air the HUD keeps to the view's edges (the rail, the news lane) and between the strip and the minimap
-const MM_PAD = 2;       // the frame past the chart: the outline and one edge line
-const MM_W_BASE = 112;  // the chart's side at 100 on the MINIMAP SIZE dial
-const MM_SIZE_MIN = 0.6, MM_SIZE_MAX = 1.5; // the dial's reach (settings.mmSize)
+const MM_OUT = 7;       // the outline's outer radius past MM_R: the day ring's track, then the outline
+const MM_R_BASE = 24;   // the disc's radius at 100 on the MINIMAP SIZE dial
+const MM_SIZE_MIN = 0.5, MM_SIZE_MAX = 2; // the dial's reach (settings.mmSize): 12 to 48 px of radius
+// the zoom ladder, px a world tile: settings.mmZoom indexes it (5 = one px a
+// tile), the wheel over the disc steps it (the canvas wheel, input.js)
+const MM_ZOOMS = [0.25, 0.35, 0.5, 0.65, 0.8, 1, 1.25, 1.6, 2, 2.5, 3.2, 4];
+function mmScale() { return MM_ZOOMS[Math.max(0, Math.min(MM_ZOOMS.length - 1, settings.mmZoom | 0))]; }
 function applyMinimapSize() {
-  // never taller than leaves the top of the view to the news plates
-  MM_W = Math.max(48, Math.min(Math.round(MM_W_BASE * settings.mmSize), Math.floor(VIEW_H * 0.55)));
-  MM_H = mmCrop(MM_W)[1];
-  const air = MM_LOOK === 'D' ? MM_GAP : 0; // TEMP
-  MM_X = settings.mmLeft ? air + MM_PAD : VIEW_W - air - MM_PAD - MM_W;
-  MM_Y = VIEW_H - air - MM_PAD - MM_H;
+  MM_R = Math.round(MM_R_BASE * settings.mmSize);
+  const e = MM_R + MM_OUT + MM_GAP; // centre to the edges it keeps
+  MM_CX = settings.mmLeft ? e : VIEW_W - e;
+  MM_CY = VIEW_H - e;
 }
 // recompute everything positioned off VIEW_W/VIEW_H; must run after any
 // change to the canvas size (window resize, fullscreen)
