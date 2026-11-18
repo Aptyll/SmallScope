@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.991';
+const PATCH_TXT = 'PATCH 0.992';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.992', 'THE 3V3 MAP GROWS NATURAL: RAGGED PINE GROVES, A CREEK OF ROUGH ICE, ROBOT CAMPS ONLY, AND THE ORCA\'S COVE ABOVE THE TOP LANE WITH A WATERFALL WHOSE POOL AND FALLEN STONES THE RULES OF WATER AND ROCK LEFT.'],
   ['0.991', 'UNDER THE HOOD: THE NEW CHECK FOR JUDGING ART IS SET ASIDE AS A NOTE, NOT A RULE. NOTHING IN A MATCH CHANGES.'],
   ['0.990', 'THE STRAY ROBOTS\' IRON FACE IS A SLIM, EVEN PLATE, NO LONGER JUTTING OUT PAST THE BOX.', 'stray-robot-head'],
   ['0.989', 'THE BOTTOM JUNGLE\'S STRAY ROBOTS LOSE THEIR LAMPS: PLAIN BRASS WALKERS ON STILT LEGS WITH AN IRON FACE.', 'stray-robots'],
