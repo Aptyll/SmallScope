@@ -154,7 +154,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   // the orca out of its ice (drawOrcaBreach, js/draw/orca.js)
   if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: (d, ex, ey) => drawOrcaBreach(ex, ey) });
   coveDraws(draws, ox, oy); // the orca cove's waterfall, at its grotto's foot (js/draw/cove.js)
-  reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
+  reedDraws(draws, ox, oy, now); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   campClockDraws(draws, tx0, ty0, tx1, ty1); // the clocks of the camps with no anchor prop (js/draw/marks.js)
   draws.sort((a, b) => a.y - b.y);
   return draws;
@@ -186,7 +186,7 @@ function drawSorted(draws, ox, oy, ex, ey, now) {
 
   airRiders.length = 0;
   for (const d of draws) {
-    if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, heroP)); continue; } // the brush's reeds (js/draw/depth.js)
+    if (d.reed) { litPunch(d.reed.x - ex - (REED_W >> 1) - 1, d.reed.y - ey - REED_H + 1, REED_W + 2, REED_H + 2, () => drawReed(d.reed, ex, ey, d.see)); continue; } // the brush's reeds (js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.fall) { drawFall(d.fall, ex, ey); continue; }
     if (d.p && !d.ghost && (d.p.zip >= 0 || heroDashOver(d.p))) { airRiders.push(d.p); continue; } // on a cable, or over the pines on a hero's dash (HERO_DASH `over`): the air layer's, below

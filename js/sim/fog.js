@@ -99,13 +99,18 @@ function woodsHide(srcs, x, y) {
 }
 
 // the brush's rule: a body in a deep snow patch (brushOf) is hidden unless
-// one of the side's heroes or soldiers stands in the same patch or within
-// FOG_BRUSH_RIM of its rim. Seeing OUT of it is nothing special
+// the side sees into that patch (brushSeen). Seeing OUT of it is nothing special
 function brushHide(srcs, x, y) {
   const D = brushOf(x, y);
-  if (!D) return false;
-  for (const s of srcs) if (s.near && brushIn(D, s.x / TILE, s.y / TILE) > -FOG_BRUSH_RIM) return false;
-  return true;
+  return !!D && !brushSeen(srcs, D);
+}
+// whether the eyes `srcs` see into patch D: one of the side's heroes or
+// soldiers stands in it or within FOG_BRUSH_RIM of its rim. Then the WHOLE
+// patch is seen, every body in it, and its reeds thin for the side's screen
+// (reedThinFrame, js/draw/depth.js), so what is drawn see-through is seen
+function brushSeen(srcs, D) {
+  for (const s of srcs) if (s.near && brushIn(D, s.x / TILE, s.y / TILE) > -FOG_BRUSH_RIM) return true;
+  return false;
 }
 // every cover a body can be in that the side's eyes reach: the woods, the brush,
 // and, for body `u` when one is named, the cover a hero's own kit gives it

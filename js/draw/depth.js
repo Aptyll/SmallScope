@@ -84,8 +84,9 @@ function deepTone(x, y, t) {
 // dead reeds poking out of the drift, frost on their tips: what says "hide
 // here" at a glance. Each reed is a small sprite y-sorted with the bodies
 // (gatherDraws, js/draw/passes.js), so a body standing among them is half
-// behind the ones in front of it. Round the viewed hero they thin to
-// REED_SEE, so your own body in the brush is never lost in it. Placed on a
+// behind the ones in front of it. A patch the viewed side sees into thins as
+// one to REED_SEE (reedThinOf), so your own body in the brush is never lost in
+// it and nothing in there hides behind it. Placed on a
 // staggered REED_STEP grid jittered off the position hash, wherever the snow
 // is deep: pure position, so every screen stands the same reeds.
 const REED_PAL = { root: '#6b5f47', blade: '#a8955f', lit: '#d6c48c', tip: '#ffffff' };
@@ -103,8 +104,8 @@ const REED_GLADE = 9;  // px across one of those openings
 const REED_RIM = 0.14; // depth past DEPTH_DEEP inside which the stand is whole: the rim says where the brush is
 const REED_LOW = 0.07; // depth past DEPTH_DEEP inside which a tuft is the short kind: the stand rises from its rim to its middle
 const REED_SWALE = 14, REED_DIP = 0.3; // px across a low swale inside the stand, and the noise under which its tufts are short: a thicket has a rhythm, not one flat top
-const REED_FADE = 16;  // px from the viewed hero's feet the reeds thin...
-const REED_SEE = 0.3;  // ...to this alpha
+const REED_SEE = 0.3;  // the alpha a patch's reeds thin to while the viewed side sees into it (reedThinOf)...
+const REED_THIN = 0.15; // ...and the seconds they take to thin or thicken
 const REED_FADE_BEAST = 10; // px either way from a shown beast's feet they thin the same
 const REED_VARS = 8, REED_W = 15, REED_H = 20; // the atlas: variants, and each cell's size
 let reedCv = null;
@@ -182,27 +183,51 @@ function reedsOf(D) {
   out.sort((a, b) => a.y - b.y);
   return out;
 }
-// the reeds over the view, into the frame's y-sorted draws (gatherDraws)
-function reedDraws(draws, ox, oy) {
+// the reeds over the view, into the frame's y-sorted draws (gatherDraws), each
+// with its patch's alpha this frame (reedThinOf)
+function reedDraws(draws, ox, oy, now) {
   reedBeasts = draws.filter((d) => d.a).map((d) => d.a); // the beasts this frame shows: the reeds thin round each (drawReed)
+  const dt = reedThinAt < 0 ? 0 : Math.max(0, Math.min(0.1, now - reedThinAt));
+  reedThinAt = now;
+  let hero = viewPlayer();
+  if (!hero.active || hero.dead || state.mode !== 'play') hero = null;
   for (const D of drifts) {
     const r = (D.len + 1) * TILE, X = D.x * TILE, Y = D.y * TILE;
     if (X + r < ox || Y + r < oy - REED_H || X - r > ox + WV_W || Y - r > oy + WV_H + REED_H) continue;
+    const see = reedThinOf(D, hero, now, dt);
     for (const q of reedsOf(D)) {
       if (q.x < ox - REED_W || q.x > ox + WV_W + REED_W || q.y < oy || q.y > oy + WV_H + REED_H) continue;
       if (ground[idx(q.x >> 4, q.y >> 4)] !== 0) continue; // paved or holed since: no snow, no reeds
-      draws.push({ y: q.y, reed: q });
+      draws.push({ y: q.y, reed: q, see });
     }
   }
 }
-// one reed, thinned round the viewed hero (null while dead or airborne) and,
-// closer in, round every beast the frame shows: a rabbit in its own brush is
-// a thing to hunt, not to lose
+// A patch's reeds thin as ONE while the viewed side sees into it, by the very
+// rule that shows the bodies in it (brushSeen, js/sim/fog.js): step into a
+// bush, or right up to its rim, and the whole bush goes see-through, not a
+// ring round your feet, so what you are shown is all that is in there. With
+// the fog down the viewed hero is the only eye. Eased over REED_THIN; the
+// alpha this frame, 1 to REED_SEE
+const reedThin = new WeakMap(); // drift -> how far thinned, 0 to 1
+let reedThinAt = -1;        // the frame's `now` (s) the thinning last stepped on
+function reedThinOf(D, hero, now, dt) {
+  const eyes = fogView(now) ? fogEyesDraw : hero ? [sightEye(hero.x, hero.y, 0, true)] : [];
+  const want = brushSeen(eyes, D) ? 1 : 0;
+  let t = reedThin.get(D);
+  if (t === undefined || dt === 0) t = want; // a patch first in view (or a still frame) stands as it is
+  else t = want > t ? Math.min(want, t + dt / REED_THIN) : Math.max(want, t - dt / REED_THIN);
+  reedThin.set(D, t);
+  return 1 - (1 - REED_SEE) * t;
+}
+// one reed at its patch's alpha (`see`, reedDraws), and, closer in, thinned
+// round every beast the frame shows: a rabbit in its own brush is a thing to
+// hunt, not to lose
 let reedBeasts = [];
-function drawReed(q, ex, ey, hero) {
-  let near = hero && Math.hypot(q.x - hero.x, q.y - hero.y - 4) < REED_FADE;
+function drawReed(q, ex, ey, see) {
+  let near = false;
   for (let i = 0; !near && i < reedBeasts.length; i++) near = Math.abs(q.x - reedBeasts[i].x) < REED_FADE_BEAST && Math.abs(q.y - reedBeasts[i].y - 4) < REED_FADE_BEAST;
-  if (near) ctx.globalAlpha = REED_SEE;
+  const a = near ? Math.min(see, REED_SEE) : see;
+  if (a < 1) ctx.globalAlpha = a;
   ctx.drawImage(reedAtlas(), q.v * REED_W, q.row * REED_H, REED_W, REED_H, Math.round(q.x - ex) - (REED_W >> 1), Math.round(q.y - ey) - REED_H + 3, REED_W, REED_H);
-  if (near) ctx.globalAlpha = 1;
+  if (a < 1) ctx.globalAlpha = 1;
 }
