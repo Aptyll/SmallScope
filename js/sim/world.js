@@ -65,19 +65,16 @@ const OBJECTS = {
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
   // anchor (placeCamps), so both tiles are solid and read back as the den
   den:      { solid: true,  w: 2, mm: [92, 86, 100] },
-  // the merchant's STALL (placeStalls, robots.js): 3x2, the anchor its
-  // bottom-left tile and the parts east and north of it, carrying
-  // its `team` and its `merch`. No `tool` and no hp: nothing swings at it,
-  // nothing shoots it, and it is in no `structures` list for a wave to
-  // siege - the counter is as untouchable as its keeper. E in front of it
-  // opens the shop (merchNear, js/ui/shop.js). `sight`: px of fog its side
-  // sees round it (sightSources, js/sim/fog.js).
-  stall:    { solid: true,  w: 3, h: 2, sight: 176, mm: (o) => mmTeam(o) },
-  // a zipline's pylon (placeZips, js/sim/zipline.js): solid, inert to E,
-  // carrying its `team`. Its pixels are PYLON_SPRS in the object pass
-  // (js/draw/zipline.js); the cable itself is not an object at all - it
-  // hangs between the pylons' points (zips) and is drawn by drawZips.
-  pylon:    { solid: true,  mm: [150, 156, 170] },
+  // the merchant's TRADING POST (placeStalls, robots.js): 4x2, the anchor its
+  // front-left tile and the parts east and north of it, carrying its `team`.
+  // No `tool` and no hp: nothing swings at it, nothing shoots it, and it is
+  // in no `structures` list for a wave to siege - the counter is as
+  // untouchable as its keeper. The shop opens from the rug before its
+  // counter (merchNear, js/ui/shop.js). `sight`: px of fog its side sees
+  // round it (sightSources, js/sim/fog.js). The SLED is the merchant's,
+  // parked by the tent: one solid tile of scenery.
+  stall:    { solid: true,  w: 4, h: 2, sight: 176, mm: (o) => mmTeam(o) },
+  sled:     { solid: true },
   stump:    { solid: false, mm: [188, 200, 218] },
   // a roosting team eagle's hitbox tiles (placed by eagleRoost, js/sim/eagle.js):
   // solid to walkers and a work target for RIVAL E swings only - workTarget

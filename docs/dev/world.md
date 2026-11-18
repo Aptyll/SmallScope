@@ -118,8 +118,12 @@ and gone once both have. The ride is [the zipline](gameplay/momentum-movement-pl
 A side's base is its PERCH: a disc `BASE_R` tiles round a point on the loop at the middle of its
 own end (`basePerch`; RED's at field x `BASE_X`), its plaza of stones `PLAZA_R` round the bird.
 The eagle sits there from the first frame ([the perch](rendering/the-perch.md)), the soldiers walk
-out of it both ways, and the side's merchant keeps a stall behind it (`MERCH_STALL`,
-js/sim/robots.js). `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
+out of it both ways, and the side's merchant keeps its trading post behind it (`MERCH_STALL`,
+js/sim/robots.js) in **the merchant's court**: on the perch's centre line a bay of the plaza's
+stones is cut back into the woods (`COURT`, paved through `courtDist` in `laneDist`), the pines
+leave a pocket round it (`COURT_CLEAR`) and close in two wings from the base's rim to its mouth
+(`COURT_WING`, short of the lanes' open band), so the shop sits in the trees with both lanes the
+same walk away. `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
 
 ## Camps
 

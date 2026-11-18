@@ -2,4 +2,4 @@
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the barracks bay (`teamBuild[team].spawner`), the soldiers (`robotTeam`), the merchant's stall, fire | by banner | `barracks bay`, `fire` |
+| the soldiers (`robotTeam`), fire, and the per-side `teamBuild` sets the baked files fill (js/baked/stall.js, pump.js, tower.js) | by banner | `soldiers`, `fire` |

@@ -114,45 +114,60 @@ function updateRobot(b, dt) {
 }
 
 // ------------------------------------------------------------ merchant
-// Each side's MERCHANT keeps its market STALL beside its perch - the shop
-// players walk to (the `shop` banner, js/ui/shop.js). The stall stands from
-// boot (placeStalls), the same spot every match; the merchant is at its
-// counter from the first second of a match (spawnMerchants, at beginMatch)
-// and keeps to it, a stroll now and then, turning to whoever it serves. Its
-// stall and its own body are both counters: walk up to either team's and E
-// opens the shop.
+// Each side's MERCHANT keeps its TRADING POST in its court behind the perch,
+// on the perch's centre line, so both lanes are the same walk from it (the
+// court is the map's: COURT, js/sim/field.js) - the shop players walk to
+// (the `shop` banner, js/ui/shop.js). Its footprint stands from boot
+// (placeStalls), the same spot every match, facing the field the way the
+// bird does. When a match starts the merchant is in the bird's saddle: it
+// hops off the back (MERCH_HOP), raises the tent a step at a time
+// (`built` 0..MERCH_BUILT, MERCH_STEP seconds a step) and then SITS at its
+// counter for the rest of the match. It never walks anywhere. The post
+// trades from the first second, built or not: he sells off his load.
 //
-// It is a unit in `robots` with `merchant: true`: the same separation and
-// draw pipelines a soldier rides, dispatched to updateMerchant/drawMerchant by
-// that flag (updateRobot's status/stun handling is shared). owner -1.
+// It is a unit in `robots` with `merchant: true`: the same draw pipeline a
+// soldier rides, dispatched to updateMerchant/drawMerchant by that flag.
+// owner -1.
 //
 // It CANNOT BE KILLED, and it has no hp at all rather than a large number:
 // unitAlive (js/sim/actions.js) answers false for a merchant, which takes it out
 // of every arrow, blow, sweep, tower mark and soldier's foe in one place.
 // Both sides trade at both counters, so neither side may shoot one, and
 // nothing may stand between a player and the shop they walked to.
-const MERCH_STALL = [6, 62];  // RED's stall: its 3x2 footprint's top-left tile, behind the perch on the top lane's side (inside the pine border, FIELD_EDGE) (BLUE's mirrored across the middle column)
-// set each side's stall on its spot: the anchor is the FRONT-left tile (the
-// row the y-sort reads), parts east and north of it. Boot, after genWorld
+const MERCH_STALL = 2;      // tiles from the world's west edge to RED's post (its footprint's back column; BLUE's mirrored across the middle column)
+const MERCH_SEAT = [38, 10]; // the seat at the counter: px in from the footprint's back edge, px up from its front edge
+const MERCH_RUG = 13;       // px past the counter's end to the middle of the rug a customer stands on (counterPt, js/ui/shop.js)
+const MERCH_SLED = [1, 2];  // his sled, parked by the tent: tiles in from the footprint's back column, tiles south of its front row
+const MERCH_HOP = 0.9;      // s the hop off the bird's back to the post takes
+const MERCH_STEP = 1.1;     // s a step of the build takes
+const MERCH_BUILT = 3;      // the last step: the tent open, the merchant seated
+// set each side's post on its spot: the anchor is the FRONT-left tile (the
+// row the y-sort reads), parts east and north of it, the sled a tile of its
+// own. Boot, after genWorld
 const stalls = [null, null];
 function placeStalls() {
+  const D = OBJECTS.stall;
   for (const team of [0, 1]) {
-    const tx = team === 0 ? MERCH_STALL[0] : WORLD - MERCH_STALL[0] - 3, ty = MERCH_STALL[1];
-    const o = placeObj(tx, ty + 1, 'stall', { team });
-    for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
+    const tx = team === 0 ? MERCH_STALL : WORLD - MERCH_STALL - D.w, ty = FIELD_C;
+    const o = placeObj(tx, ty, 'stall', { team });
+    for (let j = 0; j < D.h; j++) for (let k = 0; k < D.w; k++) {
       if (!j && !k) continue;
-      objects[idx(tx + k, ty + 1 - j)] = { type: 'part', tx: tx + k, ty: ty + 1 - j, of: o, flash: 0, shake: 0 };
+      objects[idx(tx + k, ty - j)] = { type: 'part', tx: tx + k, ty: ty - j, of: o, flash: 0, shake: 0 };
     }
+    placeObj(team === 0 ? tx + MERCH_SLED[0] : tx + D.w - 1 - MERCH_SLED[0], ty + MERCH_SLED[1], 'sled', { team });
     stalls[team] = o;
   }
 }
-// where a merchant keeps to: a step in front of its stall's counter
-function merchPost(team) { const s = stalls[team]; return { x: (s.tx + 1.5) * TILE, y: (s.ty + 1) * TILE + 10 }; }
-// the match's two merchants, at their posts (beginMatch, js/sim/eagle.js)
+// where a merchant sits: at its counter, inside the post
+function merchPost(team) {
+  const s = stalls[team], x0 = s.tx * TILE, x1 = (s.tx + OBJECTS.stall.w) * TILE;
+  return { x: team === 0 ? x0 + MERCH_SEAT[0] : x1 - MERCH_SEAT[0], y: (s.ty + 1) * TILE - MERCH_SEAT[1] };
+}
+// the match's two merchants, in their birds' saddles (beginMatch, js/sim/eagle.js)
 function spawnMerchants() {
   for (const team of [0, 1]) {
-    const at = merchPost(team), e = state.drop.eagles[team];
-    e.merchant = makeMerchant(team, at, stalls[team]);
+    const e = state.drop.eagles[team];
+    e.merchant = makeMerchant(team, { x: e.x, y: e.y }, stalls[team]);
   }
 }
 function makeMerchant(team, at, stall) {
@@ -160,53 +175,44 @@ function makeMerchant(team, at, stall) {
     merchant: true, bot: true, kind: 'merchant', team, owner: -1, home: null,
     x: at.x, y: at.y, // no hp: nothing can hurt it (unitAlive)
     stall, tgt: null, nav: null,
-    dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
+    hopT: MERCH_HOP, hopX: at.x, hopY: at.y, // the hop off the bird: s left of it, and where it began
+    built: 0, buildT: 0,                     // the build: the step the tent stands at, s into the next
+    dir: team === 0 ? 'left' : 'right', moving: false, animT: 0,
     atkAim: null, atkCd: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
   robots.push(b);
   return b;
 }
+// the step the post of `team` stands at: its merchant's, or whole with no match on (the title's world)
+function stallBuilt(team) {
+  for (const b of robots) if (b.merchant && b.team === team && !b.dead) return b.built;
+  return MERCH_BUILT;
+}
 
-// the merchant's frame: serve whoever has its counter open, else keep to
-// its post - a short stroll now and then, back toward it once it has
-// drifted two tiles off
+// the merchant's frame: the hop off the bird to its post, then the build a
+// step at a time, then its seat. Its path is its own (a straight hop over
+// the bird's tail, into its own footprint), so nothing here asks the nav
 function updateMerchant(b, dt) {
-  const from = { x: b.x, y: b.y };
-  let moving = false;
-  // The shop IS this body and its reach is measured off it (the `shop`
-  // banner, js/ui/shop.js), so a merchant that walked off mid-sale would shut
-  // its own counter in the customer's face: it stands and turns to them
-  const cust = shopServing(b);
-  if (cust) {
-    b.moveT = 0;
-    const cdx = cust.x - b.x, cdy = cust.y - b.y;
-    b.dir = Math.abs(cdx) > Math.abs(cdy) ? (cdx > 0 ? 'right' : 'left') : (cdy > 0 ? 'down' : 'up');
-    b.moving = false;
-    b.animT = 0;
-    return;
-  }
   const post = merchPost(b.team);
-  if (b.moveT > 0) {
-    b.moveT -= dt;
-    moving = true;
-    const drag = unitMoveMul(b);
-    const mv = moveEntity(b, (b.mvx * 24 * drag + b.kbx) * dt, (b.mvy * 24 * drag + b.kby) * dt, PLAYER_R);
-    if (mv.blockedX || mv.blockedY) b.moveT = 0;
-  } else {
-    b.idleT -= dt;
-    if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, PLAYER_R);
-    if (b.idleT <= 0) {
-      let ang = rng() * Math.PI * 2;
-      if (Math.hypot(post.x - b.x, post.y - b.y) > 2 * TILE) ang = Math.atan2(post.y - b.y, post.x - b.x) + rand(-0.5, 0.5);
-      b.mvx = Math.cos(ang); b.mvy = Math.sin(ang);
-      b.moveT = rand(0.4, 1); b.idleT = rand(1.5, 3.5);
-    }
+  if (b.hopT > 0) {
+    b.hopT = Math.max(0, b.hopT - dt);
+    const k = 1 - b.hopT / MERCH_HOP;
+    b.x = b.hopX + (post.x - b.hopX) * k; b.y = b.hopY + (post.y - b.hopY) * k;
+    if (b.hopT > 0) return;
+    burst(post.x, post.y + 2, '#e4e8ee', 6, 30, 0.45, true); // it lands in the snow
+    sfxAt('building', post.x, post.y);
   }
-  const mvx = b.x - from.x, mvy = b.y - from.y;
-  if (moving && (Math.abs(mvx) > 0.01 || Math.abs(mvy) > 0.01)) b.dir = Math.abs(mvx) > Math.abs(mvy) ? (mvx > 0 ? 'right' : 'left') : (mvy > 0 ? 'down' : 'up');
-  b.animT += dt * (moving ? 8 : 0);
-  b.moving = moving;
+  b.x = post.x; b.y = post.y;
+  b.dir = b.team === 0 ? 'right' : 'left'; // it faces the field, as its bird does
+  if (b.built >= MERCH_BUILT) return;
+  b.buildT += dt;
+  if (b.buildT < MERCH_STEP) return;
+  b.buildT = 0; b.built++;
+  const c = objCentre(b.stall);
+  burst(c.x, c.y, '#c3c9d3', 8, 45, 0.4, true);
+  burst(c.x, c.y - 10, '#e4e8ee', 6, 35, 0.5, true);
+  sfxAt('hammer', c.x, c.y);
 }
 
 // ------------------------------------------------------------ waves

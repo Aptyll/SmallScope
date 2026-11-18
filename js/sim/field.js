@@ -28,6 +28,13 @@ const ROAD_HALF = 1.4;          // ...and the packed road down the middle of it
 const ROAD_SHOULDER = 1.4; // tiles of dirty snow past a lane's edge (the ground's bake only, js/draw/ground.js)
 const BASE_X = 10, BASE_R = 12; // a side's perch: RED's x (on the loop, at the middle of its end) and the open disc round it
 const PLAZA_R = 6;              // tiles round the perch the plaza's stones are laid
+// THE MERCHANT'S COURT, behind each perch on its centre line (the stall stands in it: placeStalls,
+// js/sim/robots.js): a bay of the plaza's stones cut back into the woods, and two wings of pines
+// that close round it from the base's rim, so the shop sits in a pocket of the trees with both
+// lanes the same walk away. Field units from the west edge, mirrored for the east base.
+const COURT = [4.6, 3.4, 3.1];  // the paved bay: its middle's x, and its radii along and across the centre line
+const COURT_CLEAR = [3.7, 3.5, 0.7, 2]; // the pocket the pines leave round it: radii, tiles its middle sits south of the line (a pine is drawn up from its foot, so the pocket looks even), and the x its back wall of pines keeps
+const COURT_WING = [6.4, 6.5, 0.55]; // the wings: the x they come out to (short of the lanes' open band), tiles off the line they hold it to, and how fast they fall back from there to the rim
 const JUNGLE_BOX = [22, 40, 70, 70]; // the jungle's open box, x0 y0 x1 y1 (the quarter: it folds to the whole inside)
 const LAIR = [70, 25, 11, 7];   // the pit off the top lane: middle and radii (it folds to the bear's below)
 const LAIR_MOUTH = [64, 25, 70, 44]; // the cut from the pit through the lane to the jungle
@@ -79,7 +86,16 @@ function fieldOpen(x, y) {
   d = fieldSmin(d, fieldSmin(lair, mouth, 2), 1.5);
   // ...and never within FIELD_EDGE of the world's edge: a pine border stands
   // round everything, met in a smooth corner like any other wall
-  return -fieldSmin(-d, -(FIELD_EDGE - Math.min(fx, fy)), 2);
+  d = -fieldSmin(-d, -(FIELD_EDGE - Math.min(fx, fy)), 2);
+  // ...but for the merchant's court behind the perch: its wings of pines close, its pocket opens
+  const cy = y - FIELD_C, wingX = COURT_WING[0] - Math.max(0, Math.abs(cy) - COURT_WING[1]) * COURT_WING[2];
+  if (fx < wingX && Math.hypot(fx - BASE_X, cy) > PLAZA_R + 0.6) d = Math.max(d, 0.5);
+  if (fx >= COURT_CLEAR[3] && Math.hypot((fx - COURT[0]) / COURT_CLEAR[0], (cy - COURT_CLEAR[2]) / COURT_CLEAR[1]) < 1) d = Math.min(d, -0.5);
+  return d;
+}
+// signed tiles from the rim of the court's paved bay, negative on its stones. Tile-index coordinates, as laneDist
+function courtDist(fx, fy) {
+  return (Math.hypot((fieldFold(fx + 0.5) - COURT[0]) / COURT[1], (fy + 0.5 - FIELD_C) / COURT[2]) - 1) * COURT[2];
 }
 // ---- the lanes ----------------------------------------------------------
 // Lane 0 is the TOP, lane 1 the BOTTOM: each the half of the loop on its
@@ -154,7 +170,7 @@ function laneHoldRoute(team, lane, step) {
 // a tile's middle), so a tile's centre and a pixel bake's point alike
 function laneDist(fx, fy) {
   const x = fx + 0.5, y = fy + 0.5;
-  return Math.min(Math.abs(laneLoop(x, y)) - ROAD_HALF, Math.hypot(fieldFold(x) - BASE_X, y - FIELD_C) - PLAZA_R);
+  return Math.min(Math.abs(laneLoop(x, y)) - ROAD_HALF, Math.hypot(fieldFold(x) - BASE_X, y - FIELD_C) - PLAZA_R, courtDist(fx, fy));
 }
 function onRoad(tx, ty) { return laneDist(tx, ty) < 0; }
 

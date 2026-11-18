@@ -132,6 +132,7 @@ function drawRobot(b, ex, ey, now) {
   heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
 }
 const SOLDIER_BAR_ROWS = 1, SOLDIER_BAR_SEGS = 1; // a soldier's bar: one row of fill, uncut
+const MERCH_HOP_LIFT = 22; // px the merchant's hop off its bird rises at its top
 // The merchant (the `merchant` banner, robots.js): its own 16x18 hooded-robe
 // grids (sprites.js), two rows taller than a slot, standing on player feet
 // (b.y + 8 in the sort, the feet on the player's own foot row),
@@ -142,13 +143,15 @@ const SOLDIER_BAR_ROWS = 1, SOLDIER_BAR_SEGS = 1; // a soldier's bar: one row of
 // has no health to draw (the `merchant` banner, js/sim/robots.js), and a full bar
 // that can never move would promise a fight that is not on offer.
 function drawMerchant(b, ex, ey, now) {
+  if (b.built >= MERCH_BUILT) return; // seated: it is drawn in its tent, at the counter (the stall's last grid, js/baked/stall.js)
   const set = SPRITES.merchant[skin(b.team)];
   const frames = set[b.dir] || set.down;
   const spr = frames[b.moving ? 1 + (Math.floor(b.animT / 2) % 2) : 0];
   // 16 x 18: the feet land on the player's own foot row (b.y + 4), so the
   // extra two rows are height, and a walking robe bobs a pixel like a player
   const px = Math.round(b.x - 8 - ex), py = Math.round(b.y + 4 - ey) - spr.height;
-  const lift = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
+  const hop = b.hopT > 0 ? 1 - b.hopT / MERCH_HOP : 0; // the hop off the bird: an arc MERCH_HOP_LIFT px high over the way there
+  const lift = Math.round(4 * MERCH_HOP_LIFT * hop * (1 - hop));
   drawCastShade(spr, px, py);
   const lit = bodyLayerOpen(px + 8, py + spr.height, 20, 40); // keeps its light at night (js/draw/light.js)
   drawSpriteFlash(spr, px, py - lift, b.flash);

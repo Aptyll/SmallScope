@@ -1,9 +1,9 @@
 'use strict';
 // THE MERCHANT'S COUNTER: the one place gold turns into items and goods turn
 // back into gold. Each eagle's driver (the `merchant` banner, js/sim/robots.js)
-// climbs down at the crash, fells its back woods and raises the bot bays,
-// and keeps to the lane mouth between jobs - and standing beside it, or its
-// stall, opens this.
+// hops off its bird when the match starts, raises its trading post in the
+// court behind the perch and sits at its counter - and standing on the rug
+// before it, or anywhere beside the post, opens this.
 //
 // BOTH counters serve EVERYBODY. Your own roost's merchant is the near one and
 // the rival's is a walk through their base, but neither asks whose side you
@@ -27,18 +27,21 @@
 // ------------------------------------------------------------ the counters
 const SHOP_REACH = 34; // px from a counter the shop is open
 
-// A COUNTER is either of two things: the merchant's own body, or the STALL
-// it pitches beside the roost (OBJECTS.stall, world.js; updateMerchant,
-// robots.js). Both open the same shop. `counterPt` is where each one's cap
-// sits and where a click walks you to - the body itself, or the middle of the
-// stall's counter edge, a step in front of its front row.
+// A COUNTER is either of two things: the merchant's own body, or the TRADING
+// POST it raises in its court behind the perch (OBJECTS.stall, world.js;
+// updateMerchant, robots.js). Both open the same shop. `counterPt` is where
+// each one's cap sits and where a click walks you to - the body itself, or
+// the middle of the rug before the post's counter, on the side the post
+// faces (the field's: east of RED's, west of BLUE's).
 function counterPt(c) {
-  return c.merchant ? c : { x: (c.tx + 1.5) * TILE, y: (c.ty + 1) * TILE + 4 };
+  if (c.merchant) return c;
+  const d = OBJECTS.stall;
+  return { x: c.team === 0 ? (c.tx + d.w) * TILE + MERCH_RUG : c.tx * TILE - MERCH_RUG, y: (c.ty + 1 - d.h / 2) * TILE };
 }
 // how far a body stands from a counter: from the merchant's body, or from the
-// nearest edge of the stall's whole footprint, so its back and sides are in
-// reach as well as its front (the anchor is the front-left tile and the
-// footprint runs north and east of it - pitchStall, robots.js)
+// nearest edge of the post's whole footprint, so its back and sides are in
+// reach as well as its counter (the anchor is the front-left tile and the
+// footprint runs north and east of it - placeStalls, robots.js)
 function counterDist(p, c) {
   if (c.merchant) return Math.hypot(c.x - p.x, c.y - p.y);
   const d = OBJECTS.stall, x0 = c.tx * TILE, x1 = (c.tx + d.w) * TILE;
@@ -53,7 +56,7 @@ function merchNear(p) {
   let best = null, bd = SHOP_REACH + PLAYER_R;
   for (const b of robots) {
     if (!b.merchant || b.dead) continue;
-    for (const c of [b.hopT > 0 ? null : b, stallUp(b.stall) ? b.stall : null]) { // mid-hop it is still climbing down
+    for (const c of [b.hopT > 0 ? null : b, stallUp(b.stall) ? b.stall : null]) { // mid-hop it is still in the air
       if (!c) continue;
       const d = counterDist(p, c);
       if (d < bd) { bd = d; best = c; }
@@ -66,23 +69,6 @@ function inReach(p, c) {
   if (!c || c.dead || (!c.merchant && !stallUp(c))) return false;
   return counterDist(p, c) <= SHOP_REACH + PLAYER_R;
 }
-// The other way round: the player whose counter is OPEN on this merchant, or
-// null. updateMerchant (js/sim/robots.js) asks it every frame and drops
-// everything - the bays, the felling, the loiter - while somebody is being
-// served: a shopkeeper does not walk off mid-sale, and a counter that strolled
-// away from its own customer would shut itself in their face while they read
-// the prices. A counter open at its STALL holds nobody: the stall stays put,
-// so its keeper goes on working.
-//
-// It is the OPEN PANEL and not mere proximity on purpose. Everybody lands at
-// the roost together, so a merchant that stopped for anyone standing near it
-// would never get its stall up at all.
-// The local player is the only one that can open a counter today; when other
-// players can, this is the one place that has to learn about them.
-function shopServing(b) {
-  return state.shop === b && player.active && !player.dead ? player : null;
-}
-
 // Shuts the counter the moment you walk away from it. Called once per sim
 // step from updatePlay (js/sim/sim.js).
 function updateShop() {

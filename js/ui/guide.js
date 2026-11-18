@@ -35,7 +35,7 @@ function guideAttackCap() { return ckOn() ? 'RMB' : keyCap('click'); }
 function guideCounter() {
   const e = state.drop && state.drop.eagles[player.team], b = e && e.merchant;
   if (!b || b.dead) return null;
-  if (stallUp(b.stall)) { const c = counterPt(b.stall); return { x: c.x, y: c.y - 48 }; } // over its awning
+  if (stallUp(b.stall)) { const c = counterPt(b.stall); return { x: c.x, y: c.y - 30 }; } // over the rug before its counter
   return { x: b.x, y: b.y - 34 }; // over its name
 }
 // the lane your position holds (POSITIONS, js/sim/player.js): -1 in the jungle, which has none

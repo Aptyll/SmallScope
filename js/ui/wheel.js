@@ -271,7 +271,7 @@ function drawShopHint(ox, oy) {
   if (!b) return false;
   const verb = 'SHOP';
   const totalW = promptW(verb, 'shop');
-  const pt = counterPt(b), lift = b.merchant ? 44 : 50; // a stall's cap clears its awning
+  const pt = counterPt(b), lift = b.merchant ? 44 : 34; // a post's cap stands over the rug before its counter
   drawKeyPrompt(Math.round(pt.x - ox - totalW / 2), Math.round(pt.y - lift - oy), verb, keyHeld('shop'), 'shop');
   return true;
 }

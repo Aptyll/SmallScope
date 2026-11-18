@@ -76,7 +76,7 @@ function moveEntity(e, dx, dy, r, strict) {
 // reach (a bear's is 28.8 px above or below, wider than the 22 px it starts a blow inside) would
 // slide a standing target out of every blow. Hard contact still holds them apart.
 // a camp monster's mass and radius are its MONSTER row (wildlife.js), read at call time
-const UNIT_MASS = { player: 3, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
+const UNIT_MASS = { player: 3, rabbit: 0.5, robot: 0.7, soldier: 1 };
 const UNIT_BOUNCE = 0.3; // restitution for the lighter side of a contact
 const UNIT_SPACE = 1.6;     // a body's room: this x its hard radius (players 7.2, so 14.4 px between two)
 const UNIT_SPACE_TALL = 4 / 3; // ...and that much farther apart one above the other (19.2 px for two players)
@@ -97,7 +97,7 @@ function separateUnits(dt) {
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a bear (MONSTER.big)
   for (const a of animals) if (!a.dead) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead && !(b.zip >= 0) && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
+  for (const b of robots) if (!b.dead && !b.merchant && !(b.zip >= 0) && !(heroMachine(b) && heroMachine(b).fly)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: heroMachine(b) ? heroMachine(b).mass : UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;

@@ -246,11 +246,20 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const fr = SPRITES.hogHut, spr = fr[Math.floor(now * 1000 / HUT_FR) % fr.length];
     drawSpriteFlash(spr, px + sh + TILE - (spr.width >> 1), py + TILE - spr.height, o.flash);
   } else if (o.type === 'stall') {
-    // the merchant's shop (OBJECTS.stall): the anchor is the front-left tile
-    // and draws the whole 48-wide stall up off the front row
-    const spr = SPRITES.teamBuild[skin(o.team)].stall;
-    drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
-    drawHourLit(spr, px + sh, py + TILE - spr.height);
+    // the merchant's trading post (OBJECTS.stall): the anchor is the front-left
+    // tile and draws the whole tent up off the front row, at the step its
+    // merchant has built it to (stallBuilt, js/sim/robots.js), facing the
+    // field: RED's as drawn, BLUE's mirrored, each with its wall's back end
+    // on the footprint's back edge
+    const st = stallBuilt(o.team), spr = SPRITES.teamBuild[skin(o.team)].stall[o.team][st];
+    const ax = o.team === 0 ? px - SPRITES.stallBack : px + OBJECTS.stall.w * TILE + SPRITES.stallBack - spr.width;
+    stallShade(o, st);
+    drawSpriteFlash(spr, ax + sh, py + TILE - spr.height, o.flash);
+    drawHourLit(spr, ax + sh, py + TILE - spr.height);
+  } else if (o.type === 'sled') {
+    // the merchant's sled, parked by its tent, nose to the field like the tent
+    const spr = SPRITES.teamBuild[skin(o.team)].sled[o.team];
+    drawSpriteFlash(spr, px + sh + (TILE >> 1) - (spr.width >> 1), py + TILE - spr.height, o.flash);
   } else if (o.type === 'pylon') {
     drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
   } else if (o.type === 'snowdrop') {
