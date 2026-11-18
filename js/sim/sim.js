@@ -1105,7 +1105,7 @@ function updateFx(dt) {
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];
     f.t += dt;
-    if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
+    if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : FOOT_LIFE)) footprints.splice(i, 1);
   }
   ageNotices(dt); // the news plates under the minimap age here too (js/ui/notices.js)
   ageAnnouncer(dt); // ...and the announcer's queue and the kill feed (js/ui/announcer.js)

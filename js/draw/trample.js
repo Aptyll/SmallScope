@@ -2,11 +2,11 @@
 // Trampled snow: the snowfield as a record of the match. A coarse grid over
 // the world holds how PACKED and how CHURNED each 4 px patch of snow is;
 // every body that walks packs it, every blow, knockback, roll and death
-// churns it, and fresh snow fills all of it back in, faster while it snows.
-// Visual only, and fed from what every peer already has (positions, hp, the
-// knockback), so a client's field is its own and costs nothing on the wire.
-// The footprints and slide trails (sim.js) stay the crisp, short-lived
-// detail drawn over it; this is the slow memory under them.
+// churns it, and fresh snow fills all of it back in within seconds, faster
+// while it snows. Visual only, and fed from what every peer already has
+// (positions, hp, the knockback), so a client's field is its own and costs
+// nothing on the wire. The footprints and slide trails (sim.js) stay the
+// crisp detail drawn over it; this is the scuffed ground under them.
 // ------------------------------------------------------------ trampled snow
 const TR_CELL = 4;                          // world px per grid cell
 const TR_W = WORLD * TILE / TR_CELL;        // cells per side
@@ -28,12 +28,12 @@ const TR_SCUFF_FLAT = 2.4;                  // ...and how many times wider than 
 const TR_SCUFF_OUT = 5;                     // px past the body's edge the furthest lands
 const TR_SCUFF_RISE = 5;                    // px of height the scuffs are spread over
 // Refill is LINEAR, the way snowfall fills a hollow: a constant depth per
-// second. At light snow a one-pass trail (~0.1) is gone in about ninety
-// seconds and a packed road (1.0) takes a quarter of an hour, so what a
-// match walks keeps showing for as long as it keeps walking it.
-const TR_FILL = 0.0011;                     // pack refilled per second at light snow
+// second. At light snow a one-pass trail (~0.1) is gone in well under a
+// second and even a hard-packed patch (1.0) in about six, so tracks show
+// only where bodies are walking now and never build into lasting paths.
+const TR_FILL = 0.17;                       // pack refilled per second at light snow
 const TR_FILL_CHURN = 1.6;                  // churned snow slumps back faster than packed snow lifts
-const TR_REFILL_T = 1.5;                    // s between refill passes over one chunk
+const TR_REFILL_T = 0.25;                   // s between refill passes over one chunk (short, so a fade steps smoothly)
 const TR_SNOW_LIGHT = 0.35;                 // the snowfall the refill is tuned at (light snow), and the level before any weather
 const TR_POOL = 72;                         // chunk canvases kept at most
 const TR_BUILDS = 2;                        // chunk repaints a frame may spend
@@ -48,14 +48,14 @@ let trTurn = 0, trFrame = 0, trCanvases = 0;
 
 // How much new snow is landing, 0 .. 1, off the day's weather (weatherNow,
 // sim.js): the flakes falling plus what a ground blizzard blows along the
-// surface, which fills a hollow just as surely. Clear frost adds nothing and
-// only the wind's slow drift refills (0.3x light snow); a snow day or a
-// blizzard runs ~2.3x.
+// surface, which fills a hollow just as surely. Clear frost refills at
+// ~0.75x light snow, a snow day or a blizzard at ~1.5x: the weather leans
+// on the fade, never stretches it past a few seconds.
 function trampleSnowfall() {
   const wx = typeof weatherNow === 'function' && weatherNow();
   return wx ? Math.min(1, wx.snow + wx.drift * 0.8) : TR_SNOW_LIGHT;
 }
-function trFillMul() { return (0.3 + 2 * trampleSnowfall()) / (0.3 + 2 * TR_SNOW_LIGHT); }
+function trFillMul() { return (1 + trampleSnowfall()) / (1 + TR_SNOW_LIGHT); }
 
 function trChunk(ci) {
   let c = trChunks[ci];

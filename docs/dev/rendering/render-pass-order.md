@@ -9,8 +9,8 @@
    a dark under-ice silhouette at a deer's size, cut to the ice's own pixels so it never shows over the road it
    swims under, darkening as it comes up, gone while it is out) →
    ice-crack decals → ice breaks (`drawIceBreaks`, js/draw/icebreak.js);
-2. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
-   bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
+2. **the trampled snow** (`drawTrample`, js/draw/trample.js: where bodies walked and fought in
+   the last few seconds, drawn from pooled 128 px chunk canvases repainted only when their
    grid moved - see [trampled snow](../gameplay/trampled-snow.md)) → footprints (walking prints, slide
    grooves and skate scratches share the one `footprints` array, branching on
    `f.k` - the crisp, short-lived detail over the trample);
