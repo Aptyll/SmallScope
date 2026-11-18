@@ -12,6 +12,45 @@ function drawEagles(ex, ey, now, air) {
   for (const e of d.eagles) if (eagleAloft(e) === air) drawEagle(e, ex, ey, now);
 }
 
+// A body SEATED on the bird, drawn at (x, y) = the seat point on the feathers:
+// the bottom three rows (the boots) are tucked into the plumage - a rider
+// sits, it does not stand on a wing - and the body rises from that point, so
+// the hem meets the bird's back and nothing floats. `set` is a pose set
+// (classSet(p) or SPRITES.merchant[...]), any height.
+function drawSeated(set, dir, x, y, sc) {
+  const spr = set[dir][0];
+  const w = spr.width, keep = spr.height - 3;
+  ctx.drawImage(spr, 0, 0, w, keep, Math.round(x - w * sc / 2), Math.round(y - (keep - 2) * sc), Math.round(w * sc), Math.round(keep * sc));
+}
+// ...and your own name over your seated body, in your side's paint, two
+// clear rows over the head: only yours rides the bird, so you find yourself
+function seatedName(set, dir, x, y, sc, name, team) {
+  const top = Math.round(y - (set[dir][0].height - 5) * sc);
+  overheadPlate(() => drawWorldText(name, centreTextX(x, name), top - 8, TEAMS[skin(team)].mark)); // over the grade, like every name
+}
+// which way a rider faces: the bird's heading's main axis, so a crew coming
+// down the lane side shows its fronts and one riding across its profiles
+function riderDir(e) {
+  const c = Math.cos(e.heading), s = Math.sin(e.heading);
+  return Math.abs(c) >= Math.abs(s) ? (c > 0 ? 'right' : 'left') : (s > 0 ? 'down' : 'up');
+}
+// the riders on a bird drawn with pose `key` at scale `sc` (its size over the
+// roost's) at screen (sx, sy): the merchant on the neck first, then the
+// crew on their seats, your own body last so a teammate never covers it
+function drawRiders(e, key, sc, sx, sy) {
+  const PR = SPRITES.perch, t = skin(e.team), rd = riderDir(e);
+  const seatAt = (st) => PR.seat(e.heading, key, sc, st);
+  if (merchAboard(e.merchant || {})) { const [dx, dy] = seatAt(PR.merchSeat); drawSeated(SPRITES.merchant[t], rd, sx + dx, sy + dy, sc); }
+  for (let pass = 0; pass < 2; pass++) for (const p of players) {
+    if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
+    const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
+    drawSeated(classSet(p), rd, sx + dx, sy + dy, sc);
+    if (p === player && !window.DBG.hideUI) seatedName(classSet(p), rd, sx + dx, sy + dy, sc, p.name, p.team);
+  }
+}
+// the arrival's pose at u (0..1 of the glide): the stoop's whole sequence,
+// wings swept back and thrown open to land (Perch's dive keys)
+const arrivePose = (u) => 'd' + Math.round(Math.min(1, u) * SPRITES.perch.DIVE_N);
 
 // Perch's frames paint on first use (a few ms each), so the ones a bird is
 // about to need are queued ahead (SPRITES.perch.warm): at the roost its
@@ -40,6 +79,13 @@ function warmPerch(e, id) {
     takeoff(e.heading, Math.atan2(e.y - c, e.x - c), 0, true);
   }
   if (e.state === 'flee') takeoff(e.fleeFrom, e.fleeTo, e.fleeT);
+  if (e.state === 'arrive') { // the whole glide, by the clock updateArrive runs it on, and the roost's beats it lands in
+    for (let T = e.arriveT; T <= ARRIVE_T; T += 1 / 60) {
+      const u = T / ARRIVE_T, k = 1 - (1 - u) * (1 - u);
+      both(e.heading, arrivePose(u), (EAGLE_REST_SCALE + (EAGLE_SCALE - EAGLE_REST_SCALE) * (1 - k)) / EAGLE_REST_SCALE);
+    }
+    for (let fi = 0; fi < 3; fi++) PR.warm(id, t, e.heading, 'r' + fi, 1, false, true);
+  }
 }
 // the takeoff's beat at T s into it: hard and fast, from the spread
 const perchLiftBeat = (T) => [0, 1, 2, 1][Math.floor(T * 13) % 4];
@@ -83,7 +129,21 @@ function drawEagle(e, ex, ey, now) {
   const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey), t = skin(e.team);
   const PR = SPRITES.perch, look = PR.look;
   warmPerch(e, look); PR.tick(4); // paint the frames it is about to need, a few ms a frame
-  if (e.state === 'flee') {
+  if (e.state === 'arrive') {
+    // the arrival: down its line onto the perch, its side on its back. The
+    // shadow lies on the snow at the bird's true size, `alt` px under it and
+    // a little to the right, and meets it at the touchdown
+    const u = Math.min(1, e.arriveT / ARRIVE_T), alt = eagleAlt(e), sc = eagleScale(e) / EAGLE_REST_SCALE;
+    const key = arrivePose(u);
+    const spr = PR.frame(look, t, e.heading, key, sc, e), shw = PR.shadow(look, t, e.heading, key, e);
+    const w = spr.fw, h = spr.fh;
+    if (sx < -w - DROP_ALT - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + DROP_ALT + 40) return;
+    ctx.globalAlpha = 0.8;
+    PR.put(ctx, shw, sx + Math.round(10 * alt / DROP_ALT) - (shw.fw >> 1), sy + Math.round(alt) - (shw.fh >> 1));
+    ctx.globalAlpha = 1;
+    PR.put(ctx, spr, sx - Math.round(w / 2), sy - Math.round(h / 2));
+    drawRiders(e, key, sc, sx, sy);
+  } else if (e.state === 'flee') {
     // driven off: the climb out. Scale and altitude walk back up from the
     // roost's to the flight's, the wings beat hard, and the bird fades out
     // over the last stretch of its escape.
@@ -118,6 +178,7 @@ function drawEagle(e, ex, ey, now) {
       // under it read as a second bird
       const breath = winding ? -2 : (ruffling ? -1 : (e.restT >= EAGLE_SETTLE_T ? Math.round(Math.sin(now * 1.5 + e.team * 2.1)) : 0));
       PR.put(ctx, spr, sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
+      drawRiders(e, 'r' + fi, 1, sx, sy + breath); // the crew, for the beat between the touchdown and the step off
       if (e.flash > 0) {
         ctx.globalAlpha = Math.min(1, e.flash * 7);
         PR.put(ctx, PR.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));

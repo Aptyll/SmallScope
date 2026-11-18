@@ -966,6 +966,7 @@ function updatePlayer(p, dt) {
     return;
   }
 
+  if (crewStep(p, dt)) return; // on its bird, or stepping off it (the arrival, js/sim/eagle.js)
   playerIntents(p, dt);
 
   // the class abilities' own clock: cooldowns, the cast landing, and every

@@ -13,6 +13,7 @@ window.MEDIA = (function () {
     M.o = o = Object.assign({ k: 6, weather: 'calm', earR: 260, teamBlue: true }, o || {});
     D.freeze = true;
     D.beginMatch();
+    if (!o.arrive) arriveNow(); // a scene starts with both birds down and every body on its feet; o.arrive films the fly-in itself
     // nothing on this machine steers a body, aims a line or works on its own
     sampleHumanInput = function () {}; drawAimLine = function () {};
     autoWork = function () {}; drawWorkHint = function () {};

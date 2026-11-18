@@ -144,12 +144,13 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   for (const p of state.mode === 'title' ? [] : players) {
     if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || !fogShown(p, now)) continue; // one in the fog not at all (js/draw/fog.js)
+    if (p.aboard) continue; // on its bird: drawn seated on it (drawEagle, js/draw/eagle.js)
     if (bodyOffView(p, ox, oy)) { if (p.active) playerUnseen(p, ox, oy, now); continue; }
     draws.push({ y: p.y + 8 + heldSort(p), p, ghost: !p.active }); // empty slots stand as silhouettes; a carried body just behind its carrier (heldSort, js/draw/bodies.js)
   }
   titleCastDraws(draws); // the title's ten, this screen's own bodies (js/ui/titlescene.js)
   for (const a of animals) if (fogShown(a, now) && !bodyOffView(a, ox, oy)) draws.push({ y: a.y + 4, a });
-  for (const b of robots) if (fogShown(b, now) && !bodyOffView(b, ox, oy)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
+  for (const b of robots) if (fogShown(b, now) && !bodyOffView(b, ox, oy) && !merchAboard(b)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js); one on its bird's neck rides the bird (drawEagle)
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
   // the orca out of its ice (drawOrcaBreach, js/draw/orca.js)
   if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: (d, ex, ey) => drawOrcaBreach(ex, ey) });

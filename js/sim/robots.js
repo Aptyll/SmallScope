@@ -195,6 +195,8 @@ function stallBuilt(team) {
 // the bird's tail, into its own footprint), so nothing here asks the nav
 function updateMerchant(b, dt) {
   const post = merchPost(b.team);
+  const e = state.drop && state.drop.eagles[b.team];
+  if (e && e.state === 'arrive') return; // on its bird's neck: the arrival seats it (seatCrew, js/sim/eagle.js)
   if (b.hopT > 0) {
     b.hopT = Math.max(0, b.hopT - dt);
     const k = 1 - b.hopT / MERCH_HOP;

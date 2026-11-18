@@ -316,7 +316,7 @@ function drawPlayer(p, ex, ey, now, stage) {
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
-  const rl = held ? held.lift : 0;
+  const rl = held ? held.lift : crewLift(p); // ...and one stepping off its bird is up its leap's arc (js/sim/eagle.js)
   let spr = set[frame];
   // ...and a body on the move runs: the doll's eight frames (runFrame)
   const running = frame > 0 && p.fallT <= 0;
@@ -337,7 +337,7 @@ function drawPlayer(p, ex, ey, now, stage) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow
     if (p.dodgeT > 0) drawCastShade(S.roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
-    else drawCastShade(spr, bx, by);
+    else drawCastShade(spr, bx, by + rl); // a body up its leap's arc leaves its shade on the snow
   }
   if (!stage && p.fallT <= 0 && !zl && !held) drawHeroRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + HERO_RING_DY); // the team ring, on the snow under it
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
