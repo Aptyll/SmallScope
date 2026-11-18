@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SHOP: a trading post behind your perch, the same walk from both lanes; buy from the rug', '0.986'],
     ['ZIPLINES: E under your cable rides out down the lane past your outer tower', '0.977'],
     ['CONTROLS: a click on a rival beats a held walk key', '0.976'],
     ['CONTROLS: ability keys always cast; points go on the +', '0.976'],
