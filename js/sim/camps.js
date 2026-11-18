@@ -28,7 +28,7 @@
 //               the orca up in its hole, is out (`first`)
 //
 // resource: the wolf pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
-// scrap:    a stray robot pack (the headlamps), the bottom half's farm as the wolves are the top's
+// scrap:    a stray robot pack, the bottom half's farm as the wolves are the top's
 // buff:     the black bear in its den below the bottom lane: first out at 5:00,
 //           the whole team paid and given the BLACK BUFF for the kill, and the
 //           side's black bears count up (state.bearStacks, wildlife.js)
@@ -39,7 +39,7 @@
 //           cooldown (OBJECTS.snowdrop). The only rabbits on the map; one
 //           warren each side, by its base mouth
 const CAMPS = {
-  // the stray robots' pack: three HEADLAMPS (SPRITES.scrap, js/sprites/beasts.js)
+  // the stray robots' pack: three walkers (SPRITES.scrap, js/sprites/beasts.js)
   scrap: {
     name: 'SCRAP PILE',
     r: 4, mark: '#c9b48c',

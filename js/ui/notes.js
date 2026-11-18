@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['CAMPS: the stray robots are plain brass walkers, no lights', '0.989'],
     ['WAVES: melee and ranged soldiers only, the ballista cart is gone', '0.988'],
     ['MATCHMAKING: solos and small parties fill one 3v3 before bots', '0.987'],
     ['BOTS: a bot shows its level bars in the hero select and on TAB', '0.987'],

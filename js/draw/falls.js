@@ -17,7 +17,7 @@ function fallSpr(f) {
     const type = f.spr, set = (SPRITES[type] || SPRITES.robotTeam)[skin(f.team)] || SPRITES.robot;
     return set[f.left && set.length > 4 ? 4 : 0];
   }
-  // a beast falls in its own `down` frame when it has one (the headlamp, lamps out), else standing
+  // a beast falls in its own `down` frame when it has one (the stray robot, legs folded), else standing
   const kind = f.spr, set = SPRITES[kind] && SPRITES[kind][f.dir];
   return set ? (set.down || set.idle || [null])[0] : null;
 }
