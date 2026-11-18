@@ -176,11 +176,12 @@ function hudPick(want, cap) {
 // reach the view's edges, on the device grid so a crisp size can sit there
 function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 8) / h)); }
 // THE SCALES. The strip's caps where its plate would outgrow the view, or
-// reach the minimap beside it (MM_GAP short of its frame): the minimap is
-// the League corner and keeps its place. The rail's is railSc (js/ui/rail.js), capped by its own width.
+// reach the minimap beside it, on whichever side it sits (MM_GAP short of
+// its frame): the minimap keeps its corner. The rail's is railSc (js/ui/rail.js), capped by its own width.
 function stripCap() {
   const r = hudStripRect(), half = r.x + r.w - VIEW_W / 2; // the strip's right half at 1x, from the centre it scales about
-  return Math.min(hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG), hudSnapDown((mmFrameRect().x - MM_GAP - VIEW_W / 2) / half));
+  const m = mmFrameRect(), room = settings.mmLeft ? VIEW_W / 2 - (m.x + m.w) - MM_GAP : m.x - MM_GAP - VIEW_W / 2; // centre to the minimap, on its side
+  return Math.min(hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG), hudSnapDown(room / half)); // the pair is centred, so either half is this one
 }
 function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
 // a view coordinate put on the device grid, where a scaled HUD bake has to

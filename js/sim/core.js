@@ -243,7 +243,10 @@ const settings = { v: 5, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmSize: 1, hudSc
   // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
   // hudScale the bottom strip, hudRail the team rail along the top; the
   // minimap's is mmSize above (1 = MM_W_BASE px a side, applyMinimapSize)
-  hudRail: 1 };
+  hudRail: 1,
+  // the minimap's corner: false = bottom right (the League place), true =
+  // bottom left (applyMinimapSize; the MINIMAP row on the GAME page)
+  mmLeft: false };
 // pointer over the minimap's square, its frame included
 function overMinimap() { return mouse.inside && overRect(mmFrameRect()); }
 
@@ -305,21 +308,23 @@ function loadSettings() {
     settings.mmSize = Math.max(MM_SIZE_MIN, Math.min(MM_SIZE_MAX, Math.round((+settings.mmSize || 1) * 20) / 20));
   } catch (e) { }
 }
-// THE MINIMAP is a square of the whole played map in the BOTTOM-RIGHT
-// corner, the League place, FLUSH in it: its outline is the view's right
-// and bottom edge, as the strip sits flush on the bottom. MM_X/MM_Y is the chart's own top-left and
-// MM_W its side; the frame round it is MM_PAD px on three sides and
-// MM_PAD_TOP on top, where the day band runs (mmFrameRect, js/ui/minimap.js).
+// THE MINIMAP is a square of the whole played map in a bottom corner, the
+// right one by default (the League place) or the left (settings.mmLeft),
+// FLUSH in it: its outline is the view's side and bottom edge, as the strip
+// sits flush on the bottom. MM_X/MM_Y is the chart's own top-left and
+// MM_W/MM_H its size (the played map's rows only, mmCrop, js/ui/minimap.js);
+// the frame round it is MM_PAD px on every side (mmFrameRect).
 const MM_GAP = 4;       // the air the HUD keeps to the view's edges (the rail, the news lane) and between the strip and the minimap
-const MM_PAD = 3;       // the frame past the chart: outline, edge, the chart's own dark rim
-const MM_PAD_TOP = 5;   // ...and on top: outline, the 3 px day band, the rim
+const MM_PAD = 2;       // the frame past the chart: the outline and one edge line
 const MM_W_BASE = 112;  // the chart's side at 100 on the MINIMAP SIZE dial
 const MM_SIZE_MIN = 0.6, MM_SIZE_MAX = 1.5; // the dial's reach (settings.mmSize)
 function applyMinimapSize() {
   // never taller than leaves the top of the view to the news plates
   MM_W = Math.max(48, Math.min(Math.round(MM_W_BASE * settings.mmSize), Math.floor(VIEW_H * 0.55)));
-  MM_X = VIEW_W - MM_PAD - MM_W;
-  MM_Y = VIEW_H - MM_PAD - MM_W;
+  MM_H = mmCrop(MM_W)[1];
+  const air = MM_LOOK === 'D' ? MM_GAP : 0; // TEMP
+  MM_X = settings.mmLeft ? air + MM_PAD : VIEW_W - air - MM_PAD - MM_W;
+  MM_Y = VIEW_H - air - MM_PAD - MM_H;
 }
 // recompute everything positioned off VIEW_W/VIEW_H; must run after any
 // change to the canvas size (window resize, fullscreen)

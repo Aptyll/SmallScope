@@ -20,7 +20,7 @@ function renderUI(now) {
 
   ctx.save();
   ctx.translate(0, Math.round(slide * (mmFrameRect().h + 2)));
-  // the minimap, bottom right, with its day band
+  // the minimap, in its bottom corner
   renderMinimap(now);
   ctx.restore();
 

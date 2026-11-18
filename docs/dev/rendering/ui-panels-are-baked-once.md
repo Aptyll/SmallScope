@@ -69,15 +69,17 @@ white and wears its name on a small graphite tag running away from the chart's m
 (`drawChartCamps`/`chartTag`). Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
 **The minimap is the whole played map, always** (since 0.965; the round scrolling disc top right
-went): a square in the **bottom-right corner**, the League place, flush against the right and bottom
-edges (`applyMinimapSize`, core.js: `MM_X`/`MM_Y` the chart's top-left, `MM_W` its side, 112 px at
-the MINIMAP SIZE dial's 100, `settings.mmSize`). Nothing scrolls or zooms under the eye, so the
+went): in a **bottom corner**, the right by default (the League place) or the left (the GAME page's
+MINIMAP SIDE row, `settings.mmLeft`), `MM_GAP` px off the side and bottom edges (`applyMinimapSize`,
+core.js: `MM_X`/`MM_Y` the chart's top-left, `MM_W` its width, 112 px at the MINIMAP SIZE dial's 100,
+`settings.mmSize`, and `MM_H` its height). The chart is cropped to the rows the played map stands in
+(`mmCrop`, off `MAP_R0`/`MAP_RN` that `chartFit` takes), so the map fills its frame instead of floating
+in a square of woods. Nothing scrolls or zooms under the eye, so the
 wheel over it zooms the camera as anywhere else. `renderMinimap()` draws the chart (`mmChart`) through
-`mmView()` with the same layers as the M map at mark size 1, clipped to the square (a whole-pixel rect
-clip, which never blurs), on a frame baked once per size (`mmFrame`): `drawHudFrame` with only its open
-(top-left) corner cut, the chart's dark rim, and on top the **day band** — a 3 px row whose elapsed day is gold
-and night blue on `HUD_EDGE`, a grey dusk tick and a pale tip where the clock stands. The frame is
-`MM_PAD` px on three sides and `MM_PAD_TOP` on top (`mmFrameRect`); `overMinimap()` is the pointer on
+`mmView()` with the same layers as the M map at mark size 1, clipped to the crop (a whole-pixel rect
+clip, which never blurs), on a thin frame baked once per size (`mmFrame`): the `HUD_INK` outline and one
+`HUD_EDGE` line, square-cornered, `MM_PAD` px on every side (`mmFrameRect`). There is no day band (the
+hour shows in the world itself). `overMinimap()` is the pointer on
 that whole box and `mmWorldAt` answers only over the chart. It has **no hover state** of its own; a
 camp under the pointer wears its name tag as on the M map. With no team rail up, the clock stands
 over its right edge (`mmClockShown`). The hud strip's size dial stops where the strip would reach it

@@ -343,7 +343,7 @@ const sctx = scratch.getContext('2d');
 
 // the minimap's square: the chart's top-left and side in view px
 // (applyMinimapSize, core.js, sets the real ones)
-let MM_W = 112;
+let MM_W = 112, MM_H = 112;
 let MM_X = VIEW_W - MM_W - 7;
 let MM_Y = VIEW_H - MM_W - 7;
 
@@ -364,6 +364,7 @@ const MAP_HEAD = 26;    // rows over it: the header row and its margins
 const MAP_FOOT = 8;     // rows under it
 let MAP_W = 192;             // the chart's slot — the played part of the world scales into it
 let MAP_T0 = 0, MAP_N = WORLD; // the square of tiles the chart shows: from MAP_T0, MAP_N a side (chartFit, minimap.js)
+let MAP_R0 = 0, MAP_RN = WORLD; // ...and the rows of it the played map stands in, from MAP_R0, MAP_RN of them (the minimap's crop)
 let PANEL_W = MAP_W + MAP_SIDE * 2, PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 let PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);   // relayout() recenters these
 let PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);

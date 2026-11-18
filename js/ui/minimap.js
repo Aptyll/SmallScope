@@ -1,7 +1,7 @@
 'use strict';
 // Both maps' chart - the class map, its flatten, its resample into a square
 // of any size and the marks over it - and the minimap, the square of the
-// whole map in the bottom-right corner. The M map's slab is js/ui/panels.js;
+// whole map in a bottom corner. The M map's slab is js/ui/panels.js;
 // the marks' glyphs come from js/draw/marks.js.
 // ------------------------------------------------------------ chart
 // THE CHART IS A DRAWN MAP, NOT A PHOTOGRAPH OF THE TILES (3.32). Every tile
@@ -44,6 +44,10 @@ function chartFit() {
   if (x1 < 0) { MAP_T0 = 0; MAP_N = WORLD; } else {
     MAP_N = Math.min(WORLD, Math.max(x1 - x0, y1 - y0) + 1 + CHART_PAD * 2);
     MAP_T0 = Math.max(0, Math.min(WORLD - MAP_N, Math.round((x0 + x1 + y0 + y1) / 4 - MAP_N / 2)));
+    // the rows of that square the played map stands in, padded the same:
+    // the minimap shows only these (mmCrop), the M map the whole square
+    MAP_R0 = Math.max(MAP_T0, y0 - CHART_PAD);
+    MAP_RN = Math.min(MAP_T0 + MAP_N, y1 + 1 + CHART_PAD) - MAP_R0;
   }
   relayout(); // the slab's size and the chart's origin follow the square
 }
@@ -139,9 +143,12 @@ function chartInk(ch) {
 // A VIEW is where a chart lands on the screen: its square { x, y, w } and
 // the projection every mark takes, screen = o + tile * s. chartView makes one
 // for a chart w px a side with its top-left at (x, y).
-function chartView(x, y, w) {
+// A view may show a band of the chart's rows only: from its pixel row cy
+// down h rows (the minimap's crop, mmCrop); without them it is the whole square.
+function chartView(x, y, w, cy, h) {
   const s = w / MAP_N;
-  return { x, y, w, s, ox: x - MAP_T0 * s, oy: y - MAP_T0 * s };
+  cy = cy || 0;
+  return { x, y, w, h: h || w, cy, s, ox: x - MAP_T0 * s, oy: y - cy - MAP_T0 * s };
 }
 function chartX(v, wx) { return v.ox + Math.round((wx / TILE) * v.s); }
 function chartY(v, wy) { return v.oy + Math.round((wy / TILE) * v.s); }
@@ -150,18 +157,18 @@ function chartY(v, wy) { return v.oy + Math.round((wy / TILE) * v.s); }
 // towers), every one under the camps and the bodies
 function drawChartGround(ch, v, now, k) {
   chartInk(ch);
-  ctx.drawImage(ch.cv, v.x, v.y);
-  fogOverMap(ctx, now, MAP_T0, MAP_T0, MAP_N, MAP_N, v.x, v.y, v.w, v.w); // the fog of war (js/draw/fog.js)
+  ctx.drawImage(ch.cv, 0, v.cy, v.w, v.h, v.x, v.y, v.w, v.h);
+  fogOverMap(ctx, now, MAP_T0, MAP_T0 + v.cy / v.s, MAP_N, v.h / v.s, v.x, v.y, v.w, v.h); // the fog of war (js/draw/fog.js)
   if (state.darkness > 0.01) {
     ctx.globalAlpha = state.darkness * 0.22;
     ctx.fillStyle = '#2c3c6e';
-    ctx.fillRect(v.x, v.y, v.w, v.w);
+    ctx.fillRect(v.x, v.y, v.w, v.h);
     ctx.globalAlpha = 1;
   }
   // what the camera sees: a quiet frame, one pixel, inside the square
   // (filled rows and columns, never a stroked path, so it stays on the grid)
   const x0 = Math.max(v.x, v.ox + Math.round((camX / TILE) * v.s)), y0 = Math.max(v.y, v.oy + Math.round((camY / TILE) * v.s));
-  const x1 = Math.min(v.x + v.w, v.ox + Math.round(((camX + WV_W) / TILE) * v.s)), y1 = Math.min(v.y + v.w, v.oy + Math.round(((camY + WV_H) / TILE) * v.s));
+  const x1 = Math.min(v.x + v.w, v.ox + Math.round(((camX + WV_W) / TILE) * v.s)), y1 = Math.min(v.y + v.h, v.oy + Math.round(((camY + WV_H) / TILE) * v.s));
   if (x1 - x0 > 2 && y1 - y0 > 2) {
     ctx.fillStyle = 'rgba(244,247,255,0.7)';
     ctx.fillRect(x0, y0, x1 - x0, 1); ctx.fillRect(x0, y1 - 1, x1 - x0, 1);
@@ -169,7 +176,7 @@ function drawChartGround(ch, v, now, k) {
   }
   // the ziplines under everything that moves: each side's cable pylon to
   // pylon in its ink, clipped to the square
-  const inV = (x, y) => x >= v.x && y >= v.y && x < v.x + v.w && y < v.y + v.w;
+  const inV = (x, y) => x >= v.x && y >= v.y && x < v.x + v.w && y < v.y + v.h;
   for (const z of zips) if (z) drawMapZip(ctx, z, (x) => chartX(v, x), (y) => chartY(v, y), TEAMS[skin(z.team)].mark, inV);
   drawMapStructs(ctx, (x, y) => [chartX(v, x), chartY(v, y)], CHART_DARK, k);
 }
@@ -253,41 +260,46 @@ function drawChartBodies(v, now, k) {
 // a screen point over a view -> the world point under it (null off it): the
 // inverse every press on a map needs (a ping, a walk ordered on it)
 function chartWorldAt(v, sx, sy) {
-  if (sx < v.x || sy < v.y || sx >= v.x + v.w || sy >= v.y + v.w) return null;
+  if (sx < v.x || sy < v.y || sx >= v.x + v.w || sy >= v.y + v.h) return null;
   const x = (sx - v.ox) / v.s * TILE, y = (sy - v.oy) / v.s * TILE;
   return inWorld(Math.floor(x / TILE), Math.floor(y / TILE)) ? { x, y } : null;
 }
 
 // ------------------------------------------------------------ minimap
-// THE MINIMAP is the whole played map, always, as a square in the
-// bottom-right corner - the League habit: one glance says where everyone is,
-// and nothing scrolls or zooms under the eye. It is the M map's own chart
-// (above) at MM_W px, on the HUD's graphite frame (drawHudFrame, strip.js):
-// the outline, the faint edge, and the chart's own dark rim, flat and with
-// no hover state. Along its top runs the DAY BAND: the day's elapsed part
-// left to right in the day's gold, then the night's blue, on the edge's
-// grey track, a white tip where the clock stands. The size is the MINIMAP
-// SIZE dial (settings.mmSize, applyMinimapSize, core.js).
+// THE MINIMAP is the whole played map, always, in a bottom corner (the
+// right by default, the League place; settings.mmLeft for the left) - one
+// glance says where everyone is, and nothing scrolls or zooms under the eye.
+// It is the M map's own chart (above) at MM_W px wide, cropped to the rows
+// the played map stands in (mmCrop), so the picture fills its frame the way
+// League's does instead of floating in a dark square. The frame is thin and
+// flat: the HUD's outline and one edge line (HUD_INK, HUD_EDGE, strip.js),
+// square-cornered, with no hover state. The size is the MINIMAP SIZE dial
+// (settings.mmSize, applyMinimapSize, core.js).
+let MM_LOOK = 'D'; // TEMP (concept round): B thin square, C thin fitted, D fitted with air
 const mmChart = chartNew();
 const mmFrameCv = document.createElement('canvas'); // the frame, baked per size
 let mmFrameKey = '';
-const MM_DAY = '#ffd95c', MM_NIGHT = '#7a90d8';
+// the band of the chart's pixel rows the minimap shows, for a chart W px a
+// side: [first row, rows] - the played map's rows, never the woods past them
+function mmCrop(W) {
+  if (MM_LOOK === 'B') return [0, W];
+  const S = W / MAP_N, cy = Math.floor((MAP_R0 - MAP_T0) * S);
+  return [cy, Math.min(W, Math.ceil((MAP_R0 + MAP_RN - MAP_T0) * S)) - cy];
+}
 // the minimap's whole box on the screen, its frame included
 function mmFrameRect() {
-  return { x: MM_X - MM_PAD, y: MM_Y - MM_PAD_TOP, w: MM_W + MM_PAD * 2, h: MM_W + MM_PAD + MM_PAD_TOP };
+  return { x: MM_X - MM_PAD, y: MM_Y - MM_PAD, w: MM_W + MM_PAD * 2, h: MM_H + MM_PAD * 2 };
 }
-function mmView() { return chartView(MM_X, MM_Y, MM_W); }
+function mmView() { const [cy, h] = mmCrop(MM_W); return chartView(MM_X, MM_Y, MM_W, cy, h); }
 function mmFrame() {
   const r = mmFrameRect(), key = r.w + 'x' + r.h;
   if (mmFrameKey !== key) {
     mmFrameKey = key;
     mmFrameCv.width = r.w; mmFrameCv.height = r.h;
-    const keep = ctx; ctx = mmFrameCv.getContext('2d'); // drawHudFrame paints on ctx
-    // flush in the corner: only the open (top-left) corner is cut
-    try { drawHudFrame(0, 0, r.w, r.h, { corners: { tl: true, tr: false, bl: false, br: false } }); } finally { ctx = keep; }
     const g = mmFrameCv.getContext('2d');
-    g.fillStyle = HUD_EDGE; g.fillRect(MM_PAD - 1, 1, MM_W + 2, 3); // the day band's track
-    g.fillStyle = CHART_DARK; g.fillRect(MM_PAD - 1, MM_PAD_TOP - 1, MM_W + 2, MM_W + 2); // the chart's rim
+    g.fillStyle = HUD_INK; g.fillRect(0, 0, r.w, r.h);
+    g.fillStyle = HUD_EDGE; g.fillRect(1, 1, r.w - 2, r.h - 2);
+    g.clearRect(MM_PAD, MM_PAD, MM_W, MM_H); // the chart fills the rest
   }
   return mmFrameCv;
 }
@@ -298,19 +310,10 @@ function renderMinimap(now) {
   chartSize(mmChart, MM_W);
   const r = mmFrameRect(), v = mmView();
   ctx.drawImage(mmFrame(), r.x, r.y);
-  // the day band: elapsed day in gold, then night in blue, and the tip
-  const prog = state.time / CYCLE, dayFrac = DAY_LEN / CYCLE;
-  const bx = MM_X - 1, bw = MM_W + 2, by = r.y + 1;
-  const dayW = Math.round(Math.min(prog, dayFrac) * bw), nowW = Math.round(prog * bw), duskX = Math.round(dayFrac * bw);
-  ctx.fillStyle = MM_DAY; ctx.fillRect(bx, by, dayW, 3);
-  if (nowW > duskX) { ctx.fillStyle = MM_NIGHT; ctx.fillRect(bx + duskX, by, nowW - duskX, 3); }
-  ctx.fillStyle = '#8a8e96'; ctx.fillRect(bx + duskX, by, 1, 3); // dusk
-  ctx.fillStyle = state.darkness > 0.5 ? '#cfd8f2' : '#fff2b0';
-  ctx.fillRect(bx + Math.max(0, Math.min(bw - 1, nowW - 1)), by, 1, 3);
   // the chart and every mark on it, clipped to the square so a mark at the
   // map's edge stops at the rim (a whole-pixel rect: the clip never blurs)
   ctx.save();
-  ctx.beginPath(); ctx.rect(v.x, v.y, v.w, v.w); ctx.clip();
+  ctx.beginPath(); ctx.rect(v.x, v.y, v.w, v.h); ctx.clip();
   drawChartGround(mmChart, v, now, 1);
   drawChartCamps(v);
   drawChartBodies(v, now, 1);
@@ -327,7 +330,7 @@ function renderMinimap(now) {
 // clamped onto the square, so a drag that runs off its edge keeps the edge
 function mmCamAt(sx, sy) {
   const v = mmView();
-  return chartWorldAt(v, Math.max(v.x, Math.min(v.x + v.w - 1, sx)), Math.max(v.y, Math.min(v.y + v.w - 1, sy)));
+  return chartWorldAt(v, Math.max(v.x, Math.min(v.x + v.w - 1, sx)), Math.max(v.y, Math.min(v.y + v.h - 1, sy)));
 }
 // whether the clock stands over the square: only where the rail is not up
 function mmClockShown() { return !railLayout(); }

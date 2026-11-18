@@ -129,7 +129,7 @@ function replayShowing() {
 function rpFull() { return state.mode === 'dead'; }
 function rpRect() {
   if (rpFull()) return { x: 0, y: 0, w: VIEW_W, h: VIEW_H };
-  return { x: RP_PAD, y: VIEW_H - RP_H - RP_PAD, w: RP_W, h: RP_H };
+  return { x: settings.mmLeft ? VIEW_W - RP_W - RP_PAD : RP_PAD, y: VIEW_H - RP_H - RP_PAD, w: RP_W, h: RP_H }; // the bottom corner the minimap leaves free
 }
 // the full frame's close box: a small plank inside its top-right corner
 function rpCloseRect() {
