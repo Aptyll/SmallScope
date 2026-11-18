@@ -142,8 +142,8 @@ same walk away. `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
 The neutral monsters stand at fixed, mirrored sites (`CAMP_SITES`, js/sim/camps.js), written for
 RED's top quarter and folded to the other three like the field (`campSites`): a site on the middle
 row or column is its own twin. Every camp but the orca's is a SCRAP PILE of stray robots (`scrap`,
-brass walkers: the jungle's farm, `farm`): per side one at each hall's outer end and one by the
-base mouth, and one in each hollow on the middle column, shared. The orca's pool is the cove above
+brass walkers: the jungle's farm, `farm`): per side one at each hall's outer end, backed into
+the grove's pocket, and one in each hollow on the middle column, shared. The orca's pool is the cove above
 the top lane, one for the whole map, with nothing below; the black bear and the rabbit warren have
 no site. Nothing rolls. What lives
 in them: [wildlife](gameplay/wildlife.md#camp-monsters-neutral-until-hit). The gold pumps stand

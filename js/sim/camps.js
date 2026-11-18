@@ -89,7 +89,6 @@ const CAMPS = {
 const CAMP_SITES = [
   { top: 'scrap', bot: 'scrap', tx: 28, ty: 54 },   // the hall's outer end, backed into the pocket in the grove wall
   { top: 'scrap', bot: 'scrap', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
-  { top: 'scrap', bot: null, tx: 33, ty: 65 },     // the base mouth's north notch, off the walk out of base: one a side
   { top: 'orca', bot: null, tx: 69, ty: 24 },       // the orca's cove above the top lane (COVE, js/sim/field.js): on the middle column, its own twin, and none below
 ];
 function campSites() {
