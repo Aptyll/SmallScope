@@ -24,7 +24,7 @@ function drawGroundPass(ox, oy, ex, ey, now) {
   // the up orca's hole and its spouts coming down (js/draw/orca.js)
   drawOrcaPool(ex, ey);
 
-  // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
+  // the trampled snow: the last few seconds of scuffing, under the crisp prints (js/draw/trample.js)
   drawTrample(ox, oy);
 }
 
@@ -51,12 +51,12 @@ function drawFootprints(ox, oy) {
       ctx.fillRect(px, py + 1, 2, 1);
     } else if (f.k === 2) {
       // ice skate scratch: thin frosted nick, brighter than the ice sheet
-      const a = Math.max(0, 1 - f.t / 9);
+      const a = Math.max(0, 1 - f.t / FOOT_LIFE);
       ctx.fillStyle = 'rgba(238,250,255,' + (a * 0.75).toFixed(3) + ')';
       ctx.fillRect(Math.round(f.x - ox), Math.round(f.y - oy), 1, 1);
     } else {
       // walking footprints
-      const a = Math.max(0, 1 - f.t / 9);
+      const a = Math.max(0, 1 - f.t / FOOT_LIFE);
       ctx.fillStyle = 'rgba(122,150,192,' + (a * 0.6).toFixed(3) + ')';
       ctx.fillRect(Math.round(f.x - ox) - 1, Math.round(f.y - oy), 2, 2);
     }

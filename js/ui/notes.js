@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SNOW: tracks fade within seconds', '0.997'],
     ['BUSHES: step in and the whole bush goes see-through', '0.996'],
     ['MAP: the gold pump stands clean in its ring, no clutter round it', '0.995'],
     ['SURRENDER: 2 of 3 yes ends the match', '0.994'],

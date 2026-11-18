@@ -44,7 +44,8 @@ const ICE_MAX = 150;      // ice speed cap (~2x walk); holding a direction pumps
 const SLIDE_MIN = 85;     // shift-slide only engages above this speed...
 const SLIDE_EXIT = 55;    // ...and drops out below this one (hysteresis)
 const TRAIL_MIN = 110;    // sliding faster than this carves the snow trail
-const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s footprint life)
+const FOOT_LIFE = 3;      // s a walking print or an ice scratch lasts, fading all the way
+const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
 // Hero levels (League-style, max 18). XP is its own number, apart from gold:
