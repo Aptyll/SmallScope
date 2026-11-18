@@ -28,8 +28,8 @@ const LANE_R = 22;              // ...and its corners' radius
 const LANE_HALF = 3.5;          // tiles either side of a lane's centreline that are open: the lane
 const ROAD_HALF = 1.4;          // ...and the packed road down the middle of it
 const ROAD_SHOULDER = 1.4; // tiles of dirty snow past a lane's edge (the ground's bake only, js/draw/ground.js)
-const BASE_X = 10, BASE_R = 12; // a side's perch: RED's x (on the loop, at the middle of its end) and the open disc round it
-const PLAZA_R = 6;              // tiles round the perch the plaza's stones are laid
+const BASE_X = 10, BASE_R = 15; // a side's perch: RED's x (on the loop, at the middle of its end) and the open disc round it
+const PLAZA_R = 12;             // tiles round the perch the court's stones are laid: open, wide enough for a wave to fight the guards on (TOWER_SPOTS)
 // THE MERCHANT'S COURT, behind each perch on its centre line (the stall stands in it: placeStalls,
 // js/sim/robots.js): a bay of the plaza's stones cut back into the woods, and two wings of pines
 // that close round it from the base's rim, so the shop sits in a pocket of the trees with both

@@ -445,6 +445,7 @@ const STRUCT_DR = 0.6;
 // gets the credit (null = nobody); `bot` is the chassis that swung, on the one
 // blow a player is credited for but did not throw.
 function hurtStruct(o, dmg, p, bot) {
+  if (towerShut(o)) return; // the order: a tower further out on its lane still stands
   if (!bot) dmg = Math.max(1, Math.round(dmg * (1 - STRUCT_DR)));
   const c = structCenter(o);
   // ...and the buildings' share of the lobby's siege column (js/ui/lobby.js),
@@ -584,8 +585,9 @@ function unitUnder(src, wx, wy) {
 // no life of its own, so this is the whole of unitFoe for one: never your own,
 // never a neutral, and PVP has nothing to say about it - a tower is not a body.
 // `src` is a player or a sideOf() stand-in for a thing lying in the world.
+// A tower still shut by the order (towerShut, js/sim/towers.js) is nobody's.
 function structFoe(src, s) {
-  return !!s && !!STRUCTS[s.type] && s.team !== undefined && !!src && s.team !== src.team;
+  return !!s && !!STRUCTS[s.type] && s.team !== undefined && !!src && s.team !== src.team && !towerShut(s);
 }
 // Every rival building the circle touches, resolved to its anchor and listed
 // ONCE: the buildings half of unitsNear, and the one door an AREA effect gets

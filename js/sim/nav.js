@@ -93,7 +93,7 @@ function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
   // ...and a body another carries stands where its carrier does (HERO_HELD, js/sim/heroes.js)
-  for (const p of players) if (p.active && !p.dead && p.zip < 0 && !heroHeld(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
+  for (const p of players) if (p.active && !p.dead && p.zip < 0 && !heroHeld(p) && !crewAboard(p)) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 || heroDashThrough(p) }); // (a hero's dash that slips through bodies passes like a roll: HERO_DASH `through`)
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a bear (MONSTER.big)
   for (const a of animals) if (!a.dead) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: !(MONSTER[a.kind] && MONSTER[a.kind].big) });

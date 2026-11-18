@@ -138,6 +138,18 @@ function aiLaneFort(p) {
   const t = towerNear(p.team, p.x, p.y, TOWER_RANGE + 24);
   return t && towerTanked(t, p.team) ? nearestObj(p.x, p.y, 9, (o) => structOf(o) === t) : null;
 }
+// the rival's tower nearest p that takes blows now (not shut by the order,
+// towerShut): where a push goes while the bird is shut; and the px outside its ring a bot waits for its wave
+const AI_TOWER_WAIT = 20;
+function aiOpenTower(p, team) {
+  let best = null, bd = Infinity;
+  for (const o of structures) {
+    if (o.type !== 'tower' || o.team !== team || o.hp <= 0 || towerShut(o)) continue;
+    const f = towerFoot(o), d = Math.hypot(f.x - p.x, f.y - p.y);
+    if (d < bd) { bd = d; best = o; }
+  }
+  return best;
+}
 // the eagle hitbox tile nearest p (a blade's E target on a push)
 function aiEagleTile(e, p) {
   let best = null, bd = 1e9;

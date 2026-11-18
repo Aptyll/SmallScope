@@ -919,6 +919,7 @@ class Player {
     // the charge that last struck it, and BEDROLL's mend showing on it
     this.portRide = -1; this.portT = 0; this.portFastT = 0; this.portHomeId = -1; this.portRunN = 0;
     this.portBy = -1; this.portRunHit = -1; this.bedT = 0;
+    this.aboard = false; this.seat = 0; this.dropT = 0; this.hopX = 0; this.hopY = 0; // the arrival (js/sim/eagle.js): on its bird, which seat, the step off's clock and where it began
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
     this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)

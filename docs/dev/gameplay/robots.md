@@ -110,10 +110,19 @@ Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](../mult
 
 ## Road towers
 
-The `road towers` banner (js/sim/towers.js). Each lane has two `STRUCTS.tower` a side (ROAD TOWER:
-3x2, 700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund) on its centreline,
-one on the straight and one on the bend by the perch (`TOWER_SPOTS`, placed at boot by
-`placeTowers`, [the lanes](../world.md#the-lanes)).
+The `road towers` banner (js/sim/towers.js). Each lane has three `STRUCTS.tower` a side (ROAD TOWER:
+3x2, 700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund): on its centreline
+one on the straight and one on the bend by the perch, and the guard on the perch's court
+(`TOWER_SPOTS`, placed at boot by `placeTowers`, [the lanes](../world.md#the-lanes)). Each
+carries its `lane` and its `tier` in the lane's order (0 outer, 1 inner, `TOWER_GUARD`).
+
+**The order**, League's: a lane's towers fall from the outside in. While one of its side's towers
+further out on its lane stands, a tower is shut (`towerShut`) and no blow lands on it; the perch is
+shut while each lane of its side still has a tower up (`perchShut`). The blow itself refuses
+(`hurtStruct`, `hurtEagle`) and so does every picker before it (`structFoe`, `atkGood`,
+`towerNear`, `enemyStructNear`, a soldier's roost), so nothing swings at a shut one; a pusher bot
+waits outside the nearest open tower instead (`aiOpenTower`). A shut bar is drawn in stone with a
+padlock beside it (`drawShutBar`, js/draw/overhead.js), the same to both sides.
 `updateTower` (called from `updateStructures`) is one gun on a turntable:
 
 - **What it shoots** (`towerMark`): a rival hero inside `TOWER_RANGE` (112 px from the foot)
@@ -133,8 +142,8 @@ one on the straight and one on the bend by the perch (`TOWER_SPOTS`, placed at b
 A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a
 pushing bot only walks in to hit one while its own wave stands in the ring (`aiLaneFort`,
 `towerTanked`, [bots](../multiplayer.md#bots)). Its eye joins the side's fog sight (`STRUCTS.tower.sight`).
-Its side's cable on its lane runs only as far as the furthest of its towers still standing
-([the ziplines](../world.md#the-ziplines)).
+Its side's cable on its lane runs only as far as the furthest of its road towers still standing
+(the guard is no cable's: `zipRuns`, [the ziplines](../world.md#the-ziplines)).
 
 ## The merchant
 

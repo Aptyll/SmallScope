@@ -478,6 +478,25 @@ function aiPushRung(k) {
     // a rival ROAD TOWER its own wave stands under (aiLaneFort, ai.js): the
     // wave takes the bolts, so the push stops to bring the tower down with it
     const tur = aiLaneFort(p);
+    // THE ORDER (towerShut, js/sim/towers.js): while every lane still has one
+    // of the rival's towers up, the bird takes no blow, so the push is on the
+    // nearest tower that does - waited on outside its ring until a wave of
+    // the side's own stands under it, then brought down with it (tur, above)
+    if (!tur && perchShut(e)) {
+      const t = aiOpenTower(p, e.team);
+      if (t) {
+        const f = towerFoot(t), dx = p.x - f.x, dy = p.y - f.y, dd = Math.hypot(dx, dy) || 1;
+        const hold = TOWER_RANGE + AI_TOWER_WAIT;
+        aiNote(p, 'PUSH', 'TOWER FIRST', t);
+        if (dd <= hold + 8) { // there: hold outside the ring for the wave
+          if (dd < hold) { inp.mx = dx / dd; inp.my = dy / dd; }
+          aimAt(f.x, f.y); inp.atk = null; ai.tgt = null; return true;
+        }
+        if (steerTo(f.x, f.y, hold) >= 0) { aimAt(f.x, f.y); inp.atk = null; ai.tgt = null; return true; }
+      }
+      ai.pushCd = 10;
+      return false;
+    }
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
     // (a relentless side's grouping is the pack below, not the column's pace;

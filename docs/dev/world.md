@@ -108,8 +108,10 @@ along it). A lane is open `LANE_HALF` tiles either side of its centreline, and *
 packed earth down its middle, `ROAD_HALF` either side, plus the plaza round each perch
 (`laneDist`, `onRoad`; ground `3`). A wave marches its lane's waypoints (`laneWaypoints`,
 `LANE_STEP` apart), and a laner with no column of its own on the lane waits `LANE_HOLD` of the way
-to its middle (`laneHold`). Two towers a side stand on each lane's centreline, one on the straight
-and one on the bend by the perch (`TOWER_SPOTS`, js/sim/towers.js, folded with `fieldFour`).
+to its middle (`laneHold`). Three towers a side hold each lane (`TOWER_SPOTS`, js/sim/towers.js,
+folded with `fieldFour`): on the centreline one on the straight and one on the bend by the perch,
+and the guard on the perch's court, off the road on the open side. They fall in that order
+([road towers](gameplay/robots.md#road-towers)).
 The road's pixels are `paintRoadOverlay` (js/draw/paving.js).
 
 ### The ziplines
@@ -128,7 +130,8 @@ and gone once both have. The ride is [the zipline](gameplay/momentum-movement-pl
 ## The bases
 
 A side's base is its PERCH: a disc `BASE_R` tiles round a point on the loop at the middle of its
-own end (`basePerch`; RED's at field x `BASE_X`), its plaza of stones `PLAZA_R` round the bird.
+own end (`basePerch`; RED's at field x `BASE_X`), its open court of stones `PLAZA_R` round the
+bird, with the lane's two guard towers standing on it.
 The eagle sits there from the first frame ([the perch](rendering/the-perch.md)), the soldiers walk
 out of it both ways, and the side's merchant keeps its trading post behind it (`MERCH_STALL`,
 js/sim/robots.js) in **the merchant's court**: on the perch's centre line a bay of the plaza's

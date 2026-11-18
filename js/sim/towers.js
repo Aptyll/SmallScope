@@ -1,11 +1,12 @@
 'use strict';
-// The towers: two stone towers on each lane a side, stood by the map at boot,
+// The towers: three stone towers on each lane a side, stood by the map at boot,
 // each with a great crossbow on its deck (drawn by js/draw/towers.js).
 // ------------------------------------------------------------ towers
-// THE TOWERS (STRUCTS.tower, structures.js): placeTowers stands four a side
-// at boot, two on each lane - the OUTER one on the lane's straight, the INNER
-// one on its bend by the perch (TOWER_SPOTS) - on the lane's centreline, so
-// the waves walk round its foot. A tower is the map's, not a wallet's:
+// THE TOWERS (STRUCTS.tower, structures.js): placeTowers stands six a side
+// at boot, three on each lane - the OUTER one on the lane's straight, the INNER
+// one on its bend by the perch, both on the lane's centreline so the waves
+// walk round their foot, and the GUARD on the perch's court (TOWER_SPOTS).
+// They fall in that order (towerShut). A tower is the map's, not a wallet's:
 // `fixed` (nobody upgrades, repairs or pulls it down), owner -1, never on the
 // build wheel. It holds its stretch of lane:
 //
@@ -39,26 +40,53 @@ const TOWER_HEAT_MAX = 2;       // ...up to three times the first
 const TOWER_CALL_T = 1.2;       // s: a rival who hurt one of the side's heroes in the ring this recently is the mark
 const TOWER_GUN_Z = 80;         // px above the foot the gun stands: where a bolt leaves, for the spent bolt's lean
 const TOWER_PIN_T = 4;          // s a spent bolt stands in the snow
-// RED's two on the top lane, as the 3x2 footprint's top-left tile: the outer
+// RED's three on the top lane, as the 3x2 footprint's top-left tile: the outer
 // on the straight (its middle at field x 54.5, on the centreline), the inner
 // on the bend by the perch. The bottom lane's are these mirrored across the
-// middle row, BLUE's across the middle column (fieldFour), so all eight
-// stand on the lane's centreline. `lane`: which lane each holds (aiRally).
-const TOWER_SPOTS = [[53, 36], [11, 47]];
+// middle row, BLUE's across the middle column (fieldFour), so all twelve
+// match. `lane`: which lane each holds (aiRally).
+// The third, the GUARD, stands on the perch's open court (PLAZA_R), off the
+// lane on the side of the open snow, so its lane's wave comes off the road to
+// it across clear stone. `tier` is each one's place in its lane's order:
+// 0 the outer, 1 the inner, TOWER_GUARD the guard.
+const TOWER_SPOTS = [[53, 36], [11, 47], [14, 63, 78]];
+const TOWER_GUARD = 2;
 
 // where a tower's ring is measured from: the middle of its foot
 function towerFoot(o) { return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE - 6 }; }
 
 function placeTowers() {
   const w = structW('tower'), h = structH('tower');
-  for (const [ax, ay] of TOWER_SPOTS) {
+  TOWER_SPOTS.forEach(([ax, ay, by], tier) => {
     fieldFour(ax, ay).forEach(([x, y], k) => {
-      const tx = k % 2 ? x - w : x, ty = k >= 2 ? y - h : y; // a mirrored corner is the far one of its footprint
+      const tx = k % 2 ? x - w : x, ty = k >= 2 ? (by === undefined ? y - h : by) : y; // a mirrored corner is the far one of its footprint
       for (const [fx, fy] of footprint('tower', tx, ty)) objects[idx(fx, fy)] = null;
       const o = createStruct(tx, ty, 'tower', { id: -1, team: k % 2 }, false);
       o.lane = k >= 2 ? 1 : 0;
+      o.tier = tier;
     });
-  }
+  });
+}
+
+// ---- the order --------------------------------------------------------------
+// THE ORDER, League's: a lane's towers come down from the outside in. A tower
+// is SHUT, and no blow lands on it, while one of its side's towers on its
+// lane further out still stands; the PERCH is shut while each lane still has
+// one of its side's towers standing - bring one lane down to the bird and
+// the bird is open. Every way to hurt either asks here: the blow itself
+// (hurtStruct, hurtEagle), and every picker before it (structFoe, atkGood,
+// towerNear, a soldier's roost), so nobody swings at a shut one. The bars
+// show it (drawShutBar, js/draw/overhead.js) to both sides.
+function towerShut(o) {
+  if (!o || o.type !== 'tower' || !(o.tier > 0)) return false;
+  for (const q of structures) if (q.type === 'tower' && q.team === o.team && q.lane === o.lane && q.tier < o.tier && q.hp > 0) return true;
+  return false;
+}
+function perchShut(e) {
+  if (!e) return false;
+  const up = [false, false];
+  for (const q of structures) if (q.type === 'tower' && q.team === e.team && q.hp > 0 && q.lane >= 0) up[q.lane] = true;
+  return up[0] && up[1];
 }
 
 // ---- the gun ----------------------------------------------------------------
@@ -150,7 +178,7 @@ function towerBolt(o, foot, dt) {
 function towerNear(team, x, y, r) {
   let best = null, bd = r;
   for (const o of structures) {
-    if (o.type !== 'tower' || o.team === team) continue;
+    if (o.type !== 'tower' || o.team === team || towerShut(o)) continue;
     const f = towerFoot(o), d = Math.hypot(f.x - x, f.y - y);
     if (d < bd) { bd = d; best = o; }
   }
