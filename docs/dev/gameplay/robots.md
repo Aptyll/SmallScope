@@ -19,10 +19,9 @@ read through `soldierType(b)` off `b.type`): its health and its growth, its blow
 s from `reach` px; a building takes `struct` times it, the bird `eagle`), the shot that carries a
 blow from range (`shot`, s in the air), its bounty share and its XP share, and its sprite set.
 **Melee** rams with its chassis (5 every 1.1 s, 15 px, 60 hp), **ranged** throws a packed snowball (6 every
-1.5 s from 72 px, 34 hp) and **siege**, the ballista cart, shoots a bolt (10 every 2.4 s from 96 px,
-three times that on a building, 150 hp). What flies is the kind's `look` (`SOLDIER_SHOTS`: the
+1.5 s from 72 px, 34 hp). What flies is the kind's `look` (`SOLDIER_SHOTS`: the
 sounds it leaves and lands with, the puff where it hits). `robotStrike(b, e, pt)` is the single blow: an axe lands
-now through `soldierLand`, a shooter's ball or bolt leaves its kind's `hand` (`soldierThrow`) as its
+now through `soldierLand`, a thrower's ball leaves its kind's `hand` (`soldierThrow`) as its
 own thing in `soldierShots` and lands when its time is up (`updateSoldierShots`) on what it was
 aimed at, a body where it then stands (it follows, it is not a dodgeable shot). It carries its blow
 (`soldierBlow`), so it lands the same if its thrower is stunned or scrapped meanwhile, and stays
@@ -30,9 +29,9 @@ aimed at, a body where it then stands (it follows, it is not a dodgeable shot). 
 same path a player's E swing takes, so the wreck, the payout and the `WRECKED A` line are one code
 path), the bird through `hurtEagle`, and any **body** through `hurtUnit` with `cause: 'soldier'`,
 credited to nobody. The shot's pixels are `drawSoldierShots` (js/draw/soldiershots.js), over the
-bodies: the claw's own snowball on a low lob, or a bolt flat off the cart's stock, then a splat of
-snow (or splinters) on what it struck. A soldier faces what it aims at, else the
-way it drives (`b.faceL`, set in `updateSoldier`); the cart's frames are mirrored for left. Targets come from
+bodies: the claw's own snowball on a low lob, then a splat of
+snow on what it struck. A soldier faces what it aims at, else the
+way it drives (`b.faceL`, set in `updateSoldier`), which is the way its wreck falls. Targets come from
 `robotFoeUnit(b, range)` (nearest rival player or bot; players are noticed through `seenAt`, so a
 hidden body is as invisible to a soldier as to a wolf) and `enemyStructNear(team, x, y, r)`.
 `foePoint(e, fx, fy)` is where the axe lands: a body a little above its feet, or **the nearest
@@ -96,7 +95,7 @@ sight, and a pusher walks with its own column ([multiplayer.md](../multiplayer.m
 ## Farming
 
 js/sim/farm.js. League's last hit: a rival soldier pays **only** the rival who lands its final
-blow — `soldierBounty(b)`, its kind's `bounty` share (melee 1, ranged 0.65, siege 3.2) of `SOLDIER_BOUNTY`
+blow — `soldierBounty(b)`, its kind's `bounty` share (melee 1, ranged 0.65) of `SOLDIER_BOUNTY`
 (57) plus `SOLDIER_BOUNTY_GROW` (4) for every `WAVE.grow` (180 s) the match has run, paid by `robotDies` through `awardGold` — and a camp monster
 (`a.home`: the wolves and the bears) pays its killer as ever (`animalDies`). Each is one **farm**
 (`farmHit`: `p.farm`, in `PLAYER_RECORD`), which the scoreboard's FARM column and the post-game

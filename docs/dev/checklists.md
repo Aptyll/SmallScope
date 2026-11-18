@@ -506,7 +506,7 @@ already current, so it is safe to call from a state change that repeats.
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus the gold pump's pay/period and each type's `w`/`h` footprint) |
 | js/sim/pumps.js | the gold pumps: the ring's size and speed (`PUMP_R`, `PUMP_CAP_T`, `PUMP_FADE_T`) and where they stand (`PUMP_SPOT`); the bots' `AI_PUMP_*` sit with `aiPumpRung` in js/ai/ai-ladder.js |
 | js/sim/towers.js | the lane towers: range, turn, wind, reload and the bolt's damage (`TOWER_*`), and where they stand (`TOWER_SPOTS`) |
-| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); the waves (`WAVE`'s `mix`/`siege`/`first`/`waveT`/`grow`/`cap`, `WAVE_ROLL`, `WAVE_OUT`); the merchant's stall (`MERCH_STALL`) |
+| js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach; `SOLDIER_TYPES`: each kind's health, growth, blow, range, bounty and XP share); the waves (`WAVE`'s `mix`/`first`/`waveT`/`grow`/`cap`, `WAVE_ROLL`, `WAVE_OUT`); the merchant's stall (`MERCH_STALL`) |
 | js/sim/farm.js | `SOLDIER_BOUNTY`/`SOLDIER_BOUNTY_GROW` (a melee soldier's last hit; a kind pays its `bounty` share), `COIN_POP_T`; the bots' farm knobs `AI_FARM_*`/`AI_DEN_EARLY` sit in js/ai/ai-farm.js |
 | js/sim/actions.js | `WORK_REACH` and the roll block |
 | js/sim/player.js, js/sim/attack.js | each hero's basic attack (`CLASSES[c].attack`: cycle, knockback, a shot's speed and life or a cut's reach and sweep); the draw curve (`DRAW_*_MIN`) and the damage roll in `attackDmg()` |

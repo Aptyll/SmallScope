@@ -220,14 +220,11 @@ function updateMerchant(b, dt) {
 // own perch, on the match's beat - `first` seconds of match clock, then every
 // `waveT` - so every lane rolls out together. A wave is its `mix` of soldier
 // kinds (SOLDIER_TYPES, below) in door order - melee in front, ranged behind
-// - one more melee for every `grow` seconds of the match, and a SIEGE
-// soldier last on every n-th wave, n read off `siege` ([from s of match
-// clock, n]: every 3rd early, every 2nd from 15:00, every wave from 25:00,
-// League's). `cap` is the most soldiers a lane holds for a side, queued or
+// - one more melee for every `grow` seconds of the match. `cap` is the most soldiers a lane holds for a side, queued or
 // out: a side nobody fights back against does not fill the map, it waits for
 // its column to spend itself. A wave leaves its perch one soldier every
 // WAVE_ROLL, so it reads as a column, not a heap.
-const WAVE = { mix: ['melee', 'melee', 'melee', 'ranged', 'ranged', 'ranged'], siege: [[0, 3], [900, 2], [1500, 1]], first: 60, waveT: 30, grow: 180, cap: 16 };
+const WAVE = { mix: ['melee', 'melee', 'melee', 'ranged', 'ranged', 'ranged'], first: 60, waveT: 30, grow: 180, cap: 16 };
 const WAVE_ROLL = 0.5;   // s between the soldiers of one wave leaving the perch
 const WAVE_OUT = 4;      // tiles along its lane from the perch a soldier steps out at: clear of the bird
 // per side, per lane: { team, lane, kinds (still to leave, in order), rollT }
@@ -245,13 +242,9 @@ function waveBeat() {
 // the kinds of the wave a lane queues now, in door order, cut from the back
 // to what its lane's `cap` leaves room for
 function waveKinds(w) {
-  const n = Math.round((state.elapsed - WAVE.first) / WAVE.waveT) + 1;
-  let every = 0;
-  for (const [from, k] of WAVE.siege) if (state.elapsed >= from) every = k;
   const extra = Math.floor(state.elapsed / WAVE.grow);
   const at = WAVE.mix.lastIndexOf('melee') + 1; // the grown melee join the front rank
   const kinds = WAVE.mix.slice(0, at).concat(Array(extra).fill('melee'), WAVE.mix.slice(at));
-  if (every && n % every === 0) kinds.push('siege');
   let load = w.kinds.length;
   for (const b of robots) if (b.kind === 'soldier' && b.team === w.team && b.lane === w.lane && !b.dead) load++;
   return kinds.slice(0, Math.max(0, WAVE.cap - load));
@@ -298,24 +291,21 @@ const SOLDIER_TOWER_R = 160;   // px it turns on a rival road tower inside: the 
 const SOLDIER_XP = 20;         // XP a melee soldier is worth to the rival heroes standing near (shareXp); a kind's `xp` scales it
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 
-// THE KINDS of soldier a wave is made of, League's three (WAVE's `mix` and
-// `siege`, above, say how many of each).
+// THE KINDS of soldier a wave is made of, melee and ranged (WAVE's `mix`,
+// above, says how many of each).
 // What a kind IS lives here, never in an `if`: its health at the start (`hp`,
 // and `grow` more for every WAVE `grow` of the match), its blow (`dmg`
 // every `cd` s from `reach` px away; a building takes `struct` times it, the
 // rival bird `eagle` nerve), the shot that carries a blow from range (`shot`:
 // s in the air, 0 for an axe, `look`, what flies: SOLDIER_SHOTS, and `hand`, px off its
-// feet where the shot leaves, facing right, mirrored when `turns` and it aims left), its bounty as a share of SOLDIER_BOUNTY
+// feet where the shot leaves), its bounty as a share of SOLDIER_BOUNTY
 // (soldierBounty, js/sim/farm.js) and its share of SOLDIER_XP, and its
 // sprite set (`spr`, SPRITES). MELEE walks in front, tanky and slow-hitting;
 // RANGED stands back and throws a packed snowball, about half a melee's
-// health; SIEGE is the ballista cart that walks last, shoots a bolt far,
-// takes several tower bolts and hits buildings hard: it is what lets a wave
-// push a tower.
+// health.
 const SOLDIER_TYPES = {
   melee:  { hp: 60,  grow: 10, dmg: 5,  cd: 1.1, reach: 15, struct: 1, eagle: 8,  shot: 0,    look: null,   hand: null,     bounty: 1,    xp: 1,   spr: 'robotTeam' },
   ranged: { hp: 34,  grow: 6,  dmg: 6,  cd: 1.5, reach: 72, struct: 1, eagle: 6,  shot: 0.35, look: 'ball', hand: [4, -7],  bounty: 0.65, xp: 0.7, spr: 'robotRanged' }, // the ball in its raised claw (js/baked/soldiers.js)
-  siege:  { hp: 150, grow: 25, dmg: 10, cd: 2.4, reach: 96, struct: 3, eagle: 20, shot: 0.45, look: 'bolt', hand: [16, -12], turns: true, bounty: 3.2,  xp: 2,   spr: 'robotSiege' },  // the bolt's head on the loaded stock
 };
 function soldierType(b) { return SOLDIER_TYPES[b.type] || SOLDIER_TYPES.melee; }
 
@@ -449,7 +439,7 @@ function updateSoldier(b, dt) {
   }
   b.animT += dt * (moving ? 8 : 0);
   b.moving = moving;
-  // which way it faces (the ballista cart's bow, drawRobot): at what it aims, else the
+  // which way it faces (the way its wreck falls, robotDies): at what it aims, else the
   // way it drives, held through a step that is mostly up or down the screen
   if (b.atkAim) b.faceL = b.atkAim.x < b.x;
   else if (moving && Math.abs(b.x - x0) > Math.abs(b.y - y0) * 0.5) b.faceL = b.x < x0;
@@ -460,12 +450,11 @@ function updateSoldier(b, dt) {
 
 // ------------------------------------------------------------ soldier blows
 // What a wave's soldier lands (the `soldiers` banner above): a melee one's axe,
-// a ranged or siege one's snowball. The numbers are its kind's (SOLDIER_TYPES).
+// a ranged one's snowball. The numbers are its kind's (SOLDIER_TYPES).
 // what a shot is (SOLDIER_TYPES' `look`; drawn by drawSoldierShots, js/draw/soldiershots.js):
 // the sound it leaves with and lands with, and the puff where it hits
 const SOLDIER_SHOTS = {
   ball: { fire: 'waveSwing', land: 'rockLand', puff: '#eef4fb', n: 5 },  // a packed snowball, thrown
-  bolt: { fire: 'arrow', land: 'waveHit',  puff: '#a3794f', n: 10 }, // a ballista bolt: splinters off the shaft
 };
 
 // nearest building belonging to any other team, within r px of (x, y)
@@ -514,7 +503,7 @@ function robotFoeUnit(b, range) {
   }
   return best;
 }
-// the blow itself, its kind's: an axe lands now, a snowball or a bolt is
+// the blow itself, its kind's: an axe lands now, a snowball is
 // thrown and lands when its time in the air is up (updateSoldierShots) on
 // whatever it was thrown at, even if that has stepped away - a lob, not a
 // dodgeable shot
@@ -546,7 +535,7 @@ function soldierLand(w, e, pt, fx, fy) {
 }
 
 // ---- a soldier's shot in the air ------------------------------------------
-// A thrown snowball or a ballista bolt is its own thing in the world, not a
+// A thrown snowball is its own thing in the world, not a
 // field on its thrower: it leaves the hand (SOLDIER_TYPES' `hand`), flies its
 // kind's `shot` s and lands on its mark, whether or not the thrower is still
 // standing, stunned or scrapped by then. After it lands it stays SOLDIER_SPLAT_T
@@ -556,12 +545,11 @@ const SOLDIER_SPLAT_T = 0.18;
 const soldierShots = []; // { look, tg, live, x, y, x0, y0, t, fly, hit, ...soldierBlow }
 function soldierThrow(b, T, e, pt) {
   sfxAt(SOLDIER_SHOTS[T.look].fire, b.x, b.y);
-  const left = T.turns && pt.x < b.x; // the cart swings round to its mark (updateSoldier's faceL); the thrower's claw stays where it is drawn
   soldierShots.push(Object.assign(soldierBlow(b), {
     look: T.look, tg: e,
     // `live`: a body is hit where it stands when the shot lands; a building or the bird where it was aimed
     live: e.tx === undefined && !(state.drop && state.drop.eagles.indexOf(e) >= 0),
-    x: pt.x, y: pt.y, x0: b.x + (left ? -T.hand[0] : T.hand[0]), y0: b.y + T.hand[1],
+    x: pt.x, y: pt.y, x0: b.x + T.hand[0], y0: b.y + T.hand[1],
     t: 0, fly: T.shot, hit: -1,
   }));
 }
