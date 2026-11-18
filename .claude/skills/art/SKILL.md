@@ -1,6 +1,6 @@
 ---
 name: art
-description: Make or change anything a player sees in Softfall: a creature, a hero body or weapon, a soldier, a machine or building, a prop, terrain or a whole place (a camp, a base, a shop), an icon, a HUD or menu part, an ability's effect. One loop for all of them: see today's game, brief it, draw it at 1x, judge it in a real game frame and against what Noah has kept and rejected, give Noah lettered options, ship only his pick. Use whenever a new look is asked for, something is redrawn or "looks bad", "awful" or "like slop", a look is rejected, or Noah asks for options, concepts or "let me pick"; the hero and media skills send their art here.
+description: Make or change anything a player sees in Softfall: a creature, a hero body or weapon, a soldier, a machine or building, a prop, terrain or a whole place (a camp, a base, a shop), an icon, a HUD or menu part, an ability's effect. One loop for all of them: see today's game, brief it, draw it at 1x, judge it in a real game frame and by a blind read, give Noah lettered options, ship only his pick. Use whenever a new look is asked for, something is redrawn or "looks bad", "awful" or "like slop", a look is rejected, or Noah asks for options, concepts or "let me pick"; the hero and media skills send their art here.
 ---
 
 # Making anything a player sees
@@ -9,16 +9,13 @@ Six steps, the same for every asset. What changes with the asset is in [kinds.md
 your kind there and read only its section (how it is drawn, its size, where it lives in the code,
 what Noah has already said about it). The facts behind the steps are in
 [docs/dev/art.md](../../../docs/dev/art.md): **The style** is the checklist, **What was tried** is
-why these methods and not the others, **The tools** is every command. When a piece is good enough
-to show is [docs/dev/art-bar.md](../../../docs/dev/art-bar.md): the five gates, the rules for a
-place, and the faults Noah has named.
+why these methods and not the others, **The tools** is every command.
 
 Three rules hold for all of it:
 
 - **Noah picks from pictures, and sees art before it ships.** Never ship a look he has not seen.
-- **You cannot judge your own work, and your taste is not Noah's.** You know what it is meant to
-  be, and a fresh reader going by its own taste ranked his rejected pieces over his kept ones. So
-  a reader with no brief is shown what he kept and rejected and says what he would say (step 4).
+- **You cannot judge your own read.** You know what it is meant to be. A reader with no brief
+  decides whether it reads (step 4).
 - **Start from the game.** Today's sprite, a real frame, the game's own palettes. Never from
   memory, never painted big and shrunk, never a 3D render, never blurred or rotated.
 
@@ -45,7 +42,6 @@ node app/see/see.js --map --out W/map                    # the whole map and a c
 node app/server.js &
 node app/art/stage.js --cut W/refs --out W/today.png     # today's hero, wolf, rabbit, bear as 1x PNGs
 node app/art/cut.js --out W/refs scrap.left.idle tree.0  # any sprite in the game at 1x, by name (--list shows the names)
-python3 app/art/review.py wall W/wall.png                # everything Noah has kept and rejected
 ```
 
 Open each picture at its own size, one at a time: `far` for the shape, `play` for what a player
@@ -98,27 +94,21 @@ Every kept round, before Noah sees anything:
   (`--put FILE.png@dx,dy:ground|stand|beast` for a thing with no sprite yet). Read the `vs-*`
   sheets and the count of pixels that differ; `NO PIXEL DIFFERS` means look at another spot.
 - **`check.py`** runs inside the round. A FAIL is a certain fault: fix it. A WARN is a place to look.
-- **The gates.** Walk the five gates of [the bar](../../../docs/dev/art-bar.md#the-five-gates)
-  (IDEA, READ, LIFE, CRAFT, FIT; for a place, [its seven rules](../../../docs/dev/art-bar.md#a-place))
-  on the board, one line a gate. A gate you cannot answer in a line has failed.
-- **The judge.** `python3 app/art/review.py sprite W/rv W/<name>/r1/side.png --is "wild boar"
-  --kind beast --beside W/refs/tree.0.png,W/refs/pumpAnim.0.png --frame W/<name>/r1/frame-snow.png
-  --new 5` (a place, a HUD part or an effect: `review.py frame W/rv frame.png --is "the orca"
-  --kind place`). It lays the new piece among pieces of its kind Noah kept and rejected, with one
-  or two he has judged and today's neighbours (`--beside`: the pine, the pump, whatever it will
-  stand next to) hidden beside it. Give only the folder `W/rv/` and `app/art/reviewer.md` to a
-  fresh subagent with no context and tell it to read nothing else; save its JSON answer and run
-  `python3 app/art/review.py verdict W/rv answers.json`. One reader, one call.
+- **The blind read.** `python3 app/art/blind.py W/tiles.png W/old.png W/<name>/r1/side.png [today's
+  sprites, other rounds]`. Give only `tiles.png`, copied to a path that names nothing, to a fresh
+  subagent with no context. Ask per tile: what is it, how sure, which way it faces, what the flat
+  shape alone looks like, whether it looks finished or like a placeholder, the single biggest
+  thing wrong; then a ranking best-drawn to worst. Put today's neighbours among the tiles (the
+  pine, the pump, a headlamp). One reader, one image, told to be blunt and to read no other file.
+  Then open `tiles.key.json`.
 
-It passes when the verdict says PASS: the reader names it as meant, says Noah would keep it, ranks
-it above every hidden piece he rejected, calls it finished and not a placeholder, does not rank it
-under every neighbour, and does not pick it as the odd one out in the game frame. A reader that
-gets the hidden pieces wrong is not a judge of his taste: get another. A kind the library has
-nothing of yet gets a plain blind read (READ and CRAFT alone), and a place is judged mostly by its
-rules, because the library holds too few places to trust a reader on them. Otherwise the reader's
-own words ("a loaf", "a toy", "like R2") are the next round's brief: redraw from the gate they
-point at. Three rounds without a pass means the design is wrong, not the pixels: change the idea,
-or ask Noah for a reference picture. A pass is not his yes.
+It passes when the reader names the right thing with high confidence, says its shape alone reads,
+and ranks it above the old one and no lower than the neighbours it will stand beside. Otherwise the reader's own words ("a loaf", "a toy") are the next
+round's brief: redraw from the shape down. Three rounds without a pass means the design is wrong,
+not the pixels: change the pose or the feature, or ask Noah for a reference picture.
+
+A note, not a rule: [docs/dev/art-bar.md](../../../docs/dev/art-bar.md) collects what Noah has
+kept and rejected, in his words, and a parked idea for judging new art against it.
 
 ## 5. Options to Noah
 
@@ -128,11 +118,8 @@ or ask Noah for a reference picture. A pass is not his yes.
   each option into a real frame from `still.js --find open --player -40,0` beside a player, at each
   size in question. A place, a HUD part or an effect is shown as stills of the real game, A beside B.
 - Team-painted things show both team colours. Things that move show every facing.
-- One line per letter, your pick and why, what the reader said, then one decision card.
-  **Stop and wait for the letter.** Once he answers, file his verdict so the next judge knows it:
-  `python3 app/art/review.py add <id> <1x.png> --kind beast --verdict kept --words "his words"`,
-  once for the pick and once for a piece he turned down. Then the round goes to the Kitchen
-  (`kitchen` skill).
+- One line per letter, your pick and why, what the blind reader said, then one decision card.
+  **Stop and wait for the letter.** Once he answers, the round goes to the Kitchen (`kitchen` skill).
 
 ## 6. Ship the pick
 

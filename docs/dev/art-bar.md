@@ -1,10 +1,13 @@
-# The bar: what good looks like
+# A note on what looks good
 
-What a sprite, a camp or a frame must clear before Noah sees it, and how to tell. [Making art](art.md)
-says how a sprite is drawn; this says when it is good enough. The tool is `app/art/review.py`, the
-pictures are in `docs/media/bar/`.
+**A note, not a rule, and parked** (Noah, 2026-11-18: "Delay this, maybe write a note or
+something, but don't make this a rule"). Nothing here is a step anyone must run: the
+[art skill](../../.claude/skills/art/SKILL.md) is the way art is made and judged. This page keeps
+what was learned about Noah's eye so it is not learned twice: the pieces he kept and rejected
+(`docs/media/bar/`), his words for what was wrong, and an idea for judging new art against them
+(`app/art/review.py`) that he has not asked for.
 
-Three facts set the method:
+Three things were found:
 
 - **Noah's eye is the ruler.** Colour count, lone pixels, outline cover, value range and the size
   of flat fields were all measured on what he kept and what he rejected, and none of them tells the
@@ -19,7 +22,7 @@ Three facts set the method:
 
 ## The five gates
 
-A sprite passes them in this order. Failing one sends the drawing back to that gate, not to polish.
+A way to look at a sprite, in this order. A fault at one gate is fixed at that gate, not by polish.
 
 1. **IDEA.** One idea, said in five words, and the flat shape alone shows it: *a lamp box on
    stilts*, *a stag with a crown of antlers*. It has a persona: you can say what it looks at and
@@ -92,7 +95,8 @@ piece is rejected, draw a new subject, do not polish the old one.
 
 ## The judge step
 
-Before any sprite, concept sheet, camp or map frame goes to Noah:
+Parked: an idea, tried and measured below, not part of the art skill. How it runs if it is ever
+wanted:
 
 ```
 python3 app/art/review.py sprite W/rv new.png --is "wild boar" --kind beast --beside W/refs/tree.0.png --frame W/frame-snow.png --new 5
@@ -121,7 +125,7 @@ it from the left.
 4. **A fail is the next brief.** The reader's `why` and `worst` say which gate. Redraw from that
    gate. Three failed rounds mean the idea is wrong: change the idea, or ask Noah for a reference
    picture.
-5. **Noah sees only what passed**, with the reader's one line. A pass is not his yes.
+5. A pass is not his yes: it only says the piece stands with what he kept.
 6. **His answer goes in the library**, kept or rejected, in his words:
    `python3 app/art/review.py add ID file.png --kind beast --verdict rejected --words "..."`.
    The bar is only as sharp as the library is current.

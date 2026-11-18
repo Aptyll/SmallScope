@@ -22,9 +22,7 @@ date is his own; change it only when he says so.
   to 22. A hero's body is 16.
 - **Lives** as hand grids in `js/sprites/beasts.js`; a beast with many frames keeps a baker
   (`app/bake-bears/`, `app/bake-orca/`).
-- **Judge** with `review.py sprite --kind beast`, beside the wolf, rabbit and bear
-  (`stage.js --refs`). Side-on, flipped for left. The library holds only three kept beasts, all
-  from his pictures, so a pass here is weaker than for a hero or a machine.
+- **Judge** beside the wolf, rabbit and bear (`stage.js --refs`). Side-on, flipped for left.
 - **Noah.** Every creature he kept (deer, rabbit, bears) began from a picture he supplied. Without
   one, say so and ask before round one: three drawn rounds missed his bar (11-10), and the method
   read well at 35 to 45 px and poorly at 16 to 22. Bears keep today's silhouette, face and size.
@@ -57,7 +55,6 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
   then `python app/bake-player/bake.py`: the rebake may only add lines to `js/baked/motion.js`,
   every other hero's frames stay byte-identical. More in
   [sprites.md, Hero looks](../../../docs/dev/sprites.md#hero-looks).
-- **Judge** with `review.py sprite --kind hero`: the front frame, among the heroes he kept.
 - **Verify** the four facings, running, rolling, every look, both teams. Turn off respawn `invuln`
   before capturing, or the body draws faded.
 - **Reads wrong on snow.** Light cloaks and white-only marks vanish. An appendage at shoulder
@@ -77,9 +74,7 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
 - **Lives.** Its painter is a baker, `app/bake-<thing>/`, writing `js/baked/`. What it *is* lives
   in its `STRUCTS` or `BUILD_ITEMS` entry. Team paint rides shared palette letters swapped inside
   `SPR.onTeams` (`teamBuildPal` for buildings, `teamRobotPal` for soldiers).
-- **Judge** with `review.py sprite --kind machine`, beside a hero for scale, in both team colours
-  and unheld grey. He kept the small ones with one lamp or one idea (the headlamp, the pump) and
-  turned down the blocks of team colour (siege E, F, G).
+- **Judge** with `--kind prop`, beside a hero for scale, in both team colours and unheld grey.
 
 ## Props and scenery
 
@@ -92,8 +87,7 @@ The bar is ARMATOS. Read `js/sprites/armatos.js` first.
 - **Lives** as grids in `js/sprites/terrain.js` or `landmarks.js`, with an `OBJECTS` entry saying
   what it is, placed through `placeObj`. A sheet of many same-sized sprites bakes through
   `SPR.bakeSheet`. Variety between tiles reads `hash2`/`vnoise`, never the local machine.
-- **Judge** in a real spot among the pines, day and night, with a hero walking past;
-  `review.py sprite --kind prop` gives a plain blind read until the library holds a prop.
+- **Judge** in a real spot among the pines, day and night, with a hero walking past.
 - **Noah.** Scenery starts sparse; add more only when asked. The winterberry bush is never in the
   game.
 
@@ -108,17 +102,13 @@ A place (a camp, a base, a shop, a pit) is judged as a frame, never as a sprite.
   whole map with every place named.
 - **Lives.** Ground paint is `js/draw/ground.js`; a ground edit goes through `repaintGround`. A
   worldgen pass rolls on its own `worldRng(name)`, so the map is the same on every screen.
-- **Judge** (step 4) by [the seven rules of a place](../../../docs/dev/art-bar.md#a-place): the
-  owner is the landmark, a room with a mouth, its own floor, the way in is drawn, a quiet canvas,
-  it makes sense, and the epic one is one of a kind. Then `review.py frame --kind place` (a whole
-  map: `--kind layout`): the reader says what the eye lands on first and whose place it is. The
-  library holds one kept place, so the reader's call is weak and the rules decide. Turn on
+- **Judge** (step 4): can a player tell where to walk and what the place is for, with no HUD? The
+  blind reader gets the frame and is asked what the place is and where its edges are. Turn on
   hitboxes (`.`) and check the art agrees with what the sim tests. Both bases mirror.
 - **Options** are stills of the real spot, A beside B, labelled STAGED, with today's first: the
   `vs-*` sheets `see.js` writes are that pair.
 - **Noah.** Camps and lairs have no built props: the world's own pines and ground make the pocket
-  ("think about how League shows its camps"). His words on places are in
-  [the bar](../../../docs/dev/art-bar.md#noahs-words).
+  ("think about how League shows its camps").
 
 ## Icons
 
@@ -130,8 +120,7 @@ A place (a camp, a base, a shop, a pit) is judged as a frame, never as a sprite.
   (`STATUS_ICONS`) or a kit mark (`AB_MARKS`), and only when the picture does not already say it.
 - **Lives.** Ability grids in `js/sprites/<hero>.js`; item icons in `js/sprites/item-icons.js` as
   `item_<id>`.
-- **Judge** in the real HUD strip at 1080p, and with `review.py sprite --kind icon`, old and new
-  together (a plain blind read until the library holds icons). Bold
+- **Judge** in the real HUD strip at 1080p, and by a blind read with old and new shuffled. Bold
   art alone did not beat the old icons; bold art plus the mark did (11-10).
 - **Noah** approved this method on 11-10 (`/mnt/project-files/hero-icons/method.md`) and had the
   thinnest icons redrawn bold.
@@ -147,8 +136,8 @@ A place (a camp, a base, a shop, a pit) is judged as a frame, never as a sprite.
   badge with a digit has an odd diameter so the digit sits centred: check both at 1x. Overhead UI
   scales with the creature, sits close above it and never overlaps the health frame at any zoom.
 - **Built** in the game and captured from the real screen. There is no board for a HUD part.
-- **Judge** (step 4): `review.py frame --kind hud`. The reader gets the screenshot and is asked
-  what each part is and what it does. A control it cannot name needs a better shape, not a label.
+- **Judge** (step 4): the blind reader gets the screenshot and is asked what each part is and what
+  it does. A control it cannot name needs a better shape, not a label.
 - **Options** are stills of the real screen, A beside B, with today's first.
 
 ## Effects
@@ -166,6 +155,5 @@ An ability's look, a hit, a status on a body.
 - **No blood.** No loose red pixels, no white straight shape with a red tip. A hit is a spark, a
   flash and a sound. Debris is chunks of the thing's own material; nothing is rotated by a free angle.
 - **Judge** as frames over time: step the scene with `DBG.step` and lay the frames in a strip
-  (`app/media/gif.py`) at game zoom, then `review.py frame --kind effect`. The reader is asked what
-  happened and who it hurt.
+  (`app/media/gif.py`) at game zoom. The blind reader is asked what happened and who it hurt.
 - **Options** are staged strips, A beside B, labelled STAGED.
