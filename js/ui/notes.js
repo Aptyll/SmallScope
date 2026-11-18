@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['CAMPS: robots sleep until hit, chase their hitter, a 6-tile leash ring; big ice robots on the creek; 6 camps', '0.999.1'],
     ['SHOP: RECOMMENDED is three items; your first trip shows what your starting gold buys', '0.999'],
     ['SNOW: tracks fade within seconds', '0.997'],
     ['BUSHES: step in and the whole bush goes see-through', '0.996'],

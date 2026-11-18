@@ -42,16 +42,23 @@
 //           shield the picker's whole company and then rest on their own
 //           cooldown (OBJECTS.snowdrop). The only rabbits on the map; one
 //           warren each side, by its base mouth
+// the stray robots' pack: three walkers (SPRITES.scrap, js/sprites/beasts.js)
+const CAMP_SCRAP = {
+  name: 'SCRAP PILE',
+  r: 4, mark: '#c9b48c',
+  icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
+  kind: 'scrap', pop: 3, repop: 75, farm: true, // a jungler's round (aiDenSpot): about one lap of a side's camps on the clock
+  restRing: true, // its leash ring lies faint on the snow while it sleeps too (drawCampLeashes, js/draw/marks.js)
+  ground: 2, // its leash: 2 tiles past r, 6 from the middle, so the whole ring fits a player's screen (campGroundPad, wildlife.js)
+  props: [],
+  spots: [[-2, -1], [2, -1], [0, 1]],
+};
 const CAMPS = {
-  // the stray robots' pack: three walkers (SPRITES.scrap, js/sprites/beasts.js)
-  scrap: {
-    name: 'SCRAP PILE',
-    r: 4, mark: '#c9b48c',
-    icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
-    kind: 'scrap', pop: 3, repop: 75, farm: true, // a jungler's round (aiDenSpot): about one lap of a side's camps on the clock
-    props: [],
-    spots: [[-2, -1], [2, -1], [0, 1]],
-  },
+  scrap: CAMP_SCRAP,
+  // the creek's pack, on each hollow's pool: the same robots twice the size
+  // in ice paint (`look`: SPRITES.scrapIce), a pointer's box to match (`box`: half width,
+  // height px) and a body as wide (`body`: its radius px, unitRadius)
+  creek: Object.assign({}, CAMP_SCRAP, { look: 'scrapIce', box: [16, 26], body: 8 }),
   buff: {
     name: 'BLACK BEAR DEN',
     r: 4, mark: '#c2a6ff',
@@ -86,9 +93,8 @@ const CAMPS = {
 // column is its own twin there. The orca and the bear are each one camp:
 // the orca's pit above the top lane, the bear's den below the bottom one.
 const CAMP_SITES = [
-  { top: 'scrap', bot: 'scrap', tx: 28, ty: 52 },   // the hall's outer end, by the grove wall
-  { top: 'scrap', bot: 'scrap', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
-  { top: 'scrap', bot: 'scrap', tx: 35, ty: 69 },   // the base mouth
+  { top: 'scrap', bot: 'scrap', tx: 28, ty: 54 },   // the hall's outer end, backed into the pocket in the grove wall
+  { top: 'creek', bot: 'creek', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
   { top: 'orca', bot: null, tx: 69, ty: 24 },       // the orca's cove above the top lane (COVE, js/sim/field.js): on the middle column, its own twin, and none below
 ];
 function campSites() {
@@ -148,6 +154,7 @@ function spawnCampMonster(C, i) {
   }
   const a = makeAnimal(C.spec.kind, (tx + 0.5) * TILE, (ty + 0.5) * TILE);
   if (isCampKind(C.spec.kind)) { a.home = C; a.spawnX = a.x; a.spawnY = a.y; } // the spot it runs back to when a hunt ends (campRunHome)
+  if (C.spec.look) { a.look = C.spec.look; a.box = C.spec.box; a.bodyR = C.spec.body; } // a camp's own paint and size of its kind (CAMPS `look`, `box`, `body`)
   else a.meadow = C; // prey stays prey: it keeps to its warren (preyWander) and is never a camp fight (ckAcquire)
   animals.push(a);
   return a;

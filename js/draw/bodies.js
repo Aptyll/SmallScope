@@ -13,7 +13,7 @@ function clipFrame(set, a) {
 }
 
 function drawAnimal(a, ex, ey, now) {
-  const spr = clipFrame(SPRITES[a.kind][a.dir], a);
+  const spr = clipFrame(SPRITES[beastLook(a)][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
   drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js)

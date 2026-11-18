@@ -147,8 +147,8 @@ bots near a DANGER back off. [Pings](gameplay/pings.md), [Bots](multiplayer.md#b
 
 **Pine groves make the field a jungle** (js/sim/field.js): groves with ragged edges, mirrored left to
 right, the top and bottom halves grown their own way, and a creek of rough ice down the middle.
-**The camps are the jungle, and the jungle is symmetric left to right.** Each side has three **SCRAP
-PILES** of stray robots, paying gold: one at each hall's outer end and one by its base mouth, and
+**The camps are the jungle, and the jungle is symmetric left to right.** Each side has two **SCRAP
+PILES** of stray robots, paying gold: one at each hall's outer end, and
 each hollow on the middle column holds one more for both sides to fight over. The epic camp is the
 **ORCA'S POOL** in the cove above the top lane: [the orca](gameplay/wildlife.md#the-orca) under its ice, and from 6:00 up in a hole
 in the middle to be fought (back 6:00 after each kill). Its first coming is everyone's to know: the

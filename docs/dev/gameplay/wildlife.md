@@ -153,18 +153,25 @@ still load. All three run
   (the `roar` sample, a low bear roar about as long as the clip); a pack that wakes gives
   `SFX.howl()`. A camp already on a hunt is silent however often it is hit, and a hit does not
   re-aim it.
-- **The nearest body.** Awake, each monster goes for whoever is nearest (`campQuarry`): any
-  living, landed player on the camp's ground inside `CAMP_SEE` (9 tiles, shortened by `seenAt`
-  for the hidden). It turns only between blows, never mid-attack or mid-roar, and only to a body
-  `CAMP_SWITCH` (a tile) nearer than its quarry, so two side by side never make it dither. So it
-  never runs past one player to reach another, and whoever stands closest is tanking it.
+- **Whoever hit it.** Awake, each monster hunts whoever hit it, League's way: the waker for the
+  whole camp, then the last player whose blow landed on that one monster (`wakeCamp` re-aims the
+  one hit, unless it is running home). Only when its quarry dies or boards its eagle does it take
+  the nearest living, landed player on the camp's ground inside `CAMP_SEE` (9 tiles, shortened
+  by `seenAt` for the hidden; `campQuarry`).
+- **A camp's own look.** A CAMPS entry may dress its kind: `look` (the sprite set, `beastLook`),
+  `box` (the pointer's box, `unitUnder`) and `body` (its radius, `unitRadius`). The creek's robots
+  are the stray robots at twice the size in ice paint (`SPRITES.scrapIce`, grown in beasts.js).
+- **Asleep.** A kind with `sleeps` in its `MONSTER` row (the stray robots) never patrols: it
+  lies folded at its spot on its `sleep` clip (two breath frames, the frame dropped to sit over
+  the folded body) until a hit wakes the camp, and lies down again once it is home.
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
   player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
-  the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r`, or past
+  the quarry is on the camp's **ground** — `campGroundPad` tiles past the camp's `r` (its `CAMPS`
+  entry's `ground`, 2 for the stray robots so the ring fits the screen, else `CAMP_GROUND`, 7), or past
   a drawn camp's drawing (`campGround`, through `campNear`) — and
   drains over `CAMP_LEASH_T` (3 s) anywhere off it, with the monster at your heels or not; it
   keeps coming while the bar drains and the hunt ends only when the bar is empty. A quarry
-  that dies or boards its eagle hands the hunt straight on to the nearest player on the ground;
+  that dies or boards its eagle hands the hunt straight on to the nearest player on the ground (`campQuarry`);
   with nobody there the hunt is over.
 - **The reset.** The moment a hunt ends, each monster **runs home** (`campRunHome`): straight to
   the spot it was stocked on (`a.spawnX`/`a.spawnY`, set by `spawnCampMonster`) at
@@ -177,7 +184,7 @@ still load. All three run
   camp cannot be kited home. A monster with nobody to hunt also mends from nothing to full over
   `CAMP_REGEN_T` (6 s). While a camp hunts, the ground's edge lies on the snow as
   its **leash ring** (`drawCampLeashes`, js/draw/marks.js), baked from `campGround` itself so it is
-  the leash to the pixel: Graphite dashes running round it, turning `THREAT_COL` red while every
+  the leash to the pixel: bold Graphite dashes (`LEASH_W` px) running round it, turning `THREAT_COL` red while every
   hunter's bar drains, and gone when the hunt ends. Only a side that sees a hunter sees it.
 - **The chase.** The kind's `spd` (the table below) is faster than the 72 px/s walk and slower
   than a slide, so the answer is the momentum system, not
@@ -200,7 +207,7 @@ still load. All three run
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
   (2–5 tiles); once it drifts past `r * 0.8` the arc narrows to 0.5 rad straight back at the
   camp, so the only way it will walk out there is home. Taking a quarry drops the patrol goal.
-  The bear patrols its clearing the same way.
+  The bear patrols its clearing the same way; a kind that `sleeps` does not patrol at all.
   The noticed mark (`a.senseT`) is worn on a hunt and nothing else.
 
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
@@ -236,8 +243,8 @@ a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** als
 anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D`, walking in to
 its own range first, unless its own bird is under threat: the human is the camp fight's anchor
 the way it is a rival's ([Bots](../multiplayer.md#bots), rung 4), so a bear you wake is one
-your side comes to. It is *anybody on its side* because the camp turns to whoever is nearest, and the
-helpers must not drop out when one of them walks in and takes it off you. A bot will pull a den on its own through
+your side comes to. It is *anybody on its side* because a monster turns on whoever hits it, and the
+helpers must not drop out when one of them lands a blow and takes it off you. A bot will pull a den on its own through
 the hunt rung like any other animal, and never a bear (`teamPay`), which a
 lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](../checklists.md#known-drift).
