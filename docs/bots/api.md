@@ -104,8 +104,8 @@ obs = {
   enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, attack }],                // rivals your side can see; attack as me.attack
   soldiers: [{ id, team, x, y, hp, maxHp }],      // wave soldiers near your side, both teams
   animals:  [{ id, kind, level, x, y, hp, maxHp }],   // near you: rabbit, deer, wolf, alpha, orca, bird
-  eagles:   [{ team, x, y, state, hp, maxHp, hitT, mouth }],  // both birds, always
-  structs:  [{ id, type, team, tx, ty, hp, maxHp, building }],  // buildings near you: type 'barracks', 'tower' or 'pump'
+  eagles:   [{ team, x, y, state, hp, maxHp, hitT, shut, mouth }],  // both birds, always
+  structs:  [{ id, type, team, tx, ty, hp, maxHp, building, shut }],  // buildings near you: type 'barracks', 'tower' or 'pump'
   nodes:    [{ kind, tx, ty }],    // trees near you; nearest 64, nearest first
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   pings:    [{ owner, k, x, y, t }],   // your side's pings up now: k is go, attack, omw, danger or defend; t the seconds left
@@ -127,6 +127,10 @@ obs = {
 - **Birds.** `state` is `'fly' | 'dive' | 'down' | 'flee' | 'gone'`. A bird `'down'` is the
   objective: drive the rival one to `'flee'` and your side wins. `hp` is its nerve. `hitT` is
   seconds since it was last struck. `mouth` is where the road leaves its base's hollow: the way in.
+- **The order.** A lane's towers fall from the outside in: outer, inner, then the guard on the
+  perch's court. While one further out on its lane stands, a tower is `shut` and takes no blow;
+  a bird is `shut` while each of its side's lanes still has a tower up. A blow on a shut one lands
+  nothing.
 - **Ids.** A player's id is its seat. Every other id is stable for the match on this machine;
   use it to name a target in `think` or to remember a thing across thinks.
 - **Tiles to pixels:** the centre of tile `(tx, ty)` is `(tx * 16 + 8, ty * 16 + 8)`.

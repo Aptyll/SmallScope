@@ -63,7 +63,7 @@ function atkStands(t) { return inWorld(t.tx, t.ty) && structOf(objAt(t.tx, t.ty)
 // ...and the rival bird on its roost, the match's objective: struck like a
 // body, its nerve chipped EAGLE_ARROW_DMG a blow whatever the weapon (hurtEagle)
 function atkIsEagle(t) { return !!state.drop && state.drop.eagles.includes(t); }
-function atkEagleUp(p, e) { return e.state === 'down' && !state.eagleCine && (!p || e.team !== p.team); }
+function atkEagleUp(p, e) { return e.state === 'down' && !state.eagleCine && !perchShut(e) && (!p || e.team !== p.team); }
 // Can p attack t at all right now: a rival body its side can see, or a
 // rival building still standing. Every picker asks this - the sim before a
 // wind-up, the pointer before a lock, a bot before it names a mark.

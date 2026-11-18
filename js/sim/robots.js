@@ -392,7 +392,7 @@ function updateSoldier(b, dt) {
   const T = soldierType(b), x0 = b.x, y0 = b.y;
   const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = T.cd; hit(); } };
   const rival = state.drop && state.drop.eagles[1 - b.team];
-  const roost = rival && rival.state === 'down' ? rival : null;
+  const home = rival && rival.state === 'down' ? rival : null, roost = home && !perchShut(home) ? home : null; // walked to, struck
   let busy = false;
   // 1. a rival unit in reach: close and swing (players through seenAt, so a
   //    hidden hero lets a column walk past)
@@ -435,8 +435,8 @@ function updateSoldier(b, dt) {
       const w = b.way[b.wayI];
       const d = walkToward(w.x, w.y, 2);
       if (d < 0 || d < SOLDIER_WP_R) b.wayI++; // reached, or unreachable: the next one
-    } else if (roost) {
-      if (walkToward(roost.x, roost.y, 3) < 0) navClear(b); // pinned in the lane: try afresh next frame
+    } else if (home) {
+      if (walkToward(home.x, home.y, 3) < 0) navClear(b); // pinned in the lane: try afresh next frame
     }
   }
   b.animT += dt * (moving ? 8 : 0);
@@ -463,7 +463,7 @@ const SOLDIER_SHOTS = {
 function enemyStructNear(team, x, y, r) {
   let best = null, bd = r;
   for (const o of structures) {
-    if (o.team === undefined || o.team === team) continue;
+    if (o.team === undefined || o.team === team || towerShut(o)) continue;
     const c = structCenter(o);
     const d = Math.hypot(c.x - x, c.y - y);
     if (d < bd) { bd = d; best = o; }

@@ -447,6 +447,7 @@ function knockFeather(x, y, side) {
 // callers with no better point omit them.
 function hurtEagle(e, dmg, src, hx, hy) {
   if (e.state !== 'down' || state.eagleCine) return; // the ceremony has the match: no second flee under it
+  if (perchShut(e)) return; // the order: no lane of its side's towers is down yet (js/sim/towers.js)
   // the objective damage the post-game lobby prints (js/ui/lobby.js), capped
   // at the nerve there actually was to take - a bird cannot lose more than it has
   if (src instanceof Player) src.dmgBird += Math.min(dmg, Math.max(0, e.hp));

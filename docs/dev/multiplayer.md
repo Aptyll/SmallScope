@@ -987,6 +987,7 @@ what the rest of the code needs to know is this:
 Out from their own perch: `beginMatch()` (js/sim/eagle.js) stands every active player on the
 nearest open tile `RESPAWN_OUT` px out from its side's perch toward the field (`e.laneDir`),
 spread `START_SPREAD` px apart across the line, and that tile (`spawn`) is what the bot brain
-treats as "home". There is no flight in, no landing and no key to press; the match is `play` from
-the first frame ([the perch](rendering/the-perch.md)). There are no spawn pockets, no starter
+treats as "home". Each side rides its bird in and leaps off onto those tiles a moment after it
+lands; there is no key to press, and the match is `play` from the first frame
+([the perch](rendering/the-perch.md)). There are no spawn pockets, no starter
 rings, and no guaranteed resources near a start.

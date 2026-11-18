@@ -261,6 +261,26 @@ function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs, rows) {
   }
 }
 
+// SHUT (towerShut / perchShut, js/sim/towers.js): a tower or bird the order
+// keeps from every blow wears its bar in cold stone, not its side's colour,
+// with a padlock off the bar's left end - the same to both sides. The bar
+// laid at (x, y), `w` x `h`, its fill `fw` px; a padlock `k` px a pixel.
+const SHUT_FILL = '#8d97a6', SHUT_FILL_D = '#6c7686', SHUT_LOCK = '#d7dee8', SHUT_LOCK_D = '#9aa5b5';
+const SHUT_LOCK_PX = ['.###.', '#...#', '#####', '##.##', '#####']; // 5x5: the shackle over the body, the keyhole dark
+function drawShutBar(x, y, w, h, fw, segs, k) {
+  const s = k || 1;
+  ctx.fillStyle = SHUT_FILL; ctx.fillRect(x, y, fw, h);
+  ctx.fillStyle = SHUT_FILL_D; ctx.fillRect(x, y + h - Math.max(1, h >> 1), fw, Math.max(1, h >> 1));
+  if (segs > 1) {
+    const seg = (w + 1) / segs;
+    ctx.fillStyle = HP_TICK;
+    for (let i = 1; i < segs; i++) ctx.fillRect(x + Math.round(i * seg) - 1, y, 1, h);
+  }
+  const lx = x - (5 * s) - 3 * s, ly = Math.round(y + h / 2 - 2.5 * s);
+  ctx.fillStyle = BAR_FRAME; ctx.fillRect(lx - s, ly - s, 7 * s, 7 * s);
+  SHUT_LOCK_PX.forEach((row, j) => { for (let i = 0; i < 5; i++) if (row[i] === '#') { ctx.fillStyle = j < 2 ? SHUT_LOCK_D : SHUT_LOCK; ctx.fillRect(lx + i * s, ly + j * s, s, s); } });
+}
+
 // FROSTBITE's tell (cutHeal, js/sim/actions.js): the health bar's fill
 // frosted, every other pixel of its lower row in ice white, while the body's
 // heals are cut. Drawn over the bar healthBarPx laid, on the same columns.

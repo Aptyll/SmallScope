@@ -71,9 +71,12 @@ function zipTowerAlong(team, lane, o) {
 // ZIP_START out past its outer tower. RED's top cable is laid
 // off the lane and the towers; the other three are it mirrored tile for tile
 // (fieldFour's fold, as the towers are), so the four are exactly alike
+// a tower a side's cable on a lane runs out past: its road towers, never the
+// guard on the court (TOWER_GUARD, js/sim/towers.js), which stands short of ZIP_START
+function zipRuns(o, team, lane) { return o.type === 'tower' && o.team === team && o.lane === lane && o.tier < TOWER_GUARD; }
 function placeZips() {
   zips.length = 0; zipWhole.length = 0;
-  const towers = structures.filter((o) => o.type === 'tower' && o.team === 0 && o.lane === 0)
+  const towers = structures.filter((o) => zipRuns(o, 0, 0))
     .map((o) => zipTowerAlong(0, 0, o)).sort((a, b) => a - b);
   // pylons evenly spaced, at most ZIP_SPAN apart, with one beside each tower:
   // the last pylon of a cable cut back to that tower
@@ -97,7 +100,7 @@ function placeZips() {
     ramps.forEach((m, k) => { w.land[at[k]] = px(m.land); w.stake[at[k]] = px(m.stake); });
     zips.push(null);
     // its towers, inner then outer, as RED's top pair mirrored
-    const mine = structures.filter((o) => o.type === 'tower' && o.team === team && o.lane === lane)
+    const mine = structures.filter((o) => zipRuns(o, team, lane))
       .sort((a, b) => zipTowerAlong(team, lane, a) - zipTowerAlong(team, lane, b));
     mine.forEach((o, k) => { o.zl = L; o.zi = at[k]; });
   }

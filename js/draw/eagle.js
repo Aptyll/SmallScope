@@ -116,6 +116,7 @@ function drawPerchBar(e, sx, bottom, now) {
     const seg = (bw + 1) / PERCH_BAR_SEGS;
     ctx.fillStyle = HP_TICK;
     for (let k = 1; k < PERCH_BAR_SEGS; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
+    if (perchShut(e)) drawShutBar(bx, by, bw, bh, fill(e.hp), PERCH_BAR_SEGS, 1); // the order holds it (js/sim/towers.js)
     const txt = String(Math.max(0, Math.ceil(e.hp))); // the pool's number, 1x outlined, centred in the bar
     drawWorldText(txt, centreTextX(sx, txt, 1), by + 1, '#f4f7ff', 1);
   }, true); // under every body's plate: a hero standing beneath keeps its name

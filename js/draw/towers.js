@@ -45,7 +45,12 @@ function drawTowerTop(o, sx, sy) {
   drawHourLit(set.towerFront, sx, sy, true); // the hour on the parapet as on the body (js/draw/structs.js)
   // the bar stands over the tallest the gun ever gets, always up: a tower is
   // a thing to bring down, and how far along that is is the whole read
-  drawHealthBar(sx + (structSprite(o).width >> 1), sy + t[1] + g[1] - 2, o.hp, o.maxHp, evenBarW(40), o.team, undefined, o);
+  const bw = evenBarW(40), bcx = sx + (structSprite(o).width >> 1), by = sy + t[1] + g[1] - 2;
+  drawHealthBar(bcx, by, o.hp, o.maxHp, bw, o.team, undefined, o);
+  if (towerShut(o)) { // the order holds it: the bar in stone, the padlock beside it (drawShutBar)
+    const fw = o.hp > 0 ? Math.max(1, Math.round(bw * Math.min(1, o.hp / o.maxHp))) : 0;
+    overheadPlate(() => drawShutBar(Math.round(bcx - bw / 2), Math.round(by), bw, 2, fw, hpSegCount(o.maxHp, bw)));
+  }
 }
 
 function drawTowerFx(ex, ey, now) {

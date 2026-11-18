@@ -131,14 +131,14 @@ function botObserve(p) {
   }
   const eagles = [];
   if (state.drop) for (const e of state.drop.eagles) {
-    eagles.push({ team: e.team, x: botR(e.x), y: botR(e.y), state: e.state, hp: botR(e.hp), maxHp: e.maxHp, hitT: botR(e.hitT),
+    eagles.push({ team: e.team, x: botR(e.x), y: botR(e.y), state: e.state, hp: botR(e.hp), maxHp: e.maxHp, hitT: botR(e.hitT), shut: perchShut(e),
       mouth: { x: botR(e.x + e.laneDir.x * BASE_R * TILE), y: botR(e.y + e.laneDir.y * BASE_R * TILE) } }); // the base's front, where its lanes leave for the field
   }
   const structs = [];
   for (const o of structures) {
     const x = o.tx * TILE + 8, y = o.ty * TILE + 8;
     if (o.dead || !near(x, y)) continue;
-    structs.push({ id: botIdOf(o), type: o.type, team: o.team, tx: o.tx, ty: o.ty, hp: botR(o.hp), maxHp: o.maxHp, building: !!o.building });
+    structs.push({ id: botIdOf(o), type: o.type, team: o.team, tx: o.tx, ty: o.ty, hp: botR(o.hp), maxHp: o.maxHp, building: !!o.building, shut: towerShut(o) });
   }
   const nodes = [], R = Math.ceil(BOT_OBS_R / TILE), ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
   for (let ty = pty - R; ty <= pty + R; ty++) for (let tx = ptx - R; tx <= ptx + R; tx++) {
