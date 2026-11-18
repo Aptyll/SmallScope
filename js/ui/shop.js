@@ -130,7 +130,7 @@ const SHOP_SELL_W = 52, SHOP_BTN_H = 16;   // the SELL plate, and both plates' h
 const SHOP_TREE_PITCH = 24, SHOP_TREE_ROW = 34; // the build tree: a leaf's pitch, a level's
 const SHOP_INTO_MAX = 7;   // BUILDS INTO wells shown (empty ones keep the row's shape)
 const SHOP_RIM = '#3c4048', SHOP_HOT = '#9ca1aa', SHOP_PICK = '#fff6c8';
-const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_FAINT_INK = '#5c616b', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
+const SHOP_INK = '#e8eaee', SHOP_DIM = '#8a8f99', SHOP_STAT = '#7fd88a', SHOP_FAINT = '#24272d';
 const SHOP_PANE_BG = '#111216', SHOP_PLATE = '#2a2d33', SHOP_PLATE_HOT = '#3a3e46';
 const SHOP_BUY = '#2c5a3a', SHOP_BUY_HOT = '#3a7048'; // the BUY plate: the one green action on the slab
 // A price you cannot pay: the refusal red every other "not enough gold" in the
@@ -178,9 +178,9 @@ function shopFiltered(id) {
   return c >= 0 && !(ITEM_STAT_ORDER[c] in BUILD_ITEMS[id].stats);
 }
 // THE RECOMMENDED TAB (js/ui/shop-rec.js): three cards bent to the match,
-// then START and the rest of the build (shopPicks)
+// or the opening three on an empty bag (shopPicks)
 function shopHero() { return CLASSES[player.cls].name; }
-// every item the tab names, for the gold pip the other tabs wear on them
+// every item the tab names and the rest of the build, for the gold pip the other tabs wear on them
 function shopRecSet() {
   const P = shopPicks(player);
   return new Set(P.cards.map((c) => c.id).concat(P.then));
@@ -254,7 +254,7 @@ function shopLayout() {
   const x = Math.max(2, Math.round((VIEW_W - W) / 2)), y = SHOP_Y;
   const gx = x + SHOP_GRID_X, by = y + SHOP_H - 51; // the grid's left edge, the slots' top row
   const gw0 = PX - SHOP_GRID_X - 8; // the grid's width
-  const tabs = [], cats = [], grid = [], heads = [], slots = [], arrows = [];
+  const tabs = [], cats = [], grid = [], slots = [], arrows = [];
   let cards = [];
   const span = (g) => SHOP_TABS.reduce((n, t) => n + pixelTextWidth(t.label) + 8, 0) + (SHOP_TABS.length - 1) * g;
   const gap = span(4) <= PX - 26 ? 4 : 0, low = span(gap) > PX - 26;
@@ -263,7 +263,7 @@ function shopLayout() {
   for (let i = 0; i <= ITEM_STAT_ORDER.length; i++) cats.push({ c: i - 1, x: x + 6, y: y + 25 + i * SHOP_CAT_PITCH, w: SHOP_CAT, h: SHOP_CAT });
   const well = (id, wx, wy, w = SHOP_WELL) => grid.push({ id, x: wx, y: wy, w, h: w });
   if (state.shopTab === 'rec') {
-    cards = shopRecLayout(gx, y + 25, gw0, by - 6, grid, heads);
+    cards = shopRecLayout(gx, y + 25, gw0, by - 9);
   } else {
     // the rows the grid holds; more than that (a narrow view's fewer columns)
     // and the wheel walks them, an arrow at each end that has more
@@ -285,7 +285,7 @@ function shopLayout() {
   return {
     panel: { x, y, w: W, h: SHOP_H }, px: PX, low,
     xr: { x: low ? x + W - 17 : pane.x - 17, y: y + 6, w: 11, h: 11 },
-    tabs, cats, grid, cards, heads, slots, arrows, sell, undo, pane, into, by,
+    tabs, cats, grid, cards, slots, arrows, sell, undo, pane, into, by,
     purse: { x: pane.x - 10, y: by + 18 },
     buy: { x: pane.x + 6, y: pane.y + pane.h - SHOP_BTN_H - 6, w: pane.w - 12, h: SHOP_BTN_H + 2 },
     tree: shopTree(pane, shopPicked().id),
@@ -466,7 +466,6 @@ function drawShopPanel(now) {
   ctx.fillRect(P.x + 3, L.by - 6, L.px - 6, 1);
   ctx.fillRect(P.x + SHOP_GRID_X - 4, P.y + 23, 1, L.by - 9 - P.y - 23); // the stat bar's edge
   drawShopCats(L, h);
-  for (const hd of L.heads) drawPixelText(ctx, hd.label, hd.x, hd.y, hd.dim ? SHOP_FAINT_INK : SHOP_DIM);
   drawShopArrows(L);
   for (const c of L.cards) drawShopCard(c, h);
   const rec = state.shopTab === 'rec' ? null : shopRecSet();
@@ -643,6 +642,8 @@ function drawShopSlots(L, h) {
 function tipShop(h) {
   if (!h || typeof h === 'string') return null;
   if (h.kind === 'pick') return tipItem(h.id, shopBuyState(h.id).n);
+  // a stat filter names its stat, the one word the icon cannot say
+  if (h.kind === 'cat') return { title: h.c < 0 ? tr('shop.allItems') : ITEM_STATS[ITEM_STAT_ORDER[h.c]].label, tcol: '#f4f7ff', rows: [], notes: [] };
   if (h.kind === 'slot') {
     const id = player.items[h.i];
     if (!id) return null;

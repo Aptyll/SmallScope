@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['SHOP: RECOMMENDED is three items; your first trip shows what your starting gold buys', '0.999'],
     ['SNOW: tracks fade within seconds', '0.997'],
     ['BUSHES: step in and the whole bush goes see-through', '0.996'],
     ['MAP: the gold pump stands clean in its ring, no clutter round it', '0.995'],

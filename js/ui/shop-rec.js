@@ -1,12 +1,15 @@
 'use strict';
 // ------------------------------------------------------------ recommended
 // THE RECOMMENDED TAB (League's suggested items): three items drawn large on
-// cards, each with its name, its price and WHY in two words, and under them a
-// row of the small buys: START (the starter and the potion) and THEN (the
-// rest of the build). The counter's slab and everything else in it is
-// js/ui/shop.js; this file picks the three and draws their cards.
+// cards, each with its name, its price and WHY in two words, and nothing
+// else. The counter's slab and everything else in it is js/ui/shop.js; this
+// file picks the three and draws their cards.
 //
-// The three are YOUR build, bent to the match you are in:
+// On an empty bag (a potion aside) the three are THE OPENING, what the
+// purse buys before the build can start: the starter that opens your build
+// (itemStarter), the potion, and the build's first basic part your gold
+// buys, the League alternative to a starter.
+// After that the three are YOUR build, bent to the match you are in:
 //   - the first card is always the next item of your hero's build (buildsRec,
 //     js/app/builds.js: what its players finish most, or BOT_BUILDS while it
 //     has too few games), skipping what you already hold.
@@ -20,9 +23,8 @@
 // the sim reads any of this (CLAUDE.md rule 2).
 const SHOP_CARD_N = 3;          // cards on the tab
 const SHOP_CARD_GAP = 7;        // px between two cards
-const SHOP_CARD_H = 122;        // a card's height
-const SHOP_CARD_WELL = 52;      // its icon's well: a 16 px icon at 3x...
-const SHOP_CARD_SLIM = 36;      // ...or at 2x, on a card too narrow for that
+const SHOP_CARD_WELLS = [68, 52, 36]; // its icon's well: a 16 px icon at 4x, else 3x, else 2x, the largest the card's width takes
+const SHOP_CARD_FOOT = 57;      // a card from its well's foot down: the price, the tag, the faces
 const SHOP_CARD_FACE = 16;      // a rival's face under the tag
 const SHOP_CARD_BG = '#181a1f', SHOP_TAG_BG = '#24272d';
 const SHOP_ARMOR_HEAVY = 30;    // armor from items that makes a rival a wall on its own
@@ -69,7 +71,7 @@ function shopThreats(p) {
   return out.sort((a, b) => b.n - a.n);
 }
 
-// THE TAB'S PICKS for p: { cards: [{ id, faces }], start: [ids], then: [ids], data }
+// THE TAB'S PICKS for p: { cards: [{ id, faces }], then: [ids] }
 function shopPicks(p) {
   const R = buildsRec(CLASSES[p.cls].name, botBuild(p));
   // the build in buying order: the first item, the boots, the rest (BOT_BUILDS' own order)
@@ -95,38 +97,46 @@ function shopPicks(p) {
   for (const id of left) if (cards.length < SHOP_CARD_N && fits(id)) cards.push({ id, faces: [] });
   // an answer your build already names still shows who it is good against
   for (const c of cards) { const t = threats.find((q) => q.id === c.id); if (t) c.faces = t.faces; }
-  // START: the starter that opens the build while you have bought nothing, and the potion always
+  // THE OPENING: an empty bag whose purse cannot buy the build's next item
+  // yet is offered the starts it can (see the banner)
   const fresh = !p.items.some((id) => id && id !== 'potion');
-  const start = (fresh ? [itemStarter(cards[0].id)] : []).concat(['potion']);
+  if (fresh && itemCost(p, left[0]).gold > p.gold) cards.splice(0, SHOP_CARD_N, ...shopOpening(p, left[0]).map((id) => ({ id, faces: [] })));
+  // the rest of the build, for the pip the other tabs wear on it (shopRecSet)
   const then = left.filter((id) => !cards.some((c) => c.id === id));
-  return { cards, start, then, data: R.data };
+  return { cards, then };
+}
+// The opening three for p, whose build starts with `first`: its starter, the
+// potion, and the basic part of `first` the purse buys best (one of the
+// item's own kind first, then the dearer), boots when no part fits.
+function shopOpening(p, first) {
+  const kind = itemKind(first), own = (id) => (itemKind(id) === kind ? 1 : 0);
+  const pool = [...itemParts(first)].filter((id) => isPart(id) && !isBoots(id) && BUILD_ITEMS[id].price <= p.gold)
+    .sort((a, b) => own(b) - own(a) || BUILD_ITEMS[b].price - BUILD_ITEMS[a].price);
+  return [itemStarter(first), 'potion', pool[0] || 'boots'];
+}
+// a card's tag: the item's own `why`, else (a basic part) the name of the stat it gives
+function shopWhy(id) {
+  const it = BUILD_ITEMS[id];
+  return it.why || ITEM_STATS[ITEM_STAT_ORDER.find((k) => k in it.stats)].label;
 }
 
-// The tab's geometry, inside the grid's room (x0, y0, w wide, down to `bottom`):
-// the three cards across the top, then the small wells. Pushes the small
-// wells onto `grid` and their headlines onto `heads` (drawn as the grid is);
-// returns the cards, each { id, faces, x, y, w, h, well }.
-function shopRecLayout(x0, y0, w, bottom, grid, heads) {
+// The tab's geometry, inside the grid's room (x0, y0, w wide, down to
+// `bottom`): the three cards across it, standing in its middle; returns
+// them, each { id, faces, x, y, w, h, well }.
+function shopRecLayout(x0, top, w, bottom) {
   const P = shopPicks(player);
   const cw = Math.floor((w - (SHOP_CARD_N - 1) * SHOP_CARD_GAP) / SHOP_CARD_N);
-  // a narrow view's card (5:4) takes the icon at 2x, and a name too long for
-  // one line on two, broken at a space
-  const B0 = cw >= SHOP_CARD_WELL + 16 ? SHOP_CARD_WELL : SHOP_CARD_SLIM;
+  // a narrow view's card (5:4) takes the icon smaller, and a name too long
+  // for one line on two, broken at a space
+  const B0 = SHOP_CARD_WELLS.find((b) => cw >= b + 16) || SHOP_CARD_WELLS[SHOP_CARD_WELLS.length - 1];
   const names = P.cards.map((c) => shopCardName(BUILD_ITEMS[c.id].name, cw - 4));
-  const wy = y0 + 16 + (Math.max(1, ...names.map((n) => n.length)) - 1) * 7; // the wells in one row
-  const cards = P.cards.map((c, i) => {
+  const head = 16 + (Math.max(1, ...names.map((n) => n.length)) - 1) * 7; // the wells in one row
+  const h = head + B0 + SHOP_CARD_FOOT, y0 = top + Math.max(0, (bottom - top - h) >> 1), wy = y0 + head;
+  return P.cards.map((c, i) => {
     const x = x0 + i * (cw + SHOP_CARD_GAP), name = names[i];
-    return Object.assign({ x, y: y0, w: cw, h: SHOP_CARD_H, name,
+    return Object.assign({ x, y: y0, w: cw, h, name,
       well: { x: x + ((cw - B0) >> 1), y: wy, w: B0, h: B0 } }, c);
   });
-  // the small row: START, then THEN, as many as fit (a well, its price under it)
-  const B = 36, pitch = B + 6, ry = Math.min(y0 + SHOP_CARD_H + 10, bottom - B - 18);
-  heads.push({ label: tr('shop.start'), x: x0, y: ry });
-  P.start.forEach((id, i) => grid.push({ id, x: x0 + i * pitch, y: ry + 9, w: B, h: B }));
-  const tx = x0 + P.start.length * pitch + 10, fit = Math.max(0, Math.floor((x0 + w - tx + 6) / pitch));
-  if (P.then.length && fit) heads.push({ label: tr(P.data ? 'shop.alsoBuilt' : 'shop.then'), x: tx, y: ry });
-  P.then.slice(0, fit).forEach((id, i) => grid.push({ id, x: tx + i * pitch, y: ry + 9, w: B, h: B }));
-  return cards;
 }
 
 // a name in the lines it takes to fit `w`: one, or two broken at the space nearest its middle
@@ -143,17 +153,17 @@ function shopCardName(name, w) {
 function drawShopCard(c, h) {
   const hot = !!h && h.kind === 'pick' && h.id === c.id;
   const pick = shopPicked().slot < 0 && shopPicked().id === c.id;
-  const it = BUILD_ITEMS[c.id], M = itemMetal(c.id), mid = c.x + (c.w >> 1);
+  const M = itemMetal(c.id), mid = c.x + (c.w >> 1);
   shopWell(c, pick ? SHOP_PICK : hot ? SHOP_HOT : SHOP_RIM, SHOP_CARD_BG);
   c.name.forEach((ln, i) => drawPixelText(ctx, ln, mid - (pixelTextWidth(ln) >> 1), c.y + 6 + i * 7, M.ink));
   shopWell(c.well, M.rim);
   shopIcon(itemIcon(c.id), c.well);
   const n = itemCost(player, c.id).gold, t = String(n), pw = 10 + pixelTextWidth(t);
   shopPrice(n, mid - (pw >> 1), c.well.y + c.well.h + 6, n > player.gold);
-  const pad = c.w - pixelTextWidth(it.why) >= 20 ? 5 : 2;
+  const why = shopWhy(c.id), pad = c.w - pixelTextWidth(why) >= 20 ? 5 : 2;
   const tag = { x: c.x + pad, y: c.well.y + c.well.h + 17, w: c.w - 2 * pad, h: 13 };
   ctx.fillStyle = SHOP_TAG_BG; ctx.fillRect(tag.x, tag.y, tag.w, tag.h);
-  drawPixelText(ctx, it.why, mid - (pixelTextWidth(it.why) >> 1), tag.y + 4, SHOP_INK);
+  drawPixelText(ctx, why, mid - (pixelTextWidth(why) >> 1), tag.y + 4, SHOP_INK);
   // GOOD AGAINST, shown not said: the faces of the rivals it answers
   const fw = c.faces.length * (SHOP_CARD_FACE + 3) - 3;
   c.faces.forEach((q, i) => {

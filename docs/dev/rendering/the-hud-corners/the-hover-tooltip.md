@@ -42,7 +42,7 @@ short tooltip is a short panel; a free line wider than the cap breaks onto more 
 The builders, one per kind: `tipAttack` (the hero's basic attack: its damage, its attack speed and its RANGE, read off the
 sim's own functions),
 `tipGold`, `tipRail` (a rail
-chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
+chip), `tipShop` (the counter's wells, and a stat filter's bare name, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed: kept to a mid-fight glance.
 The short card is the name with its cooldown under it, the number its rank raises (each key of
 the row's `rank` table given as a list) at the rank held, and the row's one-line `tip`; the full

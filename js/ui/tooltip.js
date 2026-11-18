@@ -180,13 +180,15 @@ function tipFit(d) {
   if (d && d.notes) d.notes = d.notes.flatMap(([t, col]) => (pixelTextWidth(t) > TIP_MAXW ? wrapText(t, TIP_MAXW).map((l) => [l, col]) : [[t, col]]));
   return d;
 }
+// the head's height: the title over its kind (and the icon beside them), or a bare name's one line
+function tipHead(d) { return d.icon ? Math.max(14, d.icon.height + 2) : d.kind ? 14 : 7; }
 function tipSize(d) {
   const iw = d.icon ? d.icon.width + 3 : 0;
   let w = iw + pixelTextWidth(d.title);
   if (d.kind) w = Math.max(w, iw + pixelTextWidth(d.kind));
   for (const [l, v] of d.rows) w = Math.max(w, pixelTextWidth(l) + 10 + tipValW(v));
   for (const [t] of d.notes || []) w = Math.max(w, pixelTextWidth(t));
-  const head = d.icon ? Math.max(14, d.icon.height + 2) : 14;
+  const head = tipHead(d);
   const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW + (d.sum ? TIP_ROW + 3 : 0);
   return { w: Math.min(TIP_MAXW, w) + TIP_PAD * 2, h };
 }
@@ -244,7 +246,7 @@ function drawTooltip() {
   }
   drawPixelTextShadow(ctx, d.title, tx, cy, d.tcol, '#121418');
   if (d.kind) drawPixelTextShadow(ctx, d.kind, tx, cy + 7, TIP_LABEL, '#121418');
-  cy += d.icon ? Math.max(14, d.icon.height + 2) : 14;
+  cy += tipHead(d);
   for (const [label, value, col] of d.rows) {
     const lw = pixelTextWidth(label), vw = tipValW(value);
     drawPixelTextShadow(ctx, label, x + TIP_PAD, cy, TIP_LABEL, '#121418');
