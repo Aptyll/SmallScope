@@ -431,10 +431,10 @@
 
   // ---------------------------------------------------------------- stray robot
   // The scrap pile's stray robot (CAMPS.scrap, js/sim/camps.js): a brass box on
-  // two stilt legs, side view facing right, its iron face plate the way it walks.
+  // two stilt legs, side view facing right, a slim iron face plate the way it walks.
   // No lights (Noah 11-18: "just the bot with legs"). Its `down` frame, legs
   // folded, is the one it falls in (fallSpr, js/draw/falls.js). Drawn on the game
-  // grid with app/art (robot camps round 4 in the project files); the grids are
+  // grid with app/art (robot camps rounds 4 and 5 in the project files); the grids are
   // the source now, edited by hand.
   const HLPAL = {
     '.': null,
@@ -446,14 +446,14 @@
     'G': '#d8b870', // brass, lit from above
   };
   const hlStand = [
-    '..oooooooo.....',
-    '.oGGGGGGGGooo..',
-    '.ogggghgggkkko.',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ohhhhhhhkkkkko',
-    '..okooooiooooo.',
+    '..oooooooooo...',
+    '.oGGGGGGGGkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '..okooooiooo...',
     '..oko..oio.....',
     '..okko.oiio....',
     '...oko..oio....',
@@ -462,14 +462,14 @@
     '...oo...oo.....',
   ];
   const hlRunA = [
-    '..oooooooo.....',
-    '.oGGGGGGGGooo..',
-    '.ogggghgggkkko.',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ohhhhhhhkkkkko',
-    '..ookoooiooooo.',
+    '..oooooooooo...',
+    '.oGGGGGGGGkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '..ookoooiooo...',
     '..oko...oio....',
     '..oko...oio....',
     '.oko.....oio...',
@@ -478,14 +478,14 @@
     '.oo.......oo...',
   ];
   const hlRunB = [
-    '..oooooooo.....',
-    '.oGGGGGGGGooo..',
-    '.ogggghgggkkko.',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ohhhhhhhkkkkko',
-    '..oookooiooooo.',
+    '..oooooooooo...',
+    '.oGGGGGGGGkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '..oookooiooo...',
     '....okooio.....',
     '....okkoiio....',
     '.....okooio....',
@@ -494,14 +494,14 @@
     '.....oo.oo.....',
   ];
   const hlLunge = [
-    '...oooooooo....',
-    '..oGGGGGGGGooo.',
-    '..ogggghgggkkko',
-    '..ogggghggkkkko',
-    '..ogggghggkkkko',
-    '..ogggghggkkkko',
-    '..ohhhhhhhkkkko',
-    '...okoooiooooo.',
+    '...oooooooooo..',
+    '..oGGGGGGGGkko.',
+    '..ogggghgggkko.',
+    '..ogggghgggkko.',
+    '..ogggghgggkko.',
+    '..ogggghgggkko.',
+    '..ohhhhhhhhkko.',
+    '...okoooioooo..',
     '..oko...oio....',
     '..oko...oio....',
     '.oko.....oio...',
@@ -511,17 +511,17 @@
   ];
   const hlDown = [
     '...............',
-    '...............',
-    '..oooooooo.....',
-    '.oGGGGGGGGooo..',
-    '.ogggghgggkkko.',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ogggghggkkkkko',
-    '.ohhhhhhhkkkkko',
-    '..okikokikoooo.',
+    '..oooooooooo...',
+    '.oGGGGGGGGkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ogggghgggkko..',
+    '.ohhhhhhhhkko..',
+    '..okikokikoo...',
     '.okkookkoo.....',
     '..oo..oo.......',
+    '...............',
     '...............',
     '...............',
   ];
