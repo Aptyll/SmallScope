@@ -26,13 +26,6 @@ const YARD_THINGS = {
   pile: ['....sswwwwwss....', '...swwwwwwwwws...', '..kkkkkkkkkkkkk..', '..kcCckcCckcCck..', '..kcLckcLckcLck..', 'kkkkkkkkkkkkkkkkk', 'kcCckcCckcCckcCck', 'kcLckcLckcLckcLck', 'kkkkkkkkkkkkkkkkk', '.ddddddddddddddd.'], // split logs stacked end on, two rows under a cap of snow
   block: ['.....mm..', '....mmh..', '.....h...', '.kkkhkk..', 'kccchcck.', 'kcCCCCck.', 'kLlllLLk.', '.kkkkkk..', '..ddddd..'],          // the chopping block, the axe left in it
   log: ['.kkkk.', 'kclLLk', '.kkkd.'],
-  // the pump's works, all lying flat (a hero walks over them): a coil of rope, a sheet over the stores, spare boards, pipe lengths, and the spoil dug from the bore, gold in it
-  rope: ['..kkkkk..', '.khchhhk.', 'khkkkkkhk', 'khk...khk', 'khkkkkkLk', '.khhLLLk.', '..kkkkk..', '..ddddd..'],
-  tarp: ['.kkkkkkkkkkkkkk.', 'ktttttwwwwtttttk', 'kttTtttttwwttTtk', 'ktTttttTttttTttk', 'kttttTTtttTTtttk', 'kTtttttttTttttTk', 'kTTttTTtttttTTTk', '.kkkkkkkkkkkkkk.', '.dddddddddddddd.'], // a sheet pegged over the stores
-  boards: ['.kkkkkkkkkkkkkkkk.', '.kwwwscCCcCCCCsck.', 'kkkkkkkkkkkkkkkkkk', 'kcCCcCCCwwsCCCCCck', 'kkkkkkkkkkkkkkkkkk', 'klLLlLLLLlLLLLLLlk', 'kkkkkkkkkkkkkkkkkk', '.dddddddddddddddd.'],
-  pipes: ['..kkkkkkkkkkkkkk', '.kmmmmmmmmmmmmpk', 'kkkppppppppppkkk', 'kmmmmmmmmmmmmpk.', 'kpppppppppppppk.', '.kkkkkkkkkkkkk..', '.ddddddddddddd..'],
-  spoil: ['.....wEEe.......', '...wEEEEEee.....', '..EEEgEEEEeee...', '.EEEEEEeEEgeee..', 'EEeEEeeeEeeeeee.', '.eeeeegeeeeeeee.', '..ddddddddddddd.'],
-  spoilB: ['..wEe...', '.EEgEee.', 'EEeeeeee', '.dddddd.'],
   // the trunk the bear rubs and rakes: a fallen pine under snow, its bark torn pale by three claws
   clawlog: ['....wwwwww.......wwwwwww....', '.kkkwwwwwwkkkkkkkwwwwwwwkkk.', 'kclLLLLLLLLLcLcLcLLLLLLLLLLk', 'kcCLLlLLLLLcLcLcLLLLlLLLLLLk', 'kclLLLLLLLcLcLcLLLLLLLlLLLLk', '.kkkkkkkkkkkkkkkkkkkkkkkkkk.', '.dddddddddddddddddddddddddd.'],
   bough: ['..f.f...', '.fFfFf.f', 'fFFfFFfF', '.fFfFf.f', '..f.f...'], // a pine bough dragged in for the bed
@@ -57,14 +50,13 @@ const YARDS = {
     things: [[40, -34, 'clawlog', true], [-56, -16, 'rockA'], [-70, 2, 'rockD'], [58, 22, 'rockB'], [-30, 0, 'bough'], [8, 16, 'bough'], [30, 34, 'rockC'], [-44, 30, 'log']],
   },
   // the gold pump (a building, not a camp: drawYards asks `structures` too):
-  // a worked yard inside its ring, a walk of boards laid from the deck to the
-  // lane it stands beside (`walk`: yardWalk), its stores against the deck's
-  // far end (the yard flips so they are never on the walk) and the spoil
-  // heaped out in front
+  // a worked yard inside its ring and a walk of boards laid from the deck to
+  // the lane it stands beside (`walk`: yardWalk), and nothing lying about it:
+  // the pump stands alone in its ring
   pump: {
     rx: 60, ry: 34, rag: 0.25, dy: -8, mid: 0, walk: true,
     door: (o) => ({ x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE }), // the middle of the deck's front edge
-    things: [[-43, -20, 'tarp'], [-50, -8, 'rope'], [-52, 5, 'pipes'], [-27, 10, 'spoil'], [-22, 20, 'spoilB'], [34, 8, 'boards']],
+    things: [],
   },
 };
 const YARD_WALK_BOARD = 6; // px a board takes along the walk, its hairline seam with it
