@@ -94,7 +94,8 @@ Prey behaviour lives in `updatePrey()`, and **every step of it is a routed goal*
 included, which is what keeps the `.` overlay honest ([rendering.md](../rendering/debug-overlays-hitboxes-and-routes.md#routes)).
 
 - **Grazing.** Idle, then pick one goal and walk it. `wanderGoal(a, base, spread, near, far)`
-  tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
+  tries 8 tiles in an arc, takes the first it can actually route to (never one with a pine just
+  south of it, which would hide the body), and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
   chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
   on it takes short 1–3 tile hops that end on it, so the warren reads as theirs. `navStep` walks it at
@@ -206,10 +207,10 @@ still load. All three run
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 110, a FARM |
 | alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 630, `EPIC_TEAM_GOLD` (280) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
-| orca (up in its pool, from 20:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
+| orca (up in its pool, from 6:00) | 1560 (+100), from lv 12 | 28 (+3) | 80 px / 1.8 s / 0: `still`, it never leaves its hole; past its reach it spouts (`spout`, 240 px) | r 20, mass 9, anchored | `YIELD.orca` 880, `EPIC_TEAM_GOLD` to every teammate on the ground, the ORCA BUFF (`p.pushT`, `ORCA_PUSH_T` 180 s) for the whole team, a feed line |
 
 The bear is a `teamPay` camp kind (the orca is the other), in its den in the pit below the bottom
-lane (the orca's pool is the pit above the top one). It is first out at 5:00
+lane (the orca's pool is the cove above the top one). It is first out at 5:00
 (`CAMPS.buff.first`; `stockCamps` holds it, `updateCamps` runs the clock, `campCleared` reads it
 as cleared until then) and back `repop` (5:00) after each kill. Each kill also counts one more
 black bear for the side, for good: `state.bearStacks[team]`, `BLACK_STACK_DMG` (+5%) on every
@@ -243,10 +244,10 @@ lone bot would die to. No bot walks *to* a camp deliberately yet — see
 
 ## The orca
 
-**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond in the pit above the top lane** (`CAMPS.orca`; the pond is laid by `genWorld`, js/sim/field.js, as `orcaLakeAt` round `orcaPool()`, an oval `LAIR_POOL` tiles across)
+**One orca lives under [its pool](../world.md#camps), the ORCA'S POOL camp's frozen pond in the cove above the top lane** (`CAMPS.orca`; the cove is `COVE` in the field and the pond is laid by `genWorld`, js/sim/field.js, as `orcaLakeAt` round `orcaPool()`, an oval `LAIR_POOL` tiles across: ice the whole cove's floor, to the foot of its walls)
 ([js/sim/orca.js](../../../js/sim/orca.js), the pixels in [js/draw/orca.js](../../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). Under the ice it is not an animal: nothing shoots it,
-nothing walks into it, and it never leaves the water (up, from 20:00, it is one: below). `orca` is one `SAVE_ROOTS` singleton
+nothing walks into it, and it never leaves the water (up, from 6:00, it is one: below). `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
 - **It cruises** the whole disc (`orcaWater`) as a shadow under the ice at
@@ -262,7 +263,7 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   (`ORCA_ACC`), so the path is arcs, never a pivot; the shadow drops a little deeper at the lock
   and darkens as it rises (js/draw/orca.js). Off its ice and the hunt drops; it locks nobody for
   `ORCA_LET`.
-- **Up, from 20:00** (THE ORCA UP, `CAMPS.orca` `first` 1200, `repop` 360): the orca's camp brings it
+- **Up, from 6:00** (THE ORCA UP, `CAMPS.orca` `first` 360, `repop` 360; its first coming is public, `updateCampSight`, and its clock rides the top rail, `epic`, `railEpic`): the orca's camp brings it
   out of the water as a camp monster (`MONSTER.orca`: `still`, `hole`, `spout`, `push`) in a hole
   in the middle of the pool, and the shadow is off while it is (`orcaUp`, `updateOrca`). The pool
   is rough ice (`slickUnder`, js/sim/sim.js; its rime is `paintRime`, js/draw/ground.js): it holds a

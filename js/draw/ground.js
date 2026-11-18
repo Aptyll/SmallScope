@@ -103,8 +103,9 @@ function paintGroundTile(g, tx, ty) {
         // cracks - only well inside the ice, so none lands on the bank. A step
         // that would leave the tile is not drawn: a tile paints its own pixels
         // only, or which of two neighbours painted last (a bake's row order, a
-        // repaint's any order) would decide the pixel between them
-        if (inner && h > 0.55) {
+        // repaint's any order) would decide the pixel between them. None on
+        // the orca's pool: its sheet is clear, the orca's shadow under it
+        if (inner && h > 0.55 && !orcaLakeAt(tx, ty)) {
           g.fillStyle = '#a3cbe0';
           const n = 2 + ((h * 7) | 0) % 3;
           let lx = px + 3 + ((h * 100) | 0) % 9, ly = py + 3 + ((h * 53) | 0) % 9;
@@ -306,7 +307,7 @@ function bakeLakes() {
   const first = [], styleOf = new Map();
   const seed = (c, r, inside, s) => {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const x = c.tx + dx, y = c.ty + dy;
+      const x = Math.round(c.tx) + dx, y = Math.round(c.ty) + dy; // a tile's: the middle may sit between two
       if (isLake(x, y) && inside(x, y)) { first.push(idx(x, y)); styleOf.set(idx(x, y), s); }
     }
   };
@@ -870,7 +871,6 @@ const CASTERS = {
   // (STUMP_CODE up, clear of the pines' codes: a look, then dx and dy each -9..9)
   stump:    { code: (o, tx, ty) => { const L = stumpLook(tx, ty); return STUMP_CODE + L.v * 400 + (L.dx + 9) * 20 + L.dy + 9; },
               art: (c) => { const k = c - STUMP_CODE, r = k % 400; return whole(SPRITES.stumps[Math.floor(k / 400)], Math.floor(r / 20) - 9, 4 + r % 20 - 9); } },
-  den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
   // the trading post's code is the way it faces and the step it is built to (126..133; stallShade, js/draw/footings.js, repaints on a new step)
   stall:    { code: (o) => 126 + o.team * 4 + stallBuilt(o.team),

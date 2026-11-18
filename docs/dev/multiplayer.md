@@ -647,7 +647,7 @@ Three small rules, and the teamwork is what they add up to:
   own soldier on that lane nearest a clash, or wait at the lane's hold point (`laneHold`,
   `LANE_HOLD` (0.6) of the way from their mouth to its middle) while they have no column there
   (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. JUNGLE is the JUNGLER: it
-  walks the side's own wolf dens on their clocks (`aiDenSpot`: a den with its pack up is walked
+  walks the side's own farm camps (`farm`) on their clocks (`aiDenSpot`: a camp with its pack up is walked
   to and hunted by rung 6; a cleared one is waited on just outside `CAMP_HOLD`, set off
   `AI_DEN_EARLY` before it is due, and worked away from until then). Any bot on a rival soldier its
   own wave is wearing down **holds its draw for the last hit** (`aiFarmFire` on rung 3's trigger):
@@ -708,7 +708,7 @@ party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`)
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
 then the camp rung (4) fights it. The kill pays the whole side and gives it the bear's buff, which opens the window:
 bear, then push, is a loop that comes out of the rules rather than a script. The **orca**, once it is up in its pool
-(from 20:00), comes first: a side whose bots average level `AI_ORCA_LV` (12), its bird quiet and
+(from 6:00), comes first: a side whose bots average level `AI_ORCA_LV` (12), its bird quiet and
 no rival seen by the pool, sends as many of `AI_ORCA_N` (5) as its guards leave, never fewer than
 three, taking them off the push (`aiSideOrca`; a party already out on the bear finishes it). It is
 nobody's own, so both sides go and the fight for it is a fight between them. The camp rung reads

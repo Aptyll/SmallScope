@@ -275,8 +275,6 @@ const TEXT = {
   // ---- the wiki BEASTS page: a beast's name and what it does, every number through a slot
   'beast.rabbit': 'RABBIT',
   'beast.rabbitLine': 'BOLTS AT {sight} PX. ONE JINK CHARGE EVERY {cd} S.',
-  'beast.wolf': 'WOLF',
-  'beast.wolfLine': 'A DEN OF {n}. NEUTRAL UNTIL HIT. BITES {bite} +{lv} A LEVEL. BACK IN {back} S.',
   'beast.scrap': 'STRAY ROBOT',
   'beast.scrapLine': 'A PILE OF {n} BELOW THE WALLS. NEUTRAL UNTIL HIT. HITS {bite} +{lv} A LEVEL. BACK IN {back} S.',
   'beast.alpha': 'BLACK BEAR',

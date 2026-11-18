@@ -22,17 +22,21 @@
 //               and the orca: the timed objectives); none means it stands from the start
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
+//   farm        a jungler farms it (aiDenSpot, js/ai/ai-farm.js)
+//   epic        the camp is an epic objective: its clock rides the top rail
+//               (railEpic, js/ui/rail.js), and its first coming is public
+//               (updateCampSight)
 //   pool        the camp is the ORCA'S POOL: its pit is a frozen pond
 //               (orcaLakeAt, js/sim/field.js), and what lives there is the
 //               orca under the ice (js/sim/orca.js) until its camp monster,
 //               the orca up in its hole, is out (`first`)
 //
-// resource: the wolf pack - gold per head, the jungle's farm (each wolf a FARM, js/sim/farm.js)
-// scrap:    a stray robot pack, the bottom half's farm as the wolves are the top's
+// scrap:    a stray robot pack (brass walkers), the jungle's farm - gold per head
+//           (each robot a FARM, js/sim/farm.js), in the bottom half
 // buff:     the black bear in its den below the bottom lane: first out at 5:00,
 //           the whole team paid and given the BLACK BUFF for the kill, and the
 //           side's black bears count up (state.bearStacks, wildlife.js)
-// orca:     the orca's pool in its pit above the top lane
+// orca:     the orca's pool in its cove above the top lane, the epic camp
 // meadow:   the WARREN: three rabbits in a round pool of deep snow (layMeadowDrifts,
 //           depth.js), brush the rabbits never leave, and snowdrops that each
 //           shield the picker's whole company and then rest on their own
@@ -44,17 +48,9 @@ const CAMPS = {
     name: 'SCRAP PILE',
     r: 4, mark: '#c9b48c',
     icon: [[2, 0, 3, 1], [1, 1, 5, 3], [0, 2, 1, 1], [6, 2, 1, 1], [1, 4, 1, 2], [5, 4, 1, 2], [2, 6, 3, 1]], // a robot's head
-    kind: 'scrap', pop: 3, repop: 75,
+    kind: 'scrap', pop: 3, repop: 75, farm: true, // a jungler's round (aiDenSpot): about one lap of a side's camps on the clock
     props: [],
     spots: [[-2, -1], [2, -1], [0, 1]],
-  },
-  resource: {
-    name: 'WOLF DEN',
-    r: 5, mark: '#d8c0c4',
-    icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
-    kind: 'wolf', pop: 3, repop: 75, // about one lap of a side's camps: a jungle route on the clock
-    props: [[0, -1, 'den']],
-    spots: [[-2, 0], [3, 0], [1, 1]],
   },
   buff: {
     name: 'BLACK BEAR DEN',
@@ -68,7 +64,8 @@ const CAMPS = {
     name: "ORCA'S POOL",
     r: 6, mark: '#7fd4ff', pool: true, // the pit's pond and a tile of shore
     icon: [[3, 0, 1, 1], [3, 1, 2, 1], [3, 2, 3, 1], [0, 3, 7, 1], [1, 4, 5, 1], [0, 5, 7, 1]], // a fin over the water
-    kind: 'orca', pop: 1, repop: 360, first: 1200, // up at 20:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
+    epic: true, // its clock rides the top rail (railEpic, js/ui/rail.js)
+    kind: 'orca', pop: 1, repop: 360, first: 360, // up at 6:00, then 6:00 after each kill; under the ice until then (js/sim/orca.js)
     props: [],
     spots: [],
   },
@@ -84,15 +81,15 @@ const CAMPS = {
 // Where the camps are, as tiles in RED's top quarter of the field (tx, ty:
 // the camp's middle tile). campSites() folds each to the other quarters like
 // the field (fieldFour): `top` a camp whose bottom-half twin is `bot`'s kind
-// (the wolves up top, the robots below), and a site on the middle row or
+// (null: no camp there; the robots stand below, the top half's halls are
+// open snow), and a site on the middle row or
 // column is its own twin there. The orca and the bear are each one camp:
 // the orca's pit above the top lane, the bear's den below the bottom one.
 const CAMP_SITES = [
-  { top: 'resource', bot: 'scrap', tx: 41, ty: 48 }, // the hall: under the lane wall, by its door
-  { top: 'resource', bot: 'scrap', tx: 60, ty: 57 }, // the side camp, in the hollow's foot by the middle
-  { top: 'meadow', bot: 'meadow', tx: 35, ty: 69 },  // the warren, inside the base mouth
-  { top: 'orca', bot: null, tx: 69, ty: 25 },        // the orca's pit, above the top lane
-  { top: null, bot: 'buff', tx: 69, ty: 25 },        // the bear's den, below the bottom lane
+  { top: 'scrap', bot: 'scrap', tx: 28, ty: 52 },   // the hall's outer end, by the grove wall
+  { top: 'scrap', bot: 'scrap', tx: 69, ty: 51 },   // the hollow's, out on its pool: one up top, one below, both sides' to fight for
+  { top: 'scrap', bot: 'scrap', tx: 35, ty: 69 },   // the base mouth
+  { top: 'orca', bot: null, tx: 69, ty: 24 },       // the orca's cove above the top lane (COVE, js/sim/field.js): on the middle column, its own twin, and none below
 ];
 function campSites() {
   const out = [];
@@ -121,7 +118,6 @@ function placeCamps() {
     camps.push(C);
     for (const [dx, dy, type, variant] of spec.props) {
       const extra = type === 'snowdrop' ? { variant, readyAt: 0 } : {};
-      if (type === 'den') extra.site = C; // the den knows its camp: its clock is drawn off it (drawCampClock)
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a
       // building does: east of the anchor, and north of it, so the anchor stays
       // the footprint's front row - mirrored, its anchor is the far end
@@ -223,6 +219,10 @@ function updateCampSight() {
     if (!C.spec.pop) continue;
     if (!C.seen) C.seen = [0, 0];
     if (!C.look) C.look = [-1, -1];
+    // a timed camp's first coming is the match clock's, so every side knows
+    // it (`pub`); once it is out, that is forgotten like any sighting
+    if (C.spec.first > 0 && !C.out) { const due = state.tick + Math.ceil(C.repopT / TICK_DT); C.seen[0] = C.seen[1] = due; C.pub = true; continue; }
+    if (C.pub) { C.seen[0] = C.seen[1] = 0; C.pub = false; }
     const m = campMark(C), x = (m.tx + 0.5) * TILE, y = (m.ty + 0.5) * TILE;
     for (const team of [0, 1]) {
       if (!sightAt(team, x, y)) continue;

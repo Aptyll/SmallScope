@@ -84,7 +84,7 @@ const AI_ROLES = {
   guard:    { name: 'GUARD' },    // stands by its own bird (the guard rung)
   stalker:  { name: 'STALKER' },  // goes after a rival the side saw alone
   slayer:   { name: 'SLAYER' },   // one of the party the side sends to its bear
-  jungler:  { name: 'JUNGLER' },  // JUNGLE: walks its side's wolf dens on their clocks (js/ai/ai-farm.js)
+  jungler:  { name: 'JUNGLER' },  // JUNGLE: walks its side's farm camps on their clocks (js/ai/ai-farm.js)
   laner:    { name: 'LANER' },    // TOP, BOT: last-hits the rival wave on its lane behind its own (js/ai/ai-farm.js)
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans

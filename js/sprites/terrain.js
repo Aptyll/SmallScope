@@ -1102,48 +1102,6 @@
     '.....ssssss.....',
   ];
 
-  // The wolf den: A ROCK MAW of docs/media/concepts/den-concepts-1.png - a
-  // snow-capped boulder hill grown into a cave, icicle fangs over a wide black
-  // mouth, bones at the lip. 32x21 over its two tiles (OBJECTS.den's w: the
-  // anchor and a part to its right), the lip row on the tiles' foot, so it is
-  // drawn at py - 4. Every WOLF DEN stands one.
-  const DNPAL = {
-    '.': null,
-    'o': '#2b3040', // outline
-    'y': '#7b8398', // rock mid
-    'Y': '#99a1b6', // rock light
-    'v': '#5a6176', // rock dark
-    'k': '#12151f', // the dark inside
-    'K': '#232838', // ...and its rim
-    'i': '#dcecff', // icicle fangs
-    'b': '#e6e2d4', // bone
-    'B': '#b9b2a0', // bone shade
-    'w': '#eef4fb', // snow
-    's': '#c9dcee', // snow shade
-  };
-  const den = [
-    '............oooooo..............',
-    '..........oowwwwwwoo.ooo........',
-    '......oowwwwwwwwwwwwowwwoo......',
-    '.....owwwwwwwwwwwwwwwwwwwwo.....',
-    '....owwwwwwwwwwwwwwwwwwwwwwo....',
-    '...ossswwwwwwwwwwwwwwwwwwssso...',
-    '..oYysssswwwwwsssswwwwssssyYYo..',
-    '..oYyyyyssssssoooossssssyyyyYo..',
-    '.oYyyyyyyyyooKKKKKKooyyyyyyyyYo.',
-    '.oYyyyyyyyoiKiKkkKiKioyyyyyyyYo.',
-    '.oyyyyyyyoKikiKkkKikiKoyyyyyyyo.',
-    'oYyyyyyyoKkkkikkkkikkkKoyyyyyyYo',
-    'oYyyyyyoKkkkkkkkkkkkkkkKoyyyyyvo',
-    'ovyyyyyokkkkkkkkkkkkkkkkoyyyyvvo',
-    'ovyyYyyokkkkkkkkkkkkkkkkoyyyvvvo',
-    'ovvyyyyokkkkkkkkkkkkkkkkoyYyvvvo',
-    'ovvvyyyokkkkkkkkkkkkkkkkoyyvvvvo',
-    '.ovvvyyokkkkkkkkkkkkkkkkoyvvvvo.',
-    '.ovvvvvokkkkkkkkkkkkkkkkovvvvvo.',
-    '..ooovvoKkkkkkkkkkkkkkkKovvooo..',
-    '.....ooobBKkkkkkkkkkKBbooo......',
-  ];
   // The forest's palettes: TSPAL run through colour filters in OKLCH, never
   // redrawn (docs/media/concepts/tree-filters-2.png picked B, C and D). The
   // drawn pine's contrast ran from a near-black outline to near-white snow,
@@ -1627,7 +1585,6 @@
     })(),
     stumps: stumps.map((g) => bake(g, TPAL)),
     deadTree: [bake(deadTree1, DTPAL), bake(deadTree2, DTPAL)],
-    den: bake(den, DNPAL),
     hogHut: hogHut.map((f) => bake(f, HHPAL)),
   });
 })();

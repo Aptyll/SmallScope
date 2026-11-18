@@ -140,7 +140,7 @@ obs = {
 - **`kills`.** Every death on the map since your last think, as the feed shows it on every
   screen. `by` is the killer's seat, or -1 when no player did it. `out` is true when
   the victim's bird has fallen, so it will not come back.
-- **The orca.** The orca's pool, the frozen pond on the creek top-left of the middle, is its ice. Stand on it near
+- **The orca.** The orca's pool, the frozen pond in the cove above the top lane, is its ice. Stand on it near
   the orca and it locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still
   on that ice the orca comes up and you go down, whatever your health.
 - **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists every item,

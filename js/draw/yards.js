@@ -1,8 +1,5 @@
 // ---- yards ------------------------------------------------------------------
-// A camp is lived in, so the snow round it says so. A wolf den has a yard the
-// pack has trodden flat, a doorstep of dark earth out of the mouth, the
-// pack's trails out past where each wolf waits (the camp's `spots`) and a
-// ring of half-buried stones; a hog hut has a smaller trodden yard, a packed
+// A camp is lived in, so the snow round it says so. A hog hut has a smaller trodden yard, a packed
 // path from its door out into the clearing, a woodpile against its wall and a
 // chopping block; the black bear's bend and the gold pump, a building, have
 // yards of their own (their rows). A yard is two pressed bands of snow with a shaded upper
@@ -13,10 +10,7 @@
 // in its YARDS row.
 const YARD_IN = 0.6;                        // the share of the radius the harder inner band fills
 const YARD_COL = { out: 'rgba(138,150,178,0.2)', in: 'rgba(124,136,166,0.34)', wall: 'rgba(92,106,142,0.5)', lit: 'rgba(250,253,255,0.75)' };
-const YARD_STEP_COL = ['#4c4a52', '#5e5b62']; // a doorstep's dark earth, in two flat tones
 const YARD_BED_COL = ['#6e6052', '#807060', '#a08c58']; // a bed's scraped earth in two flat tones, and the dry grass lining it
-const YARD_PRINT_COL = 'rgba(96,110,146,0.6)';
-const YARD_TRAIL_STEP = 5;                  // px between prints along a trail
 const YARD_TRACK_STEP = 9;                  // ...and between a heavy beast's
 const YARD_TRACK_COL = 'rgba(78,92,132,0.85)'; // ...which are pressed deeper, a tone darker
 const YARD_PATH_HW = 4.5;                   // px: half the width of a packed path
@@ -44,11 +38,6 @@ const YARD_THINGS = {
   bough: ['..f.f...', '.fFfFf.f', 'fFFfFFfF', '.fFfFf.f', '..f.f...'], // a pine bough dragged in for the bed
 };
 const YARDS = {
-  den: {
-    rx: 70, ry: 42, rag: 0.4, dy: 8, mid: 0, step: [14, 13], trails: true,
-    door: (C) => ({ x: (C.tx + 1) * TILE, y: (C.ty + 1) * TILE - 3 }), // the middle of the mouth's lip row
-    things: [[-52, 2, 'rockA'], [44, -8, 'rockB'], [60, 16, 'rockD'], [-34, 30, 'rockC'], [26, 36, 'rockD'], [-66, 18, 'rockD'], [58, -22, 'rockC'], [-8, 42, 'rockB'], [-60, -14, 'rockB']],
-  },
   hut: {
     rx: 50, ry: 28, rag: 0.3, dy: 12, mid: 10,
     door: (C) => ({ x: C.tx * TILE + 6, y: (C.ty + 1) * TILE - 4 }),  // the door in its left wall (SPRITES.hogHut)
@@ -138,43 +127,24 @@ function yardOf(C, Y) {
     const r = Math.sqrt(u * u + w * w) + (vnoise(x / 17 + sx0, y / 17 + sy0) - 0.5) * 2 * Y.rag + (vnoise(x / 6 + 40, y / 6) - 0.5) * 0.12;
     return r < YARD_IN || p < YARD_PATH_HW ? 2 : r < 1 ? 1 : 0;
   };
-  // the doorstep: a tongue of dark earth straight out of the mouth, about a hero wide, its tip ragged
+  // a bed: a ragged scrape of bare earth
   const bare = (x, y) => {
-    if (Y.bed) { // a bed: a ragged scrape
-      const u = (x - m.x - Y.bed[0]) / Y.bed[2], w = (y - m.y - Y.bed[1]) / Y.bed[3];
-      return u * u + w * w + (vnoise(x / 4 + 5, y / 4 + key) - 0.5) * 0.7 < 1 && open(x, y);
-    }
-    if (!Y.step) return false;
-    const d = y - m.y, hw = Y.step[0] / 2 - Math.max(0, d - Y.step[1] * 0.55) * 0.5 + (vnoise(y / 3, key) - 0.5) * 2;
-    return d >= 0 && d < Y.step[1] + (vnoise(x / 3, key + 5) - 0.5) * 4 && Math.abs(x - m.x) < hw && open(x, y);
+    if (!Y.bed) return false;
+    const u = (x - m.x - Y.bed[0]) / Y.bed[2], w = (y - m.y - Y.bed[1]) / Y.bed[3];
+    return u * u + w * w + (vnoise(x / 4 + 5, y / 4 + key) - 0.5) * 0.7 < 1 && open(x, y);
   };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const wx = c.wx + x, wy = c.wy + y, b = band(wx, wy);
     let col = null;
     if (bare(wx, wy)) {
-      col = (Y.bed ? YARD_BED_COL : YARD_STEP_COL)[vnoise(wx / 4 + 7, wy / 3) > 0.52 ? 1 : 0];
-      if (Y.bed && hash2(wx * 5 + 3, wy * 3 + key) < 0.14) col = YARD_BED_COL[2]; // dry grass in the lining
+      col = YARD_BED_COL[vnoise(wx / 4 + 7, wy / 3) > 0.52 ? 1 : 0];
+      if (hash2(wx * 5 + 3, wy * 3 + key) < 0.14) col = YARD_BED_COL[2]; // dry grass in the lining
     } else if (b) {
       const up = band(wx - 1, wy - 1), dn = band(wx + 1, wy + 1);
       col = up < b ? YARD_COL.wall : dn < b ? (b === 1 ? YARD_COL.lit : YARD_COL.out) : b === 2 ? YARD_COL.in : YARD_COL.out;
       if (dn < b && b === 2 && dn === 0) col = YARD_COL.lit; // a path's low side out on the open snow
     }
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
-  }
-  // the trails: from the mouth past each wolf's spot and out into the open,
-  // a print either side of the line by turns, bending a little off the hash
-  g.fillStyle = YARD_PRINT_COL;
-  for (let k = 0; Y.trails && k < C.spec.spots.length; k++) {
-    const s = C.spec.spots[k], ex = (C.tx + s[0] + 0.5) * TILE, ey = (C.ty + s[1] + 0.5) * TILE;
-    const sx = m.x + (ex < m.x ? -6 : 6), sy = m.y + 5;
-    const dx = ex - sx, dy = ey - sy, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
-    const far = L * (1.5 + hash2(key + k, 31) * 0.5), bend = (hash2(key, k + 3) - 0.5) * 16;
-    for (let d = 4, n = 0; d < far; d += YARD_TRAIL_STEP, n++) {
-      const t = d / far, off = Math.sin(t * Math.PI) * bend + (n & 1 ? 1.5 : -1.5);
-      const px = Math.round(sx + ux * d - uy * off), py = Math.round(sy + uy * d + ux * off);
-      if (!open(px, py) || bare(px, py)) continue;
-      g.fillRect(px - c.wx, py - c.wy, 2, 1); g.fillRect(px - c.wx + (ux > 0 ? 1 : 0), py - c.wy + 1, 1, 1);
-    }
   }
   // the board walk: boards laid tight across its line, YARD_WALK_BOARD px each
   // with a hairline seam, every board a little out of true and a few knocked

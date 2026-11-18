@@ -20,7 +20,8 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
 // mm/map fields, and every site below asks that table first. Adding a scenery
 // type is one entry here, plus its draw branch in render() and what a swing
-// does to it in hitObject(): checklists.md#common-changes.
+// does to it in hitObject(): checklists.md#common-changes. `sorted: false`
+// is a type with no pixels in the y-sorted pass (something else draws it).
 //
 // THE CHART'S CLASSES (3.32). The minimap paints a tile the `mm` colour of
 // what stands on it, but the parchment world map (renderWorldMap, panels.js)
@@ -61,10 +62,6 @@ const OBJECTS = {
   // both maps: a speck on the snow is noise.
   snowdrop: { solid: false, work: true, verb: 'PICK', lift: 14, auto: true,
               ready: (o) => snowdropLeft(o) <= 0 },
-  // a camp's cave (the wolf den): inert scenery, two
-  // tiles wide - `w` stamps a `part` filler per extra tile, east of the
-  // anchor (placeCamps), so both tiles are solid and read back as the den
-  den:      { solid: true,  w: 2, mm: [92, 86, 100] },
   // the merchant's TRADING POST (placeStalls, robots.js): 4x2, the anchor its
   // front-left tile and the parts east and north of it, carrying its `team`.
   // No `tool` and no hp: nothing swings at it, nothing shoots it, and it is
@@ -75,6 +72,11 @@ const OBJECTS = {
   // parked by the tent: one solid tile of scenery.
   stall:    { solid: true,  w: 4, h: 2, sight: 176, mm: (o) => mmTeam(o) },
   sled:     { solid: true },
+  // a zipline's pylon (placeZips, js/sim/zipline.js): solid, inert to E,
+  // carrying its `team`. Its pixels are PYLON_SPRS in the object pass
+  // (js/draw/zipline.js); the cable itself is not an object at all - it
+  // hangs between the pylons' points (zips) and is drawn by drawZips.
+  pylon:    { solid: true,  mm: [150, 156, 170] },
   stump:    { solid: false, mm: [188, 200, 218] },
   // a roosting team eagle's hitbox tiles (placed by eagleRoost, js/sim/eagle.js):
   // solid to walkers and a work target for RIVAL E swings only - workTarget
@@ -82,6 +84,11 @@ const OBJECTS = {
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
   eagle:    { solid: true,  work: true, verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
+  // the orca cove's WATERFALL and its plunge pool (COVE_FALL, genWorld,
+  // js/sim/field.js): open water down the back wall, solid to everything.
+  // No pixels of its own in the object pass - drawCoveFall (js/draw/cove.js)
+  // draws the whole curtain at once - and on the chart it is open water
+  waterfall: { solid: true, mm: [74, 140, 196], map: CH_HOLE, sorted: false },
   // a multi-tile building's (or a wide prop's) filler tiles: solid, and
   // structOf() has resolved them to their anchor long before either map sees one
   part:     { solid: true },

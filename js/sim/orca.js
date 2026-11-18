@@ -76,13 +76,13 @@ function orcaPrey(p) { return !!p && p.active && !p.dead && !(p.zip >= 0) && orc
 function spawnOrca() {
   orcaWater = new Uint8Array(WORLD * WORLD);
   orcaHome = [];
-  const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + 2);
-  for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
+  const P = orcaPool(), r = Math.ceil(ORCA_LAKE_R + 2), cx = Math.round(P.tx), cy = Math.round(P.ty); // whole tiles: the middle may sit between two
+  for (let ty = cy - r; ty <= cy + r; ty++) for (let tx = cx - r; tx <= cx + r; tx++) {
     if (!inWorld(tx, ty) || !orcaLakeAt(tx, ty)) continue;
     orcaWater[idx(tx, ty)] = 1;
     navToll[idx(tx, ty)] = ORCA_TOLL;
   }
-  for (let ty = P.ty - r; ty <= P.ty + r; ty++) for (let tx = P.tx - r; tx <= P.tx + r; tx++) {
+  for (let ty = cy - r; ty <= cy + r; ty++) for (let tx = cx - r; tx <= cx + r; tx++) {
     if (orcaTileIn(tx, ty) && orcaClear((tx + 0.5) * TILE, (ty + 0.5) * TILE)) orcaHome.push(idx(tx, ty));
   }
   if (!orcaHome.length) return;
@@ -97,7 +97,7 @@ function orcaPutIn(at) {
   orcaGoal();
 }
 
-// THE ORCA UP: from its camp's `first` (20:00, CAMPS.orca) the orca is out of
+// THE ORCA UP: from its camp's `first` (6:00, CAMPS.orca) the orca is out of
 // the water, a camp monster (MONSTER.orca, js/sim/wildlife.js) in a hole in
 // the middle of its pool, and the shadow under the ice is gone - one orca,
 // in one place at a time. Felled, it goes back under (orcaPutIn) until the

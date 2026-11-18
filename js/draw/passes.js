@@ -84,6 +84,7 @@ function drawFlatPass(ox, oy, ex, ey, tx0, ty0, tx1, ty1, now) {
       if (o.type === 'stump') { const L = stumpLook(tx, ty); ctx.drawImage(SPRITES.stumps[L.v], px + L.dx, py + 4 + L.dy); }
     }
   }
+  drawCoveRim(ex, ey);      // the orca's cove: its cut-stone face under the pines (js/draw/cove.js)
   drawRecallGround(ex, ey); // each roost's reach: its floor lit where its bird heals, under a pale rim (js/draw/recall.js)
   drawPumpRings(ex, ey);    // ...and each gold pump's ring in its holder's colour, and the fill of a side taking it (js/draw/structs.js)
   drawCampLeashes(ex, ey, now); // an awake camp's leash: the edge of its ground, where the hunt gives up (js/draw/marks.js)
@@ -126,8 +127,9 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
     for (let tx = tx0; tx <= tx1; tx++) {
       let o = objects[idx(tx, ty)];
       // stumps and holes are both drawn flat, above, and never y-sorted; an
-      // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'eagle') continue;
+      // eagle's hitbox tiles have no pixels of their own (drawEagle draws the
+      // bird), nor a type its OBJECTS entry says draws elsewhere (`sorted`)
+      if (!o || o.type === 'stump' || o.type === 'eagle' || (OBJECTS[o.type] && OBJECTS[o.type].sorted === false)) continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -151,6 +153,7 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
   fallDraws(draws, now); // a soldier or a beast going down where it stood (js/draw/falls.js)
   // the orca out of its ice (drawOrcaBreach, js/draw/orca.js)
   if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, fn: (d, ex, ey) => drawOrcaBreach(ex, ey) });
+  coveDraws(draws, ox, oy); // the orca cove's waterfall, at its grotto's foot (js/draw/cove.js)
   reedDraws(draws, ox, oy); // the brush's reeds, each sorted by its foot (js/draw/depth.js)
   campClockDraws(draws, tx0, ty0, tx1, ty1); // the clocks of the camps with no anchor prop (js/draw/marks.js)
   draws.sort((a, b) => a.y - b.y);
@@ -221,7 +224,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const fi = treeCell(d.tx, d.ty, treeFrame(d.tx, d.ty));
     const snag = treeSnag(d.tx, d.ty); // a dead pine in the forest's heart: a bare pole (js/draw/ground.js)
     const old = !snag && treeOld(d.tx, d.ty); // an old pine stands over the rest under a load of snow
-    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty) - (old ? TREE_OLD_LIFT : 0);
+    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty) - (old ? TREE_OLD_LIFT : 0) - coveBack(d.tx, d.ty); // a pine on the cove's lip stands back from it (js/draw/cove.js)
     // the hero's own work target wears the gold rim; a canopy over the
     // hero's model opens its window (canopyOver/drawWindowed,
     // js/draw/canopy.js), rim and all. Only a covering canopy leaves the
@@ -235,9 +238,6 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     };
     const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
     if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();
-  } else if (o.type === 'den') {
-    drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
-    drawCampClock(o.site, px + 16, py - 3); // a cleared camp's respawn clock (js/draw/marks.js)
   } else if (o.type === 'hut') {
     // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
     // of its 2x2 footprint and draws the whole building centred over the

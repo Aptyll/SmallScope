@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MAP: the orca\'s cove above the top lane: ice to the walls, a waterfall, the orca up at 6:00', '0.992'],
+    ['MAP: ragged pine groves, a creek of rough ice, robot camps only, bushes by the doors and camps', '0.992'],
     ['CAMPS: the stray robots are plain brass walkers with a slim iron face', '0.990'],
     ['WAVES: melee and ranged soldiers only, the ballista cart is gone', '0.988'],
     ['MATCHMAKING: solos and small parties fill one 3v3 before bots', '0.987'],
