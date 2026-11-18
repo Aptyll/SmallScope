@@ -1,4 +1,5 @@
-# The judge step: new art among what Noah kept and what he rejected, for one fresh reader.
+# PARKED, not a step of the art skill (Noah 2026-11-18: a note, not a rule). An idea for a judge:
+# new art among what Noah kept and what he rejected, for one fresh reader.
 # No ruler tells good art from bad here (docs/dev/art.md), the author cannot judge their own
 # work, and a fresh reader's own taste is not Noah's (docs/dev/art-bar.md, What was measured). So
 # the reader is shown his verdicts and asked what he would say, without knowing which tile is new.
