@@ -72,8 +72,8 @@ A **starter** (League's Doran's) is the opening purse's one item: 450 of the `ST
 the rest a potion. It carries two stats, a touch more than its price buys in basics, is built
 from nothing and into nothing (`starter`, `isStarter`; `isPart` is false), and sells at half
 like any item. Its `starter` list names the kinds of build it opens (`itemKind`), and
-`itemStarter(first)` picks the one for a build whose first item is `first`: the shop's START row
-and a bot's opening buy both read it.
+`itemStarter(first)` picks the one for a build whose first item is `first`: the shop's opening
+cards and a bot's opening buy both read it.
 
 | starter | price | stats | opens |
 | --- | --- | --- | --- |
@@ -255,15 +255,14 @@ League's shop on the HUD's own graphite plate (`drawHudFrame`, js/ui/strip.js), 
 (`SHOP_W`/`SHOP_H`) and pinned near the top edge (`SHOP_Y`):
 
 - the **top tabs** (`state.shopTab`, `SHOP_TABS`) say what the grid shows: **RECOMMENDED**, three
-  **cards** ([the cards](#the-recommended-cards)), then a row of START (the build's starter while you
-  have bought nothing, and the potion) and THEN (or ALSO BUILT, with numbers: the rest of the build);
+  **cards** and nothing else ([the cards](#the-recommended-cards));
   **ALL**, the whole catalogue a row a kind (`shopAllRows`: the potion and starters, the basics, every pair of
   boots, the epics, the legendaries; `SHOP_COLS` a row); and one tab a **style**
   (`ITEM_STYLES`: TANK, BRUISER, MARKSMAN, ASSASSIN, MAGE, SUPPORT), the same rows holding only the
   legendaries and boots whose `styles` name it. A style is what an item is for, not the lane role
   a hero is drafted into. The counter opens on RECOMMENDED, with the pick on what to buy now (`shopOpenPick`: your build's next item, or the dearest piece of it your gold buys);
 - the **left bar** filters by stat in every tab (`state.shopCat`: ALL, then one a stat in
-  `ITEM_STAT_ORDER`, each the stat panel's own icon, `STAT_ICON`). A filter **dims** every item
+  `ITEM_STAT_ORDER`, each the stat panel's own icon, `STAT_ICON`, its stat's name in the tooltip on hover). A filter **dims** every item
   without that stat rather than hiding it, so nothing on the grid moves; picking it again clears it;
 - each **well** is rimmed by its tier (`itemMetal`: a basic dim green, an epic or a pair of boots
   steel blue, a legendary gold) with what it costs **you** now (`itemCost`) under it, in the
@@ -300,18 +299,23 @@ on it (the tabs, the row headlines, BUILDS INTO, BUY, SELL) are names, headlines
 plain words like the menus, kept in the text table as `shop.*` keys ([the text table](../rendering/the-text-table.md));
 everything else is icons, rims and numbers.
 
-**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more; RECOMMENDED's THEN shows the wells that fit. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
+**It is centred across the view**, `SHOP_Y` (4) from the top (`shopLayout`). A view narrower than 524 (4:3, 5:4, 16:10 at 3x) takes the difference out of the left side (`shopFit`): the grid loses whole columns and the pane keeps its width; the tabs close up, and when they still reach the close box the pane steps down under them and the box goes to the slab's corner. When the ALL rows run past the grid, the wheel over the slab walks them (`shopScroll`, `shopScrollBy` from the wheel, input.js), with a chevron at each end that has more. Every icon (16 px, js/sprites/item-icons.js) is drawn at the largest **whole-number** scale that fits its well (`shopIcon`; a 20 px well shows it at 1x): a fractional one
 stretches every third source pixel and frays 1 px linework.
 
 ## The recommended cards
 
-RECOMMENDED leads with **three items drawn large** (js/ui/shop-rec.js, League's suggested items):
-each card has the item's name in its tier's ink, its icon at 3x, what it costs you now (red while
-the purse is short) and **why** in two words on a flat tag (the item's `why`, js/sim/items.js:
-ANTI-HEAL, SURVIVE BURST, ATTACK SPEED). A click picks it into the pane, a right click buys, like
-any well. `shopPicks` chooses them:
+RECOMMENDED is **three items drawn large** (js/ui/shop-rec.js, League's suggested items),
+standing in the middle of the grid's room: each card has the item's name in its tier's ink, its
+icon at 4x (3x or 2x on a narrower view, `SHOP_CARD_WELLS`), what it costs you now (red while
+the purse is short) and **why** in two words on a flat tag (`shopWhy`: the item's `why`,
+js/sim/items.js: ANTI-HEAL, SURVIVE BURST, EARLY DAMAGE; a basic part says its stat). A click
+picks it into the pane, a right click buys, like any well. `shopPicks` chooses them:
 
-- the **first card** is always the next item of your build in buying order (the first item, the
+- **the opening**: while your bag holds nothing but potions and your gold cannot buy the build's
+  next item, the three are what it can (`shopOpening`): the starter that opens your build
+  (`itemStarter`), the potion, and the basic part of the build's first item your gold buys (one of
+  that item's own kind first, then the dearer; boots when none fits), League's alternative start;
+- after that, the **first card** is the next item of your build in buying order (the first item, the
   boots, the rest: [recommended builds](#recommended-builds)), skipping what you hold;
 - a **threat** on the rival side (`SHOP_THREATS`) puts the item that answers it (its `counter`) on
   the next card, under the faces of the rivals it is good against: **heal** (a hero marked `heals`
