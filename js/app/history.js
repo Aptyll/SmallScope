@@ -19,7 +19,7 @@
 // lv, k, d, a, cs, g: gold earned, dmg: to heroes, it: [six item ids or ''] }] }
 const MH_KEEP = 200;    // matches a screen keeps, the oldest out first
 const MH_NAME = /^[A-Z0-9]{1,16}$/;
-const MH_MODES = ['quick', 'ranked', 'onevone', 'guide']; // quick and onevone: modes cut since, kept so their old records still read
+const MH_MODES = ['quick', 'ranked', 'onevone', 'guide']; // quick and onevone: modes cut since, kept so their old records still read. Append only: the global ladder packs a mode by its place (boardPack)
 const MH_NUM_MAX = 1e7; // any count past this is a hand edit, not a match
 const MH_AT = (n) => typeof n === 'number' && isFinite(n) && n > 0 && n < 1e14; // a clock reading in ms
 
@@ -165,6 +165,9 @@ function peopleClean(c) {
   const bd = Array.isArray(c.bd) ? c.bd.filter((id) => typeof id === 'string' && /^[a-z0-9_]{1,16}$/.test(id)).slice(0, MH_CARD_BADGES) : [];
   return { pid: c.pid, n: c.n, pic: c.pic, rk: Math.floor(c.rk), rn: num(c.rn) ? Math.floor(c.rn) : 0, g: c.g | 0, w: c.w | 0, bd, rec, seen: MH_AT(c.seen) ? Math.floor(c.seen) : 0 };
 }
+// one person's card: the global ladder's (js/app/board.js: posted after each
+// of their matches, so never older than one heard), else the one heard
+function personCard(pid) { return (pid && (boardCard(pid) || PROFILE.people().find((c) => c.pid === pid))) || null; }
 // cards heard (a party's, off the wire): each kept once by pid, the newest
 // word on it winning; your own is never a person you met
 function peopleNote(cards) {

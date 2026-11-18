@@ -618,6 +618,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['LADDER: every RANKED player on Steam by rating; any row opens their profile', '0.998'],
     ['ZOOM: all the way out fills the screen on every display, and none sees farther than 1080p', '0.984'],
     ['BOTS keep to their role for the first 6 minutes, then roam', '0.964'],
     ['3V3: three a side, bots fill empty seats; roles TOP, JUNGLE, BOT', '0.962'],

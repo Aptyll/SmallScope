@@ -51,7 +51,7 @@ const NAME_SHAKE_T = 0.3;     // the name field's refusal: it rattles and flushe
 function pfCard() {
   const m = state.menu;
   if (!m.pfWho) return null;
-  return PROFILE.people().find((c) => c.pid === m.pfWho) || null;
+  return personCard(m.pfWho);
 }
 function pfBody() {
   const L = { x: PF_COL_W + 16, y: PF_BAR_H + 8 };
@@ -123,7 +123,7 @@ function updateProfileOver(dt) {
 function seatPid(id) {
   if (player && id === player.id) return PROFILE.pid();
   const c = NET.cards[id];
-  return c && PROFILE.people().some((q) => q.pid === c.pid) ? c.pid : null;
+  return c && personCard(c.pid) ? c.pid : null;
 }
 // open seat `id`'s profile from wherever the screen is; false when there is none to open
 function openSeatProfile(id, back) {
@@ -259,11 +259,12 @@ function updateProfile(dt) {
 const pfHot = (kind, i) => state.menu.pfHot === kind + ':' + (i == null ? '' : i);
 
 // ---- the search -------------------------------------------------------------
-// the people whose name starts with what is typed (then those holding it), under the field
+// the people whose name starts with what is typed (then those holding it), under the
+// field: everyone met and everyone on the global ladder (js/app/board.js), each once
 function pfFound(L) {
   const q = state.menu.pfSearch;
   if (!q) return [];
-  const all = PROFILE.people();
+  const met = PROFILE.people(), all = met.concat((boardList() || []).filter((c) => c.pid !== PROFILE.pid() && !met.some((p) => p.pid === c.pid)));
   const hits = all.filter((c) => c.n.startsWith(q)).concat(all.filter((c) => !c.n.startsWith(q) && c.n.indexOf(q) > 0));
   return hits.slice(0, 8).map((c, i) => ({ x: L.search.x, y: L.search.y + L.search.h + 1 + i * 14, w: L.search.w, h: 14, pid: c.pid, c }));
 }
@@ -341,10 +342,9 @@ function pfBackRect(L) { return { x: L.col.x + 10, y: L.statsY + 30, w: L.col.w 
 // the people you played with most, the ones whose card this screen holds
 function pfMateRects(L) {
   if (state.menu.pfWho) return [];
-  const known = new Map(PROFILE.people().map((c) => [c.pid, c]));
   const y0 = L.statsY + 40, rows = Math.max(0, Math.floor((L.col.y + L.col.h - y0 - 4) / 18));
-  return historyMates(historyList(), 12).filter((e) => known.has(e.pid)).slice(0, Math.min(5, rows))
-    .map((e, i) => { const c = known.get(e.pid); return { x: L.col.x + 10, y: y0 + i * 18, w: L.col.w - 20, h: 14, n: c.n, hero: c.pic, pid: c.pid }; });
+  return historyMates(historyList(), 12).filter((e) => personCard(e.pid)).slice(0, Math.min(5, rows))
+    .map((e, i) => { const c = personCard(e.pid); return { x: L.col.x + 10, y: y0 + i * 18, w: L.col.w - 20, h: 14, n: c.n, hero: c.pic, pid: c.pid }; });
 }
 // the name field: at rest the name in gold with its quill; typed in, the
 // buffer in white with the caret, or SELECTED on a gold band when the next
