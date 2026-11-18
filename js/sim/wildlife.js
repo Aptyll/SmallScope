@@ -93,7 +93,7 @@ const PREY_WARY_T = 3;
 const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   wolf: { idle: 0, run: 8 },
-  scrap: { idle: 4, run: 8, lunge: 0, down: 0 }, // the headlamp: its bulb blinks one beat in six at rest; `lunge` is the ram (MONSTER.scrap.lunge)
+  scrap: { idle: 0, run: 8, lunge: 0, down: 0 }, // the stray robot: `lunge` is the ram (MONSTER.scrap.lunge)
   alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10 }, // the bear: patrols at a walk, charges at a gallop
   orca: { idle: 0, bite: 12, paw: 12, roar: 10 }, // the orca up in its hole: a lunge either way, and the breach it wakes with
 };
@@ -500,7 +500,7 @@ const ORCA_SPOUT_R = 15 * TILE; // px the orca spouts at whoever it hunts past i
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  scrap: { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'scrap', lunge: 0.18 }, // the headlamps: the wolves' numbers, the bottom half's farm; `lunge`: seconds its ram frame shows after each blow
+  scrap: { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'scrap', lunge: 0.18 }, // the stray robots: the wolves' numbers, the bottom half's farm; `lunge`: seconds its ram frame shows after each blow
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME, stack: true }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
   orca:  { bite: 28, lvBite: 3, reach: 80, cd: 1.8, spd: 0, r: 20, foot: 5, mass: 9, big: true, teamPay: true, feed: 'ORCA', buff: 'ORCA BUFF', buffCol: '#7fd4ff', anchor: true, cause: 'orca', lv: ORCA_LV, frame: BEAR_FRAME, still: true, hole: true, spout: ORCA_SPOUT_R, push: true }, // the late fight: up in its pool, a lunge across the ice and a spout at range
 };

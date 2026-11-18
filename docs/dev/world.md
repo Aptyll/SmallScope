@@ -130,7 +130,7 @@ same walk away. `baseAt(tx, ty, pad)` names the side whose disc holds a tile.
 The neutral monsters stand at fixed, mirrored sites (`CAMP_SITES`, js/sim/camps.js), written for
 RED's top quarter and folded to the other three like the field (`campSites`): a site on the middle
 row or column is its own twin. Per side: two wolf dens in the top half (`resource`), two SCRAP
-PILES of stray robots in the bottom half (`scrap`, the HEADLAMPS), and a rabbit WARREN in deep
+PILES of stray robots in the bottom half (`scrap`, brass walkers), and a rabbit WARREN in deep
 snow by the base mouth (`meadow`). The orca's pool is the pit above the top lane and the black
 bear's den the pit below the bottom one, one each for the whole map. Nothing rolls. What lives
 in them: [wildlife](gameplay/wildlife.md#camp-monsters-neutral-until-hit). The gold pumps stand
