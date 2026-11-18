@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['BUSHES: step in and the whole bush goes see-through', '0.996'],
     ['MAP: the gold pump stands clean in its ring, no clutter round it', '0.995'],
     ['SURRENDER: 2 of 3 yes ends the match', '0.994'],
     ['HERO SELECT: one 15 s pick, no bans, first come first served, random if you never lock', '0.993'],
