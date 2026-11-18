@@ -140,10 +140,10 @@ function netHostRoom() {
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
   NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, state: state.drop ? 'live' : 'open', humans, sides,
-    // a party looking for a match (js/ui/matchmaking.js): its mode, how full
-    // each side is (seats held for a party on its way in counted), whether it
+    // a party looking for a match (js/ui/matchmaking.js): its mode, how many
+    // people each party in it brings (seated or on the way), whether it
     // takes parties in already, how well it hosts and its leader's ping location
-    seek: NET.seek && !NET.seek.crossing ? NET.mode : '', fill: NET.seek ? seekFill() : sides,
+    seek: NET.seek && !NET.seek.crossing ? NET.mode : '', grp: NET.seek ? seekGroups().map((g) => g.n) : [],
     hub: NET.seek && NET.seek.parties.size ? 1 : 0, hs: NET.seek ? seekScore() : 0, pl: NET.seek ? seekLoc : '' });
 }
 // the roster to every peer, on every change of it: a client's waiting room
@@ -284,7 +284,7 @@ function netHostHello(peer, msg) {
     // a party: a seat on the leader's own side, while it is still choosing
     // whom to bring - never once the hero select or the match has begun
     if (state.mode !== 'title' || NET.phase !== 'room') return refuse('BUSY');
-    if ((NET.seek ? seekFill()[player.team] : partySize()) >= partyCap(NET.mode)) return refuse('FULL'); // a looking party's held seats count
+    if (NET.seek ? !seekGrowOwn() : partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a looking party: only while every party still splits
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;

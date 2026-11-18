@@ -10,15 +10,17 @@
 // Every looking leader packs that one list the same way (seekPlan): the
 // rooms already taking parties in (`hub`) first, fullest first, then the
 // rest best host first (`hs`, the lowest code among equals); each party in
-// turn goes into the first room before it with a side it fits on
-// (seekSide: the emptier side, a party whole on one side, never past three),
+// turn goes into the first room before it that can still split every
+// party in it, its own whole on one side, into two sides of three (seekSplit),
 // else it hosts a room of its own. So six solo players looking at once
 // make one 3v3 with no bots, and eight make a 3v3 and a room of two.
 // A leader whose plan names another room crosses to it (seekCross): it tells
 // its guests (`cross`), and every page of it leaves its own room and joins
 // that one in place, no reload, the party's code and size in the hello
 // (CROSS). The host seats a party
-// that knocks on the side it fits (crossAdmit), holding the party's seats
+// that knocks while every party can still be split (crossAdmit), dealing
+// the sides again when it must (seekDeal: no one changes seat, only which
+// side a seat is on, before the hero select), holding the party's seats
 // until all of it is in or MATCH_GATHER runs out, and turns away one that
 // no longer fits (MATCHED). A party turned away, or whose host walks out
 // before the match, goes home and looks again (crossHome, seekResume): no
@@ -74,35 +76,101 @@ function seekPower() {
 // what the list says of how well this leader hosts: the machine's speed, less
 // its record of falling behind as a host (0 never, or never measured; 1 always)
 function seekScore() { return seekPower() - Math.round(PROFILE.hostLag() * HOST_LAG_W); }
-// a listed room's sides, people seated and seats held (Steam's store hands it back as text)
-function seekFillOf(r) {
-  let f = r.data && r.data.fill;
-  if (typeof f === 'string') { try { f = JSON.parse(f); } catch (e) { f = null; } }
-  return Array.isArray(f) && f.length === 2 ? [Math.max(0, f[0] | 0), Math.max(0, f[1] | 0)] : [0, 0];
+// a listed room's parties: how many people each brings, seated or on the
+// way (`grp`; Steam's store hands it back as text)
+function seekGrpOf(r) {
+  let g = r.data && r.data.grp;
+  if (typeof g === 'string') { try { g = JSON.parse(g); } catch (e) { g = null; } }
+  return Array.isArray(g) ? g.map((n) => Math.max(0, n | 0)).filter((n) => n > 0) : [];
 }
 // the people a crossing party has brought in so far
 function seekArrived(code) { let n = 0; for (const pr of NET.peers.values()) if (pr.cross === code) n++; return n; }
 // this room's sides: the people seated, and the seats held for the parties still on their way
 function seekFill() {
-  const f = [0, 0], s = NET.seek;
-  for (const p of players) if (isHuman(p)) f[p.team]++;
+  const f = [0, 0], s = NET.seek, gone = new Set();
+  for (const pr of NET.peers.values()) if (pr.gone) gone.add(pr.slot); // sent on to another room (seekSend)
+  for (const p of players) if (isHuman(p) && !gone.has(p.id)) f[p.team]++;
   if (s && s.parties) for (const [code, pt] of s.parties) f[pt.side] += Math.max(0, pt.n - seekArrived(code));
   return f;
 }
-// the side a party of n takes in a room filled `fill`, or -1 when it fits
-// whole on neither: the one that leaves the biggest gap open, so a bigger
-// party coming later still fits (two solos beside a pair go on the pair's
-// side, never one a side, which would shut a second pair out); the emptier
-// side when both leave the same (side 1 on a tie). The host seats by this and
-// every plan predicts by it, so both agree
-function seekSide(fill, n, cap) {
-  let best = -1, gap = -1;
-  for (const t of fill[0] < fill[1] ? [0, 1] : [1, 0]) {
-    if (fill[t] + n > cap) continue;
-    const g = Math.max(cap - fill[t] - n, cap - fill[1 - t]);
-    if (g > gap) { best = t; gap = g; }
+// every party in this room as { n, side, pt }: our own (the leader and the
+// friends who came by its code) first, then each that crossed in
+function seekGroups() {
+  const s = NET.seek, own = { n: 1, side: player.team, pt: null };
+  for (const pr of NET.peers.values()) if (!pr.cross) own.n++;
+  const g = [own];
+  if (s && s.parties) for (const pt of s.parties.values()) g.push({ n: pt.n, side: pt.side, pt });
+  return g;
+}
+// The one packing rule, the host's door and every plan alike: the sides
+// each party takes so that every party sits whole on one side and neither
+// side passes `cap` - null when no split works. Of the splits that work, the
+// one that moves the fewest people already placed (a party's `side`; one
+// without is new), our own party last; then the one that leaves the biggest
+// gap open, so a bigger party coming later still fits. A room has at most
+// six parties: every split is tried
+function seekSplit(groups, cap) {
+  let best = null, cost = Infinity;
+  for (let m = 0; m < 1 << groups.length; m++) {
+    const f = [0, 0];
+    let moved = 0;
+    groups.forEach((g, i) => { const t = (m >> i) & 1; f[t] += g.n; if (g.side != null && g.side !== t) moved += g.n + (i === 0 ? 0.5 : 0); });
+    if (f[0] > cap || f[1] > cap) continue;
+    const c = moved * 100 - Math.max(cap - f[0], cap - f[1]);
+    if (c < cost) { cost = c; best = groups.map((g, i) => (m >> i) & 1); }
   }
   return best;
+}
+// a friend joining the leader's party by its code while it looks: room for
+// one more in our own party, the sides dealt again if they must be
+function seekGrowOwn() {
+  const groups = seekGroups();
+  groups[0].n++;
+  const sides = seekSplit(groups, partyCap(NET.mode));
+  if (!sides) return false;
+  seekDeal(groups, sides);
+  return true;
+}
+// the match starts and nobody else is coming: the people spread as evenly
+// over the two sides as whole parties allow (two leftover solos one a side,
+// not together against three bots), moving the fewest to get there
+function seekEven() {
+  const groups = seekGroups(), cap = partyCap(NET.mode);
+  let best = null, cost = Infinity;
+  for (let m = 0; m < 1 << groups.length; m++) {
+    const f = [0, 0];
+    let moved = 0;
+    groups.forEach((g, i) => { const t = (m >> i) & 1; f[t] += g.n; if (g.side !== t) moved += g.n + (i === 0 ? 0.5 : 0); });
+    if (f[0] > cap || f[1] > cap) continue;
+    const c = Math.abs(f[0] - f[1]) * 100 + moved;
+    if (c < cost) { cost = c; best = groups.map((g, i) => (m >> i) & 1); }
+  }
+  if (best) seekDeal(groups, best);
+}
+// whether every party of these sizes splits into two sides of `cap`
+function seekFits(sizes, cap) { return !!seekSplit(sizes.map((n) => ({ n, side: null })), cap); }
+// the sides dealt again to a split: each party's side set, every person's
+// seat moved to its party's side, and the seats nobody holds shared out so
+// each side keeps its half of the room. No one changes seat: only which
+// side a seat is on, and only while the party waits (crossAdmit, netHostHello)
+function seekDeal(groups, sides) {
+  groups.forEach((g, i) => { if (g.pt) g.pt.side = sides[i]; });
+  const own = sides[0], half = players.length / 2, side = new Map([[localId, own]]);
+  for (const pr of NET.peers.values()) {
+    if (pr.gone) { side.set(pr.slot, players[pr.slot].team); continue; } // sent on (seekSend) and on its way out: its seat stays as it is
+    const pt = pr.cross && NET.seek.parties.get(pr.cross);
+    side.set(pr.slot, pt ? pt.side : own);
+  }
+  const left = [half, half];
+  for (const [slot, t] of side) { players[slot].team = t; left[t]--; }
+  // the empty seats: held first for the parties on their way, then the rest
+  const want = [0, 0];
+  for (const [code, pt] of NET.seek.parties) want[pt.side] += Math.max(0, pt.n - seekArrived(code));
+  for (const p of players) {
+    if (side.has(p.id)) continue;
+    const t = want[0] > 0 && left[0] > 0 ? 0 : want[1] > 0 && left[1] > 0 ? 1 : left[0] > 0 ? 0 : 1;
+    p.team = t; left[t]--; if (want[t] > 0) want[t]--;
+  }
 }
 // the parties on the list looking in our mode right now, ours left out
 function seekRivals() {
@@ -112,10 +180,10 @@ function seekRivals() {
 }
 // one looking party as the plan reads it
 function seekEntry(r) {
-  const fill = seekFillOf(r);
-  return { code: seekKey(r), r, fill, n: fill[0] + fill[1], hs: +r.data.hs || 0, hub: +r.data.hub > 0, pl: String(r.data.pl || '') };
+  const grp = seekGrpOf(r);
+  return { code: seekKey(r), r, grp, n: grp.reduce((a, b) => a + b, 0), hs: +r.data.hs || 0, hub: +r.data.hub > 0, pl: String(r.data.pl || '') };
 }
-function seekMine() { const fill = seekFill(); return { code: roomCode(), r: null, fill, n: fill[0] + fill[1], hs: seekScore(), hub: NET.seek.parties.size > 0, me: true }; }
+function seekMine() { const grp = seekGroups().map((g) => g.n); return { code: roomCode(), r: null, grp, n: grp.reduce((a, b) => a + b, 0), hs: seekScore(), hub: NET.seek.parties.size > 0, me: true }; }
 // the plan's order: rooms taking parties in first, the fullest first; then
 // the best host, then the lowest code
 function seekOrder(a, b) {
@@ -131,40 +199,28 @@ function seekNear(e) {
   const ms = s.pings.get(e.pl);
   return ms == null || ms < 0 || ms <= MATCH_PING; // not measured yet (or not measurable): taken
 }
-// how a room filled `add` fits into one filled `fill`: 0 side to side, 1
-// crossed over, -1 not at all (the way that leaves the sides closer first)
-function seekFits(fill, add, cap) {
-  const ways = [0, 1].filter((w) => fill[0] + add[w] <= cap && fill[1] + add[1 - w] <= cap);
-  if (ways.length < 2) return ways.length ? ways[0] : -1;
-  const gap = (w) => Math.abs(fill[0] + add[w] - fill[1] - add[1 - w]);
-  return gap(1) < gap(0) ? 1 : 0;
-}
 // The one packing every looking leader runs on the list: which room our
 // party ends in, and which other parties the plan sends to ours. Each, in
-// seekOrder, goes into the first room before it that it fits - a party on
-// a side whole (seekSide), a room already taking parties in with both its
-// sides (seekFits: a smaller room merges into a fuller one, every party in
-// it moving on its own) - else it hosts. Crossing only ever goes up the
+// seekOrder, goes into the first room before it whose parties and its own
+// still split into two sides (seekFits: a room already taking parties in
+// merges into a fuller one, every party in it moving on its own) - else it
+// hosts. Crossing only ever goes up the
 // order, so no two rooms cross to each other.
 function seekPlan() {
   const cap = partyCap(NET.mode), me = seekMine();
   const all = [me].concat(seekRivals().map(seekEntry)).sort(seekOrder);
   const rooms = [];
   for (const e of all) {
-    let into = null, way = -1;
+    let into = null;
     for (const g of rooms) {
       if (e.me && !seekNear(g.host)) continue;
-      way = e.hub ? seekFits(g.fill, e.fill, cap) : seekSide(g.fill, e.n, cap);
-      if (way >= 0) { into = g; break; }
+      if (seekFits(g.grp.concat(e.grp), cap)) { into = g; break; }
     }
-    if (into) {
-      if (e.hub) { into.fill[0] += e.fill[way]; into.fill[1] += e.fill[1 - way]; } else into.fill[way] += e.n;
-      into.comers.push(e); e.into = into; continue;
-    }
-    e.into = { host: e, fill: e.fill.slice(), comers: [] };
+    if (into) { into.grp = into.grp.concat(e.grp); into.comers.push(e); e.into = into; continue; }
+    e.into = { host: e, grp: e.grp.slice(), comers: [] };
     rooms.push(e.into);
   }
-  return { me, room: me.into };
+  return { me, room: me.into, rooms };
 }
 // what the Steam list is asked for while this party looks (steamRooms): only
 // the parties looking in our mode, near ones first while the search is young
@@ -232,18 +288,22 @@ function updateSeek(dt) {
   if (s.t < MATCH_MAX) {
     const plan = seekPlan();
     if (plan.room.host !== plan.me) { seekCross(plan.room.host.r); return; }
+    const give = seekGive(plan, cap);
+    if (give) seekSend(give.room, give.codes);
     if (plan.room.comers.length) s.hold = Math.max(s.hold, s.t + MATCH_HOLD); // the plan sends parties here: they may be on their way
   }
   if (s.t >= Math.min(s.hold, MATCH_MAX)) seekGo();
 }
 function seekGo() {
+  seekEven();
   NET.seek = null;
   roomsFeedClose();
   partyStart();
 }
 // the host's door for a crossing party's hello: the side its party sits on,
-// or -1 to turn it away. A party's first knock holds seats for all of it on
-// the side it fits (seekSide); its people after that take them
+// or -1 to turn it away. A party's first knock holds seats for all of it,
+// the sides dealt again if every party only splits another way (seekSplit,
+// seekDeal); its people after that take them
 function crossAdmit(msg) {
   const s = NET.seek;
   if (!s || s.crossing || state.mode !== 'title' || NET.phase !== 'room') return -1;
@@ -251,10 +311,13 @@ function crossAdmit(msg) {
   let pt = s.parties.get(code);
   if (!pt) {
     if (s.t >= MATCH_MAX) return -1; // about to start: no more
-    const n = Math.max(1, Math.min(cap, msg.pn | 0)), side = seekSide(seekFill(), n, cap);
-    if (side < 0) return -1;
-    pt = { n, side, t: 0, got: 0 };
+    const n = Math.max(1, Math.min(cap, msg.pn | 0)), groups = seekGroups();
+    pt = { n, side: null, t: 0, got: 0 };
+    groups.push({ n, side: null, pt });
+    const sides = seekSplit(groups, cap);
+    if (!sides) return -1;
     s.parties.set(code, pt);
+    seekDeal(groups, sides);
     s.hold = Math.max(s.hold, s.t + MATCH_HOLD);
   }
   return pt.side;
@@ -276,6 +339,40 @@ function seekCross(r) {
     const pt = pr.cross ? s.parties.get(pr.cross) : null;
     NET.transport.send(peer, { t: 'cross', room: r.room, code: pr.cross || code, n: pt ? pt.n : n });
   }
+}
+// A room that cannot merge whole into a fuller one (five people and three)
+// may still finish it: the parties that crossed in here and fill that
+// room's last seats exactly, with every party there still split whole, are
+// sent on to it (seekSend) and the rest of this room looks on. Only a
+// match made full, never a part move that leaves both short
+function seekGive(plan, cap) {
+  const s = NET.seek, mine = [];
+  for (const [code, pt] of s.parties) if (seekArrived(code) >= pt.n) mine.push({ code, n: pt.n }); // whole parties only
+  if (!mine.length) return null;
+  for (const g of plan.rooms) {
+    if (g === plan.room) break; // only rooms before ours: fuller ones
+    if (!g.host.hub || !seekNear(g.host)) continue;
+    const need = 2 * cap - g.grp.reduce((a, b) => a + b, 0);
+    if (need <= 0) continue;
+    for (let m = 1; m < 1 << mine.length; m++) {
+      const pick = mine.filter((_, i) => (m >> i) & 1);
+      if (pick.reduce((a, p) => a + p.n, 0) === need && seekFits(g.grp.concat(pick.map((p) => p.n)), cap)) return { room: g.host.r, codes: pick.map((p) => p.code) };
+    }
+  }
+  return null;
+}
+// those parties told to cross to that room (`cross`, each under its own
+// code) and let go here: off this room's count at once, so no plan counts
+// them twice
+function seekSend(r, codes) {
+  const s = NET.seek;
+  for (const [peer, pr] of NET.peers) {
+    if (!codes.includes(pr.cross)) continue;
+    NET.transport.send(peer, { t: 'cross', room: r.room, code: pr.cross, n: s.parties.get(pr.cross).n });
+    pr.gone = true;
+  }
+  for (const c of codes) s.parties.delete(c);
+  netHostRoom();
 }
 // a guest told its room is crossing: after it (a friend of the leader now
 // has a party to go home to; a page that crossed in keeps its own)
@@ -313,7 +410,24 @@ function crossHomeUrl(again) {
 function crossHome(again) {
   if (state.fade) { crossHomeDue = !!again; return; }
   crossHomeDue = null;
+  if (again && crossHomeHere()) return;
   pageGo(crossHomeUrl(again));
+}
+// a player who crossed alone and was turned away (or lost the host) before
+// any match: no page to reload and no friends to gather, so it hosts a room
+// of its own right here and looks again at once, its clock carrying on
+// (seekResume). A reload's few seconds were long enough for a lone room
+// elsewhere to give up on it and start with bots
+function crossHomeHere() {
+  const h = homeParty;
+  if (!h || !h.lead || Object.keys(h.seats || {}).length || state.mode !== 'title') return false;
+  const m = state.menu, t = +h.t || 0;
+  homeParty = null; CROSS = null;
+  m.joining = false; m.joinWait = 0; m.joinRetry = 0; m.joinTo = null;
+  netLeave();
+  beginParty('ranked');
+  rematchCarry = { seats: {}, seek: t };
+  return true;
 }
 // a leader home from a room that turned it away: once its guests are back
 // in their seats (or MATCH_RESUME has passed) it looks again, its clock

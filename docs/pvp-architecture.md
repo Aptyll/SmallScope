@@ -497,29 +497,34 @@ The same screens and the same protocol ride either transport; only the list and 
    code for `REMATCH_WAIT` while the leader's page comes back, and the leader deals it the slot
    it held (`rematchSeat`). Leaving (`netLeave`) closes a leader's party; a guest walks out of one.
 9. **Matchmaking** (js/ui/matchmaking.js). RANKED's PLAY sets `NET.seek`
-   and lists the room with `seek: mode`, `fill` (each side's people plus the seats it holds for a
-   party on its way in), `hub` (it has taken a party in), `hs` (how well it hosts, `seekScore`: the
+   and lists the room with `seek: mode`, `grp` (how many people each party in it brings, seated or
+   on its way), `hub` (it has taken a party in), `hs` (how well it hosts, `seekScore`: the
    machine's speed through `snapEncode`, `seekPower`, less `PROFILE.hostLag` times `HOST_LAG_W`, its
    record of falling behind its people when it last hosted, `netHostLag`) and on Steam `pl`, its
    leader's ping location. Every looking leader packs the same list the same way (`seekPlan`): rooms
    taking parties in first, fullest first, then the best `hs`, the lowest code among equals; each
-   party goes into the first room before it with a side it fits on whole (`seekSide`: the emptier
-   side, never past the mode's party cap), and a room taking parties in merges into a fuller one when
-   both its sides fit (`seekFits`); anything else hosts. While its search is younger than
+   party goes into the first room before it whose parties, its own added, still split into two
+   sides with every party whole on one and neither past the mode's party cap (`seekFits`, on
+   `seekSplit`), a room taking parties in merging into a fuller one the same way; anything else
+   hosts. While its search is younger than
    `MATCH_NEAR` (20 s) a party passes over rooms Steam estimates further than `MATCH_PING` (150 ms).
    A leader whose plan names another room crosses (`seekCross`): every guest gets `cross` naming the
    room and its own party (a friend of the leader the leader's code; in a merging room each party
    that crossed in its own code again), and after `MATCH_LEAVE` the leader follows. Crossing is in
    place (`crossGo`): the page leaves its room and joins the other with `party` and `pn` in the hello
    (`CROSS`), no reload, trying it for `MATCH_JOIN` (6 s). The host's door (`crossAdmit`) holds the
-   party's seats on the side it fits and seats its people there as they come, for `MATCH_GATHER`
-   (20 s), and refuses a party that no longer fits `MATCHED`. A room starts once both sides are
+   party's seats on the side `seekSplit` gives it and seats its people there as they come, for
+   `MATCH_GATHER` (20 s), and refuses a party that no longer fits `MATCHED`. When the parties only
+   split another way, the host deals the sides again (`seekDeal`): no one changes seat, only the
+   `team` of a seat, which the next `roster` carries to every screen, and only before the hero
+   select. At the start it deals them once more so the people spread as evenly over the two sides
+   as whole parties allow (`seekEven`). A room starts once both sides are
    full; otherwise after `MATCH_WAIT` (8 s), held `MATCH_HOLD` (6 s) past the last party it saw
    coming, and never past `MATCH_MAX` (30 s), when it takes no more; the empty seats go to bots. A
    page that has not been welcomed ignores what the host says to the whole room. A crossed page
    remembers its party (`homeParty`): after the match its LOBBY takes it home (`crossHomeUrl`: its
    leader hosts the party's code again, its guests join it); refused, out of tries, or its host gone
-   before the match, it goes home and its leader looks again once its guests are back
+   before the match, it goes home and its leader looks again once its guests are back (a player who crossed alone hosts again in place, no reload: `crossHomeHere`)
    (`seekResume`, `MATCH_RESUME`), the clock carrying on. The other parties' people are left out of
    the host's rematch seats (`pr.cross`).
    On Steam the list is `steamRooms`, which hands on every key of the lobby's data (`seek`, `fill`,

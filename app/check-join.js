@@ -8,7 +8,7 @@
 //   node app/check-join.js steam-code   one path (relay-code, steam-code, steam-invite, friend-join,
 //                                       friend-invite, steam-party, steam-match, relay-match,
 //                                       menu-join, leader-follow, steam-solos, steam-mix, steam-pairs,
-//                                       steam-eight)
+//                                       steam-trio, steam-eight)
 //   node app/check-join.js all          every path, the many-page matchmaking ones too
 //
 // The Steam paths run against a FAKE Steam: one lobby-and-packet world in this
@@ -32,12 +32,13 @@ const PARTY_SPECS = {
   'steam-solos': { parties: [1, 1, 1, 1, 1, 1], drafts: [6] },          // six solo players: one 3v3, no bots
   'steam-mix': { parties: [3, 1, 2], drafts: [6] },                     // a full side, a solo and a pair: one 3v3
   'steam-pairs': { parties: [2, 2, 1, 1], drafts: [6] },                // two pairs and two solos: one 3v3
+  'steam-trio': { parties: [1, 1, 1, 3], drafts: [6] },                // three solos and a full party: sides dealt again if the solos split
   'steam-eight': { parties: [1, 1, 1, 1, 1, 1, 1, 1], drafts: [6, 2] }, // one full match, and the two left over meet
 };
 const PARTY_PATHS = Object.keys(PARTY_SPECS);
 const FRIEND_PATHS = ['menu-join', 'leader-follow'];
 const PATHS = ['relay-code', 'steam-code', 'steam-invite', 'friend-join', 'friend-invite'].concat(PARTY_PATHS, FRIEND_PATHS);
-const SOLO_PATHS = ['steam-solos', 'steam-mix', 'steam-pairs', 'steam-eight']; // six pages and more: run by name (`all` runs them too)
+const SOLO_PATHS = ['steam-solos', 'steam-mix', 'steam-pairs', 'steam-trio', 'steam-eight']; // six pages and more: run by name (`all` runs them too)
 
 // a profile already saved, so a page is not a first launch (which goes straight into the FIRST MATCH, js/app/boot.js)
 function savedProfile(c) {
