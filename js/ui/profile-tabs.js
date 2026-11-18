@@ -8,7 +8,7 @@
 //                  (face and level, K/D/A with deaths in red, the
 //                  kill share, CS a minute, gold, the build, both sides).
 //                  A press opens the row into the whole scoreboard.
-//   RANKED         a ladder of you and every person this screen has met, by rating
+//   RANKED         the global ladder (js/app/board.js), off Steam you and the people this screen met
 //   STATS          op.gg's most played: every hero's games, KDA, CS and win rate
 // Someone else's profile shows what their card carries: their last matches
 // (no builds or sides, a card is short) and the heroes in them.
@@ -44,7 +44,10 @@ function pfMine(e) {
 function pfHeroes() {
   return historyHeroes(pfMatches().map((e) => (e.short ? { w: e.r.w, t: e.r.t, you: 0, seats: [{ s: 0, h: e.r.h, k: e.r.k, d: e.r.d, a: e.r.a, cs: 0 }] } : e.r)));
 }
+// the ladder: Steam's global board (boardList, js/app/board.js), else the people this screen met
 function pfLadder() {
+  const all = boardList();
+  if (all) return all;
   const me = cardMine();
   return PROFILE.people().concat([me]).sort((a, b) => b.rk - a.rk || b.w - a.w);
 }
@@ -102,7 +105,7 @@ function pfSeatRects(row) {
   }
   return out;
 }
-function pfKnown(pid) { return pid && (pid === PROFILE.pid() || PROFILE.people().some((c) => c.pid === pid)); }
+function pfKnown(pid) { return pid && (pid === PROFILE.pid() || !!personCard(pid)); }
 function profileTabHit(L) {
   const m = state.menu, B = L.body;
   if (m.pfTab === 1 || m.pfTab === 3) {
@@ -300,7 +303,7 @@ function drawLadderRow(row) {
   const c = row.c, me = c.pid === PROFILE.pid(), x = row.x, y = row.y;
   pfBox(x, y, row.w, row.h, me ? SC_YOU : pfHot('person', c.pid) ? SC_HOT : row.i % 2 ? SC_ROW_B : SC_ROW_A);
   if (me) { ctx.fillStyle = SC_GOLD; pfRim(x, y, row.w, row.h); }
-  pfTR(row.i + 1, x + 24, y + 14, SC_DIM);
+  pfTR(c.rank == null ? row.i + 1 : c.rank || '-', x + 24, y + 14, SC_DIM);
   pfFace(c.pic, x + 32, y + 3, 28, 2, true);
   pfT(c.n, x + 68, y + 9, me ? SC_GOLD : SC_LIT, 2);
   pfTR(c.rk, x + row.w - 140, y + 10, SC_GOLD, 2);

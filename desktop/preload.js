@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('steamBridge', {
   // Steam Cloud: one small text file by name, '' none yet, null no cloud (PROFILE.cloudSync, js/app/profile.js)
   cloudRead: (name) => ipcRenderer.invoke('cloud:read', String(name)),
   cloudWrite: (name, text) => ipcRenderer.invoke('cloud:write', String(name), String(text)),
+  // the global ladder (js/app/board.js, desktop/steam-board.js)
+  boardPost: (score, details) => ipcRenderer.invoke('steam:boardPost', score, details), // { ok, rank, was }
+  boardRead: (top, around) => ipcRenderer.invoke('steam:boardRead', top, around), // { ok, total, rows: [{ id, rank, score, details }] }
   send: (to, data, reliable) => ipcRenderer.invoke('steam:send', String(to), data, reliable), // data: a string, or a Uint8Array sent as bytes
   accept: (id) => ipcRenderer.invoke('steam:accept', String(id)),
   // the friends panel (js/ui/friends.js, desktop/steam-friends.js)

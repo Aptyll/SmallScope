@@ -18,7 +18,8 @@
 //   ITEMS          the build for that hero (buildsRec, js/app/builds.js)
 //   FRIENDS        Steam's friends (js/ui/friends.js); off Steam the panel
 //                  stands with its list empty
-//   LADDER         you among everyone this screen has met, by rating
+//   LADDER         you among every RANKED player on Steam (js/app/board.js),
+//                  off Steam among everyone this screen has met
 //
 // Every panel's head names it; a click on a panel opens its whole page and
 // that page's way out comes back here. A profile that has never seen a match
@@ -123,7 +124,7 @@ function hubHistRows(L) { return hubRows(L.hist, Math.min(historyList(null).leng
 function hubLadRows(L) {
   const all = pfLadder(), mine = all.findIndex((c) => c.pid === PROFILE.pid()), fit = Math.floor((L.ladder.h - HUB_HEAD - 6) / HUB_LAD_ROW);
   const from = Math.max(0, Math.min(all.length - fit, mine - (fit >> 1)));
-  return hubRows(L.ladder, Math.min(fit, all.length), HUB_LAD_ROW).map((r) => Object.assign(r, { c: all[from + r.i], rank: from + r.i + 1 }));
+  return hubRows(L.ladder, Math.min(fit, all.length), HUB_LAD_ROW).map((r) => { const c = all[from + r.i]; return Object.assign(r, { c, rank: c.rank == null ? from + r.i + 1 : c.rank || '-' }); });
 }
 function hubAbWells(L) { const R = L.hero, x = R.x + 72, y = R.y + HUB_HEAD + 18; return CLASS_AB[hubHero()].map((_, i) => ({ x: x + i * (HUB_WELL + HUB_WELL_GAP), y, w: HUB_WELL, h: HUB_WELL, i })); }
 function hubItemWells(L) {

@@ -136,6 +136,13 @@ page), `overlayFriends`, `presence` (rich presence: `status`, `connect`, `sf_*`)
 free weekend), sent as `info`'s `bought`: the page's FOUNDER badge (`PROFILE.steamBought`).
 If koffi or the DLL fails, `friends()` answers `ok: false` and the panel never draws.
 `desktop/steam-messages.js` reaches Steam's newer messages the same way (the Steam section below).
+`desktop/steam-board.js` holds THE GLOBAL LADDER: one leaderboard (`ranked_rating`, made by the first
+post if Steamworks has none, highest first, forced so a rating can fall) whose score is a RANKED
+rating and whose details are that player's card packed into whole numbers (`boardPack`/`boardUnpack`,
+js/app/board.js); `boardPost` and `boardRead` (the top and the rows around you) are its bridge.
+steamworks.js runs Steam's manual dispatch and takes every call result on the main pipe, so the
+board's calls ride a pipe of their own (`CreateSteamPipe` + `ConnectToGlobalUser`) that the file
+drains itself. Any failure answers `ok: false` and the ladder lists the people this screen met.
 
 **The role is decided by `netSetup(role, transport)`**: at boot from `?net=host|client` with
 `&room=CODE` or `&lobby=ID`, or from the rooms screen through `netHost()`/`netJoin(code)`;

@@ -1119,6 +1119,7 @@ function updateTitle(dt) {
   // the profile (js/ui/profile.js): its ease and its hovers
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'profile' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'profile') updateProfile(dt);
+  if (m.screen === 'room' || m.screen === 'profile') boardSync(); // the global ladder, fresh while it is in view (js/app/board.js)
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'room' ? 1 : -1) * dt / 0.35));

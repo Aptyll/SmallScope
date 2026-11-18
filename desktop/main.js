@@ -45,6 +45,9 @@ if (steam) slog('friends ' + (friends.ok ? 'OK' : 'FAILED: ' + friends.error));
 // when this account first bought the game, for the FOUNDER badge (steam-apps.js)
 const apps = steam ? require('./steam-apps.js').steamApps(APP_ID) : null;
 if (steam) slog('apps ' + (apps.ok ? 'OK bought ' + apps.bought() : 'FAILED: ' + apps.error));
+// the global ladder: Steam's leaderboard of RANKED ratings, on a pipe of its own (steam-board.js)
+const board = steam ? require('./steam-board.js').steamBoard(slog) : null;
+if (steam) slog('board ' + (board.ok ? 'OK' : 'FAILED: ' + board.error));
 const myId = () => (steam ? str(steam.localplayer.getSteamId().steamId64) : null);
 
 const args = {};
@@ -189,6 +192,10 @@ ipcMain.handle('cloud:write', (e, name, text) => {
   if (!ok && !cloudLogged) { cloudLogged = true; slog('cloud write ' + name + ' refused (is Steam Cloud on in Steamworks, with a quota?)'); }
   return ok;
 });
+// THE GLOBAL LADDER (js/app/board.js): post this player's rating with their
+// card packed into the details, read the top and the rows around them
+ipcMain.handle('steam:boardPost', (e, score, details) => (board ? board.post(score, details) : { ok: false, error: steamErr }));
+ipcMain.handle('steam:boardRead', (e, top, around) => (board ? board.read(top, around) : { ok: false, error: steamErr }));
 ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
 // THE FRIENDS PANEL (js/ui/friends.js). friends() is the list; inviteFriend
@@ -285,3 +292,4 @@ if (steam) {
 
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => app.quit());
+app.on('will-quit', () => { if (board) board.close(); });
