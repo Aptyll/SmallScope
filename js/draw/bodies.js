@@ -94,18 +94,16 @@ function drawRobot(b, ex, ey, now) {
   if (b.merchant) { drawMerchant(b, ex, ey, now); return; }
   // its kind's sprite set (SOLDIER_TYPES' `spr`): frames 0-1 roll, and a
   // thrower's 2-3 are the same roll with its shot gone - shown from the
-  // throw until the next is in hand (half its cooldown). A set baked with
-  // its mirror (the ballista cart) shows 4-7 while it faces left (b.faceL)
+  // throw until the next is in hand (half its cooldown)
   const T = soldierType(b), team = skin(b.team === undefined ? 0 : b.team);
   const set = (SPRITES[T.spr] || SPRITES.robotTeam)[team] || SPRITES.robot;
   const thrown = T.shot && b.atkCd > T.cd * 0.5 ? 2 : 0;
-  const left = b.faceL && set.length > 4;
-  const spr = set[(left ? 4 : 0) + thrown + (b.moving ? Math.floor(b.animT) % 2 : 0)];
+  const spr = set[thrown + (b.moving ? Math.floor(b.animT) % 2 : 0)];
   const M = heroMachine(b);
   if (M) { M.draw(b, ex, ey, now); return; } // a hero's machine draws itself (HERO_MACHINE: js/draw/faber.js)
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
   const ax = SPRITES.robotAx[T.spr] || 6;
-  const bx = Math.round(b.x - ex) - (left ? spr.width - ax : ax);
+  const bx = Math.round(b.x - ex) - ax;
   const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
   const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
   // the ram (soldierRam): the body and its shadow shift, the bar holds still
@@ -127,7 +125,7 @@ function drawRobot(b, ex, ey, now) {
   bodyLayerClose(lit);
   // a soldier's bar is a thin one-row line with no segments, League-style: in a wave clash
   // ten of them stack, and full hero-weight bars buried the bodies under a comb of plates
-  drawHealthBar(b.x - ex, by - 3, b.hp, b.maxHp, T.spr === 'robotSiege' ? 12 : 8, b.team, undefined, b, 1, SOLDIER_BAR_SEGS, SOLDIER_BAR_ROWS);
+  drawHealthBar(b.x - ex, by - 3, b.hp, b.maxHp, 8, b.team, undefined, b, 1, SOLDIER_BAR_SEGS, SOLDIER_BAR_ROWS);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
   heroOver(b, Math.round(b.x - ex), by - 15, now); // a hero's marks, over the bar and the stars (HERO_OVER)
 }

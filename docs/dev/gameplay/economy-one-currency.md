@@ -34,9 +34,9 @@ and a laner who lands about two in three last hits holds one at about 5:00 (meas
 the real waves, which roll out at 1:00 and first meet in a lane's middle at about 1:25: every last
 hit about 4:05, two in three about 5:00, two in five about 6:15). The parts come early, League's
 way: the start buys one, and the same laner holds about 1000 at 2:00 and 1500 at 3:00. Soldiers
-stay the better farm: a lane's last hits pay about 690 a minute at the start (3 melee at 57 and
-3 ranged at 37 a wave every 30 s, and a siege soldier at 182 every third wave) and grow with the wave and the bounty, while a player chaining pines nonstop
-earns about 196 a minute (56 fells a minute), under a third of it and about one and a half times
+stay the better farm: a lane's last hits pay about 560 a minute at the start (3 melee at 57 and
+3 ranged at 37 a wave every 30 s) and grow with the wave and the bounty, while a player chaining pines nonstop
+earns about 196 a minute (56 fells a minute), about a third of it and about one and a half times
 the trickle. The animals, camps, pumps and kills are where the rest comes from; a takedown is three
 `TAKEDOWN_GOLD` shares (330, League's 300), so a kill lead is gold lead.
 

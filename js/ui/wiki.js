@@ -113,7 +113,7 @@ const WIKI_WORLD = [
     text: 'world.eaglesText' },
   { name: 'world.counter', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
     text: 'world.counterText' },
-  { name: 'world.machines', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotRanged[skin(player.team)][0], SPRITES.robotSiege[skin(player.team)][0]],
+  { name: 'world.machines', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotRanged[skin(player.team)][0]],
     text: 'world.machinesText' },
   { name: 'world.road', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
     text: 'world.roadText' },
