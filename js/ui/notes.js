@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MAP: the gold pump stands clean in its ring, no clutter round it', '0.995'],
     ['SURRENDER: 2 of 3 yes ends the match', '0.994'],
     ['HERO SELECT: one 15 s pick, no bans, first come first served, random if you never lock', '0.993'],
     ['MAP: the orca\'s cove above the top lane: ice to the walls, a waterfall, the orca up at 6:00', '0.992'],
