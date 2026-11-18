@@ -4,15 +4,13 @@
 // middle column under the search field, League's champion grid at Softfall's size. A cell is the hero's
 // head off its own standing front at 2x (heroHead, js/ui/draft.js), in its free
 // look, so the face IS the hero.
-// What you point at is gold (red while it is a ban), a hovered cell lightens,
-// and each hero's name prints under its cell.
-// A banned hero is dimmed and struck through in red; one a person on your
-// side has locked is dimmed with your side's bar under it; one only a bot of
-// yours holds keeps the bar but stays bright (the bot gives it up,
-// draftYield); and one a rival may have is never shown - the pick is blind.
+// What you point at is gold, a hovered cell lightens, and each hero's name
+// prints under its cell. A hero a person has locked, on either side, is
+// dimmed with that side's bar under it (first come, first served); one only
+// a bot holds keeps the bar but stays bright (the bot gives it up, draftYield).
 //
 // A press points at the hero (draftPoint: the stage shows it in the pick);
-// BAN / LOCK IN at the foot confirms it (draftConfirm). In a party every
+// LOCK IN at the foot confirms it (draftConfirm). In a party every
 // press goes through the leader, who keeps the draft (js/ui/draft.js).
 
 const HERO_CELL = 42;                  // a cell's side: a 20 px head crop at 2x, and its rim
@@ -73,8 +71,8 @@ function heroSearchKey(k, e) {
   else return k !== 'tab';
   return true;
 }
-// a new draft, and the turn from bans to picks: the search starts empty, so
-// the name typed to ban a hero never hides the pick grid behind it
+// a new draft: the search starts empty, so last draft's typed name never
+// hides the grid
 function heroSearchClear() { const m = state.menu; m.search = ''; m.searchOn = false; }
 // point at hero i (the draft keeps it: js/ui/draft.js), and the keys' step
 function lobbyPick(i) { draftPoint(i); }
@@ -95,36 +93,29 @@ function drawHeroFilters(L, a, hot, now) {
 }
 
 // The grid: League's champion grid in Softfall's pixels - a head at 2x in a
-// flat well, its name under it. What you point at wears the gold rim (red
-// while it is a ban); a banned hero is dimmed and struck through; one a
-// person on your side has locked is dimmed with your side's bar under it;
-// one only a bot of yours holds keeps the bar but stays bright (the bot gives
-// it up, draftYield); a rival's pick is never shown - the pick is blind.
+// flat well, its name under it. What you point at wears the gold rim. A hero
+// any seat has locked wears that seat's side's bar under it: dimmed and out
+// when a person holds it (first come, first served, js/ui/draft.js), bright
+// when only a bot does (the bot gives it up, draftYield).
 function drawHeroRow(cells, a) {
   const m = state.menu, D = DRAFT;
   const live = m.screenT >= 1 && m.popT <= 0 && draftOpen() && D.lock[localId] < 0;
   const hv = live ? heroCellAt(cells) : -1;
-  const team = skin(player.team), S = HERO_FACE, mark = TEAMS[team].mark;
-  const mine = D.hover[localId], banning = D.phase === 'ban';
+  const mine = D.hover[localId];
   for (const c of cells) {
     const h = c.hero, i = c.i;
-    const banned = D.banned.includes(i);
-    const mates = players.filter((q) => q !== player && q.team === player.team && D.lock[q.id] === i);
-    const taken = !banned && D.phase === 'pick' && mates.length > 0;
-    const out = banned || (taken && !draftCanLock(player, i));
-    const picked = i === mine && !banned;
+    const by = D.phase === 'pick' ? players.find((q) => q !== player && q.active && D.lock[q.id] === i) : null;
+    const taken = !!by, out = taken && !draftCanLock(player, i);
+    const picked = i === mine;
     const over = !out && i === hv;
     ctx.globalAlpha = a * (!draftOpen() && !picked ? 0.45 : 1);
-    ctx.fillStyle = picked ? (banning ? SEL_RED : SEL_GOLD) : over ? SC_LBL : SC_EDGE;
+    ctx.fillStyle = picked ? SEL_GOLD : over ? SC_LBL : SC_EDGE;
     ctx.fillRect(c.x, c.y, c.w, c.h);
     ctx.fillStyle = SC_INK; ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
     draftFace(i, c.x + 1, c.y + 1, 2, out ? 0.6 : 0);
-    if (banned) {
-      draftSlash(c.x + 1, c.y + 1, S * 2); draftSlash(c.x + 2, c.y + 1, S * 2);
-      if (D.fx > 0) { ctx.globalAlpha = a * D.fx * 2; ctx.fillStyle = '#f4f7ff'; ctx.fillRect(c.x, c.y, c.w, c.h); }
-    } else if (taken) { ctx.fillStyle = mark; ctx.fillRect(c.x + 1, c.y + c.h - 4, c.w - 2, 3); }
+    if (taken) { ctx.fillStyle = TEAMS[skin(by.team)].mark; ctx.fillRect(c.x + 1, c.y + c.h - 4, c.w - 2, 3); }
     ctx.globalAlpha = a * (out ? 0.5 : 1);
-    if (!banned) ctx.drawImage(styleIcon(CLASSES[i].style), c.x + c.w - STYLE_CHIP - 1, c.y + c.h - STYLE_CHIP - (taken ? 4 : 1)); // what it is for, over your side's bar
+    ctx.drawImage(styleIcon(CLASSES[i].style), c.x + c.w - STYLE_CHIP - 1, c.y + c.h - STYLE_CHIP - (taken ? 4 : 1)); // what it is for, over the bar
     if (!out && heroStarterLit(i)) drawStarterMark(c.x + 5, c.y + 5, 3);
     const nm = h.name;
     drawPixelText(ctx, nm, c.x + ((c.w - pixelTextWidth(nm)) >> 1), c.y + c.h + 3, picked ? SEL_GOLD : over ? SC_LIT : SC_LBL, 1);

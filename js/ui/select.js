@@ -2,8 +2,7 @@
 // ------------------------------------------------------------ select look
 // The champ select's pixels (the lobby, js/ui/champ-select.js `lobby`; its rules are
 // the draft's, js/ui/draft.js), laid out the way League lays its own: the
-// HEADLINE over a draining TIMER BAR and the seconds top centre, each side's
-// BANS in its top corner, YOUR SIDE down the left as three SEAT ROWS (a
+// HEADLINE over a draining TIMER BAR and the seconds top centre, YOUR SIDE down the left as three SEAT ROWS (a
 // portrait disc, the position, the hero, the name) and THE RIVALS down the
 // right, the HERO GRID in the middle (js/ui/heroes.js), the CHAT bottom left
 // (js/ui/roomtalk.js) and the MODE bottom right. Once your pick is locked the grid gives way to the
@@ -12,7 +11,6 @@
 const SEL_ACCENT = 2;          // px: the bar down an acting row's outer edge
 const SEL_DISC = 15;           // the portrait disc's radius
 const SEL_TIMER_W = 200;       // the timer bar's full width
-const SEL_RED = '#e04848';     // a ban
 const SEL_GOLD = '#f2cc6a';    // you, and what you must do
 const SKIN_THUMB_W = 48, SKIN_THUMB_H = 28, SKIN_THUMB_G = 6, SKIN_SHOW = 5; // a skin's thumbnail, and how many the strip shows
 const SHOW_W = 288, SHOW_H = 160; // the showcase's room, before a small view cuts it
@@ -69,23 +67,23 @@ function pos11Icon(k, col) {
 }
 
 // ------------------------------------------------------------ top band
-// The headline (BAN A HERO!, PICK YOUR HERO!, GET READY! once your
-// pick is in and through the count), the bar under it draining toward the
-// middle, the seconds under that - gold while this screen still has to act.
-// Each side's bans sit in its own top corner, yours left: a vote standing
-// as a dim face, a ban made as a face struck through in red.
+// The headline (PICK YOUR HERO!, GET READY! once your pick is in and
+// through the count), the bar under it draining toward the middle, the
+// seconds under that - gold while this screen still has to act. The bar and
+// the seconds are one clock from DRAFT_PICK_T to the drop: the pick runs it
+// down to COUNT_T, then the reveal's count runs the rest (all locked early:
+// it jumps straight there).
 function selHeadline() {
   const D = DRAFT;
-  if (D.phase === 'ban') return tr('pick.ban');
   if (D.phase === 'pick' && D.lock[localId] < 0) return tr('pick.pick');
   if (D.phase === 'wait') return tr('pick.pick');
   return tr('pick.ready');
 }
 function selClock() {
-  const D = DRAFT, m = state.menu;
-  if (m.countT > 0) return { t: m.countT, f: m.countT / COUNT_T };
+  const D = DRAFT, m = state.menu, all = isFinite(draftPickT()) ? DRAFT_PICK_T : COUNT_T;
+  if (m.countT > 0) return { t: m.countT, f: m.countT / all };
   if (!draftOpen() || !isFinite(D.t)) return null; // an untimed pick (draftPickT) shows no clock
-  return { t: D.t, f: D.t / (D.phase === 'ban' ? DRAFT_BAN_T : draftPickT()) };
+  return { t: D.t, f: D.t / all };
 }
 function selActing() { return draftOpen() && DRAFT.lock[localId] < 0; }
 function drawSelectTop(L, a) {
@@ -103,20 +101,6 @@ function drawSelectTop(L, a) {
     const s = String(Math.ceil(c.t));
     drawPixelTextOutline(ctx, s, cx - (pixelTextWidth(s, 3) >> 1), by + 5, state.menu.countT > 0 ? SEL_GOLD : act ? SEL_GOLD : '#f4f7ff', SC_INK, 3);
   }
-  for (let t = 0; t < 2; t++) {
-    const mine = t === player.team, n = D.nBan;
-    for (let k = 0; k < n; k++) {
-      const x = mine ? LOBBY_PAD + k * 24 : VIEW_W - LOBBY_PAD - 22 - k * 24, y = LOBBY_PAD;
-      ctx.fillStyle = SC_EDGE; ctx.fillRect(x, y, 22, 22);
-      ctx.fillStyle = SC_INK; ctx.fillRect(x + 1, y + 1, 20, 20);
-      ctx.fillStyle = TEAMS[skin(t)].mark; ctx.fillRect(x, y + 23, 22, 1);
-      const h = D.lead[t] ? D.lead[t][k] : undefined;
-      if (h == null || !CLASSES[h]) continue;
-      const made = D.phase !== 'ban';
-      draftFace(h, x + 1, y + 1, 1, made ? 0.55 : 0.35);
-      if (made) draftSlash(x + 1, y + 1, 20);
-    }
-  }
 }
 
 // ------------------------------------------------------------ seat rows
@@ -124,8 +108,8 @@ function drawSelectTop(L, a) {
 // pointed at, faded until locked; empty, the seat's position emblem), and
 // beside it three lines - what the seat is doing (PICKING...) or its
 // position, the hero big, the player's name. A rival's, right and mirrored:
-// face-down through the draft (only that it has locked), turned at the
-// reveal. The row acting wears a bar down its outer edge (gold for yours)
+// PICKING... until it locks, then its hero at once (first come, first served:
+// what it only points at stays its own). The row acting wears a bar down its outer edge (gold for yours)
 // and the seconds point at your own row while you have to act.
 const selDiscCv = document.createElement('canvas');
 selDiscCv.width = selDiscCv.height = SEL_DISC * 2 + 1;
@@ -166,36 +150,31 @@ function drawSelSwap(r, hot) {
   ctx.fillRect(s.x + 2, s.y + 3, 5, 1); ctx.fillRect(s.x + 5, s.y + 2, 1, 1);
   ctx.fillRect(s.x + 2, s.y + 5, 5, 1); ctx.fillRect(s.x + 3, s.y + 6, 1, 1);
 }
-function drawSeatRow(r, mine, hidden, flash, hot) {
+function drawSeatRow(r, mine, flash, hot) {
   const p = r.p, D = DRAFT, me = p === player, team = skin(p.team), mark = TEAMS[team].mark;
   const role = mine ? D.role[p.id] : -1;
   const acting = draftOpen() && D.lock[p.id] === -1;
-  const banning = D.phase === 'ban';
   let h = -1, firm = true;
   if (mine && D.phase === 'pick') { h = draftWant(p.id); firm = D.lock[p.id] >= 0; }
-  else if (mine && banning) { h = D.hover[p.id]; firm = false; }
-  else if (!hidden && (D.phase === 'done' || D.phase === 'off')) h = p.cls;
+  else if (D.phase === 'pick') h = D.lock[p.id]; // a rival's lock shows the moment it is made: first come, first served
+  else if (D.phase === 'done' || D.phase === 'off') h = p.cls;
   if (me) { ctx.fillStyle = SC_YOU; ctx.fillRect(r.x, r.y, r.w, r.h - 1); }
   if (acting) { ctx.fillStyle = me ? SEL_GOLD : mark; ctx.fillRect(mine ? r.x : r.x + r.w - SEL_ACCENT, r.y, SEL_ACCENT, r.h - 1); }
   ctx.fillStyle = SC_EDGE; ctx.fillRect(r.x + 8, r.y + r.h - 1, r.w - 16, 1);
   const dx = mine ? r.x + 26 : r.x + r.w - 26, dy = r.y + (r.h >> 1);
-  const ring = h >= 0 && banning ? SEL_RED : h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
+  const ring = h >= 0 && firm ? mark : me ? SEL_GOLD : SC_EDGE;
   const worn = h >= 0 && p.skins ? p.skins[CLASSES[h].id] || null : null; // the look this seat wears
   drawSelDisc(dx, dy, ring, h, team, firm ? 1 : 0.45, role, worn);
-  if (h >= 0 && banning && D.lock[p.id] >= 0) draftSlash(dx - 10, dy - 10, 21);
   if (me && draftOpen()) drawSelSwap(r, hot === 'swap');
   // the three lines
   const tx = (s, sc) => mine ? r.x + 48 : r.x + r.w - 48 - pixelTextWidth(s, sc);
-  const status = acting ? tr(banning ? 'pick.banning' : 'pick.picking') : '';
+  const status = acting ? tr('pick.picking') : '';
   let l1, l2, l3 = p.name, c2 = '#f4f7ff';
   if (mine) {
     l1 = status || (role >= 0 ? POSITIONS[role].name : '');
-    if (h >= 0 && !banning) { l2 = CLASSES[h].name; if (!firm) c2 = SC_DIM; if (!status && role < 0) l1 = ''; }
+    if (h >= 0) { l2 = CLASSES[h].name; if (!firm) c2 = SC_DIM; if (!status && role < 0) l1 = ''; }
     else { l2 = role >= 0 ? POSITIONS[role].name : p.name; if (role >= 0) l1 = status; else l3 = ''; }
-  } else if (hidden) {
-    l1 = D.phase === 'pick' ? tr(acting ? 'pick.picking' : 'pick.locked') : '';
-    l2 = p.name; l3 = '';
-  } else { l1 = ''; l2 = h >= 0 ? CLASSES[h].name : p.name; }
+  } else { l1 = status; l2 = h >= 0 ? CLASSES[h].name : p.name; if (h < 0) l3 = ''; }
   const bot = p.active && !isHuman(p); // a bot's third line is the bots' level bars (drawBotBars, js/ui/rooms.js): never taken for a person
   if (bot) l3 = '';
   const c1 = acting && me ? SEL_GOLD : me && !status ? SEL_GOLD : SC_DIM;
@@ -207,18 +186,16 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
   if (bot) drawBotBars(mine ? r.x + 48 : r.x + r.w - 48 - botBarsW(false), ty + 21, roomLevel(), false);
   if (flash) { ctx.fillStyle = '#f4f7ff'; ctx.globalAlpha *= 0.6; ctx.fillRect(r.x, r.y, r.w, r.h - 1); }
 }
-// both columns; a rival row stays face-down until lobbyRevealed() passes it,
-// and the seconds point at your row while you have to act
+// both columns, a white flash over the rivals' as the reveal lands; the
+// seconds point at your row while you have to act
 function drawSeats(L, a, hot) {
-  const m = state.menu, shown = draftHiding() ? 0 : lobbyRevealed();
+  const m = state.menu, flash = m.countT > 0 && COUNT_T - m.countT < 0.15;
   for (let mine = 1; mine >= 0; mine--) {
     const col = L.cards[mine];
     for (let k = 0; k < col.length; k++) {
       const r = col[k];
-      const hidden = !mine && k >= shown;
-      const flash = !mine && !hidden && m.countT > 0 && (COUNT_T - k) - m.countT < 0.15;
       ctx.globalAlpha = a;
-      drawSeatRow(r, mine, hidden, flash, mine && r.p === player ? hot : null);
+      drawSeatRow(r, mine, !mine && flash, mine && r.p === player ? hot : null);
     }
   }
   const c = selClock(), mineR = L.cards[1].find((r) => r.p === player);
@@ -396,7 +373,7 @@ function selBriefHero(L) {
   if (DRAFT.phase !== 'pick' || DRAFT.lock[localId] >= 0 || L.stage) return -1;
   const hi = state.menu.screenT >= 1 && state.menu.popT <= 0 && mouse.inside ? heroCellAt(L.heroes) : -1;
   const h = hi >= 0 && hi < CLASSES.length ? hi : draftWant(localId);
-  return h >= 0 && CLASSES[h] && !DRAFT.banned.includes(h) ? h : -1;
+  return h >= 0 && CLASSES[h] ? h : -1;
 }
 // the line under the brief's name: the hero's style word (ITEM_STYLES' label) and its title
 const BRIEF_STYLE_GAP = 6;
@@ -441,18 +418,17 @@ function drawSelBrief(L, a) {
     ctx.drawImage(im, w.x + ((w.w - im.width) >> 1), w.y + ((w.h - im.height) >> 1));
   }
 }
-// LOCK IN (BAN in the ban phase) on its plate under the grid: white and
-// live while there is a confirm to make, gold under the hand, red for a
-// ban, slate once made; gone with the showcase
+// LOCK IN on its plate under the grid: white and live while there is a
+// confirm to make, gold under the hand, slate once made; gone with the showcase
 function drawSelPlay(L, a, hot) {
   const dw = draftWord(), r = L.play;
   if (!dw) return;
-  const live = dw.live, ban = DRAFT.phase === 'ban', hv = live && hot === 'play';
+  const live = dw.live, hv = live && hot === 'play';
   const pressed = live && (state.menu.pressT > 0 || (mouse.down && hv));
   ctx.globalAlpha = a;
-  const edge = !live ? SC_EDGE : hv ? SEL_GOLD : ban ? SEL_RED : SC_LBL;
+  const edge = !live ? SC_EDGE : hv ? SEL_GOLD : SC_LBL;
   ctx.fillStyle = edge; ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = live ? (ban ? '#2a1418' : SC_HOT) : SC_PLATE; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = live ? SC_HOT : SC_PLATE; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const y = r.y + ((r.h - 10) >> 1) + (pressed ? 1 : 0);
   drawPixelTextShadow(ctx, dw.w, r.x + ((r.w - pixelTextWidth(dw.w, 2)) >> 1), y, !live ? SC_DIM : hv ? SEL_GOLD : '#f4f7ff', SC_INK, 2);
 }

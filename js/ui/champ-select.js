@@ -10,15 +10,14 @@
 // (js/ui/rooms.js) and every member follows (netPhase 'pick'): League's champ
 // select in Softfall's graphite, ONE screen over its own painted night -
 // never the live world - running the DRAFT (js/ui/draft.js: the positions,
-// the bans, then everyone's blind pick, then the reveal); its pixels are
-// js/ui/select.js. The HEADLINE, the timer bar and the seconds top centre,
-// each side's bans in its top corner. YOUR SIDE's three seat rows down the
-// left in position order, THE RIVALS' down the right, face-down until the
-// count turns them. In the middle the FILTER ROW (the positions, the search)
+// then everyone's quick pick at once, then the reveal); its pixels are
+// js/ui/select.js. The HEADLINE, the timer bar and the seconds top centre.
+// YOUR SIDE's three seat rows down the left in position order, THE RIVALS'
+// down the right, each showing its hero the moment it locks. In the middle the FILTER ROW (the positions, the search)
 // over the HERO GRID (js/ui/heroes.js), the STAGE under it - the hero you
 // point at, the 48 px model at LOBBY_MODEL under its warm light, the way
 // into the HERO POP-UP (the stats and the abilities, `the hero pop-up`
-// below) - and the confirm plate (BAN / LOCK IN: draftConfirm). Once your
+// below) - and the confirm plate (LOCK IN: draftConfirm). Once your
 // pick is locked the SPLASH and its SKIN STRIP take the middle. At the foot
 // the CHAT bottom left (js/ui/roomtalk.js, your side's only) and the match's
 // size and mode bottom right; the bots' level is the leader's, set on the
@@ -32,11 +31,11 @@ const LOBBY_PANEL_MIN = 104;             // ...and its narrowest: a narrow view 
 const LOBBY_GUTTER = 30;                 // between a column and the grid: the seconds that point at your row (drawSeats: arrow and two 2x digits, 28 px)
 const LOBBY_ROW_MAX = 44;                // a seat row's tallest; a short view shrinks it...
 const LOBBY_ROW_MIN = 34;                // ...to this: the portrait disc and the three lines
-const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock, the bans
+const LOBBY_HEAD = 44;                   // the band over the columns and the grid: the headline, the clock
 const LOBBY_MODEL = 2;                   // the stage model's scale under the grid: the 48 px model at 2x
 const LOBBY_PAD = 6;                     // the margin off the view's edge
 const LOBBY_CHAT_LINES = 6;              // the chat's lines over its plate, bottom left
-const COUNT_T = 10;                    // s: the countdown from the reveal to the eagle: long enough to see who you face and pick a look, never a blink
+const COUNT_T = 3;                     // s: the pick clock's last stretch, from the reveal to the eagle: who you face, then go (DRAFT_PICK_T, js/ui/draft.js)
 function lobbyLayout() {
   const cx = Math.round(VIEW_W / 2), pad = LOBBY_PAD;
   // the grid takes six heroes a row where the view is wide enough for the
@@ -228,7 +227,7 @@ function heroClick() {
   if (h.ab != null) m.grow = h.ab; // the well takes the keyboard's focus
 }
 
-// what the pointer is on: 'play' (BAN / LOCK IN), 'hero' (the stage figure:
+// what the pointer is on: 'play' (LOCK IN), 'hero' (the stage figure:
 // the hero pop-up), 'swap' (the trade mark on your row: the
 // next position), 'search' (the row over the grid), 'skin'N /
 // 'skinPrev' / 'skinNext' (the strip under the showcase), 'book' (the story's
@@ -274,12 +273,12 @@ function beginLobby() {
   m.screen = 'lobby';
   m.csel = player.cls;
   m.cswapT = 1;
-  m.countT = 0; m.countN = -1; // every rival frame face-down again
+  m.countT = 0; m.countN = -1; // no count yet: it starts at the reveal
   m.loreOn = false;            // the story starts shut
   m.lockFx = 0;
   m.showKey = null;            // the showcase starts its turn again (drawShowcase)
   closeMenuPanel(); // a party member's settings slide away: the draft's clock is running
-  draftStart(); // the bans, then everyone's pick (js/ui/draft.js)
+  draftStart(); // everyone's quick pick at once (js/ui/draft.js)
   SFX.place();
   SFX.music.play('lobby');
 }
@@ -289,18 +288,11 @@ function leaveLobby() {
   state.menu.countT = 0;
   SFX.pickup();
 }
-// BAN / LOCK IN at the foot: the draft's confirm (js/ui/draft.js); the
+// LOCK IN at the foot: the draft's confirm (js/ui/draft.js); the
 // count that follows the pick is the draft's, and runs to the end
 function pressPlay() {
   if (state.menu.lockT > 0) return;
   draftConfirm();
-}
-// how many rival frames are face-up: one per tick of the count (the first on
-// the press, the last on ONE), all of them once it has run out, none at rest
-function lobbyRevealed() {
-  const m = state.menu;
-  if (m.countT > 0) return COUNT_T + 1 - Math.ceil(m.countT);
-  return m.countN === 0 ? MAX_PLAYERS : 0;
 }
 // the count's end: the short hold, then the eagle (updateTitle: lockT ->
 // beginMatch)
@@ -320,7 +312,7 @@ function setAiLevel(k) {
 }
 
 // the keys: a chat line or the search field being typed takes every key;
-// otherwise Enter starts a chat line (League's), Space confirms (BAN / LOCK IN), the arrows walk the heroes, ESC leaves (never
+// otherwise Enter starts a chat line (League's), Space confirms (LOCK IN), the arrows walk the heroes, ESC leaves (never
 // Backspace: a slip off the search field or the chat would walk out)
 function lobbyKey(k, e) {
   const m = state.menu;
@@ -341,7 +333,7 @@ function lobbyClick() {
   m.searchOn = h === 'search';
   if (m.talkOn && h !== 'talk') m.talkOn = false;
   if (!h) return;
-  if (h === 'play') pressPlay();                                    // BAN / LOCK IN: the draft's confirm
+  if (h === 'play') pressPlay();                                    // LOCK IN: the draft's confirm
   else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // the figure opens the hero pop-up: stats, abilities
   else if (h === 'talk') { if (!m.talkOn) talkOpen(); }             // the chat's plate starts a line
   else if (h === 'search') SFX.pickup();                            // the field takes the keys
@@ -397,11 +389,10 @@ function classIcon12(i, you) {
 // that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
 // from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
-// the stage stands only when it has your hero to show: never through the
-// bans, and in the picks only while you point at one (a banned last hero
-// leaves you pointing at none)
+// the stage stands only when it has your hero to show: in the pick only
+// while you point at one
 function lobbyStageUp(L) {
-  return L.stage && DRAFT.phase !== 'ban' && !(DRAFT.phase === 'pick' && draftWant(localId) < 0);
+  return L.stage && !(DRAFT.phase === 'pick' && draftWant(localId) < 0);
 }
 function drawLobbyStage(now, a, sw) {
   const m = state.menu, L = lobbyLayout();
@@ -472,7 +463,7 @@ function renderLobby(now, a) {
   ctx.globalAlpha = a * 0.78;
   ctx.fillStyle = SC_BG; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const hot = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
-  drawSelectTop(L, a);                 // the headline, the clock, the bans (js/ui/select.js)
+  drawSelectTop(L, a);                 // the headline, the clock (js/ui/select.js)
   drawSeats(L, a, hot);                // both sides' seat rows
   if (lobbyShowcase()) {               // your pick is in: the showcase and the skins
     drawShowcase(L, now, a);
@@ -483,7 +474,7 @@ function renderLobby(now, a) {
     drawHeroRow(L.heroes, a);          // the grid
     drawLobbyStage(now, a, easeOut(m.cswapT));
     drawSelBrief(L, a);                // the pointed hero's name, title and abilities, where the stage has no room (js/ui/select.js)
-    drawSelPlay(L, a, hot);            // BAN / LOCK IN
+    drawSelPlay(L, a, hot);            // LOCK IN
   }
   drawSelMode(L, a);                   // the match's size and mode
   ctx.globalAlpha = a;

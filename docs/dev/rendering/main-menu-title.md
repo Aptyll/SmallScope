@@ -131,23 +131,21 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
 
   <a id="lobby-draft"></a>**The draft** (js/ui/draft.js, `DRAFT`, kept by the host and
   copied to each guest cut to what its side may see, `draftMsg`): `beginLobby` opens it
-  (`draftStart`). **Bans** first (`DRAFT_BAN_T`): each team bans one hero while the roster is
-  under `DRAFT_BAN_MANY`, one per seat from then on, never leaving fewer than `DRAFT_KEEP`
-  (`draftBansPerTeam`; none at all on a roster too small). Every seat points at a hero and
-  **BAN** confirms it; a team's bans are its most pointed-at heroes, the people's before the
-  bots' (`draftTeamBans`), shown in your side's wells as dim faces while the vote stands, the
-  rivals' hidden until the phase ends, then both struck through in red. Then the **blind pick**
-  (`DRAFT_PICK_T`), all six seats at once: a person starts pointing at the hero they came in on,
-  **LOCK IN** confirms (`draftConfirm`, the gold ring bursting off the figure). A hero a person
-  on your side locked is out for you until your side's people hold every hero still in the pick
-  (`draftCanLock`/`draftSideFull`); the rivals may take the same one, and you never see what
-  they point at or took, only that they locked. Bots act the moment a phase opens
-  (`draftBotBan`: the rival people's own heroes, never their own side's people's;
-  `draftBotPick`: a hero their side does not hold yet that plays their position, leaning to about `DRAFT_RANGED` at range)
-  and give a hero up when a person of theirs locks it (`draftYield`). A phase ends early once
-  every seat that must act has (`draftCheck`); the clock running out confirms what each seat
-  points at, or picks for it the way a bot would (`draftReveal`). Space or the
-  confirm plate call `pressPlay()` → `draftConfirm`.
+  (`draftStart`) straight into one **quick pick**, no bans and no turns: all six seats at
+  once on one clock of `DRAFT_PICK_T` (15 s) that ends on the reveal's last `COUNT_T` (3 s).
+  A person starts pointing at nothing; a press points (the stage shows it) and **LOCK IN**
+  confirms (`draftConfirm`, the gold ring bursting off the figure). **First come, first
+  served**: a hero a person has locked, on either side, is out for every other person
+  (`draftHolder`/`draftCanLock`; repeats come back only once people hold every hero,
+  `draftAllHeld`), so every lock shows on every screen the moment it is made, in the seat
+  row and as that side's bar under the grid cell; what a seat only points at stays its own
+  side's. Bots lock the moment the pick opens (`draftBotPick`: a hero nobody holds, leaning
+  to about `DRAFT_RANGED` at range) and give a hero up when a
+  person locks it (`draftYield`). Once every seat has locked the clock jumps to its last
+  `COUNT_T` (`draftCheck` → `draftReveal`), so nobody waits out the rest; the clock reaching
+  `COUNT_T` does the same, and a seat that never locked gets a hero at random from those
+  still free (`draftRandom`), even if it was pointing at one. Space or the confirm plate
+  call `pressPlay()` → `draftConfirm`.
 
   **Positions** (`POSITIONS`, the `draft roles` banner: TOP, JUNGLE, BOT): as the
   draft opens the host gives every seat one per side (`draftSeatRoles`, `DRAFT.role`): the
@@ -160,12 +158,11 @@ the logo and the words. Everything else lives in the `main menu` banner and on `
   side's positions reach a guest in the `draft` message, the rivals' never.
 
   When the pick ends every seat's hero is set (`setClass`) and the **countdown** starts
-  (`draftCount`): `menu.countT` runs `COUNT_T` (10) seconds; a gold ring bursts out from the figure's feet across
+  (`draftCount`): `menu.countT` runs the clock's last `COUNT_T` seconds; a gold ring bursts out from the figure's feet across
   the snow (`menu.lockFx` over `LOCK_FX_T`), the showcase takes the middle, and the top band's
-  seconds count it down in gold,
-  `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
-  tick** (`lobbyRevealed()`: the first at the start, the last on ONE, all of them once it has
-  run out — a white flash as each turns). The hero pop-up stays open through the count
+  seconds count it down in gold on the same bar the pick drained,
+  `SFX.countTick` ticking each one (a low bell), the rivals' rows flashing white as the
+  reveal lands. The hero pop-up stays open through the count
   (the figure still opens it, which shuts itself at zero); the count runs to the end (Esc waits
   it out). At rest, Esc goes back: a leader's to the party's seats (`draftStop`), a
   guest's out of the party. <a id="lobby-lock-in"></a>At
