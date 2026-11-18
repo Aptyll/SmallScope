@@ -96,6 +96,7 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['HERO SELECT: one 15 s pick, no bans, first come first served, random if you never lock', '0.993'],
     ['MAP: the orca\'s cove above the top lane: ice to the walls, a waterfall, the orca up at 6:00', '0.992'],
     ['MAP: ragged pine groves, a creek of rough ice, robot camps only, bushes by the doors and camps', '0.992'],
     ['CAMPS: the stray robots are plain brass walkers with a slim iron face', '0.990'],
