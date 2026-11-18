@@ -25,8 +25,10 @@ function voteSeats(team) {
   return players.filter((q) => q.active && q.team === team)
     .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id));
 }
-// 4 of 5 yes, as League; a smaller side needs every seat
-function voteNeed(n) { return n >= 5 ? n - 1 : n; }
+// two thirds of the side's seats, rounded up: 2 of 3 in 3v3 (League's
+// Twisted Treeline), and League's own 4 of 5 too. A seat a leaver handed to a
+// bot is still a seat, so the count never drops under the people still in it
+function voteNeed(n) { return Math.ceil(n * 2 / 3); }
 // where a vote stands: the people's yes and no, the people yet to vote, whether
 // the bots are with the yes side, and what that adds up to. The bots take a
 // side only once the people have spoken - every person voted, or the clock
