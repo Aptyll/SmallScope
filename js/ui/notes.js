@@ -96,6 +96,9 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['START: your side flies in on the eagle with the merchant and jumps off at the perch', '0.999.2'],
+    ['TOWERS: a lane falls outer, inner, then its guard on the court; the eagle opens after one lane', '0.999.2'],
+    ['BASE: an open stone court round the perch, a guard tower for each lane', '0.999.2'],
     ['CAMPS: robots sleep until hit, chase their hitter, a 6-tile leash ring; big ice robots on the creek; 6 camps', '0.999.1'],
     ['SHOP: RECOMMENDED is three items; your first trip shows what your starting gold buys', '0.999'],
     ['SNOW: tracks fade within seconds', '0.997'],
