@@ -27,7 +27,7 @@ const COVE_FRAMES = 12;      // frames in the falls' loop
 const COVE_FRAME_S = 0.09;   // s a frame
 const COVE_FALL_V = 2;       // px a frame the slow streaks drop (the fast ones twice it)
 const COVE_FACE = 12;        // px of stone face under a wall
-const COVE_CUT_Y = 33.2;     // field y past which the lane keeps its own pines: no face
+const COVE_LIP_WANDER = 0.22; // how far the lip's bays and spurs wander, in the softened open-ness
 const COVE_STONE = ['#465066', '#606a84', '#808aa2', '#343a50']; // the face, its lit band, its top edge, its deep (and its foot line)
 const COVE_SHADE = 'rgba(16,24,56,0.22)'; // the face's shade on the ground under it
 const COVE_ICE = ['#cdeeff', '#96d2f0', '#60a0cd']; // ice: lit, mid, its own dark
@@ -54,15 +54,25 @@ function coveRimBuild() {
   const tx0 = Math.floor(cx - COVE[2] - COVE_LEDGE[0]) - pad, tx1 = Math.ceil(cx + COVE[2] + COVE_LEDGE[0]) + pad;
   const ty0 = Math.floor(COVE_FALL.top) - pad, ty1 = Math.ceil(COVE_CUT_Y) + 1;
   const x0 = tx0 * TILE, y0 = ty0 * TILE, W = (tx1 - tx0) * TILE, H = (ty1 - ty0) * TILE;
-  // open ground per pixel: the tiles' open-ness between their centres, and
-  // a little of the map's noise so the edge never runs in steps
+  // open ground per pixel: the tiles' open-ness softened over the tiles
+  // round each ([1 2 1] each way) and read between their centres, so a wall
+  // running on a slant is one clean line and not a stair of tiles; then a
+  // slow wander of the map's noise, so the lip has bays and spurs but never
+  // a speckled edge
   const open = new Uint8Array(W * H);
-  const op = (tx, ty) => coveWall(tx, ty) ? 0 : 1;
+  const NT = tx1 - tx0 + 4, MT = ty1 - ty0 + 4, soft = new Float32Array(NT * MT);
+  const K = [1, 2, 1];
+  for (let b = 0; b < MT; b++) for (let a = 0; a < NT; a++) {
+    let v = 0;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) v += (coveWall(tx0 - 2 + a + i, ty0 - 2 + b + j) ? 0 : 1) * K[i + 1] * K[j + 1];
+    soft[b * NT + a] = v / 16;
+  }
+  const op = (tx, ty) => soft[(ty - ty0 + 2) * NT + tx - tx0 + 2];
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const x = (x0 + i + 0.5) / TILE - 0.5, y = (y0 + j + 0.5) / TILE - 0.5;
     const a = Math.floor(x), b = Math.floor(y), fx = x - a, fy = y - b;
     const v = op(a, b) * (1 - fx) * (1 - fy) + op(a + 1, b) * fx * (1 - fy) + op(a, b + 1) * (1 - fx) * fy + op(a + 1, b + 1) * fx * fy;
-    open[j * W + i] = v + (hash2(((x0 + i) >> 1) + 9001, ((y0 + j) >> 1) + 61) - 0.5) * 0.25 > 0.5 ? 1 : 0;
+    open[j * W + i] = v + (vnoise((x0 + i) / 9 + 31.7, (y0 + j) / 6 + 8.3) - 0.5) * COVE_LIP_WANDER > 0.5 ? 1 : 0;
   }
   const G = coveGrotto();
   const cv = document.createElement('canvas');
@@ -70,23 +80,26 @@ function coveRimBuild() {
   const g = cv.getContext('2d');
   const put = (i, j, c) => { if (i >= 0 && j >= 0 && i < W && j < H) penDot(g, c, i, j); };
   for (let i = 0; i < W; i++) {
-    const wx = x0 + i, grotto = wx >= G.x0 && wx < G.x1;
+    const wx = x0 + i, fl = COVE_FALL.flank * TILE, flank = wx >= G.x0 - fl && wx < G.x1 + fl;
     let n = 999;
     for (let j = 0; j < H; j++) {
       n = open[j * W + i] ? n + 1 : 0;
       const wy = y0 + j, fx = (wx + 0.5) / TILE, fy = (wy + 0.5) / TILE;
       // in the grotto the face runs from wherever its wall stands down to the
       // pool, wherever that is: its foot is the grotto's own
-      const face = grotto ? n + G.y1 - 1 - wy : COVE_FACE;
-      if (!n || n > face + (grotto ? 0 : 3)) continue; // the grotto's foot is its pool's rim
-      if (!(grotto && wy < G.y1) && (fy > COVE_CUT_Y || fieldCove(fx, fy) > 1.2)) continue;
+      // (its flanks too, on its bottom row: the grotto's stone flaring out into the rim)
+      const grotto = flank && (wx >= G.x0 && wx < G.x1 || wy >= G.y1 - TILE - COVE_FACE);
+      const foot = G.y1 + Math.round((vnoise(wx / 7 + 5.5, 2.5) - 0.5) * 5); // its foot wanders a little, never a ruled line
+      const face = grotto ? n + foot - 1 - wy : COVE_FACE;
+      if (!n || n > face + 3) continue;
+      if (!(grotto && wy < foot) && (fy > COVE_CUT_Y || fieldCove(fx, fy) > 1.2)) continue;
       if (n > face + 1) { put(i, j, COVE_SHADE); continue; }       // its shade on the ground
       if (n === face + 1) { put(i, j, COVE_STONE[3]); continue; }  // its foot, in its own darkest stone
       let c;
       if (grotto) c = coveRock(wx, wy, n, face);
       else {
         const stra = (wy + Math.round(3 * Math.sin(wx / 9))) % 5;     // strata, wavering along the wall
-        c = n <= 1 ? COVE_STONE[2] : stra === 0 ? COVE_STONE[1] : COVE_STONE[0];
+        c = n <= 1 ? COVE_SNOW : n === 2 ? COVE_STONE[2] : stra === 0 ? COVE_STONE[1] : COVE_STONE[0]; // the lip: a line of the ledge's snow over its lit edge
         if (n > face * 0.65) c = stra ? COVE_STONE[3] : COVE_STONE[0];
         if ((wx * 7 + wy * 3) % 23 === 0 && n > 2) c = COVE_STONE[3];                       // a chip
         if (wx % 11 === Math.floor(hash2(Math.floor(wx / 11), 1) * 9) && n > 2 && n < face - 1) c = COVE_STONE[3]; // a joint
@@ -133,6 +146,27 @@ function coveRock(wx, wy, n, face) {
   if (wy < by - ch * 0.3 && d2 - d1 < 0.3) return k > 0.72 && low < 0.7 ? COVE_SNOW : COVE_STONE[2]; // a block's lit top, snow on a few
   const tone = k + low * 0.9 - 0.45;                                       // each its own tone, darker down
   return tone > 0.75 ? COVE_STONE[3] : tone > 0.2 ? COVE_STONE[0] : COVE_STONE[1];
+}
+// THE PINES STAND BACK from the lip: a wall pine with the cove's open ground
+// in front of it (below it, or below beside it) is drawn COVE_PINE_BACK px up
+// its own tile, so its trunk stands on the ledge's snow behind the stone
+// face rather than on the edge of it (drawSceneryObj, js/draw/passes.js).
+// The grotto's frame keeps its pines where they are. Built once off the
+// tiles, like the rim
+const COVE_PINE_BACK = 6;
+let coveBackAt = null; // tile index -> 1 for a pine that stands back
+function coveBack(tx, ty) {
+  if (!coveBackAt) {
+    coveBackAt = new Set();
+    for (let ty = Math.floor(COVE_FALL.top) - 3; ty < COVE_CUT_Y; ty++) for (let tx = 0; tx < WORLD; tx++) {
+      if (!coveWall(tx, ty) || !inWorld(tx, ty)) continue;
+      for (let i = -1; i <= 1; i++) {
+        const X = tx + i, Y = ty + 1;
+        if (inWorld(X, Y) && Y + 0.5 < COVE_CUT_Y && !objects[idx(X, Y)] && fieldCove(X + 0.5, Y + 0.5) < 1.2) { coveBackAt.add(idx(tx, ty)); break; }
+      }
+    }
+  }
+  return coveBackAt.has(idx(tx, ty)) ? COVE_PINE_BACK : 0;
 }
 // flat, under all that stands (drawFlatPass, js/draw/passes.js)
 function drawCoveRim(ex, ey) {

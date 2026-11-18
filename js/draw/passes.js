@@ -128,8 +128,8 @@ function gatherDraws(ox, oy, tx0, ty0, tx1, ty1, now) {
       let o = objects[idx(tx, ty)];
       // stumps and holes are both drawn flat, above, and never y-sorted; an
       // eagle's hitbox tiles have no pixels of their own (drawEagle draws the
-      // bird), nor a waterfall's (coveDraws draws the whole curtain)
-      if (!o || o.type === 'stump' || o.type === 'eagle' || o.type === 'waterfall') continue;
+      // bird), nor a type its OBJECTS entry says draws elsewhere (`sorted`)
+      if (!o || o.type === 'stump' || o.type === 'eagle' || (OBJECTS[o.type] && OBJECTS[o.type].sorted === false)) continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -224,7 +224,7 @@ function drawSceneryObj(d, ox, oy, now, wkO, hovO) {
     const fi = treeCell(d.tx, d.ty, treeFrame(d.tx, d.ty));
     const snag = treeSnag(d.tx, d.ty); // a dead pine in the forest's heart: a bare pole (js/draw/ground.js)
     const old = !snag && treeOld(d.tx, d.ty); // an old pine stands over the rest under a load of snow
-    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty) - (old ? TREE_OLD_LIFT : 0);
+    const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty) - (old ? TREE_OLD_LIFT : 0) - coveBack(d.tx, d.ty); // a pine on the cove's lip stands back from it (js/draw/cove.js)
     // the hero's own work target wears the gold rim; a canopy over the
     // hero's model opens its window (canopyOver/drawWindowed,
     // js/draw/canopy.js), rim and all. Only a covering canopy leaves the

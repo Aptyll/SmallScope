@@ -141,13 +141,15 @@ function laneLoop(x, y) {
 // the pit has two doors and a wood between them (K, Noah's pick: round 12).
 // Field units, in the whole field (not a quarter): middle x y, half w h.
 const COVE = [70, 24.5, 7.5, 6.5];
+const COVE_CUT_Y = 33.2;      // field y past which the lane keeps its own pines: no stone face, no ledge
 const COVE_LEDGE = [11, 36, 6.5, 2.6]; // a ledge: from (middle +-x, y) on the lane up to (+-x, the cove's middle + 2), half-wide
 // ...its WATERFALL: a curtain of water down the back wall, from `top` to its
 // `foot` on the pool, `half` tiles either side of x at the top (it widens
 // as it falls), into a plunge pool the falls keep open. The tiles it covers,
-// x0 y0 x1 y1, stand as OBJECTS.waterfall: water nothing walks into, drawn
-// whole by drawCoveFall (js/draw/cove.js)
-const COVE_FALL = { x: 70, top: 15.4, foot: 19.3, half: 0.95, tiles: [67, 15, 72, 19] };
+// x0 y0 x1 y1, and `flank` more either side on its bottom row (the grotto's
+// stone flares out into the rim there), stand as OBJECTS.waterfall: rock and
+// water nothing walks into, drawn whole by drawCoveFall (js/draw/cove.js)
+const COVE_FALL = { x: 70, top: 15.4, foot: 19.3, half: 0.95, tiles: [67, 15, 72, 19], flank: 2 };
 function fieldCove(x, y) {
   if (y > FIELD_C) return 1e9;
   const cx = COVE[0], cy = COVE[1], rx = COVE[2], ry = COVE[3], L = COVE_LEDGE;
@@ -285,7 +287,7 @@ function genWorld() {
     else if (orcaLakeAt(tx, ty) || fieldCreek(x, y)) ground[i] = 1;
   }
   const F = COVE_FALL.tiles;
-  for (let ty = F[1]; ty <= F[3]; ty++) for (let tx = F[0]; tx <= F[2]; tx++) {
+  for (let ty = F[1]; ty <= F[3]; ty++) for (let tx = F[0] - (ty === F[3] ? COVE_FALL.flank : 0); tx <= F[2] + (ty === F[3] ? COVE_FALL.flank : 0); tx++) {
     objects[idx(tx, ty)] = { type: 'waterfall', tx, ty, flash: 0, shake: 0 };
   }
 }

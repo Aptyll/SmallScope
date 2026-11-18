@@ -20,7 +20,8 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
 // mm/map fields, and every site below asks that table first. Adding a scenery
 // type is one entry here, plus its draw branch in render() and what a swing
-// does to it in hitObject(): checklists.md#common-changes.
+// does to it in hitObject(): checklists.md#common-changes. `sorted: false`
+// is a type with no pixels in the y-sorted pass (something else draws it).
 //
 // THE CHART'S CLASSES (3.32). The minimap paints a tile the `mm` colour of
 // what stands on it, but the parchment world map (renderWorldMap, panels.js)
@@ -87,7 +88,7 @@ const OBJECTS = {
   // js/sim/field.js): open water down the back wall, solid to everything.
   // No pixels of its own in the object pass - drawCoveFall (js/draw/cove.js)
   // draws the whole curtain at once - and on the chart it is open water
-  waterfall: { solid: true, mm: [74, 140, 196], map: CH_HOLE },
+  waterfall: { solid: true, mm: [74, 140, 196], map: CH_HOLE, sorted: false },
   // a multi-tile building's (or a wide prop's) filler tiles: solid, and
   // structOf() has resolved them to their anchor long before either map sees one
   part:     { solid: true },

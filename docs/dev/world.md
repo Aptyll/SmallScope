@@ -26,7 +26,8 @@ stable per tile.
 - `genWorld()` (first at boot, js/app/boot.js) stands a wall pine (`wall: true`, which never falls:
   `treeFells`) on every tile the field leaves closed, lays the road (ground `3`) where `laneDist`
   is negative, and freezes the orca's pool and the creek (ground `1`, `orcaLakeAt`, `fieldCreek`); the cove's waterfall
-  tiles stand as `OBJECTS.waterfall`, solid water drawn whole by `drawCoveFall` (js/draw/cove.js). It reads the
+  tiles (and its `flank` either side of its foot) stand as `OBJECTS.waterfall`, solid rock and water drawn whole by
+  `drawCoveFall` (js/draw/cove.js); a type whose OBJECTS entry has `sorted: false` puts nothing in the y-sorted pass. It reads the
   open tiles off `fieldGrid`, which also closes any open tile no `FIELD_PATH`-wide square covers and
   any pocket a walk from the perch never reaches, so every way through is at least `FIELD_PATH` wide.
   All three ices are rough (`fieldRough`, read by `slickUnder`): they hold a foot like snow. The camps, towers, stalls,
