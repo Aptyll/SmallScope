@@ -87,6 +87,8 @@ Each rule spans folders; its names are listed under the folder that owns them.
   case: `window.DBG`, `?seed=N`, `POST /shot`, `.` for hitboxes ([how](docs/dev/checklists.md#verifying-a-change)).
   A refactor proves itself against main with `node app/check-same.js`: same seeds, same
   `DBG.saveHash`, same pixels. A bot match never judges a feature.
+- To look at the game the way a player has it (a named place at the real zooms and hours, art that
+  is not built yet, today beside new, the whole map), run `node app/see/see.js` ([see](docs/dev/see.md)).
 - Keyboard and mouse only. Never add gamepad, touch or mobile support.
 
 ## Shipping

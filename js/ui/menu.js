@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.984';
+const PATCH_TXT = 'PATCH 0.985';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.985', 'UNDER THE HOOD: THE PROJECT\'S RULE SHEET NOW NAMES THE TOOL FOR LOOKING AT THE GAME, SO EVERY CHANGE TO ITS LOOK IS CHECKED IN THE REAL MAP. NOTHING IN A MATCH CHANGES.'],
   ['0.984', 'ZOOMING ALL THE WAY OUT NOW FILLS THE WHOLE SCREEN ON EVERY DISPLAY, AND NO SCREEN SIZE SEES MORE OF THE MAP THAN A 1080P ONE.'],
   ['0.983', 'UNDER THE HOOD: A NEW TOOL SHOWS ANY SPOT ON THE MAP THE WAY A PLAYER HAS IT, SO NEW ART IS CHECKED IN ITS PLACE BEFORE IT SHIPS. NOTHING IN A MATCH CHANGES.'],
   ['0.982', 'UNDER THE HOOD: NEW ART IS NOW JUDGED BESIDE THE ART NOAH KEPT AND THE ART HE TURNED DOWN BEFORE HE SEES IT. NOTHING IN A MATCH CHANGES.'],
