@@ -359,7 +359,7 @@ wire: the handshake is `PATCH_TXT` in the `hello` (a snapshot carries
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human`. With it `ready` (the slots whose person said READY), `lvl` (the host's bot level), `mode`, `code`, `ranks` (each person's rating) and `seek` (seconds since PLAY while the party is looking, else -1), `roomInfo` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `draft` | c→h | JSON | `k` (`hover`, `lock`, `role` or `skin`), `h`, `id`: the guest's press in the draft - a hero pointed at or confirmed, its seat moved to position `h`, or look `id` worn on hero `h` (`draftAct`, js/ui/draft.js); the host answers with a `draft` |
-| `draft` | h→c | JSON | `ph`, `tl` (s left), `n` (bans per team), `banned`, `role`/`hover`/`lock` per slot, `lead` (each team's bans): the draft as THIS peer's side may see it (`draftMsg`) - a rival's position and points hidden (-1), its lock only as -2, its bans until the ban phase ends; all of it once `ph` is `done`. Sent per peer on every change. Through the draft a `roster` carries each seat's starting hero, not its pick |
+| `draft` | h→c | JSON | `ph`, `tl` (s left), `role`/`hover`/`lock` per slot: the draft as THIS peer's side may see it (`draftMsg`) - a rival's position and points hidden (-1), every lock shown (first come, first served); all of it once `ph` is `done`. Sent per peer on every change. Through the draft a `roster` carries each seat's starting hero, not its pick |
 | `ready` | c→h | JSON | `on`: the guest's READY said or taken back (`seatReady`); the host answers with a `roster` |
 | `ping` | h→c | JSON | `at`: the host's clock, every `PING_EVERY` (2 s); the guest sends it straight back as `pong` |
 | `pong` | c→h | JSON | `at` as it came: the host eases that peer's round trip (`pongIn`). It is answered in the step, so it carries up to a frame's wait on each end |
@@ -475,7 +475,7 @@ The same screens and the same protocol ride either transport; only the list and 
    PLAY (`partyFind`) first looks for another party (**matchmaking**, below; never in FIRST MATCH), then
    (`partyStart`) fills every empty seat on both sides with a bot, pins the bots' level
    in RANKED (`NET.botLv` from the people's average rating) and in FIRST MATCH (EASY) and turns the page to the HERO SELECT
-   (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): bans, then everyone's blind pick,
+   (`pick`, the lobby), which runs the DRAFT (js/ui/draft.js): everyone's quick pick at once,
    the host keeping it and each guest pressing through `draft` messages; the leader's ESC turns back to the seats. Seats are
    locked once the drop is under way (`seatsOpen`). The client builds its bodies from the
    welcome's roster (`initPlayers(roster, slot)`) and updates them in place on each `roster`.

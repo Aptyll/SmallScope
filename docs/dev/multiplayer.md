@@ -267,10 +267,10 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay/class-abilities-keys-1-4.md) in gameplay.md.
 
 The local player's class is its **hero, picked each match** in the lobby's draft
-([lobby](rendering.md#lobby), js/ui/draft.js: a ban phase, then everyone's blind pick); the one
+([lobby](rendering.md#lobby), js/ui/draft.js: one quick pick, everyone at once, first come first served); the one
 it flies out with is kept as the profile's hero (js/app/profile.js), the one the next pick starts on. Bots hash their hero from their slot in `initPlayers()`, and in the draft
 take what it gives them (`draftBotPick`). Lobby shows that roster as two team panels on the screen's edges — your side left, the
-rivals right, their picks face-down until the draft's countdown turns them. The bots' level is
+rivals right, each pick showing the moment it locks. The bots' level is
 pinned at PLAY (`partyStart`, js/ui/rooms.js): RANKED's read off the party's rating (`rankLevel`), FIRST MATCH's EASY (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Every hero is drawn only in its own looks: `drawPlayer`/`drawGhost`

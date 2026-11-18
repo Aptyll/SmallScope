@@ -35,7 +35,7 @@ on one side, the best host hosting and the others joining its room in place; a r
 both sides are full, or with bots in the empty seats after 8 s (longer while more people are on
 their way, 30 s at most). After the match each party goes back to its own party. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/champ-select.js), which every member sees as the
-leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
+leader does. Everyone drafts there (js/ui/draft.js: one quick pick all at once, first come first served; a
 guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the
 leader's; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
@@ -233,7 +233,7 @@ eight seconds: [rendering.md](../rendering/the-hud-corners/the-stat-ledger-your-
 ## The FIRST MATCH
 
 **The FIRST MATCH** (`PARTY_MODES.guide`) is a real 3v3 against EASY bots with the coach on (js/ui/guide.js);
-the title's FIRST MATCH goes straight to the hero pick, its draft has no ban phase (`draftBansPerTeam`) and its pick has no clock at all (`draftPickT`): it waits for LOCK IN.
+the title's FIRST MATCH goes straight to the hero pick, its pick has no clock at all (`draftPickT`): it waits for LOCK IN, then the reveal's short count.
 The game's very first launch (`PROFILE.firstRun`: no profile was saved before this boot) skips the title and opens that pick
 at once (js/app/boot.js), unless the boot came for something else (a join, a party back, the field, a tool's `?seed=N` or `?local=N`).
 A FIRST MATCH played alone ends on the title, by LEAVE or by its result (`titleUrl`, the way `rematchUrl` sends it, js/ui/rooms.js);

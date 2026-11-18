@@ -249,7 +249,7 @@ async function runParty(browser, kind) {
       const by = {};
       for (const v of seen) if (v) by[v.host] = (by[v.host] || 0) + 1;
       drafts = Object.values(by).sort((a, b) => b - a).join();
-      if (seen.every((v) => v && v.screen === 'lobby' && (v.draft === 'ban' || v.draft === 'pick') && v.people === by[v.host]) && drafts === want) break;
+      if (seen.every((v) => v && v.screen === 'lobby' && v.draft === 'pick' && v.people === by[v.host]) && drafts === want) break;
       seen = seen.map((v) => (v ? v.screen + ' ' + v.draft + ' ' + v.people + ' ' + v.sides : 'reloading'));
     }
     if (typeof seen[0] === 'string') why = 'drafts ' + (drafts || '?') + ', not ' + want + ': ' + seen.join(' | ');
@@ -260,7 +260,7 @@ async function runParty(browser, kind) {
       const H = pages[roles.indexOf('host')], hostCode = await H.evaluate(() => roomCode());
       const codes = await Promise.all(pages.map((pg) => pg.evaluate(() => NET.code)));
       const G = pages[roles.findIndex((r, i) => r === 'client' && codes[i] === hostCode)];
-      const slot = await G.evaluate(() => { const h = CLASSES.findIndex((c, i) => !DRAFT.banned.includes(i) && DRAFT.hover[localId] !== i); draftPoint(h); return [localId, h]; });
+      const slot = await G.evaluate(() => { const h = CLASSES.findIndex((c, i) => draftCanLock(player, i) && DRAFT.hover[localId] !== i); draftPoint(h); return [localId, h]; });
       await H.waitForTimeout(800);
       if (!(await H.evaluate((s) => DRAFT.hover[s[0]] === s[1] || DRAFT.lock[s[0]] >= 0, slot))) why = "a friend's point never reached the leader";
       if (steam && !why) {
