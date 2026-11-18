@@ -27,7 +27,7 @@ const NET = {
   cards: [],                 // the party's: each person's player card per slot (their hello's, the host's own cardMine; js/app/history.js)
   pos: [],                   // the host's: the draft position each guest asks for per slot (their hello's PROFILE.pos, js/ui/draft.js)
   code: '',                  // a guest's: the party's code, as the host sent it (roomCode, js/ui/rooms.js)
-  seek: null,                // a host's: PLAY looking for another party, { t, hold, rival, crossing } (js/ui/matchmaking.js)
+  seek: null,                // a host's: PLAY looking for a match, { t, base, hold, parties, crossing, pings } (js/ui/matchmaking.js)
   seekAt: null,              // a guest's: when, on its own clock, the party started looking (null while it is not)
   pingT: 0,                  // a host's: s toward the next round of pings
   metaIn: false,             // a guest took the host's build records this connection (js/app/builds.js)
@@ -44,6 +44,8 @@ const NET = {
   dictOut: null, dictIn: null, // the key dictionaries the bytes are written and read with (js/net/snapshot.js)
   verify: false,             // a host's: every VERIFY_EVERY ticks the full form rides along and each client checks itself against it
   verifyFail: null,          // a client's: the first fields that disagreed, if any ever did
+  lagN: 0, lagBad: 0, lagT: 0, // a host's: seconds of this match measured, and those its people were behind it (netHostLag)
+  snapAt: 0,                 // a client's: when (performance.now) its newest snapshot landed: the stall plate's clock (drawHostStall)
 };
 // how often a host sends: every SNAP_EVERY ticks (15 Hz at the 60 Hz step;
 // the client interpolates between two, netClientLerp). LATE_JOIN_T: how far
@@ -138,8 +140,11 @@ function netHostRoom() {
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
   NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, state: state.drop ? 'live' : 'open', humans, sides,
-    seek: NET.seek && !NET.seek.rival && !NET.seek.crossing ? NET.mode : '', // a party looking for another (js/ui/matchmaking.js)
-    hs: NET.seek ? seekPower() : 0 }); // ...and how well its leader's machine hosts (seekPower): the best one hosts
+    // a party looking for a match (js/ui/matchmaking.js): its mode, how many
+    // people each party in it brings (seated or on the way), whether it
+    // takes parties in already, how well it hosts and its leader's ping location
+    seek: NET.seek && !NET.seek.crossing ? NET.mode : '', grp: NET.seek ? seekGroups().map((g) => g.n) : [],
+    hub: NET.seek && NET.seek.parties.size ? 1 : 0, hs: NET.seek ? seekScore() : 0, pl: NET.seek ? seekLoc : '' });
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same six this one does
@@ -196,11 +201,34 @@ function netHostStep(dt) {
   // client shows are the host's, and so is the moment the eagle comes
   if (NET.transport.open && !NET.published) { NET.published = true; netHostRoom(); }
   pingsHost(dt);
+  netHostLag(dt);
   rematchOffer(); // a match that has ended names the next valley to every guest (js/ui/rooms.js)
   if (state.mode === 'title' && NET.peers.size) {
     const m = state.menu, n = m.countT > 0 ? Math.ceil(m.countT) : m.countN === 0 ? 0 : -1;
     if (n !== NET.countN) { NET.countN = n; NET.transport.send('*', { t: 'count', ct: m.countT, n }); }
   }
+}
+// How well this host keeps up with its people, for matchmaking's next pick
+// (seekScore, js/ui/matchmaking.js): each second of a match with two or
+// more people on other screens, whether the median one's newest applied
+// snapshot is over HOST_LAG_T behind this host's tick. An upload (or a
+// machine) that cannot carry the match shows here first; one person's own
+// slow link does not, since it takes the median. Folded into the profile at
+// the match's end (hostLagSave, from rankResult) once HOST_LAG_MIN seconds were seen.
+const HOST_LAG_T = 1;       // s behind the host's tick that counts as behind
+const HOST_LAG_MIN = 60;    // s of such a match before the record moves
+const HOST_LAG_KEEP = 0.5;  // the old record's share when a match's is folded in
+function netHostLag(dt) {
+  if (!state.drop || state.over || NET.peers.size < 2 || (NET.lagT += dt) < 1) return;
+  NET.lagT = 0;
+  const behind = [...NET.peers.values()].map((pr) => state.tick - pr.ack).sort((a, b) => a - b);
+  NET.lagN++;
+  if (behind[(behind.length - 1) >> 1] * TICK_DT > HOST_LAG_T) NET.lagBad++;
+}
+function hostLagSave() {
+  if (NET.role !== 'host' || NET.lagN < HOST_LAG_MIN) return;
+  PROFILE.setHostLag(PROFILE.hostLag() * HOST_LAG_KEEP + (NET.lagBad / NET.lagN) * (1 - HOST_LAG_KEEP));
+  NET.lagN = 0; NET.lagBad = 0;
 }
 // a press in `m` latched into `i` until the sim consumes it
 // a remote input as the sim may take it: axes in -1..1, a finite aim near the
@@ -246,16 +274,17 @@ function netHostHello(peer, msg) {
   const park = NET.parked.get(msg.uid) || rematchSeat(msg.uid); // a dropped peer's slot, or the one it held last match
   if (park && !isHuman(players[park.slot])) { slot = park.slot; NET.parked.delete(msg.uid); }
   else if (msg.party) {
-    // a party crossing in to meet ours (js/ui/matchmaking.js): the rival side
-    if (!crossAdmit(msg)) return refuse('MATCHED');
-    const seat = players.find((p) => p.team !== player.team && !isHuman(p));
-    if (!seat) return refuse('FULL');
+    // a party crossing in to fill our match (js/ui/matchmaking.js): the side it fits on
+    const side = crossAdmit(msg);
+    if (side < 0) return refuse('MATCHED');
+    const seat = players.find((p) => p.team === side && !isHuman(p));
+    if (!seat) return refuse('MATCHED');
     slot = seat.id;
   } else if (NET.mode) {
     // a party: a seat on the leader's own side, while it is still choosing
     // whom to bring - never once the hero select or the match has begun
     if (state.mode !== 'title' || NET.phase !== 'room') return refuse('BUSY');
-    if (partySize() >= partyCap(NET.mode)) return refuse('FULL');
+    if (NET.seek ? !seekGrowOwn() : partySize() >= partyCap(NET.mode)) return refuse('FULL'); // a looking party: only while every party still splits
     const seat = players.find((p) => p.team === player.team && !isHuman(p));
     if (!seat) return refuse('FULL');
     slot = seat.id;
@@ -282,7 +311,7 @@ function netHostHello(peer, msg) {
   NET.cards[slot] = peopleClean(msg.card); // who they are, for their profile (js/app/history.js)
   peopleNote([msg.card]);
   NET.pos[slot] = msg.pos >= 0 && msg.pos < POSITIONS.length ? msg.pos | 0 : -1;
-  const pr = { slot, uid: msg.uid, name: msg.name, cross: !!msg.party, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
+  const pr = { slot, uid: msg.uid, name: msg.name, cross: msg.party ? String(msg.party) : '', lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
   NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
   netHostFull(peer, pr);
@@ -384,7 +413,7 @@ const PING_EVERY = 2;   // s between rounds
 const PING_EASE = 0.5;  // the new round's share of a peer's eased round trip
 function roomInfo() {
   if (NET.isHost) { NET.ranks[localId] = PROFILE.rank(); NET.cards[localId] = cardMine(); }
-  return { ready: [...NET.ready], lvl: roomLevel(), mode: NET.mode, code: roomCode(), ranks: NET.ranks, cards: NET.cards, seek: NET.seek ? NET.seek.t : -1 };
+  return { ready: [...NET.ready], lvl: roomLevel(), mode: NET.mode, code: roomCode(), ranks: NET.ranks, cards: NET.cards, seek: NET.seek ? seekClock() : -1 };
 }
 // a guest's copy, off a roster or the welcome
 function roomInfoIn(msg) {
@@ -494,7 +523,7 @@ function netClientStep(dt) {
     if (item.bin) {
       NET.bytesIn += item.bin.length;
       try { msg = snapDecode(item.bin, NET.dictIn); } catch (e) { NET.refused = 'BYTES'; continue; }
-      if (msg.t === 'full') { netPredictRestore(); netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; netPredictMend(msg.ia, null, true); continue; }
+      if (msg.t === 'full') { netPredictRestore(); netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; NET.snapAt = performance.now(); netPredictMend(msg.ia, null, true); continue; }
       if (msg.t === 'snap') { if (NET.synced) netClientApplyDelta(msg); continue; }
       continue;
     }
@@ -619,7 +648,7 @@ function netClientApplyDelta(msg) {
   const ahead = netPredictRestore(); // our body back to the host's last word before its next one lands
   const changed = snapApplyDelta(msg.d);
   if (changed && msg.d.orca) changed.push([orca, msg.d.orca]); // the orca is a singleton, eased like a body
-  NET.lastTick = msg.tick;
+  NET.lastTick = msg.tick; NET.snapAt = performance.now();
   if (changed === null) { NET.synced = false; NET.transport.send('host', { t: 'resync' }); return; } // an id we never had: ask for the whole thing
   // the check, against the host's own full form when it rides along
   if (msg.full && !NET.verifyFail) {

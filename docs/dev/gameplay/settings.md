@@ -30,9 +30,10 @@ sends it, Esc drops it) and under PLAY the X that leaves. There is one mode, RAN
 match through plays its first PLAY alone as FIRST MATCH (`roomGo`): straight to bots, pinned
 EASY (`NET.botLv` 0), with the coach, and its rematch is RANKED. RANKED looks for another party
 doing the same (js/ui/matchmaking.js): PLAY becomes a gold clock with an X (a press stops
-looking). Two parties that find each other play each other, the one with the higher code
-reloading into the other's room as its rival side; with nobody found within 8 s, bots take the
-rival side. Then every empty seat on both sides takes a bot and the whole party goes to the
+looking). Solo players and parties looking at once are packed into whole 3v3s, each party kept
+on one side, the best host hosting and the others joining its room in place; a room starts once
+both sides are full, or with bots in the empty seats after 8 s (longer while more people are on
+their way, 30 s at most). After the match each party goes back to its own party. Then every empty seat on both sides takes a bot and the whole party goes to the
 **hero select** (netPhase 'pick', the lobby, js/ui/champ-select.js), which every member sees as the
 leader does. Everyone drafts there (js/ui/draft.js: bans, then a blind pick all at once; a
 guest's presses go through the leader as `draft` messages); the count after the pick and the eagle on its zero are the

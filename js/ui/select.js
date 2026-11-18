@@ -196,12 +196,15 @@ function drawSeatRow(r, mine, hidden, flash, hot) {
     l1 = D.phase === 'pick' ? tr(acting ? 'pick.picking' : 'pick.locked') : '';
     l2 = p.name; l3 = '';
   } else { l1 = ''; l2 = h >= 0 ? CLASSES[h].name : p.name; }
+  const bot = p.active && !isHuman(p); // a bot's third line is the bots' level bars (drawBotBars, js/ui/rooms.js): never taken for a person
+  if (bot) l3 = '';
   const c1 = acting && me ? SEL_GOLD : me && !status ? SEL_GOLD : SC_DIM;
   const s2 = pixelTextWidth(l2, 2) <= r.w - 52 ? 2 : 1; // a long name in a narrow column drops to 1x
   const ty = r.y + ((r.h - 27) >> 1); // the three lines' block, centred on the row
   if (l1) drawPixelText(ctx, l1, tx(l1, 1), ty, c1, 1);
   drawPixelTextShadow(ctx, l2, tx(l2, s2), ty + (s2 > 1 ? 8 : 11), me && h < 0 ? SC_LIT : c2, SC_INK, s2);
   if (l3) drawPixelText(ctx, l3, tx(l3, 1), ty + 22, me ? SC_LBL : SC_DIM, 1);
+  if (bot) drawBotBars(mine ? r.x + 48 : r.x + r.w - 48 - botBarsW(false), ty + 21, roomLevel(), false);
   if (flash) { ctx.fillStyle = '#f4f7ff'; ctx.globalAlpha *= 0.6; ctx.fillRect(r.x, r.y, r.w, r.h - 1); }
 }
 // both columns; a rival row stays face-down until lobbyRevealed() passes it,

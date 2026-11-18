@@ -96,6 +96,8 @@ const ROADMAP = [
 // notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['MATCHMAKING: solos and small parties fill one 3v3 before bots', '0.987'],
+    ['BOTS: a bot shows its level bars in the hero select and on TAB', '0.987'],
     ['SHOP: a trading post behind your perch, the same walk from both lanes; buy from the rug', '0.986'],
     ['ZIPLINES: E under your cable rides out down the lane past your outer tower', '0.977'],
     ['CONTROLS: a click on a rival beats a held walk key', '0.976'],
