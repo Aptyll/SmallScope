@@ -105,14 +105,15 @@ const ITEM_PASSIVES = {
 // `starter` marks a STARTER (League's Doran's) and lists the kinds of build
 // it opens (itemStarter): a first buy that is part of nothing, sold on later.
 // `why` is a finished item's reason in two words, the tag on its RECOMMENDED
-// card (js/ui/shop-rec.js); `counter` names the rival threat it answers
+// card (js/ui/shop-rec.js); a starter and the potion wear one for the opening
+// cards, and a basic part's card says its stat instead; `counter` names the rival threat it answers
 // (SHOP_THREATS there: 'heal', 'armor', 'burst', 'attack').
 const BUILD_ITEMS = {
   // starters: the opening gold's one item, a touch more stat than its price
   // buys in basics, and nothing to build it into
-  kit:    { name: "TRAPPER'S KIT", price: 450, stats: { dmg: 2, hp: 15 }, starter: ['dmg', 'as', 'ms'] },
-  candle: { name: 'TALLOW CANDLE', price: 450, stats: { ap: 6, hp: 10 }, starter: ['ap', 'haste'] },
-  shield: { name: 'HIDE SHIELD', price: 450, stats: { hp: 22, armor: 4 }, starter: ['hp', 'armor'] },
+  kit:    { name: "TRAPPER'S KIT", price: 450, stats: { dmg: 2, hp: 15 }, starter: ['dmg', 'as', 'ms'], why: 'EARLY DAMAGE' },
+  candle: { name: 'TALLOW CANDLE', price: 450, stats: { ap: 6, hp: 10 }, starter: ['ap', 'haste'], why: 'EARLY POWER' },
+  shield: { name: 'HIDE SHIELD', price: 450, stats: { hp: 22, armor: 4 }, starter: ['hp', 'armor'], why: 'EARLY HEALTH' },
   // basic
   flint:  { name: 'FLINT HEAD', price: 400, stats: { dmg: 3 } },
   string: { name: 'GUT STRING', price: 300, stats: { as: 0.12 } },
@@ -187,7 +188,7 @@ const BUILD_ITEMS = {
   // THE CONSUMABLE: a stack of up to `stack` in ONE slot (League's potions),
   // drunk off that slot's key (the `potion` banner below). No stats, no passive,
   // never a part of anything.
-  potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion', kind: 'hp' },
+  potion: { name: 'HEALTH POTION', price: 50, stack: 5, stats: {}, icon: 'itemPotion', kind: 'hp', why: 'HEAL IN LANE' },
 };
 // THE STYLES a legendary or a pair of boots suits (its `styles`), League's
 // item classes: the shop's top tabs (js/ui/shop.js) list each one's items.

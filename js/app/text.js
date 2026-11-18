@@ -137,10 +137,8 @@ const TEXT = {
   // ---- the shop (js/ui/shop.js): an item's own name and passive stay on its entry
   'shop.rec': 'RECOMMENDED',
   'shop.all': 'ALL',
-  'shop.start': 'START',
+  'shop.allItems': 'ALL ITEMS',
   'shop.boots': 'BOOTS',
-  'shop.alsoBuilt': 'ALSO BUILT',
-  'shop.then': 'THEN',
   'shop.buildsInto': 'BUILDS INTO',
   'shop.onePair': 'ONE PAIR',
   'shop.potionHeal': '+{hp} HEALTH OVER {s}S',
