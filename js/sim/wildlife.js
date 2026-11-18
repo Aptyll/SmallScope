@@ -441,7 +441,7 @@ function animalDies(a) {
   // the orca goes back under its ice instead. A wolf says nothing over its head: a den is
   // four of them, and the coin already said it
   const pool = !!(MONSTER[a.kind] && MONSTER[a.kind].still);
-  if (!pool) unitFall('A', a.kind, a.dir, -1, a.x, a.y, false, fallAng(a, a.lastHit !== undefined ? players[a.lastHit] : null));
+  if (!pool) unitFall('A', beastLook(a), a.dir, -1, a.x, a.y, false, fallAng(a, a.lastHit !== undefined ? players[a.lastHit] : null));
   if (isBigBeast(a)) {
     burst(a.x, a.y - 16, HIT_PUFF[a.kind], 20, 60, 0.7);
     if (pool) burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
@@ -513,6 +513,8 @@ const MONSTER = {
 // tells a bite apart from the world's other blows for the post-game record
 const BEAST_CAUSES = new Set(Object.values(MONSTER).map((m) => m.cause));
 function isCampKind(k) { return !!MONSTER[k]; }
+// the sprite set a beast wears: its camp's own `look` (CAMPS, camps.js), else its kind's
+function beastLook(a) { return a.look || a.kind; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
 function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }
 // A bear's set pieces, played out whole where it stands (updateCampMonster):
@@ -631,7 +633,7 @@ function campGroundPad(C) { return C.spec.ground === undefined ? CAMP_GROUND : C
 function campGround(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, campGroundPad(C)); }
 
 function updateCampMonster(a, dt) {
-  const M = MONSTER[a.kind], C = a.home, foot = M.foot || M.r;
+  const M = MONSTER[a.kind], C = a.home, foot = M.foot || a.bodyR || M.r;
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
   const groundR = ((C ? C.r : 5) + (C ? campGroundPad(C) : CAMP_GROUND)) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);

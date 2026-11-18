@@ -158,6 +158,9 @@ still load. All three run
   one hit, unless it is running home). Only when its quarry dies or boards its eagle does it take
   the nearest living, landed player on the camp's ground inside `CAMP_SEE` (9 tiles, shortened
   by `seenAt` for the hidden; `campQuarry`).
+- **A camp's own look.** A CAMPS entry may dress its kind: `look` (the sprite set, `beastLook`),
+  `box` (the pointer's box, `unitUnder`) and `body` (its radius, `unitRadius`). The creek's robots
+  are the stray robots at twice the size in ice paint (`SPRITES.scrapIce`, grown in beasts.js).
 - **Asleep.** A kind with `sleeps` in its `MONSTER` row (the stray robots) never patrols: it
   lies folded at its spot on its `sleep` clip (two breath frames, the frame dropped to sit over
   the folded body) until a hit wakes the camp, and lies down again once it is home.

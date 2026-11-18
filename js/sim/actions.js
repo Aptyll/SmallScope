@@ -572,8 +572,8 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitFoe(src, a)) continue; // your side's own beast is no mark
-    const hw = a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' || a.kind === 'scrap' ? 9 : 16;
-    const h = a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' || a.kind === 'scrap' ? 14 : 34;
+    const hw = a.box ? a.box[0] : a.kind === 'rabbit' ? 7 : isBigBeast(a) ? 34 : a.kind === 'wolf' || a.kind === 'scrap' ? 9 : 16; // a.box: its camp's own (CAMPS `box`)
+    const h = a.box ? a.box[1] : a.kind === 'rabbit' ? 11 : isBigBeast(a) ? 48 : a.kind === 'wolf' || a.kind === 'scrap' ? 14 : 34;
     const by = a.y + 4;
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }

@@ -626,7 +626,8 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
 | `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **38×38** (its own cell, snapped onto `DEPAL` 1:1) |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
-| `scrap` (the stray robot) | `idle` 1, `run` 2, `lunge` 1, `down` 1 | hand grids | 15×14 |
+| `scrap` (the stray robot) | `idle` 1, `run` 2, `lunge` 1, `down` 1, `sleep` 2 | hand grids | 15×14 |
+| `scrapIce` (the creek's robot) | the same clips | `growGrid` of the `scrap` grids, ice paint | 30×28 |
 | `alpha` (the bear) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8 | a painted rig | 110×76 |
 
 The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
@@ -643,7 +644,10 @@ and a two-frame gait. Left variants are `flipH` of the right-facing frames.
 
 The **stray robot** (`scrap`, beasts.js) is hand grids drawn with app/art: a brass box on stilt legs
 with an iron face plate and no lights. Its **`down`** frame (legs folded) is the one it falls in:
-`fallSpr` (js/draw/falls.js) takes a kind's `down` before its `idle`.
+`fallSpr` (js/draw/falls.js) takes a kind's `down` before its `idle`. Its **`sleep`** clip (folded flat, a
+breath and a puff) is how it waits at its camp; those frames carry a `crown` so the overhead frame
+sits down over the folded body. **`scrapIce`** is the same robot grown 2x by `growGrid` (every pixel
+doubled, ink thinned back to one pixel) in ice paint, for the creek camps.
 
 The warrens' **snowdrops** ([world.md](world.md#camps)) are painted by
 `app/bake-snowdrops/paint.py` (Python with numpy and Pillow): distance-field shapes at 8×
