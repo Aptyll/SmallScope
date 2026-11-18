@@ -19,7 +19,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.988';
+const PATCH_TXT = 'PATCH 0.989';
 // index.html's boot mark (js/baked/logo.png, app/bake-logo.js) stands the logo
 // LOGO_Y down from the top while the scripts load; the first frame takes it
 // down and the page's boot ground fades off over LOGO_DAWN under the hub.
@@ -33,6 +33,7 @@ const LOGO_DAWN = 0.5; // s that fade takes
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.989', 'THE BOTTOM JUNGLE\'S STRAY ROBOTS LOSE THEIR LAMPS: PLAIN BRASS WALKERS ON STILT LEGS WITH AN IRON FACE.', 'stray-robots'],
   ['0.988', 'WAVES ARE MELEE AND RANGED SOLDIERS ONLY: THE BALLISTA CART IS GONE FOR NOW.'],
   ['0.987', 'PLAY FILLS A WHOLE 3V3 FROM EVERYONE LOOKING AT ONCE: SOLO PLAYERS AND SMALL PARTIES ARE PACKED TOGETHER, EACH PARTY KEPT ON ONE SIDE, THE SIDES SHUFFLED BEFORE THE HERO SELECT SO EVERYONE FITS, AND BOTS ONLY TAKE THE SEATS NOBODY CAME FOR.'],
   ['0.986', 'THE SHOP HAS A HOME: YOUR MERCHANT HOPS OFF THE BIRD, RAISES A STRIPED TRADING POST IN A COURT BEHIND YOUR PERCH AND SITS AT ITS COUNTER, THE SAME WALK FROM BOTH LANES. STAND ON THE RUG TO BUY.', 'trading-post'],
